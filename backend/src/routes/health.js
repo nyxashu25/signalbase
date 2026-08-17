@@ -14,11 +14,7 @@ healthRouter.get('/health', (req, res) => {
 // Readiness: can this instance actually serve traffic? Used by load
 // balancers / k8s readiness probes to pull an instance out of rotation.
 healthRouter.get('/health/ready', async (req, res) => {
-  const checks = await Promise.allSettled([
-    prisma.$queryRaw`SELECT 1`,
-    redis.ping(),
-    es.ping(),
-  ]);
+  const checks = await Promise.allSettled([prisma.$queryRaw`SELECT 1`, redis.ping(), es.ping()]);
 
   const [db, redisCheck, elasticsearch] = checks.map((c) => c.status === 'fulfilled');
   const ready = db && redisCheck && elasticsearch;

@@ -17,6 +17,7 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 .idea/
+.claude/
 
 backend/prisma/dev.db
 backend/prisma/*.db-journal

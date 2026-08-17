@@ -1,9 +1,79 @@
+import { Worker } from 'bullmq';
+import { bullConnection } from '../config/redis.js';
 import { logger } from '../config/logger.js';
+import { ensureIndices } from '../services/indexerService.js';
+import { esIndexProcessor } from './processors/esIndexProcessor.js';
+import { creditReaperProcessor } from './processors/creditReaperProcessor.js';
+import { reconciliationProcessor } from './processors/reconciliationProcessor.js';
+import { sequenceProcessor } from './processors/sequenceProcessor.js';
+import { creditReaperQueue, reconciliationQueue, sequenceQueue } from './queues.js';
 
-// Queue processors (enrichment, email-verify, crm-sync, sequence-send,
-// es-index) register here starting in Phase 03. Kept as a live no-op process
-// so `docker-compose up` and the `worker` service topology are correct now.
-logger.info('Worker process started (no queues registered yet)');
+// Additional queue processors (crm-sync) register here starting in Phase 05.
 
-process.on('SIGTERM', () => process.exit(0));
-process.on('SIGINT', () => process.exit(0));
+async function main() {
+  await ensureIndices();
+
+  const esIndexWorker = new Worker('es-index', esIndexProcessor, { connection: bullConnection });
+  esIndexWorker.on('completed', (job) => {
+    logger.info({ jobId: job.id, data: job.data }, 'es-index job completed');
+  });
+  esIndexWorker.on('failed', (job, err) => {
+    logger.error({ jobId: job?.id, data: job?.data, err }, 'es-index job failed');
+  });
+
+  const creditReaperWorker = new Worker('credit-reaper', creditReaperProcessor, {
+    connection: bullConnection,
+  });
+  creditReaperWorker.on('failed', (job, err) => {
+    logger.error({ jobId: job?.id, err }, 'credit-reaper job failed');
+  });
+
+  const reconciliationWorker = new Worker('credit-reconciliation', reconciliationProcessor, {
+    connection: bullConnection,
+  });
+  reconciliationWorker.on('failed', (job, err) => {
+    logger.error({ jobId: job?.id, err }, 'credit-reconciliation job failed');
+  });
+
+  const sequenceWorker = new Worker('sequence-tick', sequenceProcessor, {
+    connection: bullConnection,
+  });
+  sequenceWorker.on('failed', (job, err) => {
+    logger.error({ jobId: job?.id, err }, 'sequence-tick job failed');
+  });
+
+  // Repeatable jobs — BullMQ dedupes by jobId+repeat pattern, so re-running
+  // this on every worker boot doesn't stack up duplicate schedules.
+  await creditReaperQueue.add(
+    'sweep',
+    {},
+    { repeat: { every: 60_000 }, jobId: 'credit-reaper-sweep' },
+  );
+  await reconciliationQueue.add(
+    'reconcile',
+    {},
+    { repeat: { every: 15 * 60_000 }, jobId: 'credit-reconciliation-sweep' },
+  );
+  await sequenceQueue.add('tick', {}, { repeat: { every: 60_000 }, jobId: 'sequence-tick' });
+
+  logger.info(
+    'Worker process started (es-index, credit-reaper, credit-reconciliation, sequence-tick queues active)',
+  );
+
+  const shutdown = async () => {
+    await Promise.all([
+      esIndexWorker.close(),
+      creditReaperWorker.close(),
+      reconciliationWorker.close(),
+      sequenceWorker.close(),
+    ]);
+    process.exit(0);
+  };
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
+}
+
+main().catch((err) => {
+  logger.error({ err }, 'Fatal worker startup error');
+  process.exit(1);
+});

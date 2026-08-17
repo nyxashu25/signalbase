@@ -6,7 +6,15 @@ export const baseApi = createApi({
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({
     baseUrl: '/api/v1',
+    // Sends the httpOnly refresh-token cookie on same-origin requests; the
+    // access token below is attached separately since it lives in Redux,
+    // not a cookie.
     credentials: 'include',
+    prepareHeaders: (headers, { getState }) => {
+      const token = getState().auth.accessToken;
+      if (token) headers.set('Authorization', `Bearer ${token}`);
+      return headers;
+    },
   }),
   tagTypes: [],
   endpoints: () => ({}),

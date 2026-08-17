@@ -13,8 +13,35 @@ const schema = z.object({
 
   JWT_ACCESS_SECRET: z.string().min(32, 'JWT_ACCESS_SECRET must be at least 32 characters'),
   JWT_REFRESH_SECRET: z.string().min(32, 'JWT_REFRESH_SECRET must be at least 32 characters'),
+  ACCESS_TOKEN_TTL_SECONDS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(15 * 60),
+  REFRESH_TOKEN_TTL_SECONDS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(30 * 24 * 60 * 60),
 
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
+
+  // Unset in every environment right now — see emailVerifierService.js.
+  EMAIL_VERIFIER_API_KEY: z.string().optional(),
+
+  // Unset in every environment right now — see espService.js. When unset,
+  // sends are simulated (logged, not delivered) so sequences are fully
+  // exercisable in local/demo/test without a real ESP account.
+  ESP_API_KEY: z.string().optional(),
+  // Always required (unlike the above) — used to verify inbound webhook
+  // signatures even while sends themselves are simulated.
+  ESP_WEBHOOK_SECRET: z.string().min(16),
+
+  // Optional — see stripeService.js. When unset, checkout session creation
+  // is simulated; webhook signature verification still works (it only
+  // needs STRIPE_WEBHOOK_SECRET, not a live API key).
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().min(16),
 });
 
 const parsed = schema.safeParse(process.env);

@@ -35,7 +35,17 @@ export function createApp() {
       credentials: true,
     }),
   );
-  app.use(express.json({ limit: '1mb' }));
+  app.use(
+    express.json({
+      limit: '1mb',
+      // Webhook signature verification needs the exact bytes that were
+      // signed — re-serializing the parsed object could produce different
+      // bytes (key order, whitespace) and break the HMAC comparison.
+      verify: (req, res, buf) => {
+        req.rawBody = buf;
+      },
+    }),
+  );
   app.use(cookieParser());
 
   app.use(healthRouter);

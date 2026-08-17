@@ -11,6 +11,42 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: signalbase
+          POSTGRES_PASSWORD: signalbase
+          POSTGRES_DB: signalbase_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U signalbase"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
+        env:
+          discovery.type: single-node
+          xpack.security.enabled: 'false'
+          ES_JAVA_OPTS: '-Xms512m -Xmx512m'
+        ports:
+          - 9200:9200
+        options: >-
+          --health-cmd "curl --silent --fail localhost:9200/_cluster/health || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 15
     steps:
       - uses: actions/checkout@v4
 
@@ -21,8 +57,19 @@ jobs:
           cache-dependency-path: backend/package-lock.json
 
       - run: npm ci
+      - run: npm audit --audit-level=high
       - run: npm run lint
       - run: npm run format
+      # No committed migrations yet (schema was authored without a local
+      # Node/Postgres to run `prisma migrate dev` against) — `db push`
+      # syncs the test DB straight from schema.prisma. Swap this for
+      # `prisma migrate deploy` once real migration files exist.
+      # The Prisma CLI reads .env directly (not our app's NODE_ENV-aware
+      # loader), so DATABASE_URL is passed explicitly here to match the
+      # service container above and backend/.env.test.
+      - run: npx prisma db push
+        env:
+          DATABASE_URL: postgresql://signalbase:signalbase@localhost:5432/signalbase_test
       - run: npm test
 
   frontend:
@@ -40,6 +87,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - run: npm ci
+      - run: npm audit --audit-level=high
       - run: npm run lint
       - run: npm run format
       - run: npm test

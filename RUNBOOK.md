@@ -1,0 +1,157 @@
+# Operational Runbook
+
+Procedures for the alerts and failure modes this codebase can actually produce.
+Written against the services in `backend/src/jobs/` and `backend/src/services/` —
+update this file when those change, not the other way around.
+
+---
+
+## Credit balance drift (`credit-reconciliation` logs `error`)
+
+**Symptom:** `reconciliationService.js` logs `"Credit balance drift detected"` with a
+workspace id, expected/actual balances, and a drift amount.
+
+**What it means:** Redis's view of a workspace's credits (available + actively
+reserved) no longer matches Postgres's ledger truth. This should be
+structurally impossible given the reserve → commit/release flow in
+`creditService.js` — treat it as a bug, not routine noise.
+
+**Triage:**
+1. Pull the workspace's ledger: `SELECT * FROM "CreditLedgerEntry" WHERE "workspaceId" = '...' ORDER BY "createdAt"`.
+2. Check for orphaned reservations: `ZRANGE credits:reservations:pending 0 -1` in
+   Redis, cross-referenced against `credits:reservation:<id>` keys.
+3. Common causes, in order of likelihood:
+   - The `credit-reaper` worker was down for longer than the reservation's
+     safety buffer (`RESERVATION_TTL_SECONDS + REAPER_SAFETY_BUFFER_SECONDS`,
+     currently 7 minutes) — a reservation's Redis key expired before the
+     reaper refunded it. Check worker uptime/logs around the drift window.
+   - A deploy restarted the worker mid-reveal, between
+     `resolveReservationForCommit` (Redis cleared) and the Postgres
+     transaction committing.
+4. **Do not manually edit the Redis balance key to "fix" the number.** Insert a
+   `CreditLedgerEntry` with `reason: ADJUSTMENT` and a comment explaining why,
+   then let the next reconciliation tick confirm it converged. The ledger is
+   the source of truth; Redis is a cache of it.
+
+---
+
+## Sequence queue backlog (`sequence-tick` processing more than expected)
+
+**Symptom:** Emails going out later than their `nextStepDueAt`, or
+`processDueEnrollments` logs show growing `processed` counts each tick.
+
+**Triage:**
+1. Check the worker process is actually running — `sequence-tick` is a
+   60-second repeatable BullMQ job; if the worker is down, due enrollments
+   just pile up silently (no error, no alert) until it comes back.
+2. If the worker is up but falling behind: check Postgres query time on
+   `SequenceEnrollment` — the due-query is `WHERE status = 'ACTIVE' AND
+   "nextStepDueAt" <= now()`, indexed on `nextStepDueAt` (see
+   `schema.prisma`). A missing/corrupted index here is the usual cause of a
+   slow-down that wasn't present at launch.
+3. `espService.js` is currently a simulated stub with no real network call —
+   in production, once a real ESP is wired in, add per-send timeout handling
+   here; a hanging provider call would stall the whole tick.
+
+---
+
+## Elasticsearch out of sync with Postgres
+
+**Symptom:** Search results missing a company/contact that definitely exists
+in Postgres, or showing stale facet values after an update.
+
+**Fix:** Run the full backfill — it's idempotent and safe to run anytime:
+
+```bash
+cd backend
+npm run reindex
+```
+
+For a single record instead of a full backfill, the `es-index` BullMQ queue
+picks up individual `enqueueIndex('contact' | 'company', id)` calls — check
+whether the write path that changed the record actually calls
+`enqueueIndex` (searchService/revealService/privacyService already do; a new
+write path you add will not, unless you add the call).
+
+**If ES itself is down:** `/health/ready` will report `elasticsearch: false`
+and return 503 — that's the signal to pull instances out of rotation. Search
+endpoints will 5xx; the rest of the API (auth, credits, sequences) keeps
+working since ES isn't in those paths.
+
+---
+
+## Refresh token replay detected (users unexpectedly logged out)
+
+**Symptom:** `tokenService.js` throws `ReplayDetectedError`, users see a
+"session revoked" 401 and have to log in again.
+
+**What it means:** A refresh token that had already been rotated away got
+reused. Two causes, very different severity:
+- **Benign:** a client retried a `/auth/refresh` call (e.g. two browser tabs
+  both trying to refresh at once, or a flaky network causing a client-side
+  retry) — the loser of the race legitimately looks like a replay.
+- **Concerning:** a stolen refresh token being used after the legitimate
+  client already rotated past it.
+
+**Triage:** This is rare enough in normal operation that a spike is the
+signal to look closer — check whether the affected users share an IP
+range/pattern suggestive of credential theft rather than normal client
+retries. There's no per-event way to distinguish the two cases after the
+fact; the design intentionally kills the whole session in both, since the
+cost of a false positive (re-login) is much lower than the cost of not
+reacting to a real one.
+
+---
+
+## Stripe webhook failures
+
+**Symptom:** Stripe dashboard shows failed webhook deliveries to
+`/api/v1/webhooks/stripe`.
+
+**Triage:**
+1. `400` responses mean signature verification failed
+   (`stripeService.verifyAndParseEvent`) — almost always
+   `STRIPE_WEBHOOK_SECRET` mismatched between the deployed environment and
+   the Stripe dashboard's configured endpoint secret (each endpoint has its
+   own secret; a shared one across staging/prod is a common misconfiguration).
+2. `5xx` responses: check `topUpCredits`/`updateSubscriptionState` logs —
+   `topUpCredits` logs an explicit error if `checkout.session.completed`
+   metadata is missing `workspaceId`/`credits`, which means the checkout
+   session was created without that metadata (see `createCheckoutSession` —
+   once real Stripe integration replaces the stub, this metadata must be
+   set on session creation or top-ups silently no-op).
+3. Stripe retries failed webhooks on its own schedule for ~3 days — the
+   event-id dedup (`stripe:event:<id>` in Redis, 30-day TTL) means it's safe
+   to just fix the bug and let Stripe's retries catch up; no manual replay
+   needed as long as the fix ships within Stripe's retry window.
+
+---
+
+## Rate limit false positives
+
+**Symptom:** A legitimate user/IP getting `429`s.
+
+Buckets are `ratelimit:<prefix>:<key>` in Redis with a TTL matching the
+window (see `rateLimitService.js`). To manually clear one:
+
+```
+redis-cli DEL ratelimit:login:<ip>
+redis-cli DEL ratelimit:reveal:<workspaceId>
+```
+
+Current limits (`backend/src/routes/*.js`): login 10/min/IP, register
+5/hour/IP, reveal 30/min/workspace, privacy opt-out 5/hour/IP. If a limit is
+routinely too tight for real usage, that's a signal to change the constant,
+not to keep manually clearing the bucket.
+
+---
+
+## GDPR/CCPA erasure requests
+
+Handled at `POST /api/v1/privacy/opt-out` — see `privacyService.js`. This is
+unauthenticated by design (a data subject may not have an account), so
+verify identity out-of-band before triggering it on someone's behalf via
+support tooling. It redacts existing matching `Contact` rows immediately and
+registers the email so future pattern-guessed reveals are blocked
+(`revealService.js` checks `isOptedOut` before persisting a new guess) — it
+does not retroactively un-send anything already delivered through Sequences.

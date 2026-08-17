@@ -1,6 +1,3 @@
-// Models land in Phase 01 (data model, auth & tenancy). This stub exists so
-// `prisma generate` / `prisma migrate` work from the very first commit.
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,4 +5,364 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Tenancy: Org -> Workspace -> User, joined by Membership (which carries role).
+// A user can belong to multiple workspaces across multiple orgs.
+// ---------------------------------------------------------------------------
+
+model Org {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  workspaces Workspace[]
+}
+
+model Workspace {
+  id                 String   @id @default(uuid())
+  orgId              String
+  name               String
+  monthlyCreditGrant Int      @default(100)
+  // Null until the workspace has ever started a checkout — billing is
+  // opt-in, not every workspace has a Stripe customer.
+  stripeCustomerId     String? @unique
+  stripeSubscriptionId String? @unique
+  createdAt          DateTime @default(now())
+
+  org          Org                 @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  memberships  Membership[]
+  lists        List[]
+  creditLedger CreditLedgerEntry[]
+  emailReveals EmailReveal[]
+  sequences    Sequence[]
+  enrollments  SequenceEnrollment[]
+  suppressions SuppressionEntry[]
+
+  @@index([orgId])
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+
+  memberships      Membership[]
+  emailReveals     EmailReveal[]
+  createdLists     List[]     @relation("ListCreatedBy")
+  createdSequences Sequence[] @relation("SequenceCreatedBy")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model Membership {
+  id          String   @id @default(uuid())
+  userId      String
+  workspaceId String
+  role        Role     @default(MEMBER)
+  createdAt   DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  // One membership per (user, workspace) — role changes update this row, they
+  // don't create a new one.
+  @@unique([userId, workspaceId])
+  @@index([workspaceId])
+}
+
+// ---------------------------------------------------------------------------
+// Data graph: Company/Contact are the shared dataset (not tenant-scoped) —
+// every workspace searches the same underlying company/people database.
+// Tenant-scoped state (what a workspace has saved/revealed) lives below.
+// ---------------------------------------------------------------------------
+
+model Company {
+  id           String   @id @default(uuid())
+  name         String
+  domain       String   @unique
+  industry     String?
+  headcountMin Int?
+  headcountMax Int?
+  location     String?
+  techStack    String[]
+  linkedinUrl  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  contacts  Contact[]
+  listItems ListItem[]
+
+  @@index([industry])
+  @@index([name])
+}
+
+model Contact {
+  id            String   @id @default(uuid())
+  companyId     String
+  firstName     String
+  lastName      String
+  title         String?
+  seniority     String?
+  department    String?
+  // Populated once the pattern-finder/verifier has run (services/email*.js,
+  // Phase 03). Serializers must mask this field unless the requesting
+  // workspace has a matching EmailReveal row — see docs/07-credits-state.
+  email         String?
+  emailVerified Boolean  @default(false)
+  phone         String?
+  linkedinUrl   String?
+  // Set by a GDPR/CCPA erasure request (privacyService.js) — once set, PII
+  // fields above are wiped and this contact is permanently excluded from
+  // search/reveal, not just for the workspace that requested it.
+  redactedAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  company      Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  listItems    ListItem[]
+  emailReveals EmailReveal[]
+  enrollments  SequenceEnrollment[]
+
+  @@index([companyId])
+  @@index([lastName, firstName])
+}
+
+// ---------------------------------------------------------------------------
+// Tenant-scoped: every model below carries a workspaceId and every query
+// against them MUST filter by the authenticated request's workspace.
+// See src/middleware/auth.js and the isolation tests in lists.test.js.
+// ---------------------------------------------------------------------------
+
+enum ListType {
+  CONTACTS
+  COMPANIES
+}
+
+model List {
+  id          String   @id @default(uuid())
+  workspaceId String
+  name        String
+  type        ListType
+  createdById String
+  createdAt   DateTime @default(now())
+
+  workspace Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User       @relation("ListCreatedBy", fields: [createdById], references: [id])
+  items     ListItem[]
+
+  @@index([workspaceId])
+}
+
+model ListItem {
+  id        String   @id @default(uuid())
+  listId    String
+  // Exactly one of contactId/companyId is set, matching the parent List's
+  // type. Enforced in the service layer (services/listService.js) — Prisma
+  // has no declarative XOR constraint.
+  contactId String?
+  companyId String?
+  addedAt   DateTime @default(now())
+
+  list    List     @relation(fields: [listId], references: [id], onDelete: Cascade)
+  contact Contact? @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  company Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, contactId])
+  @@unique([listId, companyId])
+  @@index([listId])
+}
+
+enum CreditReason {
+  MONTHLY_GRANT
+  EMAIL_REVEAL
+  TOPUP
+  ADJUSTMENT
+}
+
+// Append-only — never UPDATE or DELETE a row. Balance is always
+// workspace.monthlyCreditGrant + SUM(delta) [- reservations held in Redis].
+// See README.md "How the credit flow works".
+model CreditLedgerEntry {
+  id          String       @id @default(uuid())
+  workspaceId String
+  delta       Int
+  reason      CreditReason
+  contactId   String?
+  createdAt   DateTime     @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
+}
+
+// Audit trail + reveal-state: once any member of a workspace reveals a
+// contact's email, the whole workspace can see it (the unique constraint is
+// what makes reveals workspace-wide rather than per-user).
+model EmailReveal {
+  id           String   @id @default(uuid())
+  workspaceId String
+  contactId    String
+  revealedById String
+  createdAt    DateTime @default(now())
+
+  workspace  Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contact    Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  revealedBy User      @relation(fields: [revealedById], references: [id])
+
+  @@unique([workspaceId, contactId])
+  @@index([workspaceId])
+}
+
+// ---------------------------------------------------------------------------
+// Engagement: multi-step email cadences. A Sequence is a template (its
+// Steps); a SequenceEnrollment is one contact's progress through it.
+// ---------------------------------------------------------------------------
+
+enum SequenceStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+model Sequence {
+  id          String         @id @default(uuid())
+  workspaceId String
+  name        String
+  status      SequenceStatus @default(DRAFT)
+  createdById String
+  createdAt   DateTime       @default(now())
+
+  workspace   Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy   User                 @relation("SequenceCreatedBy", fields: [createdById], references: [id])
+  steps       SequenceStep[]
+  enrollments SequenceEnrollment[]
+
+  @@index([workspaceId])
+}
+
+enum StepType {
+  EMAIL
+  WAIT
+}
+
+model SequenceStep {
+  id         String   @id @default(uuid())
+  sequenceId String
+  // 0-based position — the engine advances currentStepIndex through these.
+  order      Int
+  type       StepType
+  // WAIT steps only:
+  waitDays   Int?
+  // EMAIL steps only:
+  subject    String?
+  body       String?
+
+  sequence Sequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+
+  @@unique([sequenceId, order])
+  @@index([sequenceId])
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  UNENROLLED
+}
+
+model SequenceEnrollment {
+  id               String           @id @default(uuid())
+  sequenceId       String
+  // Denormalized from Sequence so isolation queries never need a join —
+  // same defense-in-depth pattern as List/CreditLedgerEntry.
+  workspaceId      String
+  contactId        String
+  status           EnrollmentStatus @default(ACTIVE)
+  currentStepIndex Int              @default(0)
+  // When the scheduler should next advance this enrollment. Indexed — the
+  // due-step processor's whole query is "WHERE nextStepDueAt <= now()".
+  nextStepDueAt    DateTime?
+  enrolledAt       DateTime         @default(now())
+  unenrolledAt     DateTime?
+  unenrolledReason String?
+
+  sequence  Sequence             @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  workspace Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contact   Contact              @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  events    SequenceStepEvent[]
+
+  // A contact can only be enrolled in a given sequence once at a time.
+  @@unique([sequenceId, contactId])
+  @@index([workspaceId])
+  @@index([nextStepDueAt])
+}
+
+enum StepEventType {
+  SENT
+  OPENED
+  CLICKED
+  BOUNCED
+  REPLIED
+  UNSUBSCRIBED
+}
+
+model SequenceStepEvent {
+  id           String        @id @default(uuid())
+  enrollmentId String
+  stepIndex    Int
+  type         StepEventType
+  // The ESP's own event id, when it has one (webhook deliveries). Unique so
+  // an at-least-once webhook redelivery can't double-count a SENT/OPENED/etc.
+  providerEventId String?    @unique
+  createdAt    DateTime      @default(now())
+
+  enrollment SequenceEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@index([enrollmentId])
+}
+
+enum SuppressionReason {
+  UNSUBSCRIBED
+  BOUNCED
+  MANUAL
+}
+
+// Workspace-scoped (not global) — a recipient unsubscribes from *this
+// workspace's* sends, which is also what CAN-SPAM/GDPR compliance tracks
+// per-sender. Checked at send time in the step processor, not at
+// enrollment time — see sequenceProcessor.js.
+model SuppressionEntry {
+  id          String            @id @default(uuid())
+  workspaceId String
+  email       String
+  reason      SuppressionReason
+  createdAt   DateTime          @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, email])
+  @@index([workspaceId])
+}
+
+// ---------------------------------------------------------------------------
+// Privacy / data-subject rights. Global, not workspace-scoped — this is a
+// real person's right over the shared data graph itself, orthogonal to
+// which tenant looked them up. See privacyService.js.
+// ---------------------------------------------------------------------------
+
+model DataSubjectOptOut {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  reason      String?
+  requestedAt DateTime @default(now())
 }
