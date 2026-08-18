@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { useSearchPeopleQuery } from '../api/searchApi.js';
+import { useDispatch } from 'react-redux';
+import { searchApi, useSearchPeopleQuery } from '../api/searchApi.js';
+import { useRevealContactMutation } from '../api/contactsApi.js';
 import { FacetPanel } from '../components/FacetPanel.jsx';
 import { Pagination } from '../components/Pagination.jsx';
 import { ContactRow } from '../components/ContactRow.jsx';
@@ -12,16 +14,32 @@ function toggle(list, value) {
 }
 
 export function People() {
+  const dispatch = useDispatch();
   const [q, setQ] = useState('');
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [page, setPage] = useState(1);
 
-  const { data, isFetching, isError } = useSearchPeopleQuery({
-    q: q || undefined,
-    ...filters,
-    page,
-    pageSize: PAGE_SIZE,
-  });
+  const queryArgs = { q: q || undefined, ...filters, page, pageSize: PAGE_SIZE };
+  const { data, isFetching, isError } = useSearchPeopleQuery(queryArgs);
+  const [revealContact] = useRevealContactMutation();
+
+  async function handleReveal(contactId) {
+    const result = await revealContact({ contactId, idempotencyKey: crypto.randomUUID() }).unwrap();
+
+    // Patch the cached page in place rather than refetching — a refetch
+    // would re-run the ES query and could reshuffle/repaginate results out
+    // from under the user for something that only changed one row.
+    dispatch(
+      searchApi.util.updateQueryData('searchPeople', queryArgs, (draft) => {
+        const contact = draft.results.find((c) => c.id === contactId);
+        if (contact) {
+          contact.email = result.email;
+          contact.emailVerified = result.emailVerified;
+          contact.revealed = true;
+        }
+      }),
+    );
+  }
 
   function updateFacet(key, value) {
     setPage(1);
@@ -77,7 +95,7 @@ export function People() {
                 </thead>
                 <tbody>
                   {data?.results.map((contact) => (
-                    <ContactRow key={contact.id} contact={contact} />
+                    <ContactRow key={contact.id} contact={contact} onReveal={handleReveal} />
                   ))}
                   {data && data.results.length === 0 && (
                     <tr>
