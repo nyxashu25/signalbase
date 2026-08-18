@@ -8,6 +8,8 @@ import { env } from './config/env.js';
 import { logger } from './config/logger.js';
 import { healthRouter } from './routes/health.js';
 import { apiRouter } from './routes/index.js';
+import { metricsRouter } from './routes/metrics.js';
+import { metricsMiddleware } from './middleware/metricsMiddleware.js';
 import { notFoundHandler, errorHandler } from './middleware/errorHandler.js';
 
 export function createApp() {
@@ -47,8 +49,10 @@ export function createApp() {
     }),
   );
   app.use(cookieParser());
+  app.use(metricsMiddleware);
 
   app.use(healthRouter);
+  app.use('/metrics', metricsRouter);
   app.use('/api/v1', apiRouter);
 
   app.use(notFoundHandler);

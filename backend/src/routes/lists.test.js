@@ -3,7 +3,6 @@ import request from 'supertest';
 import { createApp } from '../app.js';
 import { resetDb, resetRedis } from '../test/dbHelpers.js';
 import { prisma } from '../config/db.js';
-import { redis } from '../config/redis.js';
 import { hashPassword } from '../utils/password.js';
 
 const app = createApp();
@@ -23,7 +22,6 @@ describe('lists: multi-tenant isolation + RBAC', () => {
 
   afterAll(async () => {
     await prisma.$disconnect();
-    redis.disconnect();
   });
 
   it('a user in org B cannot fetch a list belonging to org A, even by guessing its id', async () => {

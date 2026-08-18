@@ -6,6 +6,25 @@ update this file when those change, not the other way around.
 
 ---
 
+## Observability surfaces
+
+- **`GET /metrics`** — Prometheus text format (`backend/src/config/metrics.js`).
+  Request duration/count by route template, active credit reservations
+  (`credit_reservations_pending`), and per-queue BullMQ backlog
+  (`bullmq_queue_waiting_jobs`). No auth — this MUST be firewalled to
+  internal scrape-only access in any real deployment, not exposed publicly.
+- **Traces** — OpenTelemetry, auto-instrumented (HTTP, Express, Prisma,
+  ioredis) via `backend/src/tracing.js`, preloaded with `node --import`
+  ahead of the app itself so instrumentation can patch modules before
+  they're first used. Spans print to the console by default; set
+  `OTEL_EXPORTER_OTLP_ENDPOINT` to ship them to a real collector (Jaeger,
+  Tempo, Honeycomb, ...) instead — no code change needed. The `fs`
+  instrumentation is deliberately disabled (traces every file read,
+  including Node's own module resolution — hundreds of thousands of
+  zero-value spans at startup otherwise).
+
+---
+
 ## Credit balance drift (`credit-reconciliation` logs `error`)
 
 **Symptom:** `reconciliationService.js` logs `"Credit balance drift detected"` with a

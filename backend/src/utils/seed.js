@@ -175,7 +175,10 @@ async function seedDemoTenant() {
   try {
     await initializeBalance(workspace.id, workspace.monthlyCreditGrant);
   } catch (err) {
-    logger.warn({ err: err.message }, 'Could not initialize credit balance (Redis unavailable?) — skipping');
+    logger.warn(
+      { err: err.message },
+      'Could not initialize credit balance (Redis unavailable?) — skipping',
+    );
   }
 
   return { org, workspace, user };
@@ -210,7 +213,10 @@ async function main() {
   try {
     await reindexAll();
   } catch (err) {
-    logger.warn({ err: err.message }, 'Could not reindex into Elasticsearch (unavailable?) — skipping');
+    logger.warn(
+      { err: err.message },
+      'Could not reindex into Elasticsearch (unavailable?) — skipping',
+    );
   }
 
   logger.info(

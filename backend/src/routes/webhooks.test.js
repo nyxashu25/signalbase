@@ -4,7 +4,6 @@ import request from 'supertest';
 import { createApp } from '../app.js';
 import { resetDb, resetRedis } from '../test/dbHelpers.js';
 import { prisma } from '../config/db.js';
-import { redis } from '../config/redis.js';
 import { env } from '../config/env.js';
 
 const app = createApp();
@@ -68,7 +67,6 @@ describe('POST /webhooks/esp', () => {
 
   afterAll(async () => {
     await prisma.$disconnect();
-    redis.disconnect();
   });
 
   it('rejects a request with no signature', async () => {

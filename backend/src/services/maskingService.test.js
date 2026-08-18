@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import { prisma } from '../config/db.js';
-import { redis } from '../config/redis.js';
 import { resetDb } from '../test/dbHelpers.js';
 import { maskEmail, attachRevealStatus } from './maskingService.js';
 
@@ -47,7 +46,6 @@ describe('attachRevealStatus', () => {
 
   afterAll(async () => {
     await prisma.$disconnect();
-    redis.disconnect();
   });
 
   it('masks the email when the workspace has no reveal on record', async () => {

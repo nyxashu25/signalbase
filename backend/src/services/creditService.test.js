@@ -21,7 +21,6 @@ describe('creditService', () => {
 
   afterAll(async () => {
     await prisma.$disconnect();
-    redis.disconnect();
   });
 
   it('reserveCredit decrements the balance and 402s once it hits zero', async () => {

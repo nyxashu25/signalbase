@@ -1,0 +1,10 @@
+title = "SignalBase gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Known-fake secrets committed intentionally for the test environment — every value in this one file is labeled not-for-production in the file itself. Scoped by path, so it doesn't weaken scanning anywhere else in the repo."
+paths = [
+  '''backend/\.env\.test''',
+]

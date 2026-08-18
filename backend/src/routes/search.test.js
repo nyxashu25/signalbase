@@ -3,7 +3,6 @@ import request from 'supertest';
 import { createApp } from '../app.js';
 import { resetDb, resetRedis } from '../test/dbHelpers.js';
 import { prisma } from '../config/db.js';
-import { redis } from '../config/redis.js';
 import { es } from '../config/elasticsearch.js';
 import { reindexAll } from '../services/indexerService.js';
 import { COMPANIES_INDEX, CONTACTS_INDEX } from '../config/esIndices.js';
@@ -70,7 +69,6 @@ describe('search API', () => {
 
   afterAll(async () => {
     await prisma.$disconnect();
-    redis.disconnect();
   });
 
   it('filters companies by industry facet and returns facet counts', async () => {

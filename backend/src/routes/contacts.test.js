@@ -39,7 +39,6 @@ describe('POST /contacts/:id/reveal', () => {
 
   afterAll(async () => {
     await prisma.$disconnect();
-    redis.disconnect();
   });
 
   it('finds and returns a pattern-guessed email, charging exactly one credit', async () => {

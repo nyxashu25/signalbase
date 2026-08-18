@@ -4,7 +4,6 @@ import request from 'supertest';
 import { createApp } from '../app.js';
 import { resetDb, resetRedis } from '../test/dbHelpers.js';
 import { prisma } from '../config/db.js';
-import { redis } from '../config/redis.js';
 import { env } from '../config/env.js';
 import { getBalance, initializeBalance } from '../services/creditService.js';
 
@@ -56,7 +55,6 @@ describe('POST /webhooks/stripe', () => {
 
   afterAll(async () => {
     await prisma.$disconnect();
-    redis.disconnect();
   });
 
   it('rejects a request with an invalid signature', async () => {

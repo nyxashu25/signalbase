@@ -3,7 +3,6 @@ import request from 'supertest';
 import { createApp } from '../app.js';
 import { resetDb, resetRedis } from '../test/dbHelpers.js';
 import { prisma } from '../config/db.js';
-import { redis } from '../config/redis.js';
 
 const app = createApp();
 
@@ -27,7 +26,6 @@ describe('auth flow', () => {
 
   afterAll(async () => {
     await prisma.$disconnect();
-    redis.disconnect();
   });
 
   it('registers a new org/workspace/user and returns an access token + refresh cookie', async () => {

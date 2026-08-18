@@ -1,7 +1,15 @@
 import { z } from 'zod';
 import dotenv from 'dotenv';
 
-dotenv.config({ path: process.env.NODE_ENV === 'test' ? '.env.test' : '.env' });
+// override: true is required — @prisma/client's generated runtime has its
+// own unconditional, NODE_ENV-unaware ".env" auto-loader that can run
+// before this line does, depending on module import order across a test
+// file's dependency graph. dotenv's default (override: false) would then
+// treat DATABASE_URL etc. as "already set" and silently keep Prisma's
+// wrong (dev) values instead of ours — pointing tests at the dev database.
+// Forcing an override here means this call always wins, regardless of
+// what ran first.
+dotenv.config({ path: process.env.NODE_ENV === 'test' ? '.env.test' : '.env', override: true });
 
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),

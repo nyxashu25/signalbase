@@ -58,7 +58,10 @@ export async function enqueueIndex(type, id) {
   await esIndexQueue.add(
     'index',
     { type, id },
-    { jobId: `${type}:${id}`, removeOnComplete: true, removeOnFail: 50 },
+    // BullMQ uses ":" as an internal delimiter in the Redis keys it derives
+    // from a custom jobId and rejects one containing it — "-" dedupes the
+    // same entity's repeated writes just as well without colliding.
+    { jobId: `${type}-${id}`, removeOnComplete: true, removeOnFail: 50 },
   );
 }
 

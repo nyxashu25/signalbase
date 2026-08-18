@@ -3,7 +3,6 @@ import request from 'supertest';
 import { createApp } from '../app.js';
 import { resetDb, resetRedis } from '../test/dbHelpers.js';
 import { prisma } from '../config/db.js';
-import { redis } from '../config/redis.js';
 
 const app = createApp();
 
@@ -15,7 +14,6 @@ describe('rate limiting', () => {
 
   afterAll(async () => {
     await prisma.$disconnect();
-    redis.disconnect();
   });
 
   it('blocks the 11th login attempt within a minute (limit is 10) and resets after the window', async () => {

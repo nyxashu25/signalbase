@@ -4,7 +4,6 @@ import request from 'supertest';
 import { createApp } from '../app.js';
 import { resetDb, resetRedis } from '../test/dbHelpers.js';
 import { prisma } from '../config/db.js';
-import { redis } from '../config/redis.js';
 
 const app = createApp();
 
@@ -23,7 +22,6 @@ describe('POST /privacy/opt-out', () => {
 
   afterAll(async () => {
     await prisma.$disconnect();
-    redis.disconnect();
   });
 
   it('redacts an existing contact and reports the count', async () => {

@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import { prisma } from '../config/db.js';
-import { redis } from '../config/redis.js';
 import { resetDb, resetRedis } from '../test/dbHelpers.js';
 import { createSequence, enroll, processDueEnrollments } from './sequenceService.js';
 import { addSuppression } from './suppressionService.js';
@@ -34,7 +33,6 @@ describe('sequenceService', () => {
 
   afterAll(async () => {
     await prisma.$disconnect();
-    redis.disconnect();
   });
 
   it('sends the first EMAIL step immediately on enroll, then waits before the next', async () => {
@@ -53,26 +51,41 @@ describe('sequenceService', () => {
 
     const enrollment = await enroll(workspace.id, sequence.id, contact.id);
 
-    const processed = await processDueEnrollments();
-    expect(processed).toBe(1);
+    // Tick 1: sends the EMAIL step and lands on the WAIT step. Per the
+    // engine's design (see sequenceService.js's processOne comment),
+    // advancing past a step sets nextStepDueAt to now — the step just
+    // landed on gets *evaluated*, not skipped, on the very next tick. The
+    // 3-day delay is applied when tick 2 actually processes the WAIT step
+    // itself, not pre-emptively here.
+    const firstProcessed = await processDueEnrollments();
+    expect(firstProcessed).toBe(1);
 
     const afterFirstTick = await prisma.sequenceEnrollment.findUnique({
       where: { id: enrollment.id },
     });
     expect(afterFirstTick.currentStepIndex).toBe(1); // past the EMAIL step, now on WAIT
     expect(afterFirstTick.status).toBe('ACTIVE');
-    expect(afterFirstTick.nextStepDueAt.getTime()).toBeGreaterThan(
-      Date.now() + 24 * 60 * 60 * 1000,
-    );
 
     const sentEvents = await prisma.sequenceStepEvent.findMany({
       where: { enrollmentId: enrollment.id, type: 'SENT' },
     });
     expect(sentEvents).toHaveLength(1);
 
-    // The WAIT step isn't due yet — a second tick must not advance it.
+    // Tick 2: processes the WAIT step itself, pushing nextStepDueAt 3 days out.
     const secondProcessed = await processDueEnrollments();
-    expect(secondProcessed).toBe(0);
+    expect(secondProcessed).toBe(1);
+
+    const afterSecondTick = await prisma.sequenceEnrollment.findUnique({
+      where: { id: enrollment.id },
+    });
+    expect(afterSecondTick.currentStepIndex).toBe(2); // past WAIT, now on the second EMAIL
+    expect(afterSecondTick.nextStepDueAt.getTime()).toBeGreaterThan(
+      Date.now() + 24 * 60 * 60 * 1000,
+    );
+
+    // Tick 3: the second EMAIL isn't due for ~3 days — must not fire yet.
+    const thirdProcessed = await processDueEnrollments();
+    expect(thirdProcessed).toBe(0);
   });
 
   it('unenrolls (does not send) when the contact has no email on file', async () => {
