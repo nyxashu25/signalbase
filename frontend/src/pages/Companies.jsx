@@ -56,11 +56,13 @@ export function Companies() {
         className="mt-4 w-full max-w-md rounded-md border border-border bg-surface-elevated px-3 py-2 text-sm text-text focus:border-focus focus:outline-none"
       />
 
-      <div className="mt-6 flex gap-8">
+      <div className="mt-6 flex flex-col gap-6 md:flex-row md:gap-8">
         <FacetPanel groups={facetGroups} />
 
         <div className="min-w-0 flex-1 rounded-lg border border-border bg-surface-elevated">
-          {isError && <p className="p-4 text-sm text-red-600">Search failed. Is the backend running?</p>}
+          {isError && (
+            <p className="p-4 text-sm text-red-600">Search failed. Is the backend running?</p>
+          )}
 
           {!isError && (
             <div className="overflow-x-auto">
@@ -79,17 +81,24 @@ export function Companies() {
                   {data?.results.map((company) => (
                     <tr key={company.id} className="border-b border-border hover:bg-surface">
                       <td className="px-4 py-3 text-sm font-medium text-text">
-                        <Link to={`/app/companies/${company.id}`} className="hover:text-primary hover:underline">
+                        <Link
+                          to={`/app/companies/${company.id}`}
+                          className="hover:text-primary hover:underline"
+                        >
                           {company.name}
                         </Link>
                       </td>
                       <td className="px-4 py-3 text-sm text-text-muted">{company.domain}</td>
-                      <td className="px-4 py-3 text-sm text-text-muted">{company.industry ?? '—'}</td>
+                      <td className="px-4 py-3 text-sm text-text-muted">
+                        {company.industry ?? '—'}
+                      </td>
                       <td className="px-4 py-3 text-sm tabular-nums text-text-muted">
                         {company.headcountMin ?? '—'}
                         {company.headcountMax ? `–${company.headcountMax}` : ''}
                       </td>
-                      <td className="px-4 py-3 text-sm text-text-muted">{company.location ?? '—'}</td>
+                      <td className="px-4 py-3 text-sm text-text-muted">
+                        {company.location ?? '—'}
+                      </td>
                       <td className="px-4 py-3 text-right">
                         <AddToListButton type="COMPANIES" companyId={company.id} />
                       </td>
@@ -108,7 +117,12 @@ export function Companies() {
           )}
 
           {data && (
-            <Pagination page={page} pageSize={PAGE_SIZE} total={data.total} onPageChange={setPage} />
+            <Pagination
+              page={page}
+              pageSize={PAGE_SIZE}
+              total={data.total}
+              onPageChange={setPage}
+            />
           )}
         </div>
       </div>

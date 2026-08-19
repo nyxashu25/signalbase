@@ -78,7 +78,7 @@ export function People() {
         className="mt-4 w-full max-w-md rounded-md border border-border bg-surface-elevated px-3 py-2 text-sm text-text focus:border-focus focus:outline-none"
       />
 
-      <div className="mt-6 flex gap-8">
+      <div className="mt-6 flex flex-col gap-6 md:flex-row md:gap-8">
         <FacetPanel groups={facetGroups} />
 
         <div className="min-w-0 flex-1 rounded-lg border border-border bg-surface-elevated">
