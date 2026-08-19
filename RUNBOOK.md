@@ -11,8 +11,14 @@ update this file when those change, not the other way around.
 - **`GET /metrics`** — Prometheus text format (`backend/src/config/metrics.js`).
   Request duration/count by route template, active credit reservations
   (`credit_reservations_pending`), and per-queue BullMQ backlog
-  (`bullmq_queue_waiting_jobs`). No auth — this MUST be firewalled to
-  internal scrape-only access in any real deployment, not exposed publicly.
+  (`bullmq_queue_waiting_jobs`). No app-level auth — on titans7.com, nginx
+  restricts `/metrics` to `127.0.0.1` (`allow 127.0.0.1; deny all;` in
+  `/etc/nginx/sites-available/titans7.com`), so it's reachable from the box
+  itself (e.g. a local Prometheus) but returns 403 from the public internet.
+- **`GET /health`** / **`GET /health/ready`** — liveness/readiness
+  (`backend/src/routes/health.js`), publicly reachable through nginx.
+  `/health` never checks dependencies; `/health/ready` checks Postgres,
+  Redis, and Elasticsearch and returns 503 if any is down.
 - **Traces** — OpenTelemetry, auto-instrumented (HTTP, Express, Prisma,
   ioredis) via `backend/src/tracing.js`, preloaded with `node --import`
   ahead of the app itself so instrumentation can patch modules before
