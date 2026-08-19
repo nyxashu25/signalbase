@@ -6,6 +6,7 @@ import { skipIfAlreadyRevealed } from '../middleware/skipIfAlreadyRevealed.js';
 import { reserveCredits, releaseOnError } from '../middleware/reserveCredits.js';
 import { rateLimit, byWorkspace } from '../middleware/rateLimit.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { CREDIT_COSTS } from '../config/creditPricing.js';
 
 export const contactsRouter = Router();
 
@@ -26,7 +27,7 @@ contactsRouter.post(
   revealLimiter,
   idempotent('reveal'),
   skipIfAlreadyRevealed,
-  reserveCredits(1),
+  reserveCredits(CREDIT_COSTS.REVEAL),
   asyncHandler(revealController.reveal),
   releaseOnError,
 );

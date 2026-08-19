@@ -2,6 +2,8 @@ import * as listService from '../services/listService.js';
 import { attachRevealStatus } from '../services/maskingService.js';
 import { toCsv } from '../utils/csv.js';
 import { sendCsv, COMPANY_COLUMNS, CONTACT_COLUMNS } from './searchController.js';
+import { resolveReservationForCommit } from '../services/creditService.js';
+import { prisma } from '../config/db.js';
 
 export async function index(req, res) {
   const lists = await listService.listLists(req.auth.workspaceId);
@@ -42,14 +44,24 @@ export async function exportCsv(req, res) {
   const list = await listService.getList(req.auth.workspaceId, req.params.id);
   const filename = csvSafeFilename(list.name);
 
+  let csv;
   if (list.type === 'CONTACTS') {
     const contacts = await attachRevealStatus(
       req.auth.workspaceId,
       list.items.map((item) => item.contact),
     );
-    return sendCsv(res, filename, toCsv(contacts, CONTACT_COLUMNS));
+    csv = toCsv(contacts, CONTACT_COLUMNS);
+  } else {
+    const companies = list.items.map((item) => item.company);
+    csv = toCsv(companies, COMPANY_COLUMNS);
   }
 
-  const companies = list.items.map((item) => item.company);
-  sendCsv(res, filename, toCsv(companies, COMPANY_COLUMNS));
+  const { amount } = await resolveReservationForCommit(req.reservationId, {
+    workspaceId: req.auth.workspaceId,
+  });
+  await prisma.creditLedgerEntry.create({
+    data: { workspaceId: req.auth.workspaceId, delta: -amount, reason: 'CSV_EXPORT' },
+  });
+
+  sendCsv(res, filename, csv);
 }

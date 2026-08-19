@@ -6,6 +6,9 @@ import { prisma } from '../config/db.js';
 import { es } from '../config/elasticsearch.js';
 import { reindexAll } from '../services/indexerService.js';
 import { COMPANIES_INDEX, CONTACTS_INDEX } from '../config/esIndices.js';
+import { redis } from '../config/redis.js';
+import { getBalance } from '../services/creditService.js';
+import { CREDIT_COSTS } from '../config/creditPricing.js';
 
 const app = createApp();
 
@@ -204,6 +207,65 @@ describe('search API', () => {
 
       expect(res.status).toBe(404);
     });
+
+    it('charges once for the first view and nothing for a repeat view', async () => {
+      const { nova } = await seedFixtures();
+      const { accessToken, workspaceId } = await registerAndLogin('Acme', 'owner@acme.test');
+      const before = await getBalance(workspaceId);
+
+      const first = await request(app)
+        .get(`/api/v1/search/companies/${nova.id}`)
+        .set('Authorization', `Bearer ${accessToken}`);
+      expect(first.status).toBe(200);
+      expect(await getBalance(workspaceId)).toBe(before - CREDIT_COSTS.COMPANY_DETAIL_VIEW);
+
+      const second = await request(app)
+        .get(`/api/v1/search/companies/${nova.id}`)
+        .set('Authorization', `Bearer ${accessToken}`);
+      expect(second.status).toBe(200);
+      expect(await getBalance(workspaceId)).toBe(before - CREDIT_COSTS.COMPANY_DETAIL_VIEW); // unchanged
+
+      const ledger = await prisma.creditLedgerEntry.findMany({ where: { workspaceId } });
+      expect(ledger).toHaveLength(1);
+      expect(ledger[0]).toMatchObject({ delta: -CREDIT_COSTS.COMPANY_DETAIL_VIEW, reason: 'COMPANY_VIEW' });
+
+      const views = await prisma.companyDetailView.findMany({ where: { workspaceId } });
+      expect(views).toHaveLength(1);
+    });
+
+    it('rejects with 402 and charges nothing when the workspace is out of credits', async () => {
+      const { nova } = await seedFixtures();
+      const { accessToken, workspaceId } = await registerAndLogin('Acme', 'owner@acme.test');
+      await redis.set(`credits:balance:${workspaceId}`, 0);
+
+      const res = await request(app)
+        .get(`/api/v1/search/companies/${nova.id}`)
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(res.status).toBe(402);
+      const ledger = await prisma.creditLedgerEntry.findMany({ where: { workspaceId } });
+      expect(ledger).toHaveLength(0);
+      const views = await prisma.companyDetailView.findMany({ where: { workspaceId } });
+      expect(views).toHaveLength(0);
+    });
+
+    it('two different workspaces viewing the same company are each charged independently', async () => {
+      const { nova } = await seedFixtures();
+      const orgA = await registerAndLogin('Org A', 'owner@org-a.test');
+      const orgB = await registerAndLogin('Org B', 'owner@org-b.test');
+
+      await request(app)
+        .get(`/api/v1/search/companies/${nova.id}`)
+        .set('Authorization', `Bearer ${orgA.accessToken}`);
+      await request(app)
+        .get(`/api/v1/search/companies/${nova.id}`)
+        .set('Authorization', `Bearer ${orgB.accessToken}`);
+
+      const ledgerA = await prisma.creditLedgerEntry.findMany({ where: { workspaceId: orgA.workspaceId } });
+      const ledgerB = await prisma.creditLedgerEntry.findMany({ where: { workspaceId: orgB.workspaceId } });
+      expect(ledgerA).toHaveLength(1);
+      expect(ledgerB).toHaveLength(1);
+    });
   });
 
   describe('CSV export', () => {
@@ -254,6 +316,39 @@ describe('search API', () => {
 
       expect(asB.text).not.toContain('jordan.bennett@novasystems.com');
       expect(asB.text).toContain('Masked');
+    });
+
+    it('charges CSV_EXPORT credits per export, every time (no idempotency)', async () => {
+      await seedFixtures();
+      const { accessToken, workspaceId } = await registerAndLogin('Acme', 'owner@acme.test');
+      const before = await getBalance(workspaceId);
+
+      await request(app)
+        .get('/api/v1/search/companies/export')
+        .set('Authorization', `Bearer ${accessToken}`);
+      await request(app)
+        .get('/api/v1/search/companies/export')
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(await getBalance(workspaceId)).toBe(before - 2 * CREDIT_COSTS.CSV_EXPORT);
+      const ledger = await prisma.creditLedgerEntry.findMany({
+        where: { workspaceId, reason: 'CSV_EXPORT' },
+      });
+      expect(ledger).toHaveLength(2);
+    });
+
+    it('rejects with 402 and produces no CSV when the workspace is out of credits', async () => {
+      await seedFixtures();
+      const { accessToken, workspaceId } = await registerAndLogin('Acme', 'owner@acme.test');
+      await redis.set(`credits:balance:${workspaceId}`, 0);
+
+      const res = await request(app)
+        .get('/api/v1/search/companies/export')
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(res.status).toBe(402);
+      const ledger = await prisma.creditLedgerEntry.findMany({ where: { workspaceId } });
+      expect(ledger).toHaveLength(0);
     });
   });
 });

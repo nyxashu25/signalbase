@@ -3,6 +3,7 @@ import { useDispatch } from 'react-redux';
 import { Link, useParams } from 'react-router-dom';
 import { searchApi, useGetCompanyDetailQuery } from '../api/searchApi.js';
 import { useRevealContactMutation } from '../api/contactsApi.js';
+import { useGetCreditCostsQuery } from '../api/billingApi.js';
 import { AddToListButton } from '../components/AddToListButton.jsx';
 
 function headcountLabel(min, max) {
@@ -14,8 +15,9 @@ function headcountLabel(min, max) {
 export function CompanyDetail() {
   const { id } = useParams();
   const dispatch = useDispatch();
-  const { data: company, isLoading, isError } = useGetCompanyDetailQuery(id);
+  const { data: company, isLoading, isError, error } = useGetCompanyDetailQuery(id);
   const [revealContact] = useRevealContactMutation();
+  const { data: costs } = useGetCreditCostsQuery();
 
   async function handleReveal(contactId) {
     const result = await revealContact({ contactId, idempotencyKey: crypto.randomUUID() }).unwrap();
@@ -33,6 +35,17 @@ export function CompanyDetail() {
   }
 
   if (isError) {
+    if (error?.status === 402) {
+      return (
+        <p className="text-sm text-red-600">
+          Not enough credits to view this company —{' '}
+          <Link to="/app/billing/add-credits" className="underline">
+            add more credits
+          </Link>{' '}
+          to continue.
+        </p>
+      );
+    }
     return <p className="text-sm text-red-600">Company not found.</p>;
   }
   if (isLoading || !company) {
@@ -46,6 +59,12 @@ export function CompanyDetail() {
       <Link to="/app/companies" className="text-sm font-medium text-primary hover:underline">
         &larr; Back to companies
       </Link>
+
+      {company.viewCost > 0 && (
+        <p className="mt-2 text-xs text-text-muted">
+          Viewing this profile used {company.viewCost} credits — revisiting it later is free.
+        </p>
+      )}
 
       <div className="mt-3 flex items-start justify-between gap-4 rounded-lg border border-border bg-surface-elevated p-5">
         <div>
@@ -103,7 +122,12 @@ export function CompanyDetail() {
           </thead>
           <tbody>
             {company.contacts.map((contact) => (
-              <ContactDetailRow key={contact.id} contact={contact} onReveal={handleReveal} />
+              <ContactDetailRow
+                key={contact.id}
+                contact={contact}
+                onReveal={handleReveal}
+                revealCost={costs?.REVEAL}
+              />
             ))}
             {company.contacts.length === 0 && (
               <tr>
@@ -119,7 +143,7 @@ export function CompanyDetail() {
   );
 }
 
-function ContactDetailRow({ contact, onReveal }) {
+function ContactDetailRow({ contact, onReveal, revealCost }) {
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState(null);
 
@@ -159,7 +183,7 @@ function ContactDetailRow({ contact, onReveal }) {
               type="button"
               onClick={handleReveal}
               disabled={status === 'revealing'}
-              title="Spends 1 credit — finds and unlocks this contact's email"
+              title={`Spends ${revealCost ?? '…'} credits — finds and unlocks this contact's email`}
               className="rounded-md border border-border px-2 py-1 text-xs text-text-muted hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
             >
               {status === 'revealing' ? 'Revealing…' : 'Reveal'}

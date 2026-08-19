@@ -10,6 +10,7 @@ import {
   useUnenrollContactMutation,
 } from '../api/sequencesApi.js';
 import { useListListsQuery, useGetListQuery } from '../api/listsApi.js';
+import { useGetCreditCostsQuery } from '../api/billingApi.js';
 
 const ENROLLMENT_STATUS_STYLES = {
   ACTIVE: 'bg-emerald-500/15 text-emerald-600',
@@ -208,6 +209,7 @@ function EnrollFromList({ sequenceId }) {
   const [selectedListId, setSelectedListId] = useState('');
   const { data: list } = useGetListQuery(selectedListId, { skip: !selectedListId });
   const [enrollContact, { isLoading: enrolling }] = useEnrollContactMutation();
+  const { data: costs } = useGetCreditCostsQuery();
   const [feedback, setFeedback] = useState(null);
 
   const contactLists = (lists ?? []).filter((l) => l.type === 'CONTACTS');
@@ -217,15 +219,25 @@ function EnrollFromList({ sequenceId }) {
     setFeedback(null);
     let enrolled = 0;
     let skipped = 0;
+    let outOfCredits = false;
     for (const item of list.items) {
       try {
         await enrollContact({ sequenceId, contactId: item.contactId }).unwrap();
         enrolled++;
-      } catch {
+      } catch (err) {
+        if (err.status === 402) {
+          // The balance won't recover mid-loop — every remaining contact
+          // would fail the same way, so stop instead of burning requests.
+          outOfCredits = true;
+          break;
+        }
         skipped++; // already enrolled, or no email on file — not fatal to the batch
       }
     }
-    setFeedback(`Enrolled ${enrolled} contact${enrolled === 1 ? '' : 's'}${skipped ? `, ${skipped} skipped` : ''}.`);
+    const parts = [`Enrolled ${enrolled} contact${enrolled === 1 ? '' : 's'}`];
+    if (skipped) parts.push(`${skipped} skipped`);
+    if (outOfCredits) parts.push('stopped — out of credits');
+    setFeedback(`${parts.join(', ')}.`);
   }
 
   return (
@@ -247,6 +259,7 @@ function EnrollFromList({ sequenceId }) {
         type="button"
         disabled={!selectedListId || enrolling}
         onClick={handleEnrollList}
+        title={costs ? `Spends ${costs.SEQUENCE_ENROLLMENT} credits per contact` : undefined}
         className="rounded-md bg-gradient-action px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
       >
         {enrolling ? 'Enrolling…' : 'Enroll all'}

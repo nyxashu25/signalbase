@@ -41,7 +41,7 @@ describe('POST /contacts/:id/reveal', () => {
     await prisma.$disconnect();
   });
 
-  it('finds and returns a pattern-guessed email, charging exactly one credit', async () => {
+  it('finds and returns a pattern-guessed email, charging exactly one reveal', async () => {
     const org = await registerOrg('Acme', 'owner@acme.test');
     const contact = await seedContact();
 
@@ -55,7 +55,7 @@ describe('POST /contacts/:id/reveal', () => {
       where: { workspaceId: org.workspaceId },
     });
     expect(ledger).toHaveLength(1);
-    expect(ledger[0].delta).toBe(-1);
+    expect(ledger[0].delta).toBe(-91);
     expect(ledger[0].reason).toBe('EMAIL_REVEAL');
 
     const emailReveal = await prisma.emailReveal.findUnique({

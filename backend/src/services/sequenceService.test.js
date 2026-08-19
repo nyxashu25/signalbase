@@ -3,6 +3,8 @@ import { prisma } from '../config/db.js';
 import { resetDb, resetRedis } from '../test/dbHelpers.js';
 import { createSequence, enroll, processDueEnrollments } from './sequenceService.js';
 import { addSuppression } from './suppressionService.js';
+import { initializeBalance, reserveCredit } from './creditService.js';
+import { CREDIT_COSTS } from '../config/creditPricing.js';
 
 async function makeWorkspaceAndUser() {
   const org = await prisma.org.create({ data: { slug: 'seq-test', name: 'Seq Test' } });
@@ -13,7 +15,16 @@ async function makeWorkspaceAndUser() {
   await prisma.membership.create({
     data: { userId: user.id, workspaceId: workspace.id, role: 'OWNER' },
   });
+  await initializeBalance(workspace.id, 10_000);
   return { workspace, user };
+}
+
+// enroll() takes a reservationId (see sequenceService.js) since enrollment
+// now spends credits — the HTTP route reserves via middleware before
+// calling it, so service-level tests have to do that reservation themselves.
+async function enrollWithCredits(workspaceId, sequenceId, contactId) {
+  const reservationId = await reserveCredit(workspaceId, CREDIT_COSTS.SEQUENCE_ENROLLMENT);
+  return enroll(workspaceId, sequenceId, contactId, reservationId);
 }
 
 async function makeContact(email = 'jordan.bennett@novasystems.com') {
@@ -49,7 +60,7 @@ describe('sequenceService', () => {
     });
     await prisma.sequence.update({ where: { id: sequence.id }, data: { status: 'ACTIVE' } });
 
-    const enrollment = await enroll(workspace.id, sequence.id, contact.id);
+    const enrollment = await enrollWithCredits(workspace.id, sequence.id, contact.id);
 
     // Tick 1: sends the EMAIL step and lands on the WAIT step. Per the
     // engine's design (see sequenceService.js's processOne comment),
@@ -100,7 +111,7 @@ describe('sequenceService', () => {
       steps: [{ type: 'EMAIL', subject: 'Hi', body: 'Body' }],
     });
     await prisma.sequence.update({ where: { id: sequence.id }, data: { status: 'ACTIVE' } });
-    const enrollment = await enroll(workspace.id, sequence.id, contact.id);
+    const enrollment = await enrollWithCredits(workspace.id, sequence.id, contact.id);
 
     await processDueEnrollments();
 
@@ -119,7 +130,7 @@ describe('sequenceService', () => {
       steps: [{ type: 'EMAIL', subject: 'Hi', body: 'Body' }],
     });
     await prisma.sequence.update({ where: { id: sequence.id }, data: { status: 'ACTIVE' } });
-    const enrollment = await enroll(workspace.id, sequence.id, contact.id);
+    const enrollment = await enrollWithCredits(workspace.id, sequence.id, contact.id);
 
     await processDueEnrollments();
 
@@ -142,7 +153,7 @@ describe('sequenceService', () => {
       steps: [{ type: 'EMAIL', subject: 'Hi', body: 'Body' }],
     });
     await prisma.sequence.update({ where: { id: sequence.id }, data: { status: 'ACTIVE' } });
-    const enrollment = await enroll(workspace.id, sequence.id, contact.id);
+    const enrollment = await enrollWithCredits(workspace.id, sequence.id, contact.id);
 
     await processDueEnrollments(); // sends the only step, index -> 1, immediately due again
     await processDueEnrollments(); // index 1 has no step -> COMPLETED

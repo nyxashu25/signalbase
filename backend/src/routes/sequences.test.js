@@ -4,6 +4,9 @@ import { createApp } from '../app.js';
 import { resetDb, resetRedis } from '../test/dbHelpers.js';
 import { prisma } from '../config/db.js';
 import { processDueEnrollments } from '../services/sequenceService.js';
+import { redis } from '../config/redis.js';
+import { getBalance } from '../services/creditService.js';
+import { CREDIT_COSTS } from '../config/creditPricing.js';
 
 const app = createApp();
 
@@ -292,6 +295,108 @@ describe('sequences routes', () => {
         .set('Authorization', `Bearer ${orgB.accessToken}`);
 
       expect(res.status).toBe(404);
+    });
+  });
+
+  describe('enrollment credits', () => {
+    it('charges CREDIT_COSTS.SEQUENCE_ENROLLMENT for a successful enrollment', async () => {
+      const owner = await registerOrg('Org A', 'owner@org-a.test');
+      const contact = await seedContact();
+      const createRes = await request(app)
+        .post('/api/v1/sequences')
+        .set('Authorization', `Bearer ${owner.accessToken}`)
+        .send(twoStepSequence);
+      await request(app)
+        .post(`/api/v1/sequences/${createRes.body.sequence.id}/activate`)
+        .set('Authorization', `Bearer ${owner.accessToken}`);
+      const before = await getBalance(owner.workspaceId);
+
+      const res = await request(app)
+        .post(`/api/v1/sequences/${createRes.body.sequence.id}/enrollments`)
+        .set('Authorization', `Bearer ${owner.accessToken}`)
+        .send({ contactId: contact.id });
+
+      expect(res.status).toBe(201);
+      expect(await getBalance(owner.workspaceId)).toBe(before - CREDIT_COSTS.SEQUENCE_ENROLLMENT);
+      const ledger = await prisma.creditLedgerEntry.findMany({ where: { workspaceId: owner.workspaceId } });
+      expect(ledger).toHaveLength(1);
+      expect(ledger[0]).toMatchObject({
+        delta: -CREDIT_COSTS.SEQUENCE_ENROLLMENT,
+        reason: 'SEQUENCE_ENROLLMENT',
+      });
+    });
+
+    it('charges nothing when enrollment fails because the sequence is still DRAFT', async () => {
+      const owner = await registerOrg('Org A', 'owner@org-a.test');
+      const contact = await seedContact();
+      const createRes = await request(app)
+        .post('/api/v1/sequences')
+        .set('Authorization', `Bearer ${owner.accessToken}`)
+        .send(twoStepSequence);
+      const before = await getBalance(owner.workspaceId);
+
+      const res = await request(app)
+        .post(`/api/v1/sequences/${createRes.body.sequence.id}/enrollments`)
+        .set('Authorization', `Bearer ${owner.accessToken}`)
+        .send({ contactId: contact.id });
+
+      expect(res.status).toBe(409);
+      expect(await getBalance(owner.workspaceId)).toBe(before);
+      const ledger = await prisma.creditLedgerEntry.findMany({ where: { workspaceId: owner.workspaceId } });
+      expect(ledger).toHaveLength(0);
+    });
+
+    it('charges nothing on the second attempt for a contact already enrolled (refunds, does not double-charge)', async () => {
+      const owner = await registerOrg('Org A', 'owner@org-a.test');
+      const contact = await seedContact();
+      const createRes = await request(app)
+        .post('/api/v1/sequences')
+        .set('Authorization', `Bearer ${owner.accessToken}`)
+        .send(twoStepSequence);
+      await request(app)
+        .post(`/api/v1/sequences/${createRes.body.sequence.id}/activate`)
+        .set('Authorization', `Bearer ${owner.accessToken}`);
+      await request(app)
+        .post(`/api/v1/sequences/${createRes.body.sequence.id}/enrollments`)
+        .set('Authorization', `Bearer ${owner.accessToken}`)
+        .send({ contactId: contact.id });
+      const afterFirst = await getBalance(owner.workspaceId);
+
+      const second = await request(app)
+        .post(`/api/v1/sequences/${createRes.body.sequence.id}/enrollments`)
+        .set('Authorization', `Bearer ${owner.accessToken}`)
+        .send({ contactId: contact.id });
+
+      expect(second.status).toBe(409);
+      expect(await getBalance(owner.workspaceId)).toBe(afterFirst); // unchanged — no double charge
+      const ledger = await prisma.creditLedgerEntry.findMany({
+        where: { workspaceId: owner.workspaceId, reason: 'SEQUENCE_ENROLLMENT' },
+      });
+      expect(ledger).toHaveLength(1); // only the first, successful enrollment
+    });
+
+    it('rejects with 402 and creates no enrollment when the workspace is out of credits', async () => {
+      const owner = await registerOrg('Org A', 'owner@org-a.test');
+      const contact = await seedContact();
+      const createRes = await request(app)
+        .post('/api/v1/sequences')
+        .set('Authorization', `Bearer ${owner.accessToken}`)
+        .send(twoStepSequence);
+      await request(app)
+        .post(`/api/v1/sequences/${createRes.body.sequence.id}/activate`)
+        .set('Authorization', `Bearer ${owner.accessToken}`);
+      await redis.set(`credits:balance:${owner.workspaceId}`, 0);
+
+      const res = await request(app)
+        .post(`/api/v1/sequences/${createRes.body.sequence.id}/enrollments`)
+        .set('Authorization', `Bearer ${owner.accessToken}`)
+        .send({ contactId: contact.id });
+
+      expect(res.status).toBe(402);
+      const enrollment = await prisma.sequenceEnrollment.findFirst({
+        where: { sequenceId: createRes.body.sequence.id, contactId: contact.id },
+      });
+      expect(enrollment).toBeNull();
     });
   });
 });

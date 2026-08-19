@@ -3,6 +3,8 @@ import { prisma } from '../config/db.js';
 import { COMPANIES_INDEX, CONTACTS_INDEX } from '../config/esIndices.js';
 import { attachRevealStatus } from './maskingService.js';
 import { ApiError } from '../middleware/errorHandler.js';
+import { resolveReservationForCommit, releaseReservation, refundAmount } from './creditService.js';
+import { CREDIT_COSTS } from '../config/creditPricing.js';
 
 const FACET_SIZE = 20;
 
@@ -97,7 +99,9 @@ export async function exportPeople(filters) {
   return results;
 }
 
-export async function getCompanyDetail(workspaceId, companyId) {
+// reservationId is null when reserveCompanyViewCredits found this company
+// already viewed by the workspace — nothing to commit, this view is free.
+export async function getCompanyDetail(workspaceId, userId, companyId, reservationId) {
   const company = await prisma.company.findUnique({
     where: { id: companyId },
     include: {
@@ -107,10 +111,39 @@ export async function getCompanyDetail(workspaceId, companyId) {
       },
     },
   });
-  if (!company) throw new ApiError(404, 'Company not found');
+
+  if (!company) {
+    if (reservationId) await releaseReservation(reservationId);
+    throw new ApiError(404, 'Company not found');
+  }
+
+  let charged = false;
+  if (reservationId) {
+    const { amount } = await resolveReservationForCommit(reservationId, { workspaceId });
+    try {
+      await prisma.$transaction([
+        prisma.creditLedgerEntry.create({
+          data: { workspaceId, delta: -amount, reason: 'COMPANY_VIEW' },
+        }),
+        prisma.companyDetailView.create({ data: { workspaceId, companyId, viewedById: userId } }),
+      ]);
+      charged = true;
+    } catch (err) {
+      if (err.code !== 'P2002') throw err;
+      // Lost a race against a concurrent identical request from the same
+      // workspace — it already committed its CompanyDetailView row. The
+      // reservation's Redis side is already cleared, so refund directly
+      // rather than double-charge for a view someone else just paid for.
+      await refundAmount(workspaceId, amount);
+    }
+  }
 
   const { contacts, ...rest } = company;
-  return { ...rest, contacts: await attachRevealStatus(workspaceId, contacts) };
+  return {
+    ...rest,
+    contacts: await attachRevealStatus(workspaceId, contacts),
+    viewCost: charged ? CREDIT_COSTS.COMPANY_DETAIL_VIEW : 0,
+  };
 }
 
 export async function searchPeople({

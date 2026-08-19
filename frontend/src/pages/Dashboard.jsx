@@ -7,6 +7,9 @@ import { useListListsQuery } from '../api/listsApi.js';
 const REASON_LABELS = {
   MONTHLY_GRANT: 'Monthly grant',
   EMAIL_REVEAL: 'Reveal',
+  COMPANY_VIEW: 'Company view',
+  CSV_EXPORT: 'CSV export',
+  SEQUENCE_ENROLLMENT: 'Sequence enrollment',
   TOPUP: 'Payment',
   ADJUSTMENT: 'Adjustment',
 };

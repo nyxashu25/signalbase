@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { AddToListButton } from './AddToListButton.jsx';
+import { useGetCreditCostsQuery } from '../api/billingApi.js';
 
 export function ContactRow({ contact, onReveal }) {
   const [status, setStatus] = useState('idle'); // idle | revealing | error
   const [error, setError] = useState(null);
+  const { data: costs } = useGetCreditCostsQuery();
 
   async function handleReveal() {
     setStatus('revealing');
@@ -42,7 +44,7 @@ export function ContactRow({ contact, onReveal }) {
               type="button"
               onClick={handleReveal}
               disabled={status === 'revealing'}
-              title="Spends 1 credit — finds and unlocks this contact's email"
+              title={`Spends ${costs?.REVEAL ?? '…'} credits — finds and unlocks this contact's email`}
               className="rounded-md border border-border px-2 py-1 text-xs text-text-muted hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
             >
               {status === 'revealing' ? 'Revealing…' : 'Reveal'}

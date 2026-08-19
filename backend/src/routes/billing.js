@@ -12,6 +12,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 export const billingRouter = Router();
 
 billingRouter.get('/packages', billingController.getPackages);
+billingRouter.get('/credit-costs', billingController.getCreditCosts);
 billingRouter.get('/summary', requireAuth, asyncHandler(billingController.getSummary));
 billingRouter.get(
   '/transactions',

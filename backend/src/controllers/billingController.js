@@ -3,10 +3,15 @@ import * as razorpayService from '../services/razorpayService.js';
 import * as creditService from '../services/creditService.js';
 import * as paymentSettingsService from '../services/paymentSettingsService.js';
 import { CREDIT_PACKAGES } from '../config/creditPackages.js';
+import { CREDIT_COSTS } from '../config/creditPricing.js';
 import { prisma } from '../config/db.js';
 
 export function getPackages(req, res) {
   res.json({ packages: CREDIT_PACKAGES });
+}
+
+export function getCreditCosts(req, res) {
+  res.json({ costs: CREDIT_COSTS });
 }
 
 export async function getSummary(req, res) {

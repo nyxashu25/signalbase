@@ -8,6 +8,9 @@ const PAGE_SIZE = 25;
 const REASON_LABELS = {
   MONTHLY_GRANT: 'Monthly grant',
   EMAIL_REVEAL: 'Reveal',
+  COMPANY_VIEW: 'Company view',
+  CSV_EXPORT: 'CSV export',
+  SEQUENCE_ENROLLMENT: 'Sequence enrollment',
   TOPUP: 'Payment',
   ADJUSTMENT: 'Adjustment',
 };
@@ -15,6 +18,9 @@ const REASON_LABELS = {
 const REASON_STYLES = {
   MONTHLY_GRANT: 'bg-primary/15 text-primary',
   EMAIL_REVEAL: 'bg-surface text-text-muted',
+  COMPANY_VIEW: 'bg-surface text-text-muted',
+  CSV_EXPORT: 'bg-surface text-text-muted',
+  SEQUENCE_ENROLLMENT: 'bg-surface text-text-muted',
   TOPUP: 'bg-emerald-500/15 text-emerald-600',
   ADJUSTMENT: 'bg-amber-500/15 text-amber-600',
 };

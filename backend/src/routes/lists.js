@@ -4,6 +4,8 @@ import { requireAuth } from '../middleware/auth.js';
 import { requireRole } from '../middleware/rbac.js';
 import { validateBody } from '../middleware/validate.js';
 import { createListSchema, addListItemSchema } from '../validators/listValidators.js';
+import { reserveCredits, releaseOnError } from '../middleware/reserveCredits.js';
+import { CREDIT_COSTS } from '../config/creditPricing.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 export const listsRouter = Router();
@@ -13,7 +15,12 @@ listsRouter.use(requireAuth);
 listsRouter.get('/', asyncHandler(listController.index));
 listsRouter.post('/', validateBody(createListSchema), asyncHandler(listController.create));
 listsRouter.get('/:id', asyncHandler(listController.show));
-listsRouter.get('/:id/export', asyncHandler(listController.exportCsv));
+listsRouter.get(
+  '/:id/export',
+  reserveCredits(CREDIT_COSTS.CSV_EXPORT),
+  asyncHandler(listController.exportCsv),
+  releaseOnError,
+);
 listsRouter.delete('/:id', requireRole('ADMIN'), asyncHandler(listController.destroy));
 listsRouter.post(
   '/:id/items',

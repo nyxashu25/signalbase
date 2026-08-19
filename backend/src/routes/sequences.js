@@ -3,6 +3,8 @@ import * as sequenceController from '../controllers/sequenceController.js';
 import { requireAuth } from '../middleware/auth.js';
 import { validateBody } from '../middleware/validate.js';
 import { createSequenceSchema, enrollSchema } from '../validators/sequenceValidators.js';
+import { reserveCredits, releaseOnError } from '../middleware/reserveCredits.js';
+import { CREDIT_COSTS } from '../config/creditPricing.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 export const sequencesRouter = Router();
@@ -21,7 +23,9 @@ sequencesRouter.post('/:id/activate', asyncHandler(sequenceController.activate))
 sequencesRouter.post(
   '/:id/enrollments',
   validateBody(enrollSchema),
+  reserveCredits(CREDIT_COSTS.SEQUENCE_ENROLLMENT),
   asyncHandler(sequenceController.enroll),
+  releaseOnError,
 );
 sequencesRouter.post('/enrollments/:enrollmentId/pause', asyncHandler(sequenceController.pause));
 sequencesRouter.post('/enrollments/:enrollmentId/resume', asyncHandler(sequenceController.resume));

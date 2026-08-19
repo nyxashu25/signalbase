@@ -1,5 +1,7 @@
 import * as searchService from '../services/searchService.js';
 import { toCsv } from '../utils/csv.js';
+import { resolveReservationForCommit } from '../services/creditService.js';
+import { prisma } from '../config/db.js';
 
 export async function companies(req, res) {
   const result = await searchService.searchCompanies(req.validatedQuery);
@@ -15,7 +17,12 @@ export async function people(req, res) {
 }
 
 export async function companyDetail(req, res) {
-  const company = await searchService.getCompanyDetail(req.auth.workspaceId, req.params.id);
+  const company = await searchService.getCompanyDetail(
+    req.auth.workspaceId,
+    req.auth.userId,
+    req.params.id,
+    req.reservationId,
+  );
   res.json({ company });
 }
 
@@ -46,8 +53,20 @@ const CONTACT_COLUMNS = [
   { header: 'Email Status', value: (c) => (c.revealed ? 'Revealed' : c.email ? 'Masked' : 'Not found') },
 ];
 
+// Charged only after the export data is actually produced — a failed ES
+// query never touches the reservation (releaseOnError refunds it).
+async function chargeCsvExport(req) {
+  const { amount } = await resolveReservationForCommit(req.reservationId, {
+    workspaceId: req.auth.workspaceId,
+  });
+  await prisma.creditLedgerEntry.create({
+    data: { workspaceId: req.auth.workspaceId, delta: -amount, reason: 'CSV_EXPORT' },
+  });
+}
+
 export async function exportCompaniesCsv(req, res) {
   const results = await searchService.exportCompanies(req.validatedQuery);
+  await chargeCsvExport(req);
   sendCsv(res, 'datapit-companies.csv', toCsv(results, COMPANY_COLUMNS));
 }
 
@@ -56,6 +75,7 @@ export async function exportPeopleCsv(req, res) {
     ...req.validatedQuery,
     workspaceId: req.auth.workspaceId,
   });
+  await chargeCsvExport(req);
   sendCsv(res, 'datapit-people.csv', toCsv(results, CONTACT_COLUMNS));
 }
 

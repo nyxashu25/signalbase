@@ -3,6 +3,7 @@ import { ApiError } from '../middleware/errorHandler.js';
 import { sendEmail } from './espService.js';
 import { isSuppressed } from './suppressionService.js';
 import { logger } from '../config/logger.js';
+import { resolveReservationForCommit, releaseReservation, refundAmount } from './creditService.js';
 
 export async function listSequences(workspaceId) {
   const sequences = await prisma.sequence.findMany({
@@ -51,19 +52,35 @@ export async function createSequence(workspaceId, createdById, { name, steps }) 
   });
 }
 
-export async function enroll(workspaceId, sequenceId, contactId) {
+export async function enroll(workspaceId, sequenceId, contactId, reservationId) {
   const sequence = await prisma.sequence.findFirst({ where: { id: sequenceId, workspaceId } });
-  if (!sequence) throw new ApiError(404, 'Sequence not found');
+  if (!sequence) {
+    await releaseReservation(reservationId);
+    throw new ApiError(404, 'Sequence not found');
+  }
   if (sequence.status !== 'ACTIVE') {
+    await releaseReservation(reservationId);
     throw new ApiError(409, 'Sequence must be ACTIVE to enroll contacts');
   }
 
+  const { amount } = await resolveReservationForCommit(reservationId, { workspaceId });
+
   try {
-    return await prisma.sequenceEnrollment.create({
-      data: { sequenceId, workspaceId, contactId, nextStepDueAt: new Date() },
-    });
+    const [enrollment] = await prisma.$transaction([
+      prisma.sequenceEnrollment.create({
+        data: { sequenceId, workspaceId, contactId, nextStepDueAt: new Date() },
+      }),
+      prisma.creditLedgerEntry.create({
+        data: { workspaceId, delta: -amount, reason: 'SEQUENCE_ENROLLMENT' },
+      }),
+    ]);
+    return enrollment;
   } catch (err) {
     if (err.code === 'P2002') {
+      // The reservation's Redis side is already cleared by the resolve
+      // call above — refund directly rather than double-charge for an
+      // enrollment that didn't happen.
+      await refundAmount(workspaceId, amount);
       throw new ApiError(409, 'This contact is already enrolled in this sequence');
     }
     throw err;

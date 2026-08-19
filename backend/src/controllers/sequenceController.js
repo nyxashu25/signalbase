@@ -39,6 +39,7 @@ export async function enroll(req, res) {
     req.auth.workspaceId,
     req.params.id,
     req.body.contactId,
+    req.reservationId,
   );
   res.status(201).json({ enrollment });
 }

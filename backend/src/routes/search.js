@@ -9,6 +9,9 @@ import {
   exportPeopleQuerySchema,
 } from '../validators/searchValidators.js';
 import { rateLimit, byWorkspace } from '../middleware/rateLimit.js';
+import { reserveCredits, releaseOnError } from '../middleware/reserveCredits.js';
+import { reserveCompanyViewCredits } from '../middleware/reserveCompanyViewCredits.js';
+import { CREDIT_COSTS } from '../config/creditPricing.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 export const searchRouter = Router();
@@ -34,9 +37,16 @@ searchRouter.get(
   '/companies/export',
   exportLimiter,
   validateQuery(exportCompaniesQuerySchema),
+  reserveCredits(CREDIT_COSTS.CSV_EXPORT),
   asyncHandler(searchController.exportCompaniesCsv),
+  releaseOnError,
 );
-searchRouter.get('/companies/:id', asyncHandler(searchController.companyDetail));
+searchRouter.get(
+  '/companies/:id',
+  reserveCompanyViewCredits(CREDIT_COSTS.COMPANY_DETAIL_VIEW),
+  asyncHandler(searchController.companyDetail),
+  releaseOnError,
+);
 searchRouter.get(
   '/people',
   validateQuery(searchPeopleQuerySchema),
@@ -46,5 +56,7 @@ searchRouter.get(
   '/people/export',
   exportLimiter,
   validateQuery(exportPeopleQuerySchema),
+  reserveCredits(CREDIT_COSTS.CSV_EXPORT),
   asyncHandler(searchController.exportPeopleCsv),
+  releaseOnError,
 );

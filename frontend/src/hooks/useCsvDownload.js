@@ -18,6 +18,10 @@ export function useCsvDownload() {
         headers: { Authorization: `Bearer ${token}` },
         credentials: 'include',
       });
+      if (res.status === 402) {
+        setError('Not enough credits for this export — add more credits to continue.');
+        return;
+      }
       if (!res.ok) throw new Error('Export failed');
 
       const blob = await res.blob();

@@ -26,7 +26,7 @@ model Workspace {
   id                 String   @id @default(uuid())
   orgId              String
   name               String
-  monthlyCreditGrant Int      @default(100)
+  monthlyCreditGrant Int      @default(1000)
   // Null until the workspace has ever started a checkout — billing is
   // opt-in, not every workspace has a Stripe customer.
   stripeCustomerId     String? @unique
@@ -37,10 +37,11 @@ model Workspace {
   memberships  Membership[]
   lists        List[]
   creditLedger CreditLedgerEntry[]
-  emailReveals EmailReveal[]
-  sequences    Sequence[]
-  enrollments  SequenceEnrollment[]
-  suppressions SuppressionEntry[]
+  emailReveals       EmailReveal[]
+  companyDetailViews CompanyDetailView[]
+  sequences          Sequence[]
+  enrollments        SequenceEnrollment[]
+  suppressions       SuppressionEntry[]
 
   @@index([orgId])
 }
@@ -57,10 +58,11 @@ model User {
   suspendedAt  DateTime?
   createdAt    DateTime @default(now())
 
-  memberships      Membership[]
-  emailReveals     EmailReveal[]
-  createdLists     List[]     @relation("ListCreatedBy")
-  createdSequences Sequence[] @relation("SequenceCreatedBy")
+  memberships        Membership[]
+  emailReveals       EmailReveal[]
+  companyDetailViews CompanyDetailView[]
+  createdLists       List[]     @relation("ListCreatedBy")
+  createdSequences   Sequence[] @relation("SequenceCreatedBy")
 }
 
 // ---------------------------------------------------------------------------
@@ -120,8 +122,9 @@ model Company {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  contacts  Contact[]
-  listItems ListItem[]
+  contacts     Contact[]
+  listItems    ListItem[]
+  detailViews  CompanyDetailView[]
 
   @@index([industry])
   @@index([name])
@@ -206,6 +209,9 @@ model ListItem {
 enum CreditReason {
   MONTHLY_GRANT
   EMAIL_REVEAL
+  COMPANY_VIEW
+  CSV_EXPORT
+  SEQUENCE_ENROLLMENT
   TOPUP
   ADJUSTMENT
 }
@@ -247,6 +253,25 @@ model EmailReveal {
   revealedBy User      @relation(fields: [revealedById], references: [id])
 
   @@unique([workspaceId, contactId])
+  @@index([workspaceId])
+}
+
+// Same shape and purpose as EmailReveal above, for the Company detail page:
+// once any member of a workspace has paid to view a company's profile, the
+// whole workspace can revisit it for free — the unique constraint is what
+// makes a view workspace-wide and one-time rather than per-user/per-visit.
+model CompanyDetailView {
+  id          String   @id @default(uuid())
+  workspaceId String
+  companyId   String
+  viewedById  String
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  viewedBy  User      @relation(fields: [viewedById], references: [id])
+
+  @@unique([workspaceId, companyId])
   @@index([workspaceId])
 }
 

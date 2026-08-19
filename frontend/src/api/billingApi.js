@@ -9,6 +9,10 @@ export const billingApi = baseApi.injectEndpoints({
       query: () => '/billing/packages',
       transformResponse: (res) => res.packages,
     }),
+    getCreditCosts: builder.query({
+      query: () => '/billing/credit-costs',
+      transformResponse: (res) => res.costs,
+    }),
     createCheckoutSession: builder.mutation({
       query: (body) => ({ url: '/billing/checkout-session', method: 'POST', body }),
     }),
@@ -24,6 +28,7 @@ export const billingApi = baseApi.injectEndpoints({
 export const {
   useGetBillingSummaryQuery,
   useListBillingPackagesQuery,
+  useGetCreditCostsQuery,
   useCreateCheckoutSessionMutation,
   useVerifyRazorpayPaymentMutation,
   useListBillingTransactionsQuery,

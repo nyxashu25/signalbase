@@ -174,14 +174,24 @@ describe('GET /billing/transactions', () => {
       data: { companyId: company.id, firstName: 'Jordan', lastName: 'Bennett' },
     });
 
+    // Explicit, deliberately-spaced createdAt — three inserts this close
+    // together can otherwise land in the same DB timestamp tick, making
+    // "newest first" ordering nondeterministic between ties.
+    const now = Date.now();
     await prisma.creditLedgerEntry.create({
-      data: { workspaceId, delta: 100, reason: 'MONTHLY_GRANT' },
+      data: { workspaceId, delta: 100, reason: 'MONTHLY_GRANT', createdAt: new Date(now - 2000) },
     });
     await prisma.creditLedgerEntry.create({
-      data: { workspaceId, delta: -1, reason: 'EMAIL_REVEAL', contactId: contact.id },
+      data: {
+        workspaceId,
+        delta: -1,
+        reason: 'EMAIL_REVEAL',
+        contactId: contact.id,
+        createdAt: new Date(now - 1000),
+      },
     });
     await prisma.creditLedgerEntry.create({
-      data: { workspaceId, delta: 250, reason: 'TOPUP', amountCents: 1500 },
+      data: { workspaceId, delta: 250, reason: 'TOPUP', amountCents: 1500, createdAt: new Date(now) },
     });
 
     const res = await request(app)
@@ -235,6 +245,20 @@ describe('GET /billing/packages', () => {
     expect(res.body.packages).toEqual(
       expect.arrayContaining([expect.objectContaining({ credits: 250, usdCents: 1500, inrPaise: 125_000 })]),
     );
+  });
+});
+
+describe('GET /billing/credit-costs', () => {
+  it('returns what every credit-spending action costs, unauthenticated', async () => {
+    const res = await request(app).get('/api/v1/billing/credit-costs');
+
+    expect(res.status).toBe(200);
+    expect(res.body.costs).toEqual({
+      REVEAL: 91,
+      COMPANY_DETAIL_VIEW: 20,
+      CSV_EXPORT: 50,
+      SEQUENCE_ENROLLMENT: 250,
+    });
   });
 });
 
@@ -398,8 +422,8 @@ describe('POST /webhooks/razorpay', () => {
       .send(payload);
 
     expect(res.status).toBe(200);
-    // 100 from registration's monthly grant + 600 from the webhook top-up.
-    expect(await getBalance(workspaceId)).toBe(700);
+    // 1000 from registration's monthly grant + 600 from the webhook top-up.
+    expect(await getBalance(workspaceId)).toBe(1600);
   });
 
   it('rejects a request with a bad signature', async () => {

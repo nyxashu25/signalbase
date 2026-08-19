@@ -4,6 +4,9 @@ import { createApp } from '../app.js';
 import { resetDb, resetRedis } from '../test/dbHelpers.js';
 import { prisma } from '../config/db.js';
 import { hashPassword } from '../utils/password.js';
+import { redis } from '../config/redis.js';
+import { getBalance } from '../services/creditService.js';
+import { CREDIT_COSTS } from '../config/creditPricing.js';
 
 const app = createApp();
 
@@ -343,5 +346,44 @@ describe('list export', () => {
       .set('Authorization', `Bearer ${orgB.accessToken}`);
 
     expect(res.status).toBe(404);
+  });
+
+  it('charges CREDIT_COSTS.CSV_EXPORT and refunds nothing on a 404 (never reaches the commit)', async () => {
+    const orgA = await registerOrg('Org A', 'owner@org-a.test');
+    const orgB = await registerOrg('Org B', 'owner@org-b.test');
+    const createRes = await request(app)
+      .post('/api/v1/lists')
+      .set('Authorization', `Bearer ${orgA.accessToken}`)
+      .send({ name: "Org A's leads", type: 'CONTACTS' });
+    const before = await getBalance(orgA.workspaceId);
+
+    const success = await request(app)
+      .get(`/api/v1/lists/${createRes.body.list.id}/export`)
+      .set('Authorization', `Bearer ${orgA.accessToken}`);
+    expect(success.status).toBe(200);
+    expect(await getBalance(orgA.workspaceId)).toBe(before - CREDIT_COSTS.CSV_EXPORT);
+
+    const beforeB = await getBalance(orgB.workspaceId);
+    const notFound = await request(app)
+      .get(`/api/v1/lists/${createRes.body.list.id}/export`)
+      .set('Authorization', `Bearer ${orgB.accessToken}`);
+    expect(notFound.status).toBe(404);
+    // Reserved then released on the 404 — org B's balance is untouched.
+    expect(await getBalance(orgB.workspaceId)).toBe(beforeB);
+  });
+
+  it('rejects with 402 when the workspace is out of credits', async () => {
+    const owner = await registerOrg('Org A', 'owner@org-a.test');
+    const createRes = await request(app)
+      .post('/api/v1/lists')
+      .set('Authorization', `Bearer ${owner.accessToken}`)
+      .send({ name: 'Empty list', type: 'CONTACTS' });
+    await redis.set(`credits:balance:${owner.workspaceId}`, 0);
+
+    const res = await request(app)
+      .get(`/api/v1/lists/${createRes.body.list.id}/export`)
+      .set('Authorization', `Bearer ${owner.accessToken}`);
+
+    expect(res.status).toBe(402);
   });
 });

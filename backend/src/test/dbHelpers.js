@@ -10,6 +10,7 @@ import { redis } from '../config/redis.js';
 // entirely and leaves EVERY subsequent table uncleaned for that test too.
 export async function resetDb() {
   await prisma.emailReveal.deleteMany();
+  await prisma.companyDetailView.deleteMany();
   await prisma.creditLedgerEntry.deleteMany();
   await prisma.sequenceStepEvent.deleteMany();
   await prisma.sequenceEnrollment.deleteMany();
