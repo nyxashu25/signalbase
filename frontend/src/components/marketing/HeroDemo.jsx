@@ -1,17 +1,28 @@
 import { useEffect, useRef, useState } from 'react';
 
 // A looping, scripted product tour: sign in -> open People -> reveal a
-// contact -> watch the credit balance tick down -> a glimpse of Sequences
-// -> a glimpse of the credit ledger -> fade to the DataPit mark + CTA ->
-// loop. Every screen here is a faithful (hand-built, not a photo)
-// reproduction of the real app UI and real seed data.
+// contact -> save it to a list -> browse Companies and filter by industry ->
+// that same list enrolls into a sequence -> watch the credit ledger -> fade
+// to the DataPit mark + CTA -> loop. Every screen here is a faithful
+// (hand-built, not a photo) reproduction of the real app UI and real seed
+// data — the list name ("Q3 outbound — Marketing leaders") is the same
+// string across the People and Sequences screens on purpose, so the tour
+// reads as one continuous workflow rather than four disconnected demos.
 const PHASES = [
   { name: 'login', ms: 1800, screen: 'login' },
   { name: 'login-click', ms: 450, screen: 'login' },
   { name: 'people', ms: 1300, screen: 'people' },
   { name: 'move-to-reveal', ms: 900, screen: 'people' },
   { name: 'click-reveal', ms: 500, screen: 'people' },
-  { name: 'revealed', ms: 2000, screen: 'people' },
+  { name: 'revealed', ms: 1300, screen: 'people' },
+  { name: 'move-to-list', ms: 700, screen: 'people' },
+  { name: 'click-list', ms: 450, screen: 'people' },
+  { name: 'added-to-list', ms: 1600, screen: 'people' },
+  { name: 'to-companies', ms: 400, screen: null },
+  { name: 'companies', ms: 1300, screen: 'companies' },
+  { name: 'move-to-facet', ms: 800, screen: 'companies' },
+  { name: 'click-facet', ms: 450, screen: 'companies' },
+  { name: 'filtered', ms: 1700, screen: 'companies' },
   { name: 'to-sequences', ms: 400, screen: null },
   { name: 'sequences', ms: 1900, screen: 'sequences' },
   { name: 'to-credits', ms: 400, screen: null },
@@ -28,6 +39,13 @@ const CURSOR_POS = {
   'move-to-reveal': { left: '85%', top: '43%' },
   'click-reveal': { left: '85%', top: '43%' },
   revealed: { left: '85%', top: '43%' },
+  'move-to-list': { left: '94%', top: '43%' },
+  'click-list': { left: '94%', top: '43%' },
+  'added-to-list': { left: '94%', top: '43%' },
+  companies: { left: '50%', top: '16%' },
+  'move-to-facet': { left: '78%', top: '30%' },
+  'click-facet': { left: '78%', top: '30%' },
+  filtered: { left: '78%', top: '30%' },
 };
 
 export function HeroDemo({ className = '' }) {
@@ -59,19 +77,31 @@ export function HeroDemo({ className = '' }) {
 
   const phase = PHASES[phaseIndex].name;
   const screen = PHASES[phaseIndex].screen;
-  const revealed = phase === 'revealed';
-  const clicking = phase === 'login-click' || phase === 'click-reveal';
+  const revealed =
+    phase === 'revealed' ||
+    phase === 'move-to-list' ||
+    phase === 'click-list' ||
+    phase === 'added-to-list';
+  const addedToList = phase === 'added-to-list';
+  const filtered = phase === 'filtered';
+  const clicking =
+    phase === 'login-click' ||
+    phase === 'click-reveal' ||
+    phase === 'click-list' ||
+    phase === 'click-facet';
   const cursorPos = CURSOR_POS[phase] ?? CURSOR_POS.revealed;
-  const cursorVisible = screen === 'login' || screen === 'people';
+  const cursorVisible = screen === 'login' || screen === 'people' || screen === 'companies';
   const panelFaded = screen === null && phase !== 'logo';
   const urlPath =
     screen === 'login'
       ? 'login'
-      : screen === 'sequences'
-        ? 'sequences'
-        : screen === 'credits'
-          ? 'billing'
-          : 'people';
+      : screen === 'companies'
+        ? 'companies'
+        : screen === 'sequences'
+          ? 'sequences'
+          : screen === 'credits'
+            ? 'billing'
+            : 'people';
 
   return (
     <div className={`[perspective:1400px] ${className}`}>
@@ -122,15 +152,16 @@ export function HeroDemo({ className = '' }) {
                 <span className="text-sm font-bold text-white">122 people</span>
                 <span className="flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1 text-[11px] font-bold tabular-nums text-mauve-magic">
                   {revealed ? '98' : '100'} credits
-                  {revealed && <FloatingMinusOne />}
+                  {phase === 'revealed' && <FloatingMinusOne />}
                 </span>
               </div>
-              <table className="w-full text-left text-xs">
+              <table data-testid="hero-people-table" className="w-full text-left text-xs">
                 <thead>
                   <tr className="text-[10px] uppercase tracking-wide text-ink-300">
                     <th className="pb-2 font-bold">Name</th>
                     <th className="pb-2 font-bold">Company</th>
                     <th className="pb-2 font-bold">Email</th>
+                    <th className="pb-2 font-bold text-right">List</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -149,6 +180,8 @@ export function HeroDemo({ className = '' }) {
                     state={
                       revealed ? 'revealed' : phase === 'click-reveal' ? 'revealing' : 'masked'
                     }
+                    listState={addedToList ? 'added' : phase === 'click-list' ? 'adding' : 'idle'}
+                    showListAction={revealed}
                   />
                   <PersonRow
                     name="Casey Novak"
@@ -163,6 +196,50 @@ export function HeroDemo({ className = '' }) {
                     email="casey.ortiz@novalabs.com"
                     state="revealed"
                   />
+                </tbody>
+              </table>
+              {addedToList && (
+                <p className="mt-3 animate-[float-up_1.8s_ease-out_1] text-[11px] font-semibold text-emerald-400">
+                  Added to &ldquo;Q3 outbound &mdash; Marketing leaders&rdquo;
+                </p>
+              )}
+            </div>
+          </ScreenFade>
+
+          <ScreenFade active={screen === 'companies'}>
+            <div className="p-5">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-sm font-bold text-white">
+                  {filtered ? '3' : '40'} companies
+                </span>
+                <span
+                  className={`rounded-full border px-2.5 py-1 text-[10px] font-bold transition-colors duration-300 ${
+                    filtered
+                      ? 'border-mauve-magic bg-primary/20 text-mauve-magic'
+                      : 'border-white/15 text-ink-300'
+                  }`}
+                >
+                  Industry: SaaS
+                </span>
+              </div>
+              <table data-testid="hero-companies-table" className="w-full text-left text-xs">
+                <thead>
+                  <tr className="text-[10px] uppercase tracking-wide text-ink-300">
+                    <th className="pb-2 font-bold">Company</th>
+                    <th className="pb-2 font-bold">Industry</th>
+                    <th className="pb-2 font-bold">Headcount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <CompanyRow name="Drift Labs" industry="SaaS" headcount="51–200" />
+                  <CompanyRow name="Atlas Labs" industry="SaaS" headcount="201–500" />
+                  <CompanyRow
+                    name="Halo Labs"
+                    industry="Fintech"
+                    headcount="11–50"
+                    dim={filtered}
+                  />
+                  <CompanyRow name="Nova Labs" industry="SaaS" headcount="51–200" />
                 </tbody>
               </table>
             </div>
@@ -271,7 +348,15 @@ function ScreenFade({ active, children }) {
   );
 }
 
-function PersonRow({ name, title, company, email, state }) {
+function PersonRow({
+  name,
+  title,
+  company,
+  email,
+  state,
+  listState = 'idle',
+  showListAction = false,
+}) {
   return (
     <tr className="border-t border-white/5">
       <td className="py-2.5 pr-2">
@@ -279,7 +364,7 @@ function PersonRow({ name, title, company, email, state }) {
         <p className="text-[10px] text-ink-300">{title}</p>
       </td>
       <td className="py-2.5 pr-2 text-ink-300">{company}</td>
-      <td className="py-2.5">
+      <td className="py-2.5 pr-2">
         {state === 'revealed' && <span className="text-white">{email}</span>}
         {state === 'masked' && (
           <span className="rounded-md border border-white/15 px-2 py-1 text-[10px] font-bold text-mauve-magic">
@@ -290,6 +375,32 @@ function PersonRow({ name, title, company, email, state }) {
           <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-mauve-magic border-t-transparent" />
         )}
       </td>
+      <td className="py-2.5 text-right">
+        {showListAction && (
+          <span
+            className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-bold transition-all duration-300 ${
+              listState === 'added'
+                ? 'border-emerald-400/40 text-emerald-400'
+                : 'border-white/15 text-mauve-magic'
+            } ${listState === 'adding' ? 'scale-90' : 'scale-100'}`}
+          >
+            {listState === 'added' ? '✓ Added' : '+ List'}
+          </span>
+        )}
+      </td>
+    </tr>
+  );
+}
+
+function CompanyRow({ name, industry, headcount, dim = false }) {
+  return (
+    <tr
+      className="border-t border-white/5 transition-opacity duration-300"
+      style={{ opacity: dim ? 0.3 : 1 }}
+    >
+      <td className="py-2.5 pr-2 font-semibold text-white">{name}</td>
+      <td className="py-2.5 pr-2 text-ink-300">{industry}</td>
+      <td className="py-2.5 tabular-nums text-ink-300">{headcount}</td>
     </tr>
   );
 }
