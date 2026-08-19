@@ -70,14 +70,19 @@ export function AdminSettings() {
           </dl>
         )}
 
-        <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-3 border-t border-white/10 pt-6">
+        <form
+          onSubmit={handleSubmit}
+          className="mt-6 flex flex-col gap-3 border-t border-white/10 pt-6"
+        >
           <label className="flex flex-col gap-1 text-xs font-bold uppercase tracking-wide text-ink-300">
             Secret key
             <input
               type="password"
               value={secretKey}
               onChange={(e) => setSecretKey(e.target.value)}
-              placeholder={settings?.configured ? 'Leave blank to keep the saved secret' : 'sk_live_...'}
+              placeholder={
+                settings?.configured ? 'Leave blank to keep the saved secret' : 'sk_live_...'
+              }
               className="h-10 rounded-md border border-white/15 bg-white/5 px-3 font-mono text-sm font-normal normal-case text-white outline-none focus:border-neon-violet"
             />
           </label>

@@ -1,16 +1,22 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useListBillingPackagesQuery, useCreateCheckoutSessionMutation } from '../api/billingApi.js';
+import {
+  useListBillingPackagesQuery,
+  useCreateCheckoutSessionMutation,
+} from '../api/billingApi.js';
 
 function formatPrice(pkg, currency) {
-  return currency === 'INR' ? `₹${(pkg.inrPaise / 100).toLocaleString('en-IN')}` : `$${pkg.usdCents / 100}`;
+  return currency === 'INR'
+    ? `₹${(pkg.inrPaise / 100).toLocaleString('en-IN')}`
+    : `$${pkg.usdCents / 100}`;
 }
 
 export function AddCredits() {
   const { data: packages } = useListBillingPackagesQuery();
   const [currency, setCurrency] = useState('USD');
   const [selected, setSelected] = useState(null);
-  const [createCheckoutSession, { isLoading: startingCheckout }] = useCreateCheckoutSessionMutation();
+  const [createCheckoutSession, { isLoading: startingCheckout }] =
+    useCreateCheckoutSessionMutation();
   const [error, setError] = useState(null);
 
   const featured = packages?.find((p) => p.badge)?.credits;
