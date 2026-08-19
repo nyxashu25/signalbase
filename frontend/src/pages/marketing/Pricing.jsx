@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { MarketingNav } from '../../components/marketing/MarketingNav.jsx';
 import { MarketingFooter } from '../../components/marketing/MarketingFooter.jsx';
+import { AnimatedCreditLedgerMockup } from '../../components/marketing/AnimatedCreditLedgerMockup.jsx';
 
 const PLANS = [
   {
@@ -156,6 +157,25 @@ export function Pricing() {
         <p className="mt-8 text-center text-xs text-text-muted">
           Prices shown are per seat, billed annually. Monthly billing available at checkout.
         </p>
+      </section>
+
+      <section className="border-t border-border bg-ink-950">
+        <div className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-14 px-6 py-24 lg:grid-cols-2">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-wide text-mauve-magic">
+              How billing actually works
+            </span>
+            <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+              You only spend a credit when a reveal succeeds
+            </h2>
+            <p className="mt-4 text-base leading-relaxed text-ink-300">
+              Your seat price covers the platform. Credits are the only thing that moves when you
+              actually use it &mdash; every grant, reveal, and top-up lands in the same append-only
+              ledger you can see in your workspace at any time.
+            </p>
+          </div>
+          <AnimatedCreditLedgerMockup />
+        </div>
       </section>
 
       <section className="border-t border-border bg-surface">

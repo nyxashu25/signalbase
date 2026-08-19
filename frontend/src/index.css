@@ -87,3 +87,24 @@ body {
     transform: translateY(-14px);
   }
 }
+
+@keyframes particle-burst {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--dx), var(--dy)) scale(0.2);
+    opacity: 0;
+  }
+}
+
+@keyframes ambient-tilt {
+  0%,
+  100% {
+    transform: rotateY(-2.5deg) rotateX(1.2deg);
+  }
+  50% {
+    transform: rotateY(2.5deg) rotateX(-1.2deg);
+  }
+}

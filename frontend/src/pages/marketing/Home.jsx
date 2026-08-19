@@ -2,9 +2,9 @@ import { Link } from 'react-router-dom';
 import { MarketingNav } from '../../components/marketing/MarketingNav.jsx';
 import { MarketingFooter } from '../../components/marketing/MarketingFooter.jsx';
 import { HeroDemo } from '../../components/marketing/HeroDemo.jsx';
-import { RevealMockup } from '../../components/marketing/RevealMockup.jsx';
-import { SequenceMockup } from '../../components/marketing/SequenceMockup.jsx';
-import { CreditLedgerMockup } from '../../components/marketing/CreditLedgerMockup.jsx';
+import { AnimatedRevealMockup } from '../../components/marketing/AnimatedRevealMockup.jsx';
+import { AnimatedSequenceMockup } from '../../components/marketing/AnimatedSequenceMockup.jsx';
+import { AnimatedCreditLedgerMockup } from '../../components/marketing/AnimatedCreditLedgerMockup.jsx';
 
 const SECONDARY_FEATURES = [
   {
@@ -118,7 +118,7 @@ export function Home() {
               <FeatureCheck>Workspace-wide reveals, not per-seat</FeatureCheck>
             </ul>
           </div>
-          <RevealMockup />
+          <AnimatedRevealMockup />
         </div>
       </section>
 
@@ -127,7 +127,7 @@ export function Home() {
         <div className="mx-auto max-w-[1200px] px-6 py-24">
           <div className="grid grid-cols-1 items-center gap-14 lg:grid-cols-2">
             <div className="order-2 lg:order-1">
-              <SequenceMockup />
+              <AnimatedSequenceMockup />
             </div>
             <div className="order-1 lg:order-2">
               <span className="text-xs font-bold uppercase tracking-wide text-primary">
@@ -171,7 +171,7 @@ export function Home() {
               <FeatureCheck>Auto-refund on a failed or expired reveal</FeatureCheck>
             </ul>
           </div>
-          <CreditLedgerMockup />
+          <AnimatedCreditLedgerMockup />
         </div>
       </section>
 

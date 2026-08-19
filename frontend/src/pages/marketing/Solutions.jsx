@@ -1,37 +1,44 @@
 import { Link } from 'react-router-dom';
 import { MarketingNav } from '../../components/marketing/MarketingNav.jsx';
 import { MarketingFooter } from '../../components/marketing/MarketingFooter.jsx';
+import { RoleAccent } from '../../components/marketing/RoleAccent.jsx';
 
 const ROLES = [
   {
     title: 'Sales leaders',
     desc: "See where pipeline is actually coming from. Every reveal and every sequence send rolls up to a workspace-wide credit ledger, so you can see what your team is spending and what it's producing without asking for a spreadsheet.",
     icon: IconChart,
+    accent: { type: 'bars', label: 'Team credit spend this week' },
   },
   {
     title: 'Account executives',
     desc: 'Stop losing an afternoon to finding the right contact. Search by title and seniority, reveal only the people worth a real conversation, and drop them straight into a sequence.',
     icon: IconTarget,
+    accent: { type: 'counter', label: 'Contacts revealed today', value: 12 },
   },
   {
     title: 'Sales development',
     desc: 'Build a list, enroll it, and let wait steps handle the timing between touches. Suppression is enforced automatically, so you never have to manually track who unsubscribed.',
     icon: IconSend,
+    accent: { type: 'ring', label: 'Sequence completion', value: 76 },
   },
   {
     title: 'Revenue operations',
     desc: 'One append-only ledger for every credit movement means reconciliation is a query, not a project. Role-based access keeps every workspace scoped to its own org.',
     icon: IconGear,
+    accent: { type: 'counter', label: 'Ledger entries this month', value: 248 },
   },
   {
     title: 'Marketers',
     desc: 'Firmographic and technographic filters narrow a total-addressable-market list to the accounts that actually match your ideal customer profile, before a single credit is spent.',
     icon: IconMegaphone,
+    accent: { type: 'ring', label: 'ICP match rate', value: 82 },
   },
   {
     title: 'Founders',
     desc: "Start on the free plan, reveal your first real prospects the same day, and upgrade only once you're actually running out of credits — not before.",
     icon: IconRocket,
+    accent: { type: 'counter', label: 'Minutes to first reveal', value: 4 },
   },
 ];
 
@@ -67,6 +74,7 @@ export function Solutions() {
               </div>
               <h3 className="mt-4 text-base font-bold text-text">{r.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-text-muted">{r.desc}</p>
+              <RoleAccent {...r.accent} />
             </div>
           ))}
         </div>

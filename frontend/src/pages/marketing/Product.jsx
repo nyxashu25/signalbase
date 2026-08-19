@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom';
 import { MarketingNav } from '../../components/marketing/MarketingNav.jsx';
 import { MarketingFooter } from '../../components/marketing/MarketingFooter.jsx';
-import { ProductMockup } from '../../components/marketing/ProductMockup.jsx';
-import { RevealMockup } from '../../components/marketing/RevealMockup.jsx';
-import { SequenceMockup } from '../../components/marketing/SequenceMockup.jsx';
-import { CreditLedgerMockup } from '../../components/marketing/CreditLedgerMockup.jsx';
+import { AnimatedSearchMockup } from '../../components/marketing/AnimatedSearchMockup.jsx';
+import { AnimatedRevealMockup } from '../../components/marketing/AnimatedRevealMockup.jsx';
+import { AnimatedSequenceMockup } from '../../components/marketing/AnimatedSequenceMockup.jsx';
+import { AnimatedCreditLedgerMockup } from '../../components/marketing/AnimatedCreditLedgerMockup.jsx';
 
 const MODULES = [
   {
@@ -16,7 +16,7 @@ const MODULES = [
       'Masked results until reveal',
       'Facet counts update live',
     ],
-    mockup: <ProductMockup />,
+    mockup: <AnimatedSearchMockup />,
   },
   {
     eyebrow: 'Reveal',
@@ -27,7 +27,7 @@ const MODULES = [
       'Atomic reserve-then-commit — no double charges',
       'Shared across the workspace, not per-seat',
     ],
-    mockup: <RevealMockup />,
+    mockup: <AnimatedRevealMockup />,
   },
   {
     eyebrow: 'Sequences',
@@ -38,7 +38,7 @@ const MODULES = [
       'Enroll straight from a list',
       'Automatic suppression-list enforcement',
     ],
-    mockup: <SequenceMockup />,
+    mockup: <AnimatedSequenceMockup />,
   },
   {
     eyebrow: 'Credits & billing',
@@ -49,7 +49,7 @@ const MODULES = [
       'Reserve → commit/refund accounting',
       'Buy more credits any time',
     ],
-    mockup: <CreditLedgerMockup />,
+    mockup: <AnimatedCreditLedgerMockup />,
   },
 ];
 
