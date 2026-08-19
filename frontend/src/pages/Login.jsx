@@ -3,6 +3,7 @@ import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useLoginMutation, useRegisterMutation } from '../api/authApi.js';
 import { setSession } from '../store/authSlice.js';
+import { Logo } from '../components/Logo.jsx';
 
 export function Login() {
   const [mode, setMode] = useState('login');
@@ -37,7 +38,7 @@ export function Login() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-surface">
       <div className="w-full max-w-sm rounded-xl border border-border bg-surface-elevated p-7 shadow-dp">
-        <img src="/logos/datapit-logo-light.svg" alt="DataPit" className="h-7" />
+        <Logo className="h-7" />
         <p className="mt-3 text-sm text-text-muted">
           {mode === 'login' ? 'Sign in to your workspace' : 'Create a new workspace'}
         </p>

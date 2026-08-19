@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { ThemeToggle } from '../ThemeToggle.jsx';
+import { Logo } from '../Logo.jsx';
 
 const LINKS = [
   { to: '/product', label: 'Product' },
@@ -19,7 +20,7 @@ export function MarketingNav() {
     <header className="sticky top-0 z-20 border-b border-border bg-surface-elevated/90 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between px-6">
         <Link to="/" onClick={() => setMenuOpen(false)}>
-          <img src="/logos/datapit-logo-light.svg" alt="DataPit" className="h-6" />
+          <Logo className="h-6" />
         </Link>
 
         <nav className="hidden items-center gap-8 text-sm font-medium text-text-muted md:flex">

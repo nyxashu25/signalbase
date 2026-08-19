@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Logo } from '../Logo.jsx';
 
 const COLUMNS = [
   {
@@ -31,7 +32,7 @@ export function MarketingFooter() {
       <div className="mx-auto max-w-[1200px] px-6 py-16">
         <div className="grid grid-cols-2 gap-10 sm:grid-cols-4">
           <div className="col-span-2 sm:col-span-1">
-            <img src="/logos/datapit-logo-light.svg" alt="DataPit" className="h-6 opacity-90" />
+            <Logo className="h-6 opacity-90" />
             <p className="mt-4 max-w-[200px] text-sm text-text-muted">
               Search, reveal, and outreach on one credit ledger.
             </p>

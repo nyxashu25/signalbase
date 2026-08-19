@@ -3,6 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { ProfileMenu } from '../components/ProfileMenu.jsx';
 import { ThemeToggle } from '../components/ThemeToggle.jsx';
+import { Logo } from '../components/Logo.jsx';
 
 const NAV_ITEMS = [
   { to: '/app', label: 'Dashboard', end: true },
@@ -34,7 +35,7 @@ export function AppLayout() {
         }`}
       >
         <div className="px-4 py-4">
-          <img src="/logos/datapit-logo-light.svg" alt="DataPit" className="h-6" />
+          <Logo className="h-6" />
         </div>
         <nav className="flex flex-col gap-1 px-2">
           {NAV_ITEMS.map((item) => (

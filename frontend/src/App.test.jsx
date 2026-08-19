@@ -35,7 +35,9 @@ describe('App', () => {
 
   it('redirects to login when visiting /app unauthenticated', () => {
     renderApp({ authenticated: false, path: '/app' });
-    expect(screen.getByAltText('DataPit')).toBeInTheDocument();
+    // Logo renders both theme variants (light/dark) — CSS picks the visible
+    // one in a real browser; that stylesheet isn't loaded in this test env.
+    expect(screen.getAllByAltText('DataPit').length).toBeGreaterThan(0);
     expect(screen.getByText('Sign in to your workspace')).toBeInTheDocument();
   });
 
