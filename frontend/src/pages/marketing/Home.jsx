@@ -1,22 +1,16 @@
 import { Link } from 'react-router-dom';
 import { MarketingNav } from '../../components/marketing/MarketingNav.jsx';
 import { MarketingFooter } from '../../components/marketing/MarketingFooter.jsx';
+import { ProductMockup } from '../../components/marketing/ProductMockup.jsx';
+import { RevealMockup } from '../../components/marketing/RevealMockup.jsx';
+import { SequenceMockup } from '../../components/marketing/SequenceMockup.jsx';
+import { CreditLedgerMockup } from '../../components/marketing/CreditLedgerMockup.jsx';
 
-const FEATURES = [
-  {
-    title: 'People search',
-    desc: 'Faceted search over contacts by title, seniority, department, and geography. Emails stay masked until you spend a credit to reveal them.',
-    icon: IconSearch,
-  },
+const SECONDARY_FEATURES = [
   {
     title: 'Company search',
     desc: 'Firmographic and technographic filtering with live facet counts, so you narrow a list of thousands down to the accounts that matter.',
     icon: IconBuilding,
-  },
-  {
-    title: 'Verified email reveal',
-    desc: 'Pattern-based finding plus verification, gated by an atomic credit ledger — reveal once, and the whole workspace sees it.',
-    icon: IconMail,
   },
   {
     title: 'Lists',
@@ -24,14 +18,9 @@ const FEATURES = [
     icon: IconList,
   },
   {
-    title: 'Sequences',
-    desc: 'Multi-step outreach cadences with wait steps, enrollment from lists, and pause/resume control.',
-    icon: IconSend,
-  },
-  {
-    title: 'Credits & billing',
-    desc: 'An append-only ledger with reserve-then-commit accounting, so concurrent reveals can never over-spend your balance.',
-    icon: IconCredit,
+    title: 'Role-based access',
+    desc: 'Owner, Admin, and Member roles per workspace, with every query scoped to your org — no cross-tenant leakage.',
+    icon: IconShield,
   },
 ];
 
@@ -58,6 +47,7 @@ export function Home() {
     <div className="min-h-screen bg-bg">
       <MarketingNav />
 
+      {/* Hero */}
       <section id="product" className="relative overflow-hidden bg-ink-950 text-white">
         <div
           className="pointer-events-none absolute inset-0 opacity-60"
@@ -66,84 +56,170 @@ export function Home() {
               'radial-gradient(60% 50% at 15% 0%, rgba(148,0,222,0.35), transparent), radial-gradient(50% 40% at 100% 20%, rgba(190,61,255,0.25), transparent)',
           }}
         />
-        <div className="relative mx-auto max-w-[1120px] px-6 py-24 text-center sm:py-28">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-mauve-magic">
-            B2B sales intelligence
-          </span>
-          <h1 className="mx-auto mt-6 max-w-[820px] text-balance text-5xl font-extrabold leading-[1.08] tracking-tight sm:text-6xl">
-            Find verified contacts.
-            <br />
-            <span className="bg-gradient-brand bg-clip-text text-transparent">
-              Track buying signals.
+        <div className="relative mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-16 px-6 py-24 sm:py-28 lg:grid-cols-[1.05fr_1fr]">
+          <div>
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-mauve-magic">
+              B2B sales intelligence
             </span>
-          </h1>
-          <p className="mx-auto mt-6 max-w-[560px] text-lg text-ink-300">
-            DataPit is the search, reveal, and outreach platform for teams who'd rather spend
-            credits on real contacts than guess at spreadsheets.
-          </p>
-          <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link
-              to="/login"
-              className="rounded-md bg-gradient-action px-7 py-3.5 text-sm font-bold text-white shadow-[0_14px_32px_rgba(148,0,222,0.4)] transition-transform duration-150 ease-brand hover:-translate-y-px"
-            >
-              Start free
-            </Link>
-            <Link
-              to="/pricing"
-              className="rounded-md border border-white/20 bg-white/5 px-7 py-3.5 text-sm font-bold text-white transition-colors duration-150 ease-brand hover:bg-white/10"
-            >
-              See pricing
-            </Link>
+            <h1 className="mt-6 text-balance text-5xl font-extrabold leading-[1.08] tracking-tight sm:text-6xl">
+              Find verified contacts.
+              <br />
+              <span className="bg-gradient-brand bg-clip-text text-transparent">
+                Track buying signals.
+              </span>
+            </h1>
+            <p className="mt-6 max-w-[520px] text-lg text-ink-300">
+              DataPit is the search, reveal, and outreach platform for teams who'd rather spend
+              credits on real contacts than guess at spreadsheets.
+            </p>
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+              <Link
+                to="/login"
+                className="rounded-md bg-gradient-action px-7 py-3.5 text-center text-sm font-bold text-white shadow-[0_14px_32px_rgba(148,0,222,0.4)] transition-transform duration-150 ease-brand hover:-translate-y-px"
+              >
+                Start free
+              </Link>
+              <Link
+                to="/pricing"
+                className="rounded-md border border-white/20 bg-white/5 px-7 py-3.5 text-center text-sm font-bold text-white transition-colors duration-150 ease-brand hover:bg-white/10"
+              >
+                See pricing
+              </Link>
+            </div>
+            <p className="mt-5 text-xs text-ink-500">
+              No credit card required &middot; 100 free credits every month
+            </p>
+          </div>
+
+          <ProductMockup className="lg:translate-x-4" />
+        </div>
+      </section>
+
+      {/* Feature: People search + reveal */}
+      <section className="mx-auto max-w-[1200px] px-6 py-24">
+        <div className="grid grid-cols-1 items-center gap-14 lg:grid-cols-2">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-wide text-primary">
+              Search &amp; reveal
+            </span>
+            <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-text sm:text-4xl">
+              Every contact, verified before you spend a credit
+            </h2>
+            <p className="mt-4 text-base leading-relaxed text-text-muted">
+              Filter by title, seniority, department, and company signal across a live database.
+              Results stay masked until you reveal them — so you never pay for a guess, and once
+              anyone on your team reveals a contact, the whole workspace can see it for free.
+            </p>
+            <ul className="mt-6 flex flex-col gap-3 text-sm text-text">
+              <FeatureCheck>Pattern-based email finding plus verification</FeatureCheck>
+              <FeatureCheck>
+                Atomic credit ledger — never double-charged, even under load
+              </FeatureCheck>
+              <FeatureCheck>Workspace-wide reveals, not per-seat</FeatureCheck>
+            </ul>
+          </div>
+          <RevealMockup />
+        </div>
+      </section>
+
+      {/* Feature: Sequences */}
+      <section className="border-y border-border bg-surface">
+        <div className="mx-auto max-w-[1200px] px-6 py-24">
+          <div className="grid grid-cols-1 items-center gap-14 lg:grid-cols-2">
+            <div className="order-2 lg:order-1">
+              <SequenceMockup />
+            </div>
+            <div className="order-1 lg:order-2">
+              <span className="text-xs font-bold uppercase tracking-wide text-primary">
+                Outreach
+              </span>
+              <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-text sm:text-4xl">
+                Sequences that keep working after the first email
+              </h2>
+              <p className="mt-4 text-base leading-relaxed text-text-muted">
+                Build multi-step cadences with wait steps, enroll a list in one click, and pause or
+                resume without losing a contact's place in the sequence.
+              </p>
+              <ul className="mt-6 flex flex-col gap-3 text-sm text-text">
+                <FeatureCheck>Email and wait steps in any order</FeatureCheck>
+                <FeatureCheck>Enroll straight from a saved list</FeatureCheck>
+                <FeatureCheck>Suppression list enforced automatically on every send</FeatureCheck>
+              </ul>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1120px] px-6 py-24">
-        <div className="mx-auto max-w-[640px] text-center">
-          <h2 className="text-3xl font-extrabold tracking-tight text-text sm:text-4xl">
-            Everything a go-to-market team needs, in one workspace
-          </h2>
-          <p className="mt-4 text-base text-text-muted">
-            No bundled modules you don't use. Search, reveal, and outreach on one credit ledger.
-          </p>
-        </div>
-
-        <div className="mt-14 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map((f) => (
-            <div
-              key={f.title}
-              className="rounded-lg border border-border bg-surface-elevated p-6 shadow-dp transition-transform duration-150 ease-brand hover:-translate-y-0.5"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-gradient-action text-white">
-                <f.icon />
-              </div>
-              <h3 className="mt-4 text-base font-bold text-text">{f.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-text-muted">{f.desc}</p>
-            </div>
-          ))}
+      {/* Feature: Credits */}
+      <section className="mx-auto max-w-[1200px] px-6 py-24">
+        <div className="grid grid-cols-1 items-center gap-14 lg:grid-cols-2">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-wide text-primary">
+              Credits &amp; billing
+            </span>
+            <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-text sm:text-4xl">
+              A credit ledger you can actually audit
+            </h2>
+            <p className="mt-4 text-base leading-relaxed text-text-muted">
+              Every credit movement is an append-only ledger entry — monthly grants, reveals, and
+              top-ups. Reserve-then-commit accounting means a burst of concurrent reveals can never
+              push your balance negative.
+            </p>
+            <ul className="mt-6 flex flex-col gap-3 text-sm text-text">
+              <FeatureCheck>Full transaction history, not just a balance</FeatureCheck>
+              <FeatureCheck>Buy more credits any time from your profile</FeatureCheck>
+              <FeatureCheck>Auto-refund on a failed or expired reveal</FeatureCheck>
+            </ul>
+          </div>
+          <CreditLedgerMockup />
         </div>
       </section>
 
-      <section className="border-y border-border bg-surface">
-        <div className="mx-auto max-w-[1120px] px-6 py-24">
+      {/* Secondary features grid */}
+      <section className="border-t border-border bg-surface">
+        <div className="mx-auto max-w-[1200px] px-6 py-24">
           <div className="mx-auto max-w-[640px] text-center">
             <h2 className="text-3xl font-extrabold tracking-tight text-text sm:text-4xl">
-              How it works
+              Everything else a go-to-market team needs
             </h2>
           </div>
-          <div className="mt-14 grid grid-cols-1 gap-10 sm:grid-cols-3">
-            {STEPS.map((s) => (
-              <div key={s.n}>
-                <span className="text-sm font-extrabold text-primary">{s.n}</span>
-                <h3 className="mt-2 text-lg font-bold text-text">{s.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-text-muted">{s.desc}</p>
+          <div className="mt-14 grid grid-cols-1 gap-6 sm:grid-cols-3">
+            {SECONDARY_FEATURES.map((f) => (
+              <div
+                key={f.title}
+                className="rounded-lg border border-border bg-surface-elevated p-6 shadow-dp transition-transform duration-150 ease-brand hover:-translate-y-0.5"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-gradient-action text-white">
+                  <f.icon />
+                </div>
+                <h3 className="mt-4 text-base font-bold text-text">{f.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-text-muted">{f.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1120px] px-6 py-24">
+      {/* How it works */}
+      <section className="mx-auto max-w-[1200px] px-6 py-24">
+        <div className="mx-auto max-w-[640px] text-center">
+          <h2 className="text-3xl font-extrabold tracking-tight text-text sm:text-4xl">
+            How it works
+          </h2>
+        </div>
+        <div className="mt-14 grid grid-cols-1 gap-10 sm:grid-cols-3">
+          {STEPS.map((s) => (
+            <div key={s.n}>
+              <span className="text-sm font-extrabold text-primary">{s.n}</span>
+              <h3 className="mt-2 text-lg font-bold text-text">{s.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-text-muted">{s.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* CTA band */}
+      <section className="mx-auto max-w-[1200px] px-6 pb-24">
         <div className="rounded-xl bg-gradient-action px-8 py-16 text-center text-white sm:px-16">
           <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
             Start finding your next customers
@@ -165,19 +241,22 @@ export function Home() {
   );
 }
 
-function IconSearch() {
+function FeatureCheck({ children }) {
   return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-    >
-      <circle cx="11" cy="11" r="7" strokeLinecap="round" />
-      <path d="M21 21l-4.3-4.3" strokeLinecap="round" />
-    </svg>
+    <li className="flex items-start gap-2.5">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        className="mt-0.5 shrink-0 text-primary"
+      >
+        <path d="M5 12.5l4.5 4.5L19 7" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      <span>{children}</span>
+    </li>
   );
 }
 
@@ -193,22 +272,6 @@ function IconBuilding() {
     >
       <rect x="4" y="3" width="12" height="18" rx="1.5" />
       <path d="M9 8h2M9 12h2M9 16h2M16 11h4v10h-4z" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function IconMail() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-    >
-      <rect x="3" y="5" width="18" height="14" rx="2" />
-      <path d="M3.5 6.5L12 13l8.5-6.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -231,7 +294,7 @@ function IconList() {
   );
 }
 
-function IconSend() {
+function IconShield() {
   return (
     <svg
       width="20"
@@ -241,24 +304,8 @@ function IconSend() {
       stroke="currentColor"
       strokeWidth="1.75"
     >
-      <path d="M21 3L3 10.5l7.5 3L14 21l7-18z" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function IconCredit() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-    >
-      <rect x="3" y="5" width="18" height="14" rx="2" />
-      <path d="M3 10h18" strokeLinecap="round" />
-      <path d="M7 15h4" strokeLinecap="round" />
+      <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" strokeLinejoin="round" />
+      <path d="M9 12l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

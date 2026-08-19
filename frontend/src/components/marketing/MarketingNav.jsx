@@ -13,11 +13,17 @@ export function MarketingNav() {
         </Link>
 
         <nav className="hidden items-center gap-8 text-sm font-medium text-text-muted md:flex">
-          <a href="/#product" className="transition-colors hover:text-text">
+          <Link to="/product" className="transition-colors hover:text-text">
             Product
-          </a>
+          </Link>
+          <Link to="/solutions" className="transition-colors hover:text-text">
+            Solutions
+          </Link>
           <Link to="/pricing" className="transition-colors hover:text-text">
             Pricing
+          </Link>
+          <Link to="/about" className="transition-colors hover:text-text">
+            About
           </Link>
         </nav>
 

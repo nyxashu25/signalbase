@@ -12,6 +12,12 @@ import { Profile } from './pages/Profile.jsx';
 import { AddCredits } from './pages/AddCredits.jsx';
 import { Home } from './pages/marketing/Home.jsx';
 import { Pricing } from './pages/marketing/Pricing.jsx';
+import { Product } from './pages/marketing/Product.jsx';
+import { Solutions } from './pages/marketing/Solutions.jsx';
+import { About } from './pages/marketing/About.jsx';
+import { Contact } from './pages/marketing/Contact.jsx';
+import { Privacy } from './pages/marketing/Privacy.jsx';
+import { Terms } from './pages/marketing/Terms.jsx';
 import { AdminLayout } from './layouts/AdminLayout.jsx';
 import { RequireSuperAdmin } from './components/RequireSuperAdmin.jsx';
 import { AdminLogin } from './pages/admin/AdminLogin.jsx';
@@ -52,6 +58,12 @@ export function App() {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/pricing" element={<Pricing />} />
+      <Route path="/product" element={<Product />} />
+      <Route path="/solutions" element={<Solutions />} />
+      <Route path="/about" element={<About />} />
+      <Route path="/contact" element={<Contact />} />
+      <Route path="/privacy" element={<Privacy />} />
+      <Route path="/terms" element={<Terms />} />
       <Route path="/login" element={<Login />} />
 
       <Route path="/app" element={<RequireAuth />}>

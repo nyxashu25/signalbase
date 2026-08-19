@@ -8,6 +8,7 @@ import { webhooksRouter } from './webhooks.js';
 import { billingRouter } from './billing.js';
 import { privacyRouter } from './privacy.js';
 import { adminRouter } from './admin.js';
+import { contactRouter } from './contact.js';
 
 export const apiRouter = Router();
 
@@ -24,6 +25,7 @@ apiRouter.use('/webhooks', webhooksRouter);
 apiRouter.use('/billing', billingRouter);
 apiRouter.use('/privacy', privacyRouter);
 apiRouter.use('/admin', adminRouter);
+apiRouter.use('/contact', contactRouter);
 
 // CRM sync (Salesforce/HubSpot) and the Chrome extension are P2 / out of
 // scope here — CRM sync needs a real sandbox to integrate against, and the
