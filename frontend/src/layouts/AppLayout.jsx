@@ -35,7 +35,7 @@ export function AppLayout() {
         }`}
       >
         <div className="px-4 py-4">
-          <Logo className="h-6" />
+          <Logo className="h-[40px] w-[120px] object-contain" />
         </div>
         <nav className="flex flex-col gap-1 px-2">
           {NAV_ITEMS.map((item) => (
