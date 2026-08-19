@@ -7,6 +7,8 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 
 export const billingRouter = Router();
 
+billingRouter.get('/summary', requireAuth, asyncHandler(billingController.getSummary));
+
 billingRouter.post(
   '/checkout-session',
   requireAuth,

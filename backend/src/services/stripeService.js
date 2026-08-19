@@ -13,6 +13,16 @@ const stripe = new Stripe(env.STRIPE_SECRET_KEY || 'sk_test_placeholder_unused_f
 
 const PROCESSED_EVENT_TTL_SECONDS = 30 * 24 * 60 * 60; // Stripe retries for up to ~3 days; comfortable margin
 
+// Single source of truth for what a credit package actually costs — priced
+// server-side so a client can never request a discount by sending an
+// arbitrary `credits` value. Must stay in sync with the packages shown on
+// frontend/src/pages/AddCredits.jsx.
+const CREDIT_PACKAGES = {
+  250: 1500,
+  600: 3000,
+  1500: 6500,
+};
+
 export function verifyAndParseEvent(rawBody, signatureHeader) {
   try {
     return stripe.webhooks.constructEvent(rawBody, signatureHeader, env.STRIPE_WEBHOOK_SECRET);
@@ -34,7 +44,7 @@ async function claimEvent(eventId) {
 }
 
 async function topUpCredits(session) {
-  const { workspaceId, credits } = session.metadata ?? {};
+  const { workspaceId, credits, amountCents } = session.metadata ?? {};
   if (!workspaceId || !credits) {
     logger.error({ sessionId: session.id }, 'Stripe session missing workspaceId/credits metadata');
     return;
@@ -46,11 +56,16 @@ async function topUpCredits(session) {
   // updated one without the other is exactly the drift reconciliationService
   // watches for, so keep this symmetric with commitReservation's approach.
   await prisma.creditLedgerEntry.create({
-    data: { workspaceId, delta: amount, reason: 'TOPUP' },
+    data: {
+      workspaceId,
+      delta: amount,
+      reason: 'TOPUP',
+      amountCents: amountCents ? Number(amountCents) : null,
+    },
   });
   await redis.incrby(`credits:balance:${workspaceId}`, amount);
 
-  logger.info({ workspaceId, amount }, 'Credits topped up from Stripe payment');
+  logger.info({ workspaceId, amount, amountCents }, 'Credits topped up from Stripe payment');
 }
 
 async function updateSubscriptionState(subscription) {
@@ -89,14 +104,22 @@ export async function handleEvent(event) {
  * stripe.checkout.sessions.create call.
  */
 export async function createCheckoutSession({ workspaceId, credits }) {
+  const amountCents = CREDIT_PACKAGES[credits];
+  if (!amountCents) {
+    throw new ApiError(400, 'Unknown credit package');
+  }
+
   if (!env.STRIPE_SECRET_KEY) {
     const sessionId = `cs_simulated_${workspaceId}_${Date.now()}`;
     logger.info(
-      { workspaceId, credits, sessionId },
+      { workspaceId, credits, amountCents, sessionId },
       'Stripe checkout session simulated (no STRIPE_SECRET_KEY)',
     );
     return { sessionId, url: `https://billing.simulated.local/checkout/${sessionId}` };
   }
 
+  // Once wired up for real: stripe.checkout.sessions.create with
+  // metadata: { workspaceId, credits, amountCents } — topUpCredits above
+  // already reads amountCents back off that metadata.
   throw new Error('Live Stripe checkout integration not implemented yet');
 }

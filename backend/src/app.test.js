@@ -14,7 +14,7 @@ describe('health', () => {
   it('GET /api/v1 returns the API identity', async () => {
     const res = await request(app).get('/api/v1');
     expect(res.status).toBe(200);
-    expect(res.body.name).toBe('SignalBase API');
+    expect(res.body.name).toBe('DataPit API');
   });
 
   it('unknown routes return 404 via the JSON error envelope', async () => {

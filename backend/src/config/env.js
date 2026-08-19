@@ -21,6 +21,15 @@ const schema = z.object({
 
   JWT_ACCESS_SECRET: z.string().min(32, 'JWT_ACCESS_SECRET must be at least 32 characters'),
   JWT_REFRESH_SECRET: z.string().min(32, 'JWT_REFRESH_SECRET must be at least 32 characters'),
+  // Deliberately a separate secret from the tenant JWT_ACCESS_SECRET above —
+  // a wrong-secret signature failure is a stronger guarantee than an
+  // audience-claim check alone. See routes/admin.js.
+  ADMIN_JWT_SECRET: z.string().min(32, 'ADMIN_JWT_SECRET must be at least 32 characters'),
+  ADMIN_ACCESS_TOKEN_TTL_SECONDS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(12 * 60 * 60),
   ACCESS_TOKEN_TTL_SECONDS: z.coerce
     .number()
     .int()

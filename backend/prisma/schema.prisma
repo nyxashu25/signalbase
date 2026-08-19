@@ -50,12 +50,33 @@ model User {
   email        String   @unique
   passwordHash String
   name         String
+  // Set by a super admin (see SuperAdmin below) to immediately cut off
+  // login/refresh — checked in authService.login/refresh, not per-request,
+  // matching this app's stateless-access-token design (see docs on
+  // ACCESS_TOKEN_TTL_SECONDS). Null means never suspended.
+  suspendedAt  DateTime?
   createdAt    DateTime @default(now())
 
   memberships      Membership[]
   emailReveals     EmailReveal[]
   createdLists     List[]     @relation("ListCreatedBy")
   createdSequences Sequence[] @relation("SequenceCreatedBy")
+}
+
+// ---------------------------------------------------------------------------
+// Super admin: entirely separate credential space from the tenant User
+// model above — no membership, no workspace, no shared login route. Signed
+// with its own JWT secret (ADMIN_JWT_SECRET) and audience claim so a tenant
+// access token can never be replayed against an admin-only route, or vice
+// versa. See middleware/adminAuth.js and routes/admin.js.
+// ---------------------------------------------------------------------------
+
+model SuperAdmin {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
 }
 
 enum Role {
@@ -198,6 +219,12 @@ model CreditLedgerEntry {
   delta       Int
   reason      CreditReason
   contactId   String?
+  // Real money charged for this entry, in cents — only ever set on TOPUP
+  // rows (a real Stripe purchase). Null for everything else, including
+  // ADJUSTMENT rows (an admin-granted credit isn't revenue). This is the
+  // only place a dollar amount is recorded anywhere in the schema; the
+  // credit ledger otherwise deals purely in credit counts.
+  amountCents Int?
   createdAt   DateTime     @default(now())
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)

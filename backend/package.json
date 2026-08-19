@@ -1,5 +1,5 @@
 {
-  "name": "signalbase-backend",
+  "name": "datapit-backend",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -21,6 +21,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "seed": "node src/utils/seed.js",
+    "create-super-admin": "node src/utils/createSuperAdmin.js",
     "reindex": "node src/utils/reindex.js",
     "load-test": "node scripts/load-test.mjs"
   },

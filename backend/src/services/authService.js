@@ -69,6 +69,10 @@ export async function login({ email, password, workspaceId }) {
   const invalid = () => new ApiError(401, 'Invalid email or password');
   if (!user) throw invalid();
   if (!(await verifyPassword(user.passwordHash, password))) throw invalid();
+  // Checked after password verification (not before) so a suspended
+  // account's error message never doubles as a way to test whether a
+  // guessed password was actually correct.
+  if (user.suspendedAt) throw new ApiError(403, 'This account has been suspended');
 
   const membership = workspaceId
     ? user.memberships.find((m) => m.workspaceId === workspaceId)
@@ -107,11 +111,17 @@ export async function refresh(cookieValue) {
   // login takes effect immediately on refresh, not just at next login.
   const membership = await prisma.membership.findUnique({
     where: { userId_workspaceId: { userId: result.userId, workspaceId: result.workspaceId } },
-    include: { workspace: true },
+    include: { workspace: true, user: true },
   });
 
   if (!membership) {
     throw new ApiError(403, 'This account no longer has access to that workspace');
+  }
+  // A suspension applied mid-session is caught here rather than only at the
+  // next login — the access token this issues has a short TTL, so a
+  // suspended user's session dies within one refresh cycle, not 30 days.
+  if (membership.user.suspendedAt) {
+    throw new ApiError(403, 'This account has been suspended');
   }
 
   const accessToken = signAccessToken({

@@ -1,3 +1,75 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* DataPit design tokens — see DataPit_Design_Language/DESIGN_LANGUAGE.md.
+   Light is the default surface; [data-theme='dark'] overrides for the
+   dark-mode expression described in section 14. */
+:root {
+  --dp-indigo: #440066;
+  --dp-indigo-2: #610091;
+  --dp-royal-violet: #7c00ba;
+  --dp-dark-violet: #9400de;
+  --dp-purple-x11: #aa00ff;
+  --dp-hyper-magenta: #be3dff;
+  --dp-neon-violet: #c552ff;
+  --dp-mauve-magic: #cf70ff;
+  --dp-mauve: #dd99ff;
+  --dp-mauve-2: #e7b3ff;
+
+  --dp-ink-950: #110019;
+  --dp-ink-900: #180022;
+  --dp-ink-800: #250031;
+  --dp-ink-700: #3a2442;
+  --dp-ink-600: #5b4963;
+  --dp-ink-500: #75647c;
+  --dp-ink-300: #baafc0;
+  --dp-ink-200: #d9d1dd;
+  --dp-ink-100: #eee9f1;
+  --dp-ink-50: #faf7fb;
+
+  --dp-bg: #ffffff;
+  --dp-surface: #faf7fb;
+  --dp-surface-elevated: #ffffff;
+  --dp-text: #180022;
+  --dp-text-muted: #5b4963;
+  --dp-border: #e6ddeb;
+  --dp-primary: #7c00ba;
+  --dp-primary-hover: #610091;
+  --dp-accent: #aa00ff;
+  --dp-focus: #c552ff;
+
+  --dp-gradient-action: linear-gradient(
+    135deg,
+    var(--dp-dark-violet),
+    var(--dp-purple-x11) 48%,
+    var(--dp-hyper-magenta)
+  );
+  --dp-gradient-brand: linear-gradient(
+    135deg,
+    var(--dp-indigo-2) 0%,
+    var(--dp-royal-violet) 28%,
+    var(--dp-purple-x11) 55%,
+    var(--dp-hyper-magenta) 76%,
+    var(--dp-mauve-magic) 100%
+  );
+}
+
+[data-theme='dark'] {
+  --dp-bg: #0a0011;
+  --dp-surface: #14001d;
+  --dp-surface-elevated: #1d002a;
+  --dp-text: #ffffff;
+  --dp-text-muted: #baafc0;
+  --dp-border: #3c1551;
+  --dp-primary: #aa00ff;
+  --dp-primary-hover: #be3dff;
+  --dp-accent: #cf70ff;
+  --dp-focus: #c552ff;
+}
+
+body {
+  font-family: 'Montserrat', 'Avenir Next', Arial, sans-serif;
+  background: var(--dp-bg);
+  color: var(--dp-text);
+}

@@ -138,7 +138,7 @@ describe('POST /billing/checkout-session', () => {
     const res = await request(app)
       .post('/api/v1/billing/checkout-session')
       .set('Authorization', `Bearer ${registerRes.body.accessToken}`)
-      .send({ credits: 100 });
+      .send({ credits: 250 });
 
     expect(res.status).toBe(201);
     expect(res.body.sessionId).toMatch(/^cs_simulated_/);

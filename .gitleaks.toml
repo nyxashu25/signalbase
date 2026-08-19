@@ -1,4 +1,4 @@
-title = "SignalBase gitleaks config"
+title = "DataPit gitleaks config"
 
 [extend]
 useDefault = true

@@ -25,6 +25,7 @@ export async function resetDb() {
   await prisma.workspace.deleteMany();
   await prisma.org.deleteMany();
   await prisma.dataSubjectOptOut.deleteMany();
+  await prisma.superAdmin.deleteMany();
 }
 
 // Refresh-token sessions and credit reservations/balances live in Redis,

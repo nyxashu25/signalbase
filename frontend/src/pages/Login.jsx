@@ -26,7 +26,7 @@ export function Login() {
     const result = await action(body);
     if (result.data) {
       dispatch(setSession(result.data));
-      navigate('/', { replace: true });
+      navigate('/app', { replace: true });
     }
   }
 
@@ -35,10 +35,10 @@ export function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50">
-      <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-        <h1 className="text-lg font-semibold">SignalBase</h1>
-        <p className="mt-1 text-sm text-slate-500">
+    <div className="flex min-h-screen items-center justify-center bg-surface">
+      <div className="w-full max-w-sm rounded-xl border border-border bg-surface-elevated p-7 shadow-dp">
+        <img src="/logos/datapit-logo-light.svg" alt="DataPit" className="h-7" />
+        <p className="mt-3 text-sm text-text-muted">
           {mode === 'login' ? 'Sign in to your workspace' : 'Create a new workspace'}
         </p>
 
@@ -74,7 +74,7 @@ export function Login() {
           <button
             type="submit"
             disabled={isLoading}
-            className="mt-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+            className="mt-2 rounded-md bg-gradient-action px-4 py-2.5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(148,0,222,0.24)] transition-transform duration-150 ease-brand hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isLoading ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create workspace'}
           </button>
@@ -82,7 +82,7 @@ export function Login() {
 
         <button
           type="button"
-          className="mt-4 text-sm text-slate-500 hover:text-slate-700"
+          className="mt-4 text-sm font-medium text-primary hover:underline"
           onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
         >
           {mode === 'login'
@@ -96,11 +96,11 @@ export function Login() {
 
 function Field({ label, ...props }) {
   return (
-    <label className="flex flex-col gap-1 text-sm text-slate-600">
+    <label className="flex flex-col gap-1 text-sm text-text-muted">
       {label}
       <input
         {...props}
-        className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none"
+        className="h-[46px] rounded-md border border-border bg-surface-elevated px-3.5 text-sm text-text outline-none focus:border-focus focus:shadow-[0_0_0_3px_rgba(197,82,255,0.18)]"
       />
     </label>
   );

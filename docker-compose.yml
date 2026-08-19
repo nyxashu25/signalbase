@@ -1,4 +1,4 @@
-name: signalbase
+name: datapit
 
 services:
   postgres:
@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_USER: signalbase
       POSTGRES_PASSWORD: signalbase
-      POSTGRES_DB: signalbase
+      POSTGRES_DB: datapit
     ports:
       - '5432:5432'
     volumes:
@@ -51,7 +51,7 @@ services:
       dockerfile: Dockerfile
     env_file: ./backend/.env
     environment:
-      DATABASE_URL: postgresql://signalbase:signalbase@postgres:5432/signalbase
+      DATABASE_URL: postgresql://signalbase:signalbase@postgres:5432/datapit
       REDIS_URL: redis://redis:6379
       ELASTICSEARCH_URL: http://elasticsearch:9200
     ports:
@@ -74,7 +74,7 @@ services:
     command: ['npm', 'run', 'worker']
     env_file: ./backend/.env
     environment:
-      DATABASE_URL: postgresql://signalbase:signalbase@postgres:5432/signalbase
+      DATABASE_URL: postgresql://signalbase:signalbase@postgres:5432/datapit
       REDIS_URL: redis://redis:6379
       ELASTICSEARCH_URL: http://elasticsearch:9200
     depends_on:

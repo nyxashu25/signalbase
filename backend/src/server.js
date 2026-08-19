@@ -9,7 +9,7 @@ async function main() {
 
   const app = createApp();
   const server = app.listen(env.PORT, () => {
-    logger.info(`SignalBase API listening on :${env.PORT} (${env.NODE_ENV})`);
+    logger.info(`DataPit API listening on :${env.PORT} (${env.NODE_ENV})`);
   });
 
   const shutdown = async (signal) => {

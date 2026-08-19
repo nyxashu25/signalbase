@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="150" viewBox="0 0 560 150" role="img" aria-label="DataPit B2B Sales Intelligence Platform">
+<defs>
+  <linearGradient id="dpGradient" x1="12" y1="20" x2="138" y2="138" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#7C00BA"/><stop offset=".28" stop-color="#AA00FF"/><stop offset=".58" stop-color="#BE3DFF"/><stop offset=".82" stop-color="#C552FF"/><stop offset="1" stop-color="#CF70FF"/></linearGradient>
+  <linearGradient id="wordGradient" x1="325" y1="35" x2="470" y2="100" gradientUnits="userSpaceOnUse"><stop stop-color="#AA00FF"/><stop offset=".55" stop-color="#BE3DFF"/><stop offset="1" stop-color="#DD99FF"/></linearGradient>
+</defs>
+<g transform="translate(4 -5) scale(.88)">
+  <g fill="url(#dpGradient)"><circle cx="21" cy="91" r="5"/><circle cx="29" cy="72" r="6"/><circle cx="41" cy="53" r="7"/><rect x="22" y="101" width="13" height="25" rx="6.5"/><rect x="40" y="84" width="15" height="42" rx="7.5"/><rect x="60" y="63" width="16" height="63" rx="8"/></g>
+  <path d="M79 34H91C121 34 140 52 140 80C140 108 121 126 91 126H79" fill="none" stroke="url(#dpGradient)" stroke-width="23" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<text x="140" y="82" font-family="Montserrat, Arial, sans-serif" font-size="59" font-weight="800" letter-spacing="-2.2" fill="#180022">Data</text>
+<text x="285" y="82" font-family="Montserrat, Arial, sans-serif" font-size="59" font-weight="800" letter-spacing="-2.2" fill="url(#wordGradient)">Pit</text>
+<text x="143" y="115" font-family="Montserrat, Arial, sans-serif" font-size="17" font-weight="600" letter-spacing=".2" fill="#5B4963">B2B Sales Intelligence Platform</text>
+</svg>

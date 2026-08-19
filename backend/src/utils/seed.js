@@ -6,8 +6,8 @@ import { reindexAll } from '../services/indexerService.js';
 import { initializeBalance } from '../services/creditService.js';
 import { logger } from '../config/logger.js';
 
-const DEMO_ORG_SLUG = 'signalbase-demo';
-const DEMO_USER_EMAIL = 'demo@signalbase.io';
+const DEMO_ORG_SLUG = 'datapit-demo';
+const DEMO_USER_EMAIL = 'demo@datapit.io';
 const DEMO_USER_PASSWORD = 'demo1234';
 
 // Deterministic pseudo-UUID so re-running the seed upserts the same rows
@@ -140,7 +140,7 @@ async function seedDemoTenant() {
   const org = await prisma.org.upsert({
     where: { slug: DEMO_ORG_SLUG },
     update: {},
-    create: { slug: DEMO_ORG_SLUG, name: 'SignalBase Demo' },
+    create: { slug: DEMO_ORG_SLUG, name: 'DataPit Demo' },
   });
 
   const workspace = await prisma.workspace.upsert({

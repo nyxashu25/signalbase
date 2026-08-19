@@ -7,11 +7,12 @@ import { sequencesRouter } from './sequences.js';
 import { webhooksRouter } from './webhooks.js';
 import { billingRouter } from './billing.js';
 import { privacyRouter } from './privacy.js';
+import { adminRouter } from './admin.js';
 
 export const apiRouter = Router();
 
 apiRouter.get('/', (req, res) => {
-  res.json({ name: 'SignalBase API', version: 'v1' });
+  res.json({ name: 'DataPit API', version: 'v1' });
 });
 
 apiRouter.use('/auth', authRouter);
@@ -22,6 +23,7 @@ apiRouter.use('/sequences', sequencesRouter);
 apiRouter.use('/webhooks', webhooksRouter);
 apiRouter.use('/billing', billingRouter);
 apiRouter.use('/privacy', privacyRouter);
+apiRouter.use('/admin', adminRouter);
 
 // CRM sync (Salesforce/HubSpot) and the Chrome extension are P2 / out of
 // scope here — CRM sync needs a real sandbox to integrate against, and the

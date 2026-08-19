@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Load test for the search and reveal endpoints against a running local
-// (or staging) SignalBase backend. Two parts:
+// (or staging) DataPit backend. Two parts:
 //   1. Throughput/latency for the two search endpoints (autocannon).
 //   2. A concurrency stress test of the credit-reservation Lua script:
 //      many parallel reveal requests racing for the SAME never-before-
@@ -19,7 +19,7 @@ const CONNECTIONS = 10;
 const RACE_CONCURRENCY = 20;
 
 async function registerThrowawayAccount() {
-  const email = `loadtest-${randomUUID()}@signalbase.local`;
+  const email = `loadtest-${randomUUID()}@datapit.local`;
   const res = await fetch(`${BASE_URL}/api/v1/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

@@ -37,7 +37,7 @@ const exporter = process.env.OTEL_EXPORTER_OTLP_ENDPOINT
 
 const sdk = new NodeSDK({
   resource: new Resource({
-    [ATTR_SERVICE_NAME]: process.env.OTEL_SERVICE_NAME || 'signalbase-backend',
+    [ATTR_SERVICE_NAME]: process.env.OTEL_SERVICE_NAME || 'datapit-backend',
   }),
   traceExporter: exporter,
   instrumentations: [

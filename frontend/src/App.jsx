@@ -8,6 +8,17 @@ import { Login } from './pages/Login.jsx';
 import { People } from './pages/People.jsx';
 import { Companies } from './pages/Companies.jsx';
 import { Placeholder } from './pages/Placeholder.jsx';
+import { Profile } from './pages/Profile.jsx';
+import { AddCredits } from './pages/AddCredits.jsx';
+import { Home } from './pages/marketing/Home.jsx';
+import { Pricing } from './pages/marketing/Pricing.jsx';
+import { AdminLayout } from './layouts/AdminLayout.jsx';
+import { RequireSuperAdmin } from './components/RequireSuperAdmin.jsx';
+import { AdminLogin } from './pages/admin/AdminLogin.jsx';
+import { AdminDashboard } from './pages/admin/AdminDashboard.jsx';
+import { AdminUsers } from './pages/admin/AdminUsers.jsx';
+import { AdminUserDetail } from './pages/admin/AdminUserDetail.jsx';
+import { AdminBilling } from './pages/admin/AdminBilling.jsx';
 import { authApi } from './api/authApi.js';
 import { setSession, clearSession } from './store/authSlice.js';
 
@@ -39,9 +50,11 @@ export function App() {
 
   return (
     <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/pricing" element={<Pricing />} />
       <Route path="/login" element={<Login />} />
 
-      <Route element={<RequireAuth />}>
+      <Route path="/app" element={<RequireAuth />}>
         <Route element={<AppLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="people" element={<People />} />
@@ -49,6 +62,18 @@ export function App() {
           <Route path="lists" element={<Placeholder title="Lists" />} />
           <Route path="sequences" element={<Placeholder title="Sequences" />} />
           <Route path="billing" element={<Placeholder title="Billing" />} />
+          <Route path="billing/add-credits" element={<AddCredits />} />
+          <Route path="profile" element={<Profile />} />
+        </Route>
+      </Route>
+
+      <Route path="/control/login" element={<AdminLogin />} />
+      <Route path="/control" element={<RequireSuperAdmin />}>
+        <Route element={<AdminLayout />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="users/:userId" element={<AdminUserDetail />} />
+          <Route path="billing" element={<AdminBilling />} />
         </Route>
       </Route>
     </Routes>

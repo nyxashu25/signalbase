@@ -5,9 +5,9 @@
 # a bastion host) — this script does not schedule itself.
 #
 # Usage:
-#   DATABASE_URL=postgresql://user:pass@host:5432/signalbase \
-#   BACKUP_DIR=/var/backups/signalbase \
-#   S3_BUCKET=s3://signalbase-backups \
+#   DATABASE_URL=postgresql://user:pass@host:5432/datapit \
+#   BACKUP_DIR=/var/backups/datapit \
+#   S3_BUCKET=s3://datapit-backups \
 #   ./scripts/backup-postgres.sh
 #
 # Restore:
@@ -23,7 +23,7 @@ set -euo pipefail
 BACKUP_DIR="${BACKUP_DIR:-./backups}"
 RETENTION_DAYS="${RETENTION_DAYS:-14}"
 TIMESTAMP=$(date -u +%Y%m%dT%H%M%SZ)
-FILENAME="signalbase-${TIMESTAMP}.dump"
+FILENAME="datapit-${TIMESTAMP}.dump"
 
 mkdir -p "$BACKUP_DIR"
 
@@ -41,6 +41,6 @@ if [ -n "${S3_BUCKET:-}" ]; then
 fi
 
 echo "Pruning local backups older than ${RETENTION_DAYS} days..."
-find "$BACKUP_DIR" -name 'signalbase-*.dump' -mtime "+${RETENTION_DAYS}" -delete
+find "$BACKUP_DIR" -name 'datapit-*.dump' -mtime "+${RETENTION_DAYS}" -delete
 
 echo "Done."

@@ -1,4 +1,4 @@
-# SignalBase — B2B Sales Intelligence Platform
+# DataPit — B2B Sales Intelligence Platform
 
 An Apollo.io / Slintel / 6sense-style sales intelligence platform built with **Node.js + Express**
 on the backend and **React + Vite** on the frontend. It demonstrates the full architecture of a
@@ -69,7 +69,7 @@ docker compose exec api npm run seed             # sample data + demo user
 
 - Web app: <http://localhost:5173>
 - API: <http://localhost:4000/api/v1>
-- **Demo login:** `demo@signalbase.io` / `demo1234`
+- **Demo login:** `demo@datapit.io` / `demo1234`
 
 ## 🛠 Quick start (manual / dev)
 

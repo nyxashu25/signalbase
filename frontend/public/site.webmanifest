@@ -1,0 +1,21 @@
+{
+  "name": "DataPit",
+  "short_name": "DataPit",
+  "description": "B2B Sales Intelligence Platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#110019",
+  "theme_color": "#610091",
+  "icons": [
+    {
+      "src": "android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
