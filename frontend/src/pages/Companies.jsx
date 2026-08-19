@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useSearchCompaniesQuery } from '../api/searchApi.js';
 import { FacetPanel } from '../components/FacetPanel.jsx';
 import { Pagination } from '../components/Pagination.jsx';
+import { AddToListButton } from '../components/AddToListButton.jsx';
 
 const PAGE_SIZE = 25;
 const EMPTY_FILTERS = { industry: [], location: [], techStack: [] };
@@ -40,7 +41,7 @@ export function Companies() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold">Companies</h1>
+      <h1 className="text-xl font-semibold text-text">Companies</h1>
       <input
         type="search"
         placeholder="Search by company name…"
@@ -49,51 +50,47 @@ export function Companies() {
           setPage(1);
           setQ(e.target.value);
         }}
-        className="mt-4 w-full max-w-md rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
+        className="mt-4 w-full max-w-md rounded-md border border-border bg-surface-elevated px-3 py-2 text-sm text-text focus:border-focus focus:outline-none"
       />
 
       <div className="mt-6 flex gap-8">
         <FacetPanel groups={facetGroups} />
 
-        <div className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white">
-          {isError && (
-            <p className="p-4 text-sm text-red-600">Search failed. Is the backend running?</p>
-          )}
+        <div className="min-w-0 flex-1 rounded-lg border border-border bg-surface-elevated">
+          {isError && <p className="p-4 text-sm text-red-600">Search failed. Is the backend running?</p>}
 
           {!isError && (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-slate-200 text-left text-xs font-medium uppercase tracking-wide text-slate-400">
+                  <tr className="border-b border-border text-left text-xs font-medium uppercase tracking-wide text-text-muted">
                     <th className="px-4 py-3">Name</th>
                     <th className="px-4 py-3">Domain</th>
                     <th className="px-4 py-3">Industry</th>
                     <th className="px-4 py-3">Headcount</th>
                     <th className="px-4 py-3">Location</th>
+                    <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {data?.results.map((company) => (
-                    <tr key={company.id} className="border-b border-slate-100 hover:bg-slate-50">
-                      <td className="px-4 py-3 text-sm font-medium text-slate-900">
-                        {company.name}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-600">{company.domain}</td>
-                      <td className="px-4 py-3 text-sm text-slate-600">
-                        {company.industry ?? '—'}
-                      </td>
-                      <td className="px-4 py-3 text-sm tabular-nums text-slate-600">
+                    <tr key={company.id} className="border-b border-border hover:bg-surface">
+                      <td className="px-4 py-3 text-sm font-medium text-text">{company.name}</td>
+                      <td className="px-4 py-3 text-sm text-text-muted">{company.domain}</td>
+                      <td className="px-4 py-3 text-sm text-text-muted">{company.industry ?? '—'}</td>
+                      <td className="px-4 py-3 text-sm tabular-nums text-text-muted">
                         {company.headcountMin ?? '—'}
                         {company.headcountMax ? `–${company.headcountMax}` : ''}
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-600">
-                        {company.location ?? '—'}
+                      <td className="px-4 py-3 text-sm text-text-muted">{company.location ?? '—'}</td>
+                      <td className="px-4 py-3 text-right">
+                        <AddToListButton type="COMPANIES" companyId={company.id} />
                       </td>
                     </tr>
                   ))}
                   {data && data.results.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-400">
+                      <td colSpan={6} className="px-4 py-8 text-center text-sm text-text-muted">
                         {isFetching ? 'Searching…' : 'No matches'}
                       </td>
                     </tr>
@@ -104,12 +101,7 @@ export function Companies() {
           )}
 
           {data && (
-            <Pagination
-              page={page}
-              pageSize={PAGE_SIZE}
-              total={data.total}
-              onPageChange={setPage}
-            />
+            <Pagination page={page} pageSize={PAGE_SIZE} total={data.total} onPageChange={setPage} />
           )}
         </div>
       </div>

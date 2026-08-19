@@ -4,26 +4,28 @@ export function FacetPanel({ groups }) {
     <div className="w-56 shrink-0 space-y-6">
       {groups.map((group) => (
         <div key={group.key}>
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-text-muted">
             {group.label}
           </h3>
           <div className="mt-2 flex flex-col gap-1.5">
-            {group.options.length === 0 && <p className="text-xs text-slate-400">No options yet</p>}
+            {group.options.length === 0 && (
+              <p className="text-xs text-text-muted">No options yet</p>
+            )}
             {group.options.map((opt) => (
               <label
                 key={opt.value}
-                className="flex cursor-pointer items-center justify-between gap-2 text-sm text-slate-700"
+                className="flex cursor-pointer items-center justify-between gap-2 text-sm text-text"
               >
                 <span className="flex items-center gap-2">
                   <input
                     type="checkbox"
                     checked={group.selected.includes(opt.value)}
                     onChange={() => group.onToggle(opt.value)}
-                    className="rounded border-slate-300"
+                    className="rounded border-border text-primary focus:ring-focus"
                   />
                   {opt.value}
                 </span>
-                <span className="text-xs tabular-nums text-slate-400">{opt.count}</span>
+                <span className="text-xs tabular-nums text-text-muted">{opt.count}</span>
               </label>
             ))}
           </div>

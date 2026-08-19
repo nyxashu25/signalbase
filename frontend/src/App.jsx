@@ -8,6 +8,11 @@ import { Login } from './pages/Login.jsx';
 import { People } from './pages/People.jsx';
 import { Companies } from './pages/Companies.jsx';
 import { Placeholder } from './pages/Placeholder.jsx';
+import { Lists } from './pages/Lists.jsx';
+import { ListDetail } from './pages/ListDetail.jsx';
+import { Sequences } from './pages/Sequences.jsx';
+import { SequenceBuilder } from './pages/SequenceBuilder.jsx';
+import { SequenceDetail } from './pages/SequenceDetail.jsx';
 import { Profile } from './pages/Profile.jsx';
 import { AddCredits } from './pages/AddCredits.jsx';
 import { Home } from './pages/marketing/Home.jsx';
@@ -71,8 +76,11 @@ export function App() {
           <Route index element={<Dashboard />} />
           <Route path="people" element={<People />} />
           <Route path="companies" element={<Companies />} />
-          <Route path="lists" element={<Placeholder title="Lists" />} />
-          <Route path="sequences" element={<Placeholder title="Sequences" />} />
+          <Route path="lists" element={<Lists />} />
+          <Route path="lists/:id" element={<ListDetail />} />
+          <Route path="sequences" element={<Sequences />} />
+          <Route path="sequences/new" element={<SequenceBuilder />} />
+          <Route path="sequences/:id" element={<SequenceDetail />} />
           <Route path="billing" element={<Placeholder title="Billing" />} />
           <Route path="billing/add-credits" element={<AddCredits />} />
           <Route path="profile" element={<Profile />} />

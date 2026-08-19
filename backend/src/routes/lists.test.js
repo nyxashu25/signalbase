@@ -14,6 +14,15 @@ async function registerOrg(orgName, email) {
   return { accessToken: res.body.accessToken, workspaceId: res.body.workspace.id };
 }
 
+async function seedContact() {
+  const company = await prisma.company.create({
+    data: { name: 'Nova Systems', domain: `novasystems-${Date.now()}.com` },
+  });
+  return prisma.contact.create({
+    data: { companyId: company.id, firstName: 'Jordan', lastName: 'Bennett' },
+  });
+}
+
 describe('lists: multi-tenant isolation + RBAC', () => {
   beforeEach(async () => {
     await resetDb();
@@ -105,5 +114,141 @@ describe('lists: multi-tenant isolation + RBAC', () => {
       .delete(`/api/v1/lists/${listId}`)
       .set('Authorization', `Bearer ${owner.accessToken}`);
     expect(ownerDelete.status).toBe(204);
+  });
+});
+
+describe('list items', () => {
+  beforeEach(async () => {
+    await resetDb();
+    await resetRedis();
+  });
+
+  afterAll(async () => {
+    await prisma.$disconnect();
+  });
+
+  it('adds a contact to a CONTACTS list and it shows up in the list detail with company info', async () => {
+    const owner = await registerOrg('Org A', 'owner@org-a.test');
+    const contact = await seedContact();
+
+    const createRes = await request(app)
+      .post('/api/v1/lists')
+      .set('Authorization', `Bearer ${owner.accessToken}`)
+      .send({ name: 'Leads', type: 'CONTACTS' });
+    const listId = createRes.body.list.id;
+
+    const addRes = await request(app)
+      .post(`/api/v1/lists/${listId}/items`)
+      .set('Authorization', `Bearer ${owner.accessToken}`)
+      .send({ contactId: contact.id });
+    expect(addRes.status).toBe(201);
+
+    const showRes = await request(app)
+      .get(`/api/v1/lists/${listId}`)
+      .set('Authorization', `Bearer ${owner.accessToken}`);
+    expect(showRes.body.list.items).toHaveLength(1);
+    expect(showRes.body.list.items[0].contact.firstName).toBe('Jordan');
+    expect(showRes.body.list.items[0].contact.company.name).toBe('Nova Systems');
+  });
+
+  it('rejects adding a company to a CONTACTS list (type mismatch)', async () => {
+    const owner = await registerOrg('Org A', 'owner@org-a.test');
+    const company = await prisma.company.create({
+      data: { name: 'Atlas Labs', domain: `atlaslabs-${Date.now()}.com` },
+    });
+
+    const createRes = await request(app)
+      .post('/api/v1/lists')
+      .set('Authorization', `Bearer ${owner.accessToken}`)
+      .send({ name: 'Leads', type: 'CONTACTS' });
+    const listId = createRes.body.list.id;
+
+    const addRes = await request(app)
+      .post(`/api/v1/lists/${listId}/items`)
+      .set('Authorization', `Bearer ${owner.accessToken}`)
+      .send({ companyId: company.id });
+    expect(addRes.status).toBe(400);
+  });
+
+  it('adding the same contact twice is idempotent, not an error', async () => {
+    const owner = await registerOrg('Org A', 'owner@org-a.test');
+    const contact = await seedContact();
+
+    const createRes = await request(app)
+      .post('/api/v1/lists')
+      .set('Authorization', `Bearer ${owner.accessToken}`)
+      .send({ name: 'Leads', type: 'CONTACTS' });
+    const listId = createRes.body.list.id;
+
+    const first = await request(app)
+      .post(`/api/v1/lists/${listId}/items`)
+      .set('Authorization', `Bearer ${owner.accessToken}`)
+      .send({ contactId: contact.id });
+    const second = await request(app)
+      .post(`/api/v1/lists/${listId}/items`)
+      .set('Authorization', `Bearer ${owner.accessToken}`)
+      .send({ contactId: contact.id });
+
+    expect(first.status).toBe(201);
+    expect(second.status).toBe(201);
+
+    const count = await prisma.listItem.count({ where: { listId } });
+    expect(count).toBe(1);
+  });
+
+  it('removes an item from a list', async () => {
+    const owner = await registerOrg('Org A', 'owner@org-a.test');
+    const contact = await seedContact();
+
+    const createRes = await request(app)
+      .post('/api/v1/lists')
+      .set('Authorization', `Bearer ${owner.accessToken}`)
+      .send({ name: 'Leads', type: 'CONTACTS' });
+    const listId = createRes.body.list.id;
+
+    const addRes = await request(app)
+      .post(`/api/v1/lists/${listId}/items`)
+      .set('Authorization', `Bearer ${owner.accessToken}`)
+      .send({ contactId: contact.id });
+    const itemId = addRes.body.item.id;
+
+    const removeRes = await request(app)
+      .delete(`/api/v1/lists/${listId}/items/${itemId}`)
+      .set('Authorization', `Bearer ${owner.accessToken}`);
+    expect(removeRes.status).toBe(204);
+
+    const showRes = await request(app)
+      .get(`/api/v1/lists/${listId}`)
+      .set('Authorization', `Bearer ${owner.accessToken}`);
+    expect(showRes.body.list.items).toHaveLength(0);
+  });
+
+  it('org B cannot add to or remove from org A\'s list', async () => {
+    const orgA = await registerOrg('Org A', 'owner@org-a.test');
+    const orgB = await registerOrg('Org B', 'owner@org-b.test');
+    const contact = await seedContact();
+
+    const createRes = await request(app)
+      .post('/api/v1/lists')
+      .set('Authorization', `Bearer ${orgA.accessToken}`)
+      .send({ name: "Org A's leads", type: 'CONTACTS' });
+    const listId = createRes.body.list.id;
+
+    const crossTenantAdd = await request(app)
+      .post(`/api/v1/lists/${listId}/items`)
+      .set('Authorization', `Bearer ${orgB.accessToken}`)
+      .send({ contactId: contact.id });
+    expect(crossTenantAdd.status).toBe(404);
+
+    const legitAdd = await request(app)
+      .post(`/api/v1/lists/${listId}/items`)
+      .set('Authorization', `Bearer ${orgA.accessToken}`)
+      .send({ contactId: contact.id });
+    const itemId = legitAdd.body.item.id;
+
+    const crossTenantRemove = await request(app)
+      .delete(`/api/v1/lists/${listId}/items/${itemId}`)
+      .set('Authorization', `Bearer ${orgB.accessToken}`);
+    expect(crossTenantRemove.status).toBe(404);
   });
 });

@@ -1,6 +1,16 @@
 import * as sequenceService from '../services/sequenceService.js';
 import { prisma } from '../config/db.js';
 
+export async function index(req, res) {
+  const sequences = await sequenceService.listSequences(req.auth.workspaceId);
+  res.json({ sequences });
+}
+
+export async function show(req, res) {
+  const sequence = await sequenceService.getSequence(req.auth.workspaceId, req.params.id);
+  res.json({ sequence });
+}
+
 export async function create(req, res) {
   const sequence = await sequenceService.createSequence(
     req.auth.workspaceId,

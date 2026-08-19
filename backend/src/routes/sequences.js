@@ -9,6 +9,8 @@ export const sequencesRouter = Router();
 
 sequencesRouter.use(requireAuth);
 
+sequencesRouter.get('/', asyncHandler(sequenceController.index));
+sequencesRouter.get('/:id', asyncHandler(sequenceController.show));
 sequencesRouter.post(
   '/',
   validateBody(createSequenceSchema),

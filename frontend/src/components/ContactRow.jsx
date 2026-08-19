@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { AddToListButton } from './AddToListButton.jsx';
 
 export function ContactRow({ contact, onReveal }) {
   const [status, setStatus] = useState('idle'); // idle | revealing | error
@@ -17,35 +18,38 @@ export function ContactRow({ contact, onReveal }) {
   }
 
   return (
-    <tr className="border-b border-slate-100 hover:bg-slate-50">
-      <td className="px-4 py-3 text-sm font-medium text-slate-900">
+    <tr className="border-b border-border hover:bg-surface">
+      <td className="px-4 py-3 text-sm font-medium text-text">
         {contact.firstName} {contact.lastName}
       </td>
-      <td className="px-4 py-3 text-sm text-slate-600">{contact.title ?? '—'}</td>
-      <td className="px-4 py-3 text-sm text-slate-600">{contact.company?.name ?? '—'}</td>
-      <td className="px-4 py-3 text-sm text-slate-600">{contact.department ?? '—'}</td>
+      <td className="px-4 py-3 text-sm text-text-muted">{contact.title ?? '—'}</td>
+      <td className="px-4 py-3 text-sm text-text-muted">{contact.company?.name ?? '—'}</td>
+      <td className="px-4 py-3 text-sm text-text-muted">{contact.department ?? '—'}</td>
       <td className="px-4 py-3 text-sm">
         {contact.revealed ? (
-          <span className="text-slate-900">{contact.email}</span>
+          <span className="text-text">{contact.email}</span>
         ) : contact.email ? (
-          <span className="font-mono text-slate-400">{contact.email}</span>
+          <span className="font-mono text-text-muted">{contact.email}</span>
         ) : (
-          <span className="text-slate-300">Not found yet</span>
+          <span className="text-ink-300">Not found yet</span>
         )}
         {status === 'error' && <div className="mt-1 text-xs text-red-600">{error}</div>}
       </td>
-      <td className="px-4 py-3 text-right">
-        {!contact.revealed && (
-          <button
-            type="button"
-            onClick={handleReveal}
-            disabled={status === 'revealing'}
-            title="Spends 1 credit — finds and unlocks this contact's email"
-            className="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:border-slate-400 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {status === 'revealing' ? 'Revealing…' : 'Reveal'}
-          </button>
-        )}
+      <td className="px-4 py-3">
+        <div className="flex items-center justify-end gap-2">
+          {!contact.revealed && (
+            <button
+              type="button"
+              onClick={handleReveal}
+              disabled={status === 'revealing'}
+              title="Spends 1 credit — finds and unlocks this contact's email"
+              className="rounded-md border border-border px-2 py-1 text-xs text-text-muted hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {status === 'revealing' ? 'Revealing…' : 'Reveal'}
+            </button>
+          )}
+          <AddToListButton type="CONTACTS" contactId={contact.id} />
+        </div>
       </td>
     </tr>
   );

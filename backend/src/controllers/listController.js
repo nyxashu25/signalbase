@@ -19,3 +19,13 @@ export async function destroy(req, res) {
   await listService.deleteList(req.auth.workspaceId, req.params.id);
   res.status(204).end();
 }
+
+export async function addItem(req, res) {
+  const item = await listService.addItem(req.auth.workspaceId, req.params.id, req.body);
+  res.status(201).json({ item });
+}
+
+export async function removeItem(req, res) {
+  await listService.removeItem(req.auth.workspaceId, req.params.id, req.params.itemId);
+  res.status(204).end();
+}

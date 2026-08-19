@@ -4,7 +4,7 @@ export function Pagination({ page, pageSize, total, onPageChange }) {
   const end = Math.min(page * pageSize, total);
 
   return (
-    <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3 text-sm text-slate-500">
+    <div className="flex items-center justify-between border-t border-border px-4 py-3 text-sm text-text-muted">
       <span>
         {start}–{end} of {total}
       </span>
@@ -13,7 +13,7 @@ export function Pagination({ page, pageSize, total, onPageChange }) {
           type="button"
           disabled={page <= 1}
           onClick={() => onPageChange(page - 1)}
-          className="rounded-md border border-slate-200 px-3 py-1 disabled:opacity-40"
+          className="rounded-md border border-border px-3 py-1 disabled:opacity-40"
         >
           Previous
         </button>
@@ -21,7 +21,7 @@ export function Pagination({ page, pageSize, total, onPageChange }) {
           type="button"
           disabled={page >= totalPages}
           onClick={() => onPageChange(page + 1)}
-          className="rounded-md border border-slate-200 px-3 py-1 disabled:opacity-40"
+          className="rounded-md border border-border px-3 py-1 disabled:opacity-40"
         >
           Next
         </button>

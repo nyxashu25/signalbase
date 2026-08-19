@@ -4,6 +4,33 @@ import { sendEmail } from './espService.js';
 import { isSuppressed } from './suppressionService.js';
 import { logger } from '../config/logger.js';
 
+export async function listSequences(workspaceId) {
+  const sequences = await prisma.sequence.findMany({
+    where: { workspaceId },
+    orderBy: { createdAt: 'desc' },
+    include: {
+      _count: { select: { steps: true, enrollments: true } },
+    },
+  });
+
+  return sequences;
+}
+
+export async function getSequence(workspaceId, sequenceId) {
+  const sequence = await prisma.sequence.findFirst({
+    where: { id: sequenceId, workspaceId },
+    include: {
+      steps: { orderBy: { order: 'asc' } },
+      enrollments: {
+        orderBy: { enrolledAt: 'desc' },
+        include: { contact: { include: { company: true } } },
+      },
+    },
+  });
+  if (!sequence) throw new ApiError(404, 'Sequence not found');
+  return sequence;
+}
+
 export async function createSequence(workspaceId, createdById, { name, steps }) {
   return prisma.sequence.create({
     data: {
