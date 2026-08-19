@@ -26,3 +26,11 @@ export const searchPeopleQuerySchema = z.object({
   location: stringArray,
   ...pagination,
 });
+
+// Export takes the same filters as search but no pagination — it always
+// exports the full (capped) matching set in one shot.
+export const exportCompaniesQuerySchema = searchCompaniesQuerySchema.omit({
+  page: true,
+  pageSize: true,
+});
+export const exportPeopleQuerySchema = searchPeopleQuerySchema.omit({ page: true, pageSize: true });

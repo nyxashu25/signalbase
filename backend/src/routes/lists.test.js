@@ -252,3 +252,96 @@ describe('list items', () => {
     expect(crossTenantRemove.status).toBe(404);
   });
 });
+
+describe('list export', () => {
+  beforeEach(async () => {
+    await resetDb();
+    await resetRedis();
+  });
+
+  afterAll(async () => {
+    await prisma.$disconnect();
+  });
+
+  it('exports a CONTACTS list as CSV with the email masked (not revealed for this workspace)', async () => {
+    const owner = await registerOrg('Org A', 'owner@org-a.test');
+    const company = await prisma.company.create({
+      data: { name: 'Nova Systems', domain: `novasystems-${Date.now()}.com` },
+    });
+    const contact = await prisma.contact.create({
+      data: {
+        companyId: company.id,
+        firstName: 'Jordan',
+        lastName: 'Bennett',
+        email: 'jordan.bennett@novasystems.com',
+      },
+    });
+
+    const createRes = await request(app)
+      .post('/api/v1/lists')
+      .set('Authorization', `Bearer ${owner.accessToken}`)
+      .send({ name: 'Q3 Leads!', type: 'CONTACTS' });
+    const listId = createRes.body.list.id;
+    await request(app)
+      .post(`/api/v1/lists/${listId}/items`)
+      .set('Authorization', `Bearer ${owner.accessToken}`)
+      .send({ contactId: contact.id });
+
+    const res = await request(app)
+      .get(`/api/v1/lists/${listId}/export`)
+      .set('Authorization', `Bearer ${owner.accessToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toMatch(/text\/csv/);
+    // The list name is slugified into the filename.
+    expect(res.headers['content-disposition']).toMatch(/filename="q3-leads\.csv"/);
+    expect(res.text).toContain('Jordan,Bennett,,Nova Systems');
+    expect(res.text).not.toContain('jordan.bennett@novasystems.com');
+    expect(res.text).toContain('Masked');
+  });
+
+  it('exports a COMPANIES list as CSV', async () => {
+    const owner = await registerOrg('Org A', 'owner@org-a.test');
+    const company = await prisma.company.create({
+      data: {
+        name: 'Atlas Labs',
+        domain: `atlaslabs-${Date.now()}.com`,
+        industry: 'SaaS',
+        techStack: ['React', 'AWS'],
+      },
+    });
+
+    const createRes = await request(app)
+      .post('/api/v1/lists')
+      .set('Authorization', `Bearer ${owner.accessToken}`)
+      .send({ name: 'Target Accounts', type: 'COMPANIES' });
+    const listId = createRes.body.list.id;
+    await request(app)
+      .post(`/api/v1/lists/${listId}/items`)
+      .set('Authorization', `Bearer ${owner.accessToken}`)
+      .send({ companyId: company.id });
+
+    const res = await request(app)
+      .get(`/api/v1/lists/${listId}/export`)
+      .set('Authorization', `Bearer ${owner.accessToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('Atlas Labs');
+    expect(res.text).toContain('React; AWS');
+  });
+
+  it('blocks cross-tenant export', async () => {
+    const orgA = await registerOrg('Org A', 'owner@org-a.test');
+    const orgB = await registerOrg('Org B', 'owner@org-b.test');
+    const createRes = await request(app)
+      .post('/api/v1/lists')
+      .set('Authorization', `Bearer ${orgA.accessToken}`)
+      .send({ name: "Org A's leads", type: 'CONTACTS' });
+
+    const res = await request(app)
+      .get(`/api/v1/lists/${createRes.body.list.id}/export`)
+      .set('Authorization', `Bearer ${orgB.accessToken}`);
+
+    expect(res.status).toBe(404);
+  });
+});

@@ -13,6 +13,7 @@ listsRouter.use(requireAuth);
 listsRouter.get('/', asyncHandler(listController.index));
 listsRouter.post('/', validateBody(createListSchema), asyncHandler(listController.create));
 listsRouter.get('/:id', asyncHandler(listController.show));
+listsRouter.get('/:id/export', asyncHandler(listController.exportCsv));
 listsRouter.delete('/:id', requireRole('ADMIN'), asyncHandler(listController.destroy));
 listsRouter.post(
   '/:id/items',

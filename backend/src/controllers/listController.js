@@ -1,4 +1,7 @@
 import * as listService from '../services/listService.js';
+import { attachRevealStatus } from '../services/maskingService.js';
+import { toCsv } from '../utils/csv.js';
+import { sendCsv, COMPANY_COLUMNS, CONTACT_COLUMNS } from './searchController.js';
 
 export async function index(req, res) {
   const lists = await listService.listLists(req.auth.workspaceId);
@@ -28,4 +31,25 @@ export async function addItem(req, res) {
 export async function removeItem(req, res) {
   await listService.removeItem(req.auth.workspaceId, req.params.id, req.params.itemId);
   res.status(204).end();
+}
+
+function csvSafeFilename(name) {
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  return `${slug || 'list'}.csv`;
+}
+
+export async function exportCsv(req, res) {
+  const list = await listService.getList(req.auth.workspaceId, req.params.id);
+  const filename = csvSafeFilename(list.name);
+
+  if (list.type === 'CONTACTS') {
+    const contacts = await attachRevealStatus(
+      req.auth.workspaceId,
+      list.items.map((item) => item.contact),
+    );
+    return sendCsv(res, filename, toCsv(contacts, CONTACT_COLUMNS));
+  }
+
+  const companies = list.items.map((item) => item.company);
+  sendCsv(res, filename, toCsv(companies, COMPANY_COLUMNS));
 }

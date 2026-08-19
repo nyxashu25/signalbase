@@ -205,4 +205,55 @@ describe('search API', () => {
       expect(res.status).toBe(404);
     });
   });
+
+  describe('CSV export', () => {
+    it('exports companies as CSV, respecting the current filters', async () => {
+      await seedFixtures();
+      const { accessToken } = await registerAndLogin('Acme', 'owner@acme.test');
+
+      const res = await request(app)
+        .get('/api/v1/search/companies/export')
+        .query({ industry: 'SaaS' })
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.headers['content-type']).toMatch(/text\/csv/);
+      expect(res.headers['content-disposition']).toMatch(/attachment; filename="datapit-companies\.csv"/);
+      const lines = res.text.trim().split('\r\n');
+      expect(lines[0]).toBe('Name,Domain,Industry,Headcount Min,Headcount Max,Location,Tech Stack,LinkedIn');
+      expect(lines).toHaveLength(2); // header + Nova Systems only
+      expect(lines[1]).toContain('Nova Systems');
+    });
+
+    it('exports people as CSV with emails masked unless revealed for this workspace', async () => {
+      const { contact } = await seedFixtures();
+      const orgA = await registerAndLogin('Org A', 'owner@org-a.test');
+      const orgB = await registerAndLogin('Org B', 'owner@org-b.test');
+
+      await prisma.emailReveal.create({
+        data: {
+          workspaceId: orgA.workspaceId,
+          contactId: contact.id,
+          revealedById: (
+            await prisma.membership.findFirstOrThrow({ where: { workspaceId: orgA.workspaceId } })
+          ).userId,
+        },
+      });
+
+      const asA = await request(app)
+        .get('/api/v1/search/people/export')
+        .set('Authorization', `Bearer ${orgA.accessToken}`);
+      const asB = await request(app)
+        .get('/api/v1/search/people/export')
+        .set('Authorization', `Bearer ${orgB.accessToken}`);
+
+      expect(asA.status).toBe(200);
+      expect(asA.headers['content-disposition']).toMatch(/filename="datapit-people\.csv"/);
+      expect(asA.text).toContain('jordan.bennett@novasystems.com');
+      expect(asA.text).toContain('Revealed');
+
+      expect(asB.text).not.toContain('jordan.bennett@novasystems.com');
+      expect(asB.text).toContain('Masked');
+    });
+  });
 });

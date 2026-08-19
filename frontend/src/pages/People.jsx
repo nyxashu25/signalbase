@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { searchApi, useSearchPeopleQuery } from '../api/searchApi.js';
+import { searchApi, useSearchPeopleQuery, toQueryString } from '../api/searchApi.js';
 import { useRevealContactMutation } from '../api/contactsApi.js';
 import { FacetPanel } from '../components/FacetPanel.jsx';
 import { Pagination } from '../components/Pagination.jsx';
 import { ContactRow } from '../components/ContactRow.jsx';
+import { ExportCsvButton } from '../components/ExportCsvButton.jsx';
 
 const PAGE_SIZE = 25;
 const EMPTY_FILTERS = { seniority: [], department: [], industry: [], location: [] };
@@ -60,7 +61,10 @@ export function People() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-text">People</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold text-text">People</h1>
+        <ExportCsvButton path={`/search/people/export?${toQueryString({ q: q || undefined, ...filters })}`} />
+      </div>
       <input
         type="search"
         placeholder="Search by name or title…"

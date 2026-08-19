@@ -3,7 +3,7 @@ import { baseApi } from './baseApi.js';
 // fetchBaseQuery's default params handling doesn't repeat array values as
 // repeated keys (which is what the backend's zod `stringArray` preprocessor
 // expects) — build the query string explicitly instead.
-function toQueryString(params) {
+export function toQueryString(params) {
   const qs = new URLSearchParams();
   for (const [key, value] of Object.entries(params ?? {})) {
     if (value === undefined || value === null || value === '') continue;

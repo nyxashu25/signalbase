@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom';
 import { useGetListQuery, useRemoveListItemMutation } from '../api/listsApi.js';
+import { ExportCsvButton } from '../components/ExportCsvButton.jsx';
 
 export function ListDetail() {
   const { id } = useParams();
@@ -25,6 +26,7 @@ export function ListDetail() {
             {isContacts ? 'Contacts' : 'Companies'} &middot; {list.items.length} saved
           </p>
         </div>
+        {list.items.length > 0 && <ExportCsvButton path={`/lists/${list.id}/export`} />}
       </div>
 
       <div className="mt-6 overflow-x-auto rounded-lg border border-border bg-surface-elevated">

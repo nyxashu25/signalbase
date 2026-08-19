@@ -83,6 +83,20 @@ export async function searchCompanies({
   };
 }
 
+// A single unpaginated export query, capped rather than paginated — this
+// dataset is small enough that scrolling/streaming would be premature.
+const EXPORT_LIMIT = 5000;
+
+export async function exportCompanies(filters) {
+  const { results } = await searchCompanies({ ...filters, page: 1, pageSize: EXPORT_LIMIT });
+  return results;
+}
+
+export async function exportPeople(filters) {
+  const { results } = await searchPeople({ ...filters, page: 1, pageSize: EXPORT_LIMIT });
+  return results;
+}
+
 export async function getCompanyDetail(workspaceId, companyId) {
   const company = await prisma.company.findUnique({
     where: { id: companyId },

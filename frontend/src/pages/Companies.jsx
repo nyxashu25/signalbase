@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useSearchCompaniesQuery } from '../api/searchApi.js';
+import { useSearchCompaniesQuery, toQueryString } from '../api/searchApi.js';
 import { FacetPanel } from '../components/FacetPanel.jsx';
 import { Pagination } from '../components/Pagination.jsx';
 import { AddToListButton } from '../components/AddToListButton.jsx';
+import { ExportCsvButton } from '../components/ExportCsvButton.jsx';
 
 const PAGE_SIZE = 25;
 const EMPTY_FILTERS = { industry: [], location: [], techStack: [] };
@@ -17,12 +18,8 @@ export function Companies() {
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [page, setPage] = useState(1);
 
-  const { data, isFetching, isError } = useSearchCompaniesQuery({
-    q: q || undefined,
-    ...filters,
-    page,
-    pageSize: PAGE_SIZE,
-  });
+  const searchArgs = { q: q || undefined, ...filters, page, pageSize: PAGE_SIZE };
+  const { data, isFetching, isError } = useSearchCompaniesQuery(searchArgs);
 
   function updateFacet(key, value) {
     setPage(1);
@@ -42,7 +39,12 @@ export function Companies() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-text">Companies</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold text-text">Companies</h1>
+        <ExportCsvButton
+          path={`/search/companies/export?${toQueryString({ q: q || undefined, ...filters })}`}
+        />
+      </div>
       <input
         type="search"
         placeholder="Search by company name…"
