@@ -73,3 +73,17 @@ body {
   background: var(--dp-bg);
   color: var(--dp-text);
 }
+
+@keyframes float-up {
+  0% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+}

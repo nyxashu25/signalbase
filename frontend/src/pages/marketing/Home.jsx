@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { MarketingNav } from '../../components/marketing/MarketingNav.jsx';
 import { MarketingFooter } from '../../components/marketing/MarketingFooter.jsx';
-import { ProductMockup } from '../../components/marketing/ProductMockup.jsx';
+import { HeroDemo } from '../../components/marketing/HeroDemo.jsx';
 import { RevealMockup } from '../../components/marketing/RevealMockup.jsx';
 import { SequenceMockup } from '../../components/marketing/SequenceMockup.jsx';
 import { CreditLedgerMockup } from '../../components/marketing/CreditLedgerMockup.jsx';
@@ -91,7 +91,7 @@ export function Home() {
             </p>
           </div>
 
-          <ProductMockup className="lg:translate-x-4" />
+          <HeroDemo className="lg:translate-x-4" />
         </div>
       </section>
 
