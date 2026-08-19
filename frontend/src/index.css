@@ -55,6 +55,25 @@
   );
 }
 
+/* Auto: follows the OS/browser preference when the user hasn't picked an
+   explicit theme (see useTheme.js — [data-theme] is only ever stamped once
+   someone overrides the default via ThemeToggle). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --dp-bg: #0a0011;
+    --dp-surface: #14001d;
+    --dp-surface-elevated: #1d002a;
+    --dp-text: #ffffff;
+    --dp-text-muted: #baafc0;
+    --dp-border: #3c1551;
+    --dp-primary: #aa00ff;
+    --dp-primary-hover: #be3dff;
+    --dp-accent: #cf70ff;
+    --dp-focus: #c552ff;
+  }
+}
+
+/* Explicit override, either direction, always wins over the OS preference. */
 [data-theme='dark'] {
   --dp-bg: #0a0011;
   --dp-surface: #14001d;

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { ProfileMenu } from '../components/ProfileMenu.jsx';
+import { ThemeToggle } from '../components/ThemeToggle.jsx';
 
 const NAV_ITEMS = [
   { to: '/app', label: 'Dashboard', end: true },
@@ -79,7 +80,10 @@ export function AppLayout() {
             </button>
             <span className="truncate text-sm font-medium text-text-muted">{workspace?.name}</span>
           </div>
-          <ProfileMenu />
+          <div className="flex shrink-0 items-center gap-1">
+            <ThemeToggle />
+            <ProfileMenu />
+          </div>
         </header>
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           <Outlet />

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { ThemeToggle } from '../ThemeToggle.jsx';
 
 const LINKS = [
   { to: '/product', label: 'Product' },
@@ -53,6 +54,8 @@ export function MarketingNav() {
               </Link>
             </>
           )}
+
+          <ThemeToggle />
 
           <button
             type="button"

@@ -6,6 +6,21 @@
     <meta name="theme-color" content="#7C00BA" />
     <title>DataPit</title>
 
+    <script>
+      // Runs before the stylesheet paints, so an explicit saved preference
+      // (see useTheme.js) applies immediately instead of flashing the OS
+      // default first. No stored value = follow the OS preference, handled
+      // entirely by CSS (index.css), nothing to do here.
+      (function () {
+        try {
+          var stored = localStorage.getItem('dp-theme');
+          if (stored === 'light' || stored === 'dark') {
+            document.documentElement.setAttribute('data-theme', stored);
+          }
+        } catch (e) {}
+      })();
+    </script>
+
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicons/favicon-32x32.png" sizes="32x32" type="image/png" />
     <link rel="icon" href="/favicons/favicon-192x192.png" sizes="192x192" type="image/png" />
