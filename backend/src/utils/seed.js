@@ -132,6 +132,7 @@ function buildContacts(company, companyIndex) {
       // finder/verifier fills these in as a real (billed) action, not seed data.
       email: null,
       emailVerified: false,
+      linkedinUrl: `https://www.linkedin.com/in/${firstName.toLowerCase()}-${lastName.toLowerCase()}`,
     };
   });
 }

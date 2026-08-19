@@ -93,4 +93,24 @@ describe('ContactRow', () => {
     await user.click(await screen.findByRole('button', { name: /Reveal/ }));
     await waitFor(() => expect(screen.getByText('Not enough credits')).toBeInTheDocument());
   });
+
+  it('links to the LinkedIn profile when linkedinUrl is present', () => {
+    renderRow({
+      id: 'c1',
+      firstName: 'Ada',
+      lastName: 'Lovelace',
+      revealed: false,
+      email: null,
+      linkedinUrl: 'https://www.linkedin.com/in/ada-lovelace',
+    });
+    const link = screen.getByRole('link', { name: "Open Ada Lovelace's LinkedIn profile" });
+    expect(link).toHaveAttribute('href', 'https://www.linkedin.com/in/ada-lovelace');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+
+  it('shows a placeholder instead of a link when linkedinUrl is missing', () => {
+    renderRow({ id: 'c1', firstName: 'Ada', lastName: 'Lovelace', revealed: false, email: null });
+    expect(screen.queryByRole('link', { name: /LinkedIn profile/ })).not.toBeInTheDocument();
+  });
 });

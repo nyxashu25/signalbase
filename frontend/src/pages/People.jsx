@@ -63,7 +63,9 @@ export function People() {
     <div>
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-text">People</h1>
-        <ExportCsvButton path={`/search/people/export?${toQueryString({ q: q || undefined, ...filters })}`} />
+        <ExportCsvButton
+          path={`/search/people/export?${toQueryString({ q: q || undefined, ...filters })}`}
+        />
       </div>
       <input
         type="search"
@@ -80,7 +82,9 @@ export function People() {
         <FacetPanel groups={facetGroups} />
 
         <div className="min-w-0 flex-1 rounded-lg border border-border bg-surface-elevated">
-          {isError && <p className="p-4 text-sm text-red-600">Search failed. Is the backend running?</p>}
+          {isError && (
+            <p className="p-4 text-sm text-red-600">Search failed. Is the backend running?</p>
+          )}
 
           {!isError && (
             <div className="overflow-x-auto">
@@ -89,6 +93,9 @@ export function People() {
                   <tr className="border-b border-border text-left text-xs font-medium uppercase tracking-wide text-text-muted">
                     <th className="px-4 py-3">Name</th>
                     <th className="px-4 py-3">Title</th>
+                    <th className="px-4 py-3">
+                      <span className="sr-only">LinkedIn</span>
+                    </th>
                     <th className="px-4 py-3">Company</th>
                     <th className="px-4 py-3">Department</th>
                     <th className="px-4 py-3">Email</th>
@@ -101,7 +108,7 @@ export function People() {
                   ))}
                   {data && data.results.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-sm text-text-muted">
+                      <td colSpan={7} className="px-4 py-8 text-center text-sm text-text-muted">
                         {isFetching ? 'Searching…' : 'No matches'}
                       </td>
                     </tr>
@@ -112,7 +119,12 @@ export function People() {
           )}
 
           {data && (
-            <Pagination page={page} pageSize={PAGE_SIZE} total={data.total} onPageChange={setPage} />
+            <Pagination
+              page={page}
+              pageSize={PAGE_SIZE}
+              total={data.total}
+              onPageChange={setPage}
+            />
           )}
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { AddToListButton } from './AddToListButton.jsx';
+import { LinkedInIcon } from './LinkedInIcon.jsx';
 import { useGetCreditCostsQuery } from '../api/billingApi.js';
 
 export function ContactRow({ contact, onReveal }) {
@@ -25,6 +26,21 @@ export function ContactRow({ contact, onReveal }) {
         {contact.firstName} {contact.lastName}
       </td>
       <td className="px-4 py-3 text-sm text-text-muted">{contact.title ?? '—'}</td>
+      <td className="px-4 py-3">
+        {contact.linkedinUrl ? (
+          <a
+            href={contact.linkedinUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Open ${contact.firstName} ${contact.lastName}'s LinkedIn profile`}
+            className="inline-flex transition-opacity hover:opacity-80"
+          >
+            <LinkedInIcon className="h-5 w-5" />
+          </a>
+        ) : (
+          <span className="text-sm text-ink-300">—</span>
+        )}
+      </td>
       <td className="px-4 py-3 text-sm text-text-muted">{contact.company?.name ?? '—'}</td>
       <td className="px-4 py-3 text-sm text-text-muted">{contact.department ?? '—'}</td>
       <td className="px-4 py-3 text-sm">
