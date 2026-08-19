@@ -50,6 +50,10 @@ const schema = z.object({
   // sends are simulated (logged, not delivered) so sequences are fully
   // exercisable in local/demo/test without a real ESP account.
   ESP_API_KEY: z.string().optional(),
+  // Required once ESP_API_KEY is set — SendGrid rejects sends whose "from"
+  // isn't a verified sender/domain on the account. Validated at call time
+  // (not here) since it's only conditionally required.
+  ESP_FROM_EMAIL: z.string().email().optional(),
   // Always required (unlike the above) — used to verify inbound webhook
   // signatures even while sends themselves are simulated.
   ESP_WEBHOOK_SECRET: z.string().min(16),
