@@ -26,6 +26,7 @@ export async function resetDb() {
   await prisma.org.deleteMany();
   await prisma.dataSubjectOptOut.deleteMany();
   await prisma.superAdmin.deleteMany();
+  await prisma.paymentGatewaySettings.deleteMany();
 }
 
 // Refresh-token sessions and credit reservations/balances live in Redis,
@@ -37,5 +38,7 @@ export async function resetRedis() {
   keys.push(...(await redis.keys('idempotency:*')));
   keys.push(...(await redis.keys('ratelimit:*')));
   keys.push(...(await redis.keys('stripe:event:*')));
+  keys.push(...(await redis.keys('razorpay:event:*')));
+  keys.push(...(await redis.keys('razorpay:order:*')));
   if (keys.length) await redis.del(...keys);
 }

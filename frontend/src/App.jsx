@@ -31,6 +31,7 @@ import { AdminDashboard } from './pages/admin/AdminDashboard.jsx';
 import { AdminUsers } from './pages/admin/AdminUsers.jsx';
 import { AdminUserDetail } from './pages/admin/AdminUserDetail.jsx';
 import { AdminBilling } from './pages/admin/AdminBilling.jsx';
+import { AdminSettings } from './pages/admin/AdminSettings.jsx';
 import { authApi } from './api/authApi.js';
 import { setSession, clearSession } from './store/authSlice.js';
 
@@ -96,6 +97,7 @@ export function App() {
           <Route path="users" element={<AdminUsers />} />
           <Route path="users/:userId" element={<AdminUserDetail />} />
           <Route path="billing" element={<AdminBilling />} />
+          <Route path="settings" element={<AdminSettings />} />
         </Route>
       </Route>
     </Routes>

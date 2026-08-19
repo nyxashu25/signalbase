@@ -4,6 +4,7 @@ import { redis } from '../config/redis.js';
 import { prisma } from '../config/db.js';
 import { ApiError } from '../middleware/errorHandler.js';
 import { logger } from '../config/logger.js';
+import { findPackage } from '../config/creditPackages.js';
 
 // constructEvent is pure local cryptography (HMAC over the payload with the
 // webhook signing secret) — it needs no API key and makes no network call,
@@ -12,16 +13,6 @@ import { logger } from '../config/logger.js';
 const stripe = new Stripe(env.STRIPE_SECRET_KEY || 'sk_test_placeholder_unused_for_verification');
 
 const PROCESSED_EVENT_TTL_SECONDS = 30 * 24 * 60 * 60; // Stripe retries for up to ~3 days; comfortable margin
-
-// Single source of truth for what a credit package actually costs — priced
-// server-side so a client can never request a discount by sending an
-// arbitrary `credits` value. Must stay in sync with the packages shown on
-// frontend/src/pages/AddCredits.jsx.
-const CREDIT_PACKAGES = {
-  250: 1500,
-  600: 3000,
-  1500: 6500,
-};
 
 export function verifyAndParseEvent(rawBody, signatureHeader) {
   try {
@@ -104,10 +95,11 @@ export async function handleEvent(event) {
  * stripe.checkout.sessions.create call.
  */
 export async function createCheckoutSession({ workspaceId, credits }) {
-  const amountCents = CREDIT_PACKAGES[credits];
-  if (!amountCents) {
+  const pkg = findPackage(credits);
+  if (!pkg) {
     throw new ApiError(400, 'Unknown credit package');
   }
+  const amountCents = pkg.usdCents;
 
   if (!env.STRIPE_SECRET_KEY) {
     const sessionId = `cs_simulated_${workspaceId}_${Date.now()}`;

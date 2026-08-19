@@ -63,6 +63,17 @@ const schema = z.object({
   // needs STRIPE_WEBHOOK_SECRET, not a live API key).
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().min(16),
+
+  // AES-256-GCM key (32 bytes, hex-encoded = 64 chars) for encrypting secrets
+  // stored in the database — currently just the Razorpay key secret /
+  // webhook secret an admin pastes into /control/settings. Always required
+  // (not gated like the provider keys above) since it's infra, not a
+  // provider integration itself. Generate with:
+  //   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+  SETTINGS_ENCRYPTION_KEY: z
+    .string()
+    .length(64, 'SETTINGS_ENCRYPTION_KEY must be a 64-char hex string (32 bytes)')
+    .regex(/^[0-9a-f]+$/i, 'SETTINGS_ENCRYPTION_KEY must be hex'),
 });
 
 const parsed = schema.safeParse(process.env);

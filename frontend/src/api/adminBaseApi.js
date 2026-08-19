@@ -12,6 +12,6 @@ export const adminBaseApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['AdminUsers', 'AdminSummary'],
+  tagTypes: ['AdminUsers', 'AdminSummary', 'RazorpaySettings'],
   endpoints: () => ({}),
 });

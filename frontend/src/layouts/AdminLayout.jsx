@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { to: '/control', label: 'Overview', end: true },
   { to: '/control/users', label: 'Users' },
   { to: '/control/billing', label: 'Billing' },
+  { to: '/control/settings', label: 'Settings' },
 ];
 
 export function AdminLayout() {

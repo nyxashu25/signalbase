@@ -10,6 +10,7 @@ import {
   paginationQuerySchema,
   addCreditsSchema,
 } from '../validators/adminValidators.js';
+import { saveRazorpaySettingsSchema } from '../validators/billingValidators.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 export const adminRouter = Router();
@@ -55,4 +56,11 @@ adminRouter.get(
   '/billing/transactions',
   validateQuery(paginationQuerySchema),
   asyncHandler(adminController.listTransactions),
+);
+
+adminRouter.get('/settings/razorpay', asyncHandler(adminController.getRazorpaySettings));
+adminRouter.put(
+  '/settings/razorpay',
+  validateBody(saveRazorpaySettingsSchema),
+  asyncHandler(adminController.saveRazorpaySettings),
 );

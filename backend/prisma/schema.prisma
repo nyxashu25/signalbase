@@ -394,3 +394,22 @@ model DataSubjectOptOut {
   reason      String?
   requestedAt DateTime @default(now())
 }
+
+// ---------------------------------------------------------------------------
+// Platform-wide (not workspace-scoped) payment gateway config, set by a
+// super admin — see paymentSettingsService.js. Single row, id fixed to
+// 'razorpay' in application code rather than a schema default so every
+// read/write path is an explicit, greppable literal.
+// Secrets are AES-256-GCM ciphertext (see utils/crypto.js), never plaintext
+// — the key id itself isn't secret (it's sent to the browser to open the
+// Razorpay Checkout widget) so it's stored as-is.
+// ---------------------------------------------------------------------------
+
+model PaymentGatewaySettings {
+  id                     String   @id
+  keyId                  String?
+  keySecretEncrypted     String?
+  webhookSecretEncrypted String?
+  updatedAt              DateTime @updatedAt
+  updatedById            String?
+}

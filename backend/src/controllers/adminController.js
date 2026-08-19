@@ -1,4 +1,5 @@
 import * as adminService from '../services/adminService.js';
+import * as paymentSettingsService from '../services/paymentSettingsService.js';
 
 export async function getOverview(req, res) {
   res.json(await adminService.getOverview());
@@ -37,4 +38,13 @@ export async function getBillingOverview(req, res) {
 
 export async function listTransactions(req, res) {
   res.json(await adminService.listTransactions(req.validatedQuery));
+}
+
+export async function getRazorpaySettings(req, res) {
+  res.json(await paymentSettingsService.getRazorpaySettings());
+}
+
+export async function saveRazorpaySettings(req, res) {
+  const result = await paymentSettingsService.saveRazorpaySettings(req.body, req.superAdmin.adminId);
+  res.json(result);
 }

@@ -161,4 +161,67 @@ describe('admin data routes', () => {
     expect(transactions.status).toBe(200);
     expect(transactions.body.total).toBe(2); // the ADJUSTMENT and the TOPUP
   });
+
+  describe('/admin/settings/razorpay', () => {
+    it('reports not configured before anything is saved', async () => {
+      const token = await loginAsAdmin();
+
+      const res = await request(app)
+        .get('/api/v1/admin/settings/razorpay')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({
+        configured: false,
+        keyId: null,
+        keySecretLast4: null,
+        hasWebhookSecret: false,
+      });
+    });
+
+    it('saves keys, never echoes the secret back, and reports configured afterward', async () => {
+      const token = await loginAsAdmin();
+
+      const saveRes = await request(app)
+        .put('/api/v1/admin/settings/razorpay')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ keyId: 'rzp_test_abc123', keySecret: 'super-secret-key-value' });
+
+      expect(saveRes.status).toBe(200);
+      expect(saveRes.body.configured).toBe(true);
+      expect(saveRes.body.keyId).toBe('rzp_test_abc123');
+      expect(saveRes.body.keySecretLast4).toBe('alue');
+      expect(JSON.stringify(saveRes.body)).not.toContain('super-secret-key-value');
+
+      // The secret is genuinely encrypted at rest, not just omitted from the API response.
+      const row = await prisma.paymentGatewaySettings.findUnique({ where: { id: 'razorpay' } });
+      expect(row.keySecretEncrypted).not.toContain('super-secret-key-value');
+
+      const readBack = await request(app)
+        .get('/api/v1/admin/settings/razorpay')
+        .set('Authorization', `Bearer ${token}`);
+      expect(readBack.body.configured).toBe(true);
+    });
+
+    it('updating just the key id leaves a previously-saved secret intact', async () => {
+      const token = await loginAsAdmin();
+      await request(app)
+        .put('/api/v1/admin/settings/razorpay')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ keyId: 'rzp_test_original', keySecret: 'original-secret' });
+
+      const updateRes = await request(app)
+        .put('/api/v1/admin/settings/razorpay')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ keyId: 'rzp_test_rotated' });
+
+      expect(updateRes.body.keyId).toBe('rzp_test_rotated');
+      expect(updateRes.body.keySecretLast4).toBe('cret'); // still "original-secret"'s last 4
+    });
+
+    it('rejects an unauthenticated request', async () => {
+      const res = await request(app).get('/api/v1/admin/settings/razorpay');
+      expect(res.status).toBe(401);
+    });
+  });
 });
