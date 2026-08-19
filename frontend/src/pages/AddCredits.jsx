@@ -1,35 +1,17 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import {
-  useListBillingPackagesQuery,
-  useCreateCheckoutSessionMutation,
-  useVerifyRazorpayPaymentMutation,
-} from '../api/billingApi.js';
-
-function loadRazorpayScript() {
-  return new Promise((resolve, reject) => {
-    if (window.Razorpay) return resolve();
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error('Could not load the Razorpay checkout script'));
-    document.body.appendChild(script);
-  });
-}
+import { Link } from 'react-router-dom';
+import { useListBillingPackagesQuery, useCreateCheckoutSessionMutation } from '../api/billingApi.js';
 
 function formatPrice(pkg, currency) {
   return currency === 'INR' ? `₹${(pkg.inrPaise / 100).toLocaleString('en-IN')}` : `$${pkg.usdCents / 100}`;
 }
 
 export function AddCredits() {
-  const navigate = useNavigate();
   const { data: packages } = useListBillingPackagesQuery();
   const [currency, setCurrency] = useState('USD');
   const [selected, setSelected] = useState(null);
   const [createCheckoutSession, { isLoading: startingCheckout }] = useCreateCheckoutSessionMutation();
-  const [verifyPayment] = useVerifyRazorpayPaymentMutation();
   const [error, setError] = useState(null);
-  const [paying, setPaying] = useState(false);
 
   const featured = packages?.find((p) => p.badge)?.credits;
   const activeCredits = selected ?? featured ?? packages?.[0]?.credits;
@@ -39,43 +21,9 @@ export function AddCredits() {
     setError(null);
     try {
       const session = await createCheckoutSession({ credits: activeCredits, currency }).unwrap();
-
-      if (session.provider === 'razorpay') {
-        setPaying(true);
-        await loadRazorpayScript();
-        const checkout = new window.Razorpay({
-          key: session.keyId,
-          order_id: session.orderId,
-          amount: session.amount,
-          currency: session.currency,
-          name: 'DataPit',
-          description: `${activeCredits} credits`,
-          handler: async (response) => {
-            try {
-              await verifyPayment({
-                orderId: response.razorpay_order_id,
-                paymentId: response.razorpay_payment_id,
-                signature: response.razorpay_signature,
-              }).unwrap();
-              navigate('/app/billing');
-            } catch {
-              setError(
-                'Payment went through but we could not verify it automatically — check Billing in a moment, or contact support if credits don’t appear.',
-              );
-              setPaying(false);
-            }
-          },
-          modal: { ondismiss: () => setPaying(false) },
-        });
-        checkout.open();
-        return;
-      }
-
-      // Stripe fallback (simulated until a real key is configured elsewhere).
       window.location.href = session.url;
     } catch (err) {
       setError(err.data?.error?.message || 'Could not start checkout. Please try again.');
-      setPaying(false);
     }
   }
 
@@ -133,10 +81,10 @@ export function AddCredits() {
       <button
         type="button"
         onClick={handleContinue}
-        disabled={startingCheckout || paying || !activePkg}
+        disabled={startingCheckout || !activePkg}
         className="mt-6 rounded-md bg-gradient-action px-5 py-2.5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(148,0,222,0.24)] transition-transform duration-150 ease-brand hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {startingCheckout || paying ? 'Starting checkout…' : 'Continue to payment'}
+        {startingCheckout ? 'Starting checkout…' : 'Continue to payment'}
       </button>
     </div>
   );

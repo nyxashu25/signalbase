@@ -10,7 +10,7 @@ import {
   paginationQuerySchema,
   addCreditsSchema,
 } from '../validators/adminValidators.js';
-import { saveRazorpaySettingsSchema } from '../validators/billingValidators.js';
+import { saveStripeSettingsSchema } from '../validators/billingValidators.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 export const adminRouter = Router();
@@ -58,9 +58,9 @@ adminRouter.get(
   asyncHandler(adminController.listTransactions),
 );
 
-adminRouter.get('/settings/razorpay', asyncHandler(adminController.getRazorpaySettings));
+adminRouter.get('/settings/stripe', asyncHandler(adminController.getStripeSettings));
 adminRouter.put(
-  '/settings/razorpay',
-  validateBody(saveRazorpaySettingsSchema),
-  asyncHandler(adminController.saveRazorpaySettings),
+  '/settings/stripe',
+  validateBody(saveStripeSettingsSchema),
+  asyncHandler(adminController.saveStripeSettings),
 );

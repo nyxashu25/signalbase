@@ -58,15 +58,12 @@ const schema = z.object({
   // signatures even while sends themselves are simulated.
   ESP_WEBHOOK_SECRET: z.string().min(16),
 
-  // Optional — see stripeService.js. When unset, checkout session creation
-  // is simulated; webhook signature verification still works (it only
-  // needs STRIPE_WEBHOOK_SECRET, not a live API key).
-  STRIPE_SECRET_KEY: z.string().optional(),
-  STRIPE_WEBHOOK_SECRET: z.string().min(16),
-
   // AES-256-GCM key (32 bytes, hex-encoded = 64 chars) for encrypting secrets
-  // stored in the database — currently just the Razorpay key secret /
-  // webhook secret an admin pastes into /control/settings. Always required
+  // stored in the database — currently the Stripe secret key and webhook
+  // secret an admin pastes into /control/settings (see
+  // paymentSettingsService.js/stripeService.js; there are no
+  // STRIPE_SECRET_KEY/STRIPE_WEBHOOK_SECRET env vars — Stripe is configured
+  // entirely from the admin panel, not deploy-time config). Always required
   // (not gated like the provider keys above) since it's infra, not a
   // provider integration itself. Generate with:
   //   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"

@@ -2,7 +2,7 @@ import { prisma } from '../config/db.js';
 import { redis } from '../config/redis.js';
 import { getBalance } from './creditService.js';
 import { ApiError } from '../middleware/errorHandler.js';
-import { env } from '../config/env.js';
+import { getStripeSettings } from './paymentSettingsService.js';
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -138,23 +138,25 @@ export async function unsuspendUser(userId) {
 }
 
 export async function getBillingOverview() {
-  const [revenueAgg, transactionCount] = await Promise.all([
+  const [revenueAgg, transactionCount, stripeSettings] = await Promise.all([
     prisma.creditLedgerEntry.aggregate({
       where: { reason: 'TOPUP' },
       _sum: { amountCents: true },
     }),
     prisma.creditLedgerEntry.count({ where: { reason: 'TOPUP' } }),
+    getStripeSettings(),
   ]);
 
   return {
     totalRevenueCents: revenueAgg._sum.amountCents ?? 0,
     transactionCount,
-    // No real Stripe key configured means every checkout is simulated —
-    // see stripeService.createCheckoutSession. Surfaced so the admin billing
-    // screen can say so honestly instead of implying a connected gateway.
+    // No key configured in /control/settings means every checkout is
+    // simulated — see stripeService.createCheckoutSession. Surfaced so the
+    // admin billing screen can say so honestly instead of implying a
+    // connected gateway.
     paymentGateway: {
       provider: 'stripe',
-      connected: Boolean(env.STRIPE_SECRET_KEY),
+      connected: stripeSettings.configured,
     },
   };
 }

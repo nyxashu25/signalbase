@@ -40,11 +40,11 @@ export async function listTransactions(req, res) {
   res.json(await adminService.listTransactions(req.validatedQuery));
 }
 
-export async function getRazorpaySettings(req, res) {
-  res.json(await paymentSettingsService.getRazorpaySettings());
+export async function getStripeSettings(req, res) {
+  res.json(await paymentSettingsService.getStripeSettings());
 }
 
-export async function saveRazorpaySettings(req, res) {
-  const result = await paymentSettingsService.saveRazorpaySettings(req.body, req.superAdmin.adminId);
+export async function saveStripeSettings(req, res) {
+  const result = await paymentSettingsService.saveStripeSettings(req.body, req.superAdmin.adminId);
   res.json(result);
 }

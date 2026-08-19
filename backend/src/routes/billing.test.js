@@ -1,24 +1,25 @@
-import { createHmac } from 'node:crypto';
-import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import Stripe from 'stripe';
 import request from 'supertest';
 import { createApp } from '../app.js';
 import { resetDb, resetRedis } from '../test/dbHelpers.js';
 import { prisma } from '../config/db.js';
-import { env } from '../config/env.js';
 import { getBalance, initializeBalance } from '../services/creditService.js';
-import { saveRazorpaySettings } from '../services/paymentSettingsService.js';
+import { saveStripeSettings } from '../services/paymentSettingsService.js';
+import { createCheckoutSession } from '../services/stripeService.js';
 
 const app = createApp();
-// A local Stripe client with a placeholder key, same as stripeService.js —
-// generateTestHeaderString is pure local crypto, no network/real key needed.
+// A local Stripe client with a placeholder key — generateTestHeaderString is
+// pure local crypto, no network/real key needed, same as stripeService.js's
+// own signature-check client.
 const stripe = new Stripe('sk_test_placeholder_unused_for_verification');
+const TEST_WEBHOOK_SECRET = 'whsec_test_secret_not_a_real_key';
 
 function signedPayload(event) {
   const payload = JSON.stringify(event);
   const header = stripe.webhooks.generateTestHeaderString({
     payload,
-    secret: env.STRIPE_WEBHOOK_SECRET,
+    secret: TEST_WEBHOOK_SECRET,
   });
   return { payload, header };
 }
@@ -53,6 +54,7 @@ describe('POST /webhooks/stripe', () => {
   beforeEach(async () => {
     await resetDb();
     await resetRedis();
+    await saveStripeSettings({ webhookSecret: TEST_WEBHOOK_SECRET }, null);
   });
 
   afterAll(async () => {
@@ -63,6 +65,23 @@ describe('POST /webhooks/stripe', () => {
     const workspace = await makeWorkspace();
     const { payload } = signedPayload(
       checkoutCompletedEvent({ id: 'evt_1', workspaceId: workspace.id, credits: 50 }),
+    );
+
+    const res = await request(app)
+      .post('/api/v1/webhooks/stripe')
+      .set('Content-Type', 'application/json')
+      .set('Stripe-Signature', 't=1,v1=deadbeef')
+      .send(payload);
+
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects a request when no webhook secret is configured', async () => {
+    // Overwrite the beforeEach's configured secret with none.
+    await resetDb();
+    const workspace = await makeWorkspace();
+    const { payload } = signedPayload(
+      checkoutCompletedEvent({ id: 'evt_1b', workspaceId: workspace.id, credits: 50 }),
     );
 
     const res = await request(app)
@@ -129,22 +148,81 @@ describe('POST /billing/checkout-session', () => {
     await resetRedis();
   });
 
-  it('returns a simulated session when no STRIPE_SECRET_KEY is configured', async () => {
-    const registerRes = await request(app).post('/api/v1/auth/register').send({
+  afterAll(async () => {
+    await prisma.$disconnect();
+  });
+
+  async function registerOwner() {
+    const res = await request(app).post('/api/v1/auth/register').send({
       email: 'owner@billing.test',
       password: 'correct-horse-battery',
       name: 'Owner',
       orgName: 'Billing Co',
     });
+    return { accessToken: res.body.accessToken, workspaceId: res.body.workspace.id };
+  }
+
+  it('returns a simulated session when no key is configured in admin settings', async () => {
+    const { accessToken } = await registerOwner();
 
     const res = await request(app)
       .post('/api/v1/billing/checkout-session')
-      .set('Authorization', `Bearer ${registerRes.body.accessToken}`)
+      .set('Authorization', `Bearer ${accessToken}`)
       .send({ credits: 250 });
 
     expect(res.status).toBe(201);
+    expect(res.body.provider).toBe('stripe');
     expect(res.body.sessionId).toMatch(/^cs_simulated_/);
     expect(res.body.url).toContain(res.body.sessionId);
+  });
+
+  // The route always constructs its own real Stripe client from the DB key
+  // (no test seam at the HTTP layer) — the "real Stripe API call" path is
+  // covered at the service level below via an injected fake client instead
+  // of hitting api.stripe.com from the test suite.
+});
+
+describe('stripeService.createCheckoutSession (unit, injected client)', () => {
+  beforeEach(async () => {
+    await resetDb();
+    await resetRedis();
+  });
+
+  afterAll(async () => {
+    await prisma.$disconnect();
+  });
+
+  it('simulates when no key is configured', async () => {
+    const session = await createCheckoutSession({ workspaceId: 'ws_1', credits: 250 });
+    expect(session.sessionId).toMatch(/^cs_simulated_/);
+  });
+
+  it('throws for an unknown credit package', async () => {
+    await saveStripeSettings({ secretKey: 'sk_test_configured' }, null);
+    await expect(createCheckoutSession({ workspaceId: 'ws_1', credits: 999 })).rejects.toThrow(
+      /Unknown credit package/,
+    );
+  });
+
+  it('passes the right amount/currency/metadata to the Stripe client and returns its session', async () => {
+    await saveStripeSettings({ secretKey: 'sk_test_configured' }, null);
+    const create = async (params) => {
+      expect(params.line_items[0].price_data.currency).toBe('inr');
+      expect(params.line_items[0].price_data.unit_amount).toBe(125_000);
+      expect(params.metadata).toEqual({ workspaceId: 'ws_1', credits: '250', amountCents: '125000' });
+      return { id: 'cs_test_inr', url: 'https://checkout.stripe.com/pay/cs_test_inr' };
+    };
+    const makeClient = (key) => {
+      expect(key).toBe('sk_test_configured');
+      return { checkout: { sessions: { create } } };
+    };
+
+    const session = await createCheckoutSession(
+      { workspaceId: 'ws_1', credits: 250, currency: 'INR' },
+      makeClient,
+    );
+
+    expect(session).toEqual({ sessionId: 'cs_test_inr', url: 'https://checkout.stripe.com/pay/cs_test_inr' });
   });
 });
 
@@ -259,186 +337,5 @@ describe('GET /billing/credit-costs', () => {
       CSV_EXPORT: 50,
       SEQUENCE_ENROLLMENT: 250,
     });
-  });
-});
-
-describe('Razorpay checkout flow', () => {
-  beforeEach(async () => {
-    await resetDb();
-    await resetRedis();
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  afterAll(async () => {
-    await prisma.$disconnect();
-  });
-
-  async function registerOwner() {
-    const res = await request(app).post('/api/v1/auth/register').send({
-      email: 'owner@razorpay.test',
-      password: 'correct-horse-battery',
-      name: 'Owner',
-      orgName: 'Razorpay Co',
-    });
-    return { accessToken: res.body.accessToken, workspaceId: res.body.workspace.id };
-  }
-
-  it('checkout-session falls back to the simulated Stripe flow when Razorpay is not configured', async () => {
-    const { accessToken } = await registerOwner();
-
-    const res = await request(app)
-      .post('/api/v1/billing/checkout-session')
-      .set('Authorization', `Bearer ${accessToken}`)
-      .send({ credits: 250 });
-
-    expect(res.status).toBe(201);
-    expect(res.body.provider).toBe('stripe');
-    expect(res.body.sessionId).toMatch(/^cs_simulated_/);
-  });
-
-  it('checkout-session uses Razorpay once an admin has configured it', async () => {
-    await saveRazorpaySettings({ keyId: 'rzp_test_key', keySecret: 'test_secret' }, null);
-    const { accessToken } = await registerOwner();
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: 'order_route_test' }), { status: 200 })),
-    );
-
-    const res = await request(app)
-      .post('/api/v1/billing/checkout-session')
-      .set('Authorization', `Bearer ${accessToken}`)
-      .send({ credits: 250, currency: 'INR' });
-
-    expect(res.status).toBe(201);
-    expect(res.body).toMatchObject({
-      provider: 'razorpay',
-      orderId: 'order_route_test',
-      keyId: 'rzp_test_key',
-      amount: 125_000,
-      currency: 'INR',
-    });
-  });
-
-  it('POST /billing/razorpay/verify credits the workspace on a valid signature', async () => {
-    await saveRazorpaySettings({ keyId: 'rzp_test_key', keySecret: 'test_secret' }, null);
-    const { accessToken, workspaceId } = await registerOwner();
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: 'order_verify_test' }), { status: 200 })),
-    );
-    const before = await getBalance(workspaceId);
-
-    await request(app)
-      .post('/api/v1/billing/checkout-session')
-      .set('Authorization', `Bearer ${accessToken}`)
-      .send({ credits: 250, currency: 'INR' });
-
-    const paymentId = 'pay_route_test';
-    const signature = createHmac('sha256', 'test_secret')
-      .update(`order_verify_test|${paymentId}`)
-      .digest('hex');
-
-    const res = await request(app)
-      .post('/api/v1/billing/razorpay/verify')
-      .set('Authorization', `Bearer ${accessToken}`)
-      .send({ orderId: 'order_verify_test', paymentId, signature });
-
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual({ credited: true, credits: 250 });
-    expect(await getBalance(workspaceId)).toBe(before + 250);
-  });
-
-  it('POST /billing/razorpay/verify rejects a forged signature', async () => {
-    await saveRazorpaySettings({ keyId: 'rzp_test_key', keySecret: 'test_secret' }, null);
-    const { accessToken } = await registerOwner();
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: 'order_forged' }), { status: 200 })),
-    );
-    await request(app)
-      .post('/api/v1/billing/checkout-session')
-      .set('Authorization', `Bearer ${accessToken}`)
-      .send({ credits: 250, currency: 'INR' });
-
-    const res = await request(app)
-      .post('/api/v1/billing/razorpay/verify')
-      .set('Authorization', `Bearer ${accessToken}`)
-      .send({ orderId: 'order_forged', paymentId: 'pay_forged', signature: 'a'.repeat(64) });
-
-    expect(res.status).toBe(400);
-  });
-});
-
-describe('POST /webhooks/razorpay', () => {
-  beforeEach(async () => {
-    await resetDb();
-    await resetRedis();
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  afterAll(async () => {
-    await prisma.$disconnect();
-  });
-
-  it('credits the workspace on a signed payment.captured event', async () => {
-    await saveRazorpaySettings(
-      { keyId: 'rzp_test_key', keySecret: 'test_secret', webhookSecret: 'whsec_test' },
-      null,
-    );
-    const registerRes = await request(app).post('/api/v1/auth/register').send({
-      email: 'owner@razorpay-wh.test',
-      password: 'correct-horse-battery',
-      name: 'Owner',
-      orgName: 'Razorpay WH Co',
-    });
-    const accessToken = registerRes.body.accessToken;
-    const workspaceId = registerRes.body.workspace.id;
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: 'order_webhook_route' }), { status: 200 })),
-    );
-    await request(app)
-      .post('/api/v1/billing/checkout-session')
-      .set('Authorization', `Bearer ${accessToken}`)
-      .send({ credits: 600, currency: 'INR' });
-
-    const payload = {
-      event: 'payment.captured',
-      payload: { payment: { entity: { id: 'pay_webhook_route', order_id: 'order_webhook_route', amount: 250_000 } } },
-    };
-    const rawBody = Buffer.from(JSON.stringify(payload));
-    const signature = createHmac('sha256', 'whsec_test').update(rawBody).digest('hex');
-
-    const res = await request(app)
-      .post('/api/v1/webhooks/razorpay')
-      .set('Content-Type', 'application/json')
-      .set('X-Razorpay-Signature', signature)
-      .send(payload);
-
-    expect(res.status).toBe(200);
-    // 1000 from registration's monthly grant + 600 from the webhook top-up.
-    expect(await getBalance(workspaceId)).toBe(1600);
-  });
-
-  it('rejects a request with a bad signature', async () => {
-    await saveRazorpaySettings(
-      { keyId: 'rzp_test_key', keySecret: 'test_secret', webhookSecret: 'whsec_test' },
-      null,
-    );
-    const payload = { event: 'payment.captured', payload: {} };
-
-    const res = await request(app)
-      .post('/api/v1/webhooks/razorpay')
-      .set('Content-Type', 'application/json')
-      .set('X-Razorpay-Signature', 'a'.repeat(64))
-      .send(payload);
-
-    expect(res.status).toBe(400);
   });
 });

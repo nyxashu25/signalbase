@@ -5,18 +5,27 @@ import { prisma } from '../config/db.js';
 import { ApiError } from '../middleware/errorHandler.js';
 import { logger } from '../config/logger.js';
 import { findPackage } from '../config/creditPackages.js';
-
-// constructEvent is pure local cryptography (HMAC over the payload with the
-// webhook signing secret) — it needs no API key and makes no network call,
-// so signature verification is fully real and testable even though checkout
-// session creation below is stubbed.
-const stripe = new Stripe(env.STRIPE_SECRET_KEY || 'sk_test_placeholder_unused_for_verification');
+import { getDecryptedStripeCredentials } from './paymentSettingsService.js';
 
 const PROCESSED_EVENT_TTL_SECONDS = 30 * 24 * 60 * 60; // Stripe retries for up to ~3 days; comfortable margin
 
-export function verifyAndParseEvent(rawBody, signatureHeader) {
+// webhooks.constructEvent is pure local cryptography (HMAC over the payload
+// with the signing secret) — it needs no real API key, so a throwaway
+// client works for it regardless of whether checkout is configured.
+const signatureCheckClient = new Stripe('sk_test_placeholder_unused_for_verification');
+
+export async function verifyAndParseEvent(rawBody, signatureHeader) {
+  const credentials = await getDecryptedStripeCredentials();
+  if (!credentials?.webhookSecret) {
+    throw new ApiError(400, 'Stripe webhook secret is not configured');
+  }
+
   try {
-    return stripe.webhooks.constructEvent(rawBody, signatureHeader, env.STRIPE_WEBHOOK_SECRET);
+    return signatureCheckClient.webhooks.constructEvent(
+      rawBody,
+      signatureHeader,
+      credentials.webhookSecret,
+    );
   } catch {
     throw new ApiError(400, 'Invalid Stripe webhook signature');
   }
@@ -90,28 +99,54 @@ export async function handleEvent(event) {
 
 /**
  * Interface stub, same pattern as espService/emailVerifierService: with no
- * key configured, simulate success so the credit-purchase flow is fully
- * exercisable locally. TODO once billing goes live: real
- * stripe.checkout.sessions.create call.
+ * key configured (via /control/settings, not an env var — see
+ * paymentSettingsService.js), simulate success so the credit-purchase flow
+ * is fully exercisable locally/in demo.
+ *
+ * makeClient is injectable purely for testing — createCheckoutSession makes
+ * a fresh Stripe client per call (the secret key can change at runtime via
+ * the admin panel, unlike a boot-time env var), and there's no clean way to
+ * mock the Stripe SDK's own HTTP transport, so tests substitute a fake
+ * client instead of mocking network calls.
  */
-export async function createCheckoutSession({ workspaceId, credits }) {
+export async function createCheckoutSession(
+  { workspaceId, credits, currency = 'USD' },
+  makeClient = (key) => new Stripe(key),
+) {
   const pkg = findPackage(credits);
   if (!pkg) {
     throw new ApiError(400, 'Unknown credit package');
   }
-  const amountCents = pkg.usdCents;
+  const amountMinor = currency === 'INR' ? pkg.inrPaise : pkg.usdCents;
 
-  if (!env.STRIPE_SECRET_KEY) {
+  const credentials = await getDecryptedStripeCredentials();
+  if (!credentials?.secretKey) {
     const sessionId = `cs_simulated_${workspaceId}_${Date.now()}`;
     logger.info(
-      { workspaceId, credits, amountCents, sessionId },
-      'Stripe checkout session simulated (no STRIPE_SECRET_KEY)',
+      { workspaceId, credits, amountMinor, currency, sessionId },
+      'Stripe checkout session simulated (no key configured in admin settings)',
     );
     return { sessionId, url: `https://billing.simulated.local/checkout/${sessionId}` };
   }
 
-  // Once wired up for real: stripe.checkout.sessions.create with
-  // metadata: { workspaceId, credits, amountCents } — topUpCredits above
-  // already reads amountCents back off that metadata.
-  throw new Error('Live Stripe checkout integration not implemented yet');
+  const stripe = makeClient(credentials.secretKey);
+  const session = await stripe.checkout.sessions.create({
+    mode: 'payment',
+    payment_method_types: ['card'],
+    line_items: [
+      {
+        price_data: {
+          currency: currency.toLowerCase(),
+          product_data: { name: `${credits} DataPit credits` },
+          unit_amount: amountMinor,
+        },
+        quantity: 1,
+      },
+    ],
+    success_url: `${env.CORS_ORIGIN}/app/billing?checkout=success`,
+    cancel_url: `${env.CORS_ORIGIN}/app/billing/add-credits?checkout=cancelled`,
+    metadata: { workspaceId, credits: String(credits), amountCents: String(amountMinor) },
+  });
+
+  return { sessionId: session.id, url: session.url };
 }

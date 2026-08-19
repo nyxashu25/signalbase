@@ -19,10 +19,8 @@ webhooksRouter.post(
 );
 
 // Stripe verifies + parses the body itself (stripeService.verifyAndParseEvent)
-// using its own signature scheme — no shared verifyWebhookSignature/validateBody here.
+// using its own signature scheme — no shared verifyWebhookSignature/validateBody
+// here. The webhook secret is admin-configured (stored encrypted in Postgres,
+// see /control/settings), not a static env var, so it can't use the shared
+// verifyWebhookSignature middleware either, which only knows ESP_WEBHOOK_SECRET.
 webhooksRouter.post('/stripe', asyncHandler(billingController.stripeWebhook));
-
-// Same story — the webhook secret is admin-configured (stored encrypted in
-// Postgres), not a static env var, so it can't use the shared
-// verifyWebhookSignature middleware, which only knows ESP_WEBHOOK_SECRET.
-webhooksRouter.post('/razorpay', asyncHandler(billingController.razorpayWebhook));

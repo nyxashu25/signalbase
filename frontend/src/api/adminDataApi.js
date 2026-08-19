@@ -40,13 +40,13 @@ export const adminDataApi = adminBaseApi.injectEndpoints({
     listAdminTransactions: builder.query({
       query: (params) => ({ url: '/billing/transactions', params }),
     }),
-    getAdminRazorpaySettings: builder.query({
-      query: () => '/settings/razorpay',
-      providesTags: ['RazorpaySettings'],
+    getAdminStripeSettings: builder.query({
+      query: () => '/settings/stripe',
+      providesTags: ['StripeSettings'],
     }),
-    saveAdminRazorpaySettings: builder.mutation({
-      query: (body) => ({ url: '/settings/razorpay', method: 'PUT', body }),
-      invalidatesTags: ['RazorpaySettings'],
+    saveAdminStripeSettings: builder.mutation({
+      query: (body) => ({ url: '/settings/stripe', method: 'PUT', body }),
+      invalidatesTags: ['StripeSettings'],
     }),
   }),
 });
@@ -61,6 +61,6 @@ export const {
   useAddAdminUserCreditsMutation,
   useGetAdminBillingOverviewQuery,
   useListAdminTransactionsQuery,
-  useGetAdminRazorpaySettingsQuery,
-  useSaveAdminRazorpaySettingsMutation,
+  useGetAdminStripeSettingsQuery,
+  useSaveAdminStripeSettingsMutation,
 } = adminDataApi;

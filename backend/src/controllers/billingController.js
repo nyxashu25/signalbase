@@ -1,7 +1,5 @@
 import * as stripeService from '../services/stripeService.js';
-import * as razorpayService from '../services/razorpayService.js';
 import * as creditService from '../services/creditService.js';
-import * as paymentSettingsService from '../services/paymentSettingsService.js';
 import { CREDIT_PACKAGES } from '../config/creditPackages.js';
 import { CREDIT_COSTS } from '../config/creditPricing.js';
 import { prisma } from '../config/db.js';
@@ -82,37 +80,16 @@ export async function createCheckoutSession(req, res) {
   const { workspaceId } = req.auth;
   const { credits, currency } = req.body;
 
-  // Razorpay is preferred once an admin has configured it (see
-  // /control/settings); until then, checkout falls back to the existing
-  // simulated Stripe flow unchanged — same gate-on-configuration pattern as
-  // every other integration in this app.
-  const razorpaySettings = await paymentSettingsService.getRazorpaySettings();
-  if (razorpaySettings.configured) {
-    const order = await razorpayService.createOrder({ workspaceId, credits, currency: currency ?? 'INR' });
-    return res.status(201).json(order);
-  }
-
-  const session = await stripeService.createCheckoutSession({ workspaceId, credits });
+  const session = await stripeService.createCheckoutSession({
+    workspaceId,
+    credits,
+    currency: currency ?? 'USD',
+  });
   res.status(201).json({ provider: 'stripe', ...session });
 }
 
-export async function verifyRazorpayPayment(req, res) {
-  const result = await razorpayService.verifyAndCreditPayment({
-    orderId: req.body.orderId,
-    paymentId: req.body.paymentId,
-    signature: req.body.signature,
-    workspaceId: req.auth.workspaceId,
-  });
-  res.json(result);
-}
-
 export async function stripeWebhook(req, res) {
-  const event = stripeService.verifyAndParseEvent(req.rawBody, req.headers['stripe-signature']);
+  const event = await stripeService.verifyAndParseEvent(req.rawBody, req.headers['stripe-signature']);
   await stripeService.handleEvent(event);
   res.status(204).end();
-}
-
-export async function razorpayWebhook(req, res) {
-  await razorpayService.handleWebhookEvent(req.rawBody, req.headers['x-razorpay-signature']);
-  res.status(200).json({ status: 'ok' });
 }
