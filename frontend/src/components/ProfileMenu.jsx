@@ -3,12 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 import { useLogoutMutation } from '../api/authApi.js';
 import { clearSession } from '../store/authSlice.js';
-
-function initials(name) {
-  if (!name) return '?';
-  const parts = name.trim().split(/\s+/);
-  return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase();
-}
+import { RabbitAvatar } from './RabbitAvatar.jsx';
 
 export function ProfileMenu() {
   const [open, setOpen] = useState(false);
@@ -44,9 +39,9 @@ export function ProfileMenu() {
         aria-label={`Account menu for ${user?.name ?? 'your account'}`}
         aria-haspopup="true"
         aria-expanded={open}
-        className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-action text-xs font-bold text-white transition-transform duration-150 ease-brand hover:-translate-y-px"
+        className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-action text-white transition-transform duration-150 ease-brand hover:-translate-y-px"
       >
-        {initials(user?.name)}
+        <RabbitAvatar className="h-5 w-5" />
       </button>
 
       {open && (
