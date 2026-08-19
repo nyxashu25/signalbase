@@ -41,6 +41,9 @@ export function ProfileMenu() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
+        aria-label={`Account menu for ${user?.name ?? 'your account'}`}
+        aria-haspopup="true"
+        aria-expanded={open}
         className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-action text-xs font-bold text-white transition-transform duration-150 ease-brand hover:-translate-y-px"
       >
         {initials(user?.name)}
