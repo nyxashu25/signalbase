@@ -4,8 +4,13 @@ export function LegalDoc({ title, updated, children }) {
       <h1 className="text-4xl font-extrabold tracking-tight text-text">{title}</h1>
       <p className="mt-2 text-sm text-text-muted">Last updated {updated}</p>
       <p className="mt-6 rounded-md border border-border bg-surface px-4 py-3 text-xs leading-relaxed text-text-muted">
-        DataPit is an early-stage product. This document is a good-faith starting template, not a
-        substitute for review by qualified legal counsel before relying on it for a real launch.
+        This describes how DataPit actually handles data today, in plain language, and we keep it
+        current as the product changes. It hasn't been reviewed by outside counsel, so if you need
+        a formal legal review for your own compliance purposes,{' '}
+        <a href="/contact" className="font-medium text-primary hover:underline">
+          contact us
+        </a>{' '}
+        and we'll work with you directly.
       </p>
       <div className="mt-10 flex flex-col gap-10">{children}</div>
     </section>
