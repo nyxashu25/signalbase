@@ -70,7 +70,7 @@ const PLANS = [
 const FAQS = [
   {
     q: 'What is a credit?',
-    a: "One credit reveals one contact's verified email. Search and masked results never cost a credit — only the reveal action does, and it's reserved atomically so concurrent requests can never over-spend your balance.",
+    a: "Revealing a contact's verified email costs 2 credits. Search and masked results never cost a credit — only the reveal action does, and it's reserved atomically so concurrent requests can never over-spend your balance.",
   },
   {
     q: 'Do unused credits roll over?',

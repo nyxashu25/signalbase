@@ -90,7 +90,7 @@ export function AnimatedRevealMockup({ className = '' }) {
                   )}
                 </span>
               )}
-              <span className="text-[11px] font-bold text-mauve-magic">&minus;1 credit</span>
+              <span className="text-[11px] font-bold text-mauve-magic">&minus;2 credits</span>
             </div>
           </div>
 

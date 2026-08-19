@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 
 const ENTRIES = [
   { label: 'Monthly grant', delta: '+100', tone: 'text-emerald-400', balance: 100 },
-  { label: 'Reveal · Avery Bennett', delta: '−1', tone: 'text-ink-300', balance: 99 },
-  { label: 'Reveal · Casey Ortiz', delta: '−1', tone: 'text-ink-300', balance: 98 },
-  { label: 'Reveal · Jordan Price', delta: '−1', tone: 'text-ink-300', balance: 97 },
+  { label: 'Reveal · Avery Bennett', delta: '−2', tone: 'text-ink-300', balance: 98 },
+  { label: 'Reveal · Casey Ortiz', delta: '−2', tone: 'text-ink-300', balance: 96 },
+  { label: 'Reveal · Jordan Price', delta: '−2', tone: 'text-ink-300', balance: 94 },
 ];
 
 const STEP_MS = 750;

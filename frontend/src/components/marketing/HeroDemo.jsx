@@ -121,7 +121,7 @@ export function HeroDemo({ className = '' }) {
               <div className="mb-3 flex items-center justify-between">
                 <span className="text-sm font-bold text-white">122 people</span>
                 <span className="flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1 text-[11px] font-bold tabular-nums text-mauve-magic">
-                  {revealed ? '99' : '100'} credits
+                  {revealed ? '98' : '100'} credits
                   {revealed && <FloatingMinusOne />}
                 </span>
               </div>
@@ -198,11 +198,11 @@ export function HeroDemo({ className = '' }) {
           <ScreenFade active={screen === 'credits'}>
             <div className="p-5">
               <p className="text-[11px] font-bold uppercase tracking-wide text-ink-300">Balance</p>
-              <p className="mt-1 text-4xl font-extrabold tabular-nums text-white">99 credits</p>
+              <p className="mt-1 text-4xl font-extrabold tabular-nums text-white">98 credits</p>
               <div className="mt-6 flex flex-col gap-2.5 border-t border-white/10 pt-4">
                 {[
                   { label: 'Monthly grant', delta: '+100', tone: 'text-emerald-400' },
-                  { label: 'Reveal · Avery Kowalski', delta: '−1', tone: 'text-ink-300' },
+                  { label: 'Reveal · Avery Kowalski', delta: '−2', tone: 'text-ink-300' },
                 ].map((e) => (
                   <div key={e.label} className="flex items-center justify-between text-xs">
                     <span className="text-ink-300">{e.label}</span>
@@ -295,7 +295,7 @@ function PersonRow({ name, title, company, email, state }) {
 }
 
 function FloatingMinusOne() {
-  return <span className="animate-[float-up_1.4s_ease-out_1] text-emerald-400">&minus;1</span>;
+  return <span className="animate-[float-up_1.4s_ease-out_1] text-emerald-400">&minus;2</span>;
 }
 
 const PARTICLE_VECTORS = [

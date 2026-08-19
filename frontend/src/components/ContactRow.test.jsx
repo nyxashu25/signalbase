@@ -7,7 +7,7 @@ import { renderWithProviders, authenticatedState, mockFetchRoutes } from '../tes
 const creditCostsRoute = {
   url: '/billing/credit-costs',
   respond: {
-    body: { costs: { REVEAL: 91, COMPANY_VIEW: 20, CSV_EXPORT: 50, SEQUENCE_ENROLLMENT: 250 } },
+    body: { costs: { REVEAL: 2, COMPANY_VIEW: 20, CSV_EXPORT: 50, SEQUENCE_ENROLLMENT: 250 } },
   },
 };
 

@@ -55,7 +55,7 @@ describe('POST /contacts/:id/reveal', () => {
       where: { workspaceId: org.workspaceId },
     });
     expect(ledger).toHaveLength(1);
-    expect(ledger[0].delta).toBe(-91);
+    expect(ledger[0].delta).toBe(-2);
     expect(ledger[0].reason).toBe('EMAIL_REVEAL');
 
     const emailReveal = await prisma.emailReveal.findUnique({
