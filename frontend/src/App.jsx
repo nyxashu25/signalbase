@@ -8,7 +8,7 @@ import { Login } from './pages/Login.jsx';
 import { People } from './pages/People.jsx';
 import { Companies } from './pages/Companies.jsx';
 import { CompanyDetail } from './pages/CompanyDetail.jsx';
-import { Placeholder } from './pages/Placeholder.jsx';
+import { Billing } from './pages/Billing.jsx';
 import { Lists } from './pages/Lists.jsx';
 import { ListDetail } from './pages/ListDetail.jsx';
 import { Sequences } from './pages/Sequences.jsx';
@@ -83,7 +83,7 @@ export function App() {
           <Route path="sequences" element={<Sequences />} />
           <Route path="sequences/new" element={<SequenceBuilder />} />
           <Route path="sequences/:id" element={<SequenceDetail />} />
-          <Route path="billing" element={<Placeholder title="Billing" />} />
+          <Route path="billing" element={<Billing />} />
           <Route path="billing/add-credits" element={<AddCredits />} />
           <Route path="profile" element={<Profile />} />
         </Route>

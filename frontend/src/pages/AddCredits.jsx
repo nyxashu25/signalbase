@@ -19,8 +19,8 @@ export function AddCredits() {
 
   return (
     <div className="max-w-2xl">
-      <Link to="/app/profile" className="text-sm font-medium text-primary hover:underline">
-        &larr; Back to profile
+      <Link to="/app/billing" className="text-sm font-medium text-primary hover:underline">
+        &larr; Back to billing
       </Link>
       <h1 className="mt-3 text-xl font-semibold text-text">Add credits</h1>
       <p className="mt-1 text-sm text-text-muted">

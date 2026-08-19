@@ -145,3 +145,82 @@ describe('POST /billing/checkout-session', () => {
     expect(res.body.url).toContain(res.body.sessionId);
   });
 });
+
+describe('GET /billing/transactions', () => {
+  beforeEach(async () => {
+    await resetDb();
+    await resetRedis();
+  });
+
+  afterAll(async () => {
+    await prisma.$disconnect();
+  });
+
+  it("lists this workspace's ledger, newest first, with contact info joined onto reveal rows", async () => {
+    const registerRes = await request(app).post('/api/v1/auth/register').send({
+      email: 'owner@billing.test',
+      password: 'correct-horse-battery',
+      name: 'Owner',
+      orgName: 'Billing Co',
+    });
+    const workspaceId = registerRes.body.workspace.id;
+
+    const company = await prisma.company.create({
+      data: { name: 'Nova Systems', domain: `novasystems-${Date.now()}.com` },
+    });
+    const contact = await prisma.contact.create({
+      data: { companyId: company.id, firstName: 'Jordan', lastName: 'Bennett' },
+    });
+
+    await prisma.creditLedgerEntry.create({
+      data: { workspaceId, delta: 100, reason: 'MONTHLY_GRANT' },
+    });
+    await prisma.creditLedgerEntry.create({
+      data: { workspaceId, delta: -1, reason: 'EMAIL_REVEAL', contactId: contact.id },
+    });
+    await prisma.creditLedgerEntry.create({
+      data: { workspaceId, delta: 250, reason: 'TOPUP', amountCents: 1500 },
+    });
+
+    const res = await request(app)
+      .get('/api/v1/billing/transactions')
+      .set('Authorization', `Bearer ${registerRes.body.accessToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.total).toBe(3);
+    expect(res.body.results.map((r) => r.reason)).toEqual(['TOPUP', 'EMAIL_REVEAL', 'MONTHLY_GRANT']);
+
+    const revealRow = res.body.results.find((r) => r.reason === 'EMAIL_REVEAL');
+    expect(revealRow.contact).toMatchObject({ firstName: 'Jordan', lastName: 'Bennett' });
+
+    const topupRow = res.body.results.find((r) => r.reason === 'TOPUP');
+    expect(topupRow.amountCents).toBe(1500);
+    expect(topupRow.contact).toBeNull();
+  });
+
+  it("never shows another workspace's ledger", async () => {
+    const orgA = await request(app).post('/api/v1/auth/register').send({
+      email: 'owner@org-a.test',
+      password: 'correct-horse-battery',
+      name: 'Owner',
+      orgName: 'Org A',
+    });
+    const orgB = await request(app).post('/api/v1/auth/register').send({
+      email: 'owner@org-b.test',
+      password: 'correct-horse-battery',
+      name: 'Owner',
+      orgName: 'Org B',
+    });
+
+    await prisma.creditLedgerEntry.create({
+      data: { workspaceId: orgA.body.workspace.id, delta: 100, reason: 'MONTHLY_GRANT' },
+    });
+
+    const res = await request(app)
+      .get('/api/v1/billing/transactions')
+      .set('Authorization', `Bearer ${orgB.body.accessToken}`);
+
+    expect(res.body.total).toBe(0);
+    expect(res.body.results).toHaveLength(0);
+  });
+});

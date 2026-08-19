@@ -30,7 +30,7 @@ function renderApp({ authenticated, path = '/app' }) {
 describe('App', () => {
   it('renders the dashboard at /app when authenticated', () => {
     renderApp({ authenticated: true, path: '/app' });
-    expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Welcome back, Demo' })).toBeInTheDocument();
   });
 
   it('redirects to login when visiting /app unauthenticated', () => {
