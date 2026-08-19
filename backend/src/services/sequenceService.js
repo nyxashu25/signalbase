@@ -88,6 +88,73 @@ export const resumeEnrollment = (workspaceId, id) => setEnrollmentStatus(workspa
 export const unenroll = (workspaceId, id, reason = 'manual') =>
   setEnrollmentStatus(workspaceId, id, 'UNENROLLED', reason);
 
+const EMPTY_EVENT_COUNTS = () => ({
+  SENT: 0,
+  OPENED: 0,
+  CLICKED: 0,
+  BOUNCED: 0,
+  REPLIED: 0,
+  UNSUBSCRIBED: 0,
+});
+
+function rate(numerator, denominator) {
+  return denominator > 0 ? numerator / denominator : 0;
+}
+
+export async function getSequenceAnalytics(workspaceId, sequenceId) {
+  const sequence = await prisma.sequence.findFirst({
+    where: { id: sequenceId, workspaceId },
+    include: { steps: { where: { type: 'EMAIL' }, orderBy: { order: 'asc' } } },
+  });
+  if (!sequence) throw new ApiError(404, 'Sequence not found');
+
+  const [enrollmentGroups, eventGroups] = await Promise.all([
+    prisma.sequenceEnrollment.groupBy({
+      by: ['status'],
+      where: { sequenceId },
+      _count: true,
+    }),
+    prisma.sequenceStepEvent.groupBy({
+      by: ['stepIndex', 'type'],
+      where: { enrollment: { sequenceId } },
+      _count: true,
+    }),
+  ]);
+
+  const funnel = { ACTIVE: 0, PAUSED: 0, COMPLETED: 0, UNENROLLED: 0 };
+  for (const row of enrollmentGroups) funnel[row.status] = row._count;
+
+  const totals = EMPTY_EVENT_COUNTS();
+  const perStepCounts = new Map();
+  for (const row of eventGroups) {
+    totals[row.type] += row._count;
+    if (!perStepCounts.has(row.stepIndex)) perStepCounts.set(row.stepIndex, EMPTY_EVENT_COUNTS());
+    perStepCounts.get(row.stepIndex)[row.type] += row._count;
+  }
+
+  return {
+    enrollmentFunnel: {
+      total: funnel.ACTIVE + funnel.PAUSED + funnel.COMPLETED + funnel.UNENROLLED,
+      active: funnel.ACTIVE,
+      paused: funnel.PAUSED,
+      completed: funnel.COMPLETED,
+      unenrolled: funnel.UNENROLLED,
+    },
+    totals,
+    rates: {
+      openRate: rate(totals.OPENED, totals.SENT),
+      clickRate: rate(totals.CLICKED, totals.SENT),
+      replyRate: rate(totals.REPLIED, totals.SENT),
+      bounceRate: rate(totals.BOUNCED, totals.SENT),
+    },
+    perStep: sequence.steps.map((step) => ({
+      stepIndex: step.order,
+      subject: step.subject,
+      ...(perStepCounts.get(step.order) ?? EMPTY_EVENT_COUNTS()),
+    })),
+  };
+}
+
 /**
  * The cadence engine's tick: advances every enrollment whose next step is
  * due. Runs on a fixed interval (see worker.js) rather than one delayed

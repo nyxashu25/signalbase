@@ -12,6 +12,11 @@ export const sequencesApi = baseApi.injectEndpoints({
       transformResponse: (res) => res.sequence,
       providesTags: (result, error, id) => [{ type: 'Sequences', id }],
     }),
+    getSequenceAnalytics: builder.query({
+      query: (id) => `/sequences/${id}/analytics`,
+      transformResponse: (res) => res.analytics,
+      providesTags: (result, error, id) => [{ type: 'Sequences', id: `${id}-analytics` }],
+    }),
     createSequence: builder.mutation({
       query: (body) => ({ url: '/sequences', method: 'POST', body }),
       invalidatesTags: ['Sequences'],
@@ -55,6 +60,7 @@ export const sequencesApi = baseApi.injectEndpoints({
 export const {
   useListSequencesQuery,
   useGetSequenceQuery,
+  useGetSequenceAnalyticsQuery,
   useCreateSequenceMutation,
   useActivateSequenceMutation,
   useEnrollContactMutation,

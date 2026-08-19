@@ -11,6 +11,7 @@ sequencesRouter.use(requireAuth);
 
 sequencesRouter.get('/', asyncHandler(sequenceController.index));
 sequencesRouter.get('/:id', asyncHandler(sequenceController.show));
+sequencesRouter.get('/:id/analytics', asyncHandler(sequenceController.analytics));
 sequencesRouter.post(
   '/',
   validateBody(createSequenceSchema),

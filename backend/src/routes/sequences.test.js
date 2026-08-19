@@ -3,6 +3,7 @@ import request from 'supertest';
 import { createApp } from '../app.js';
 import { resetDb, resetRedis } from '../test/dbHelpers.js';
 import { prisma } from '../config/db.js';
+import { processDueEnrollments } from '../services/sequenceService.js';
 
 const app = createApp();
 
@@ -190,5 +191,107 @@ describe('sequences routes', () => {
     enrollment = await prisma.sequenceEnrollment.findUnique({ where: { id: enrollmentId } });
     expect(enrollment.status).toBe('UNENROLLED');
     expect(enrollment.unenrolledReason).toBe('manual');
+  });
+
+  describe('analytics', () => {
+    it('returns zeroed totals and rates for a sequence with no sends yet', async () => {
+      const owner = await registerOrg('Org A', 'owner@org-a.test');
+      const createRes = await request(app)
+        .post('/api/v1/sequences')
+        .set('Authorization', `Bearer ${owner.accessToken}`)
+        .send(twoStepSequence);
+
+      const res = await request(app)
+        .get(`/api/v1/sequences/${createRes.body.sequence.id}/analytics`)
+        .set('Authorization', `Bearer ${owner.accessToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.analytics.totals).toMatchObject({ SENT: 0, OPENED: 0, CLICKED: 0 });
+      expect(res.body.analytics.rates).toEqual({
+        openRate: 0,
+        clickRate: 0,
+        replyRate: 0,
+        bounceRate: 0,
+      });
+      expect(res.body.analytics.enrollmentFunnel.total).toBe(0);
+      expect(res.body.analytics.perStep).toHaveLength(1); // the one EMAIL step
+    });
+
+    it('aggregates sent/opened/clicked events into totals, rates, and a per-step breakdown', async () => {
+      const owner = await registerOrg('Org A', 'owner@org-a.test');
+      const contactA = await seedContact('a@novasystems.com');
+      const contactB = await seedContact('b@novasystems.com');
+
+      const createRes = await request(app)
+        .post('/api/v1/sequences')
+        .set('Authorization', `Bearer ${owner.accessToken}`)
+        .send(twoStepSequence);
+      const sequenceId = createRes.body.sequence.id;
+      await request(app)
+        .post(`/api/v1/sequences/${sequenceId}/activate`)
+        .set('Authorization', `Bearer ${owner.accessToken}`);
+
+      const enrollA = await request(app)
+        .post(`/api/v1/sequences/${sequenceId}/enrollments`)
+        .set('Authorization', `Bearer ${owner.accessToken}`)
+        .send({ contactId: contactA.id });
+      await request(app)
+        .post(`/api/v1/sequences/${sequenceId}/enrollments`)
+        .set('Authorization', `Bearer ${owner.accessToken}`)
+        .send({ contactId: contactB.id });
+
+      // Sends the EMAIL step (index 0) to both enrollments, then each lands
+      // on the WAIT step and stays ACTIVE.
+      await processDueEnrollments();
+
+      // Simulate ESP webhook deliveries for contact A's send only — real
+      // rows would come through webhookService, but the aggregation only
+      // cares about the SequenceStepEvent rows themselves.
+      await prisma.sequenceStepEvent.create({
+        data: { enrollmentId: enrollA.body.enrollment.id, stepIndex: 0, type: 'OPENED' },
+      });
+      await prisma.sequenceStepEvent.create({
+        data: { enrollmentId: enrollA.body.enrollment.id, stepIndex: 0, type: 'CLICKED' },
+      });
+
+      const res = await request(app)
+        .get(`/api/v1/sequences/${sequenceId}/analytics`)
+        .set('Authorization', `Bearer ${owner.accessToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.analytics.totals).toMatchObject({
+        SENT: 2,
+        OPENED: 1,
+        CLICKED: 1,
+        BOUNCED: 0,
+        REPLIED: 0,
+      });
+      expect(res.body.analytics.rates.openRate).toBe(0.5);
+      expect(res.body.analytics.rates.clickRate).toBe(0.5);
+      expect(res.body.analytics.perStep).toHaveLength(1);
+      expect(res.body.analytics.perStep[0]).toMatchObject({
+        stepIndex: 0,
+        subject: 'Hi there',
+        SENT: 2,
+        OPENED: 1,
+        CLICKED: 1,
+      });
+      expect(res.body.analytics.enrollmentFunnel).toMatchObject({ total: 2, active: 2 });
+    });
+
+    it('blocks cross-tenant access', async () => {
+      const orgA = await registerOrg('Org A', 'owner@org-a.test');
+      const orgB = await registerOrg('Org B', 'owner@org-b.test');
+      const createRes = await request(app)
+        .post('/api/v1/sequences')
+        .set('Authorization', `Bearer ${orgA.accessToken}`)
+        .send(twoStepSequence);
+
+      const res = await request(app)
+        .get(`/api/v1/sequences/${createRes.body.sequence.id}/analytics`)
+        .set('Authorization', `Bearer ${orgB.accessToken}`);
+
+      expect(res.status).toBe(404);
+    });
   });
 });

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   useGetSequenceQuery,
+  useGetSequenceAnalyticsQuery,
   useActivateSequenceMutation,
   useEnrollContactMutation,
   usePauseEnrollmentMutation,
@@ -52,6 +53,8 @@ export function SequenceDetail() {
       </div>
 
       <StepTimeline steps={sequence.steps} />
+
+      {sequence.status !== 'DRAFT' && <SequenceAnalytics sequenceId={sequence.id} />}
 
       {sequence.status === 'ACTIVE' && <EnrollFromList sequenceId={sequence.id} />}
 
@@ -111,6 +114,91 @@ function StepTimeline({ steps }) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function formatPct(rate) {
+  return `${Math.round(rate * 1000) / 10}%`;
+}
+
+function StatCard({ label, value }) {
+  return (
+    <div className="rounded-lg border border-border bg-surface-elevated px-4 py-3">
+      <p className="text-xs font-medium uppercase tracking-wide text-text-muted">{label}</p>
+      <p className="mt-1 text-lg font-semibold tabular-nums text-text">{value}</p>
+    </div>
+  );
+}
+
+function SequenceAnalytics({ sequenceId }) {
+  const { data: analytics, isLoading } = useGetSequenceAnalyticsQuery(sequenceId);
+
+  if (isLoading || !analytics) return null;
+  const { totals, rates, perStep, enrollmentFunnel } = analytics;
+
+  if (totals.SENT === 0) {
+    return (
+      <div className="mt-6 rounded-lg border border-border bg-surface-elevated p-4 text-sm text-text-muted">
+        No emails sent yet — analytics will appear once the first step goes out.
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-6">
+      <h2 className="text-sm font-bold uppercase tracking-wide text-text-muted">Analytics</h2>
+
+      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-5">
+        <StatCard label="Sent" value={totals.SENT} />
+        <StatCard label="Open rate" value={formatPct(rates.openRate)} />
+        <StatCard label="Click rate" value={formatPct(rates.clickRate)} />
+        <StatCard label="Reply rate" value={formatPct(rates.replyRate)} />
+        <StatCard label="Bounce rate" value={formatPct(rates.bounceRate)} />
+      </div>
+
+      <p className="mt-3 text-xs text-text-muted">
+        {enrollmentFunnel.total} enrolled &middot; {enrollmentFunnel.active} active &middot;{' '}
+        {enrollmentFunnel.paused} paused &middot; {enrollmentFunnel.completed} completed &middot;{' '}
+        {enrollmentFunnel.unenrolled} unenrolled
+      </p>
+
+      {perStep.length > 0 && (
+        <div className="mt-4 overflow-x-auto rounded-lg border border-border bg-surface-elevated">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-border text-left text-xs font-medium uppercase tracking-wide text-text-muted">
+                <th className="px-4 py-3">Step</th>
+                <th className="px-4 py-3">Sent</th>
+                <th className="px-4 py-3">Opened</th>
+                <th className="px-4 py-3">Clicked</th>
+                <th className="px-4 py-3">Replied</th>
+                <th className="px-4 py-3">Bounced</th>
+              </tr>
+            </thead>
+            <tbody>
+              {perStep.map((step) => (
+                <tr key={step.stepIndex} className="border-b border-border last:border-0">
+                  <td className="px-4 py-3 text-sm font-medium text-text">{step.subject}</td>
+                  <td className="px-4 py-3 text-sm tabular-nums text-text-muted">{step.SENT}</td>
+                  <td className="px-4 py-3 text-sm tabular-nums text-text-muted">
+                    {step.OPENED} {step.SENT > 0 && `(${formatPct(step.OPENED / step.SENT)})`}
+                  </td>
+                  <td className="px-4 py-3 text-sm tabular-nums text-text-muted">
+                    {step.CLICKED} {step.SENT > 0 && `(${formatPct(step.CLICKED / step.SENT)})`}
+                  </td>
+                  <td className="px-4 py-3 text-sm tabular-nums text-text-muted">
+                    {step.REPLIED} {step.SENT > 0 && `(${formatPct(step.REPLIED / step.SENT)})`}
+                  </td>
+                  <td className="px-4 py-3 text-sm tabular-nums text-text-muted">
+                    {step.BOUNCED} {step.SENT > 0 && `(${formatPct(step.BOUNCED / step.SENT)})`}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
