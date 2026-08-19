@@ -24,7 +24,11 @@ export const searchApi = baseApi.injectEndpoints({
     searchPeople: builder.query({
       query: (filters) => `/search/people?${toQueryString(filters)}`,
     }),
+    getCompanyDetail: builder.query({
+      query: (id) => `/search/companies/${id}`,
+      transformResponse: (res) => res.company,
+    }),
   }),
 });
 
-export const { useSearchCompaniesQuery, useSearchPeopleQuery } = searchApi;
+export const { useSearchCompaniesQuery, useSearchPeopleQuery, useGetCompanyDetailQuery } = searchApi;

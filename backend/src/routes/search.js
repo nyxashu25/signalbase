@@ -17,6 +17,7 @@ searchRouter.get(
   validateQuery(searchCompaniesQuerySchema),
   asyncHandler(searchController.companies),
 );
+searchRouter.get('/companies/:id', asyncHandler(searchController.companyDetail));
 searchRouter.get(
   '/people',
   validateQuery(searchPeopleQuerySchema),

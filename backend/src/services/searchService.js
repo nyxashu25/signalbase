@@ -2,6 +2,7 @@ import { es } from '../config/elasticsearch.js';
 import { prisma } from '../config/db.js';
 import { COMPANIES_INDEX, CONTACTS_INDEX } from '../config/esIndices.js';
 import { attachRevealStatus } from './maskingService.js';
+import { ApiError } from '../middleware/errorHandler.js';
 
 const FACET_SIZE = 20;
 
@@ -80,6 +81,22 @@ export async function searchCompanies({
     pageSize,
     facets: extractFacets(result.aggregations, ['industry', 'location', 'techStack']),
   };
+}
+
+export async function getCompanyDetail(workspaceId, companyId) {
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+    include: {
+      contacts: {
+        where: { redactedAt: null },
+        orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+      },
+    },
+  });
+  if (!company) throw new ApiError(404, 'Company not found');
+
+  const { contacts, ...rest } = company;
+  return { ...rest, contacts: await attachRevealStatus(workspaceId, contacts) };
 }
 
 export async function searchPeople({

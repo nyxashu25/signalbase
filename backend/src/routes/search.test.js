@@ -142,4 +142,67 @@ describe('search API', () => {
     expect(res.body.results).toHaveLength(1);
     expect(res.body.total).toBe(2);
   });
+
+  describe('company detail', () => {
+    it('returns the company with its contacts, emails masked by default', async () => {
+      const { nova } = await seedFixtures();
+      const { accessToken } = await registerAndLogin('Acme', 'owner@acme.test');
+
+      const res = await request(app)
+        .get(`/api/v1/search/companies/${nova.id}`)
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.company.name).toBe('Nova Systems');
+      expect(res.body.company.contacts).toHaveLength(1);
+      expect(res.body.company.contacts[0].firstName).toBe('Jordan');
+      expect(res.body.company.contacts[0].revealed).toBe(false);
+      expect(res.body.company.contacts[0].email).not.toBe('jordan.bennett@novasystems.com');
+    });
+
+    it('reflects this workspace\'s reveal status on the contact list', async () => {
+      const { nova, contact } = await seedFixtures();
+      const { accessToken, workspaceId } = await registerAndLogin('Acme', 'owner@acme.test');
+
+      await prisma.emailReveal.create({
+        data: {
+          workspaceId,
+          contactId: contact.id,
+          revealedById: (
+            await prisma.membership.findFirstOrThrow({ where: { workspaceId } })
+          ).userId,
+        },
+      });
+
+      const res = await request(app)
+        .get(`/api/v1/search/companies/${nova.id}`)
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(res.body.company.contacts[0].revealed).toBe(true);
+      expect(res.body.company.contacts[0].email).toBe('jordan.bennett@novasystems.com');
+    });
+
+    it('excludes redacted contacts', async () => {
+      const { nova, contact } = await seedFixtures();
+      const { accessToken } = await registerAndLogin('Acme', 'owner@acme.test');
+      await prisma.contact.update({ where: { id: contact.id }, data: { redactedAt: new Date() } });
+
+      const res = await request(app)
+        .get(`/api/v1/search/companies/${nova.id}`)
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(res.body.company.contacts).toHaveLength(0);
+    });
+
+    it('404s for an unknown company id', async () => {
+      await seedFixtures();
+      const { accessToken } = await registerAndLogin('Acme', 'owner@acme.test');
+
+      const res = await request(app)
+        .get('/api/v1/search/companies/00000000-0000-0000-0000-000000000000')
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(res.status).toBe(404);
+    });
+  });
 });

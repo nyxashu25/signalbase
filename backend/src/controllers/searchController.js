@@ -12,3 +12,8 @@ export async function people(req, res) {
   });
   res.json(result);
 }
+
+export async function companyDetail(req, res) {
+  const company = await searchService.getCompanyDetail(req.auth.workspaceId, req.params.id);
+  res.json({ company });
+}

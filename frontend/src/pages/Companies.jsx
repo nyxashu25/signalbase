@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useSearchCompaniesQuery } from '../api/searchApi.js';
 import { FacetPanel } from '../components/FacetPanel.jsx';
 import { Pagination } from '../components/Pagination.jsx';
@@ -75,7 +76,11 @@ export function Companies() {
                 <tbody>
                   {data?.results.map((company) => (
                     <tr key={company.id} className="border-b border-border hover:bg-surface">
-                      <td className="px-4 py-3 text-sm font-medium text-text">{company.name}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-text">
+                        <Link to={`/app/companies/${company.id}`} className="hover:text-primary hover:underline">
+                          {company.name}
+                        </Link>
+                      </td>
                       <td className="px-4 py-3 text-sm text-text-muted">{company.domain}</td>
                       <td className="px-4 py-3 text-sm text-text-muted">{company.industry ?? '—'}</td>
                       <td className="px-4 py-3 text-sm tabular-nums text-text-muted">
