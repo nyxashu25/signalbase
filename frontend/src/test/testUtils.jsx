@@ -56,11 +56,19 @@ export function mockFetchRoutes(routes) {
       throw new Error(`Unhandled fetch in test: ${method} ${url}`);
     }
     const result = typeof match.respond === 'function' ? match.respond(url, init) : match.respond;
+    const status = result.status ?? 200;
     const body = result.body ?? {};
-    return new Response(typeof body === 'string' ? body : JSON.stringify(body), {
-      status: result.status ?? 200,
-      headers: { 'Content-Type': 'application/json', ...(result.headers ?? {}) },
-    });
+    // The Fetch spec forbids a body on these statuses — the real Response
+    // constructor throws if you pass one, same as it would for a real 204
+    // reply with a stray JSON body.
+    const nullBodyStatus = status === 204 || status === 205 || status === 304;
+    return new Response(
+      nullBodyStatus ? null : typeof body === 'string' ? body : JSON.stringify(body),
+      {
+        status,
+        headers: { 'Content-Type': 'application/json', ...(result.headers ?? {}) },
+      },
+    );
   });
   vi.stubGlobal('fetch', fetchMock);
   return fetchMock;

@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppLayout } from './layouts/AppLayout.jsx';
+import { ChatWidget } from './components/ChatWidget.jsx';
 import { RequireAuth } from './components/RequireAuth.jsx';
 import { Dashboard } from './pages/Dashboard.jsx';
 import { Login } from './pages/Login.jsx';
@@ -38,6 +39,8 @@ import { setSession, clearSession } from './store/authSlice.js';
 export function App() {
   const dispatch = useDispatch();
   const status = useSelector((s) => s.auth.status);
+  const location = useLocation();
+  const showChatWidget = !location.pathname.startsWith('/control');
 
   // Silent-refresh-on-load: the access token lives only in memory (Redux),
   // so a page reload has none — but the httpOnly refresh cookie survives
@@ -62,44 +65,47 @@ export function App() {
   }, []);
 
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/pricing" element={<Pricing />} />
-      <Route path="/product" element={<Product />} />
-      <Route path="/solutions" element={<Solutions />} />
-      <Route path="/about" element={<About />} />
-      <Route path="/contact" element={<Contact />} />
-      <Route path="/privacy" element={<Privacy />} />
-      <Route path="/terms" element={<Terms />} />
-      <Route path="/login" element={<Login />} />
+    <>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/product" element={<Product />} />
+        <Route path="/solutions" element={<Solutions />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/login" element={<Login />} />
 
-      <Route path="/app" element={<RequireAuth />}>
-        <Route element={<AppLayout />}>
-          <Route index element={<Dashboard />} />
-          <Route path="people" element={<People />} />
-          <Route path="companies" element={<Companies />} />
-          <Route path="companies/:id" element={<CompanyDetail />} />
-          <Route path="lists" element={<Lists />} />
-          <Route path="lists/:id" element={<ListDetail />} />
-          <Route path="sequences" element={<Sequences />} />
-          <Route path="sequences/new" element={<SequenceBuilder />} />
-          <Route path="sequences/:id" element={<SequenceDetail />} />
-          <Route path="billing" element={<Billing />} />
-          <Route path="billing/add-credits" element={<AddCredits />} />
-          <Route path="profile" element={<Profile />} />
+        <Route path="/app" element={<RequireAuth />}>
+          <Route element={<AppLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="people" element={<People />} />
+            <Route path="companies" element={<Companies />} />
+            <Route path="companies/:id" element={<CompanyDetail />} />
+            <Route path="lists" element={<Lists />} />
+            <Route path="lists/:id" element={<ListDetail />} />
+            <Route path="sequences" element={<Sequences />} />
+            <Route path="sequences/new" element={<SequenceBuilder />} />
+            <Route path="sequences/:id" element={<SequenceDetail />} />
+            <Route path="billing" element={<Billing />} />
+            <Route path="billing/add-credits" element={<AddCredits />} />
+            <Route path="profile" element={<Profile />} />
+          </Route>
         </Route>
-      </Route>
 
-      <Route path="/control/login" element={<AdminLogin />} />
-      <Route path="/control" element={<RequireSuperAdmin />}>
-        <Route element={<AdminLayout />}>
-          <Route index element={<AdminDashboard />} />
-          <Route path="users" element={<AdminUsers />} />
-          <Route path="users/:userId" element={<AdminUserDetail />} />
-          <Route path="billing" element={<AdminBilling />} />
-          <Route path="settings" element={<AdminSettings />} />
+        <Route path="/control/login" element={<AdminLogin />} />
+        <Route path="/control" element={<RequireSuperAdmin />}>
+          <Route element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="users/:userId" element={<AdminUserDetail />} />
+            <Route path="billing" element={<AdminBilling />} />
+            <Route path="settings" element={<AdminSettings />} />
+          </Route>
         </Route>
-      </Route>
-    </Routes>
+      </Routes>
+      {showChatWidget && <ChatWidget />}
+    </>
   );
 }
