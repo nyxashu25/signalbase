@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useLoginMutation, useRegisterMutation } from '../api/authApi.js';
+import { useLoginMutation, useRegisterMutation, useGoogleLoginMutation } from '../api/authApi.js';
 import { setSession } from '../store/authSlice.js';
 import { Logo } from '../components/Logo.jsx';
+import { GoogleSignInButton } from '../components/GoogleSignInButton.jsx';
 
 export function Login() {
   // Marketing "Start free" CTAs link here with ?mode=register so they land
@@ -14,13 +15,17 @@ export function Login() {
     new URLSearchParams(location.search).get('mode') === 'register' ? 'register' : 'login';
   const [mode, setMode] = useState(initialMode);
   const [form, setForm] = useState({ email: '', password: '', name: '', orgName: '' });
+  const [googleScriptError, setGoogleScriptError] = useState(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const [login, loginState] = useLoginMutation();
   const [register, registerState] = useRegisterMutation();
+  const [googleLogin, googleLoginState] = useGoogleLoginMutation();
   const { isLoading } = mode === 'login' ? loginState : registerState;
-  const error = (loginState.error ?? registerState.error)?.data?.error?.message;
+  const error =
+    (loginState.error ?? registerState.error ?? googleLoginState.error)?.data?.error?.message ??
+    googleScriptError;
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -31,6 +36,14 @@ export function Login() {
         : { email: form.email, password: form.password, name: form.name, orgName: form.orgName };
 
     const result = await action(body);
+    if (result.data) {
+      dispatch(setSession(result.data));
+      navigate('/app', { replace: true });
+    }
+  }
+
+  async function handleGoogleCredential(credential) {
+    const result = await googleLogin({ credential });
     if (result.data) {
       dispatch(setSession(result.data));
       navigate('/app', { replace: true });
@@ -86,6 +99,20 @@ export function Login() {
             {isLoading ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create workspace'}
           </button>
         </form>
+
+        <div className="mt-5 flex items-center gap-3 text-xs font-medium uppercase tracking-wide text-text-muted">
+          <span className="h-px flex-1 bg-border" />
+          or
+          <span className="h-px flex-1 bg-border" />
+        </div>
+
+        <div className="mt-4">
+          <GoogleSignInButton
+            mode={mode}
+            onCredential={handleGoogleCredential}
+            onError={setGoogleScriptError}
+          />
+        </div>
 
         <button
           type="button"

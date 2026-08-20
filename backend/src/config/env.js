@@ -43,6 +43,13 @@ const schema = z.object({
 
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
 
+  // Google OAuth client — "Sign in with Google" verifies the ID token
+  // Google Identity Services hands the frontend against this audience (see
+  // authService.loginWithGoogle). Unset in an environment that hasn't
+  // configured it yet: the endpoint responds 503 rather than crashing at
+  // boot, same posture as EMAIL_VERIFIER_API_KEY/ESP_API_KEY below.
+  GOOGLE_CLIENT_ID: z.string().optional(),
+
   // Unset in every environment right now — see emailVerifierService.js.
   EMAIL_VERIFIER_API_KEY: z.string().optional(),
 

@@ -79,8 +79,18 @@ model Workspace {
 model User {
   id                  String    @id @default(uuid())
   email               String    @unique
-  passwordHash        String
+  // Optional because a Google-only account (see googleId) never sets one —
+  // authService.login's verifyPassword call is null-safe (returns false
+  // rather than throwing) so such an account simply can't log in with a
+  // password until/unless it also sets one.
+  passwordHash        String?
   name                String
+  // Google "sub" claim once this account has signed in with Google — set
+  // either at signup (Google-only account) or retroactively the first time
+  // an existing password account signs in with Google using the same
+  // verified email (see authService.loginWithGoogle). Null means never
+  // linked.
+  googleId            String?   @unique
   // Set by a super admin (see SuperAdmin below) to immediately cut off
   // login/refresh — checked in authService.login/refresh, not per-request,
   // matching this app's stateless-access-token design (see docs on

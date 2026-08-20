@@ -12,14 +12,8 @@ picked up or completed — don't let it drift from reality.
       than 1 seat.
 - [ ] **Password reset / forgot password.** No route, no token model, no UI.
       A locked-out user has zero self-service recovery path.
-- [ ] **Sign in with Google.** Needs an OAuth 2.0 client (Client ID/Secret)
-      from Google Cloud Console — the user needs to create that and hand us
-      the credentials before this can be wired up (authorized redirect URI
-      will be `https://titans7.com/api/v1/auth/oauth/google/callback` or
-      similar).
-- [ ] **Sign in with Microsoft.** Same shape — needs an app registration
-      (Client ID/Secret) in Microsoft Entra ID (Azure AD) from the user
-      first.
+- [ ] **Sign in with Microsoft.** Needs an app registration (Client ID/
+      Secret) in Microsoft Entra ID (Azure AD) from the user first.
 - [ ] **GDPR opt-out has no UI.** `POST /api/v1/privacy/opt-out` is real and
       rate-limited, but the Privacy marketing page just says "contact us" —
       nothing calls the endpoint.
@@ -55,3 +49,10 @@ picked up or completed — don't let it drift from reality.
       on the Sign In form instead of the Create Workspace form. Now link to
       `/login?mode=register`, which `Login.jsx` reads to open directly in
       register mode.
+- [x] **Sign in with Google.** Google Identity Services button on the Login
+      page (`GoogleSignInButton.jsx`); backend verifies the ID token
+      (`authService.loginWithGoogle`) and links-or-creates an account by
+      verified email. `User.passwordHash` is now optional and
+      `User.googleId` was added. Configured via `GOOGLE_CLIENT_ID`
+      (backend/.env) and `VITE_GOOGLE_CLIENT_ID` (frontend/.env) — both set
+      locally and on titans7.com.

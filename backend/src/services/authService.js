@@ -1,3 +1,4 @@
+import { OAuth2Client } from 'google-auth-library';
 import { prisma } from '../config/db.js';
 import { hashPassword, verifyPassword } from '../utils/password.js';
 import { initializeBalance } from './creditService.js';
@@ -10,6 +11,7 @@ import {
   ReplayDetectedError,
 } from './tokenService.js';
 import { ApiError } from '../middleware/errorHandler.js';
+import { env } from '../config/env.js';
 
 function slugify(name) {
   return (
@@ -23,14 +25,13 @@ function slugify(name) {
   );
 }
 
-export async function register({ email, password, name, orgName }) {
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    throw new ApiError(409, 'An account with this email already exists');
-  }
-
-  const passwordHash = await hashPassword(password);
-
+/**
+ * Creates a brand-new org + FREE workspace + user + OWNER membership.
+ * Shared by register() (password signup) and loginWithGoogle() (a Google
+ * sign-in with no matching existing account) — passwordHash is null for
+ * the latter, googleId is null for the former.
+ */
+async function createAccount({ email, name, passwordHash, googleId, orgName }) {
   const { user, workspace, membership, org } = await prisma.$transaction(async (tx) => {
     const org = await tx.org.create({ data: { name: orgName, slug: slugify(orgName) } });
     const workspace = await tx.workspace.create({
@@ -41,7 +42,7 @@ export async function register({ email, password, name, orgName }) {
         monthlyCreditGrant: PLAN_MONTHLY_CREDITS.FREE,
       },
     });
-    const user = await tx.user.create({ data: { email, passwordHash, name } });
+    const user = await tx.user.create({ data: { email, passwordHash, googleId, name } });
     const membership = await tx.membership.create({
       data: { userId: user.id, workspaceId: workspace.id, role: 'OWNER' },
     });
@@ -53,6 +54,24 @@ export async function register({ email, password, name, orgName }) {
   // workspace exists without a credit balance yet. Acceptable for MVP;
   // reserveCredit fails closed (missing balance = 0 available) in that gap.
   await initializeBalance(workspace.id, workspace.monthlyCreditGrant);
+
+  return { user, workspace, membership, org };
+}
+
+export async function register({ email, password, name, orgName }) {
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) {
+    throw new ApiError(409, 'An account with this email already exists');
+  }
+
+  const passwordHash = await hashPassword(password);
+  const { user, workspace, membership, org } = await createAccount({
+    email,
+    name,
+    passwordHash,
+    googleId: null,
+    orgName,
+  });
 
   return issueSession({
     userId: user.id,
@@ -95,6 +114,87 @@ export async function login({ email, password, workspaceId }) {
     role: membership.role,
     user,
     workspace: membership.workspace,
+  });
+}
+
+// Verifies the signature, audience, and expiry of a Google Identity
+// Services ID token and returns its payload. Split out as a default so
+// tests can inject a fake verifier (same pattern as stripeService's
+// makeClient) — actually exchanging a live Google-signed token isn't
+// practical in a test suite.
+async function verifyGoogleIdToken(idToken) {
+  if (!env.GOOGLE_CLIENT_ID) {
+    throw new ApiError(503, 'Google sign-in is not configured');
+  }
+  const client = new OAuth2Client(env.GOOGLE_CLIENT_ID);
+  const ticket = await client.verifyIdToken({ idToken, audience: env.GOOGLE_CLIENT_ID });
+  return ticket.getPayload();
+}
+
+/**
+ * Signs in with a Google Identity Services ID token, linking or creating an
+ * account as needed:
+ *   - googleId already on file -> sign in as that user.
+ *   - no googleId match, but an existing account shares the verified email
+ *     -> link googleId onto it (lets a password user add Google sign-in).
+ *   - neither -> create a brand-new account, same shape as register().
+ */
+export async function loginWithGoogle(credential, verify = verifyGoogleIdToken) {
+  let payload;
+  try {
+    payload = await verify(credential);
+  } catch (err) {
+    if (err instanceof ApiError) throw err;
+    throw new ApiError(401, 'Invalid Google credential');
+  }
+
+  if (!payload?.sub || !payload.email || !payload.email_verified) {
+    throw new ApiError(401, 'Invalid or unverified Google account');
+  }
+
+  const email = payload.email.toLowerCase();
+  const googleId = payload.sub;
+  const name = payload.name || email;
+  const include = {
+    memberships: { include: { workspace: true }, orderBy: { createdAt: 'asc' } },
+  };
+
+  let user = await prisma.user.findUnique({ where: { googleId }, include });
+  if (!user) {
+    const existing = await prisma.user.findUnique({ where: { email }, include });
+    if (existing) {
+      user = await prisma.user.update({ where: { id: existing.id }, data: { googleId }, include });
+    }
+  }
+
+  let workspace, membership, orgId;
+  if (user) {
+    if (user.suspendedAt) throw new ApiError(403, 'This account has been suspended');
+    membership = user.memberships[0];
+    if (!membership) throw new ApiError(403, 'This account has no access to that workspace');
+    workspace = membership.workspace;
+    orgId = workspace.orgId;
+  } else {
+    const created = await createAccount({
+      email,
+      name,
+      passwordHash: null,
+      googleId,
+      orgName: `${name}'s Workspace`,
+    });
+    user = created.user;
+    workspace = created.workspace;
+    membership = created.membership;
+    orgId = created.org.id;
+  }
+
+  return issueSession({
+    userId: user.id,
+    workspaceId: workspace.id,
+    orgId,
+    role: membership.role,
+    user,
+    workspace,
   });
 }
 

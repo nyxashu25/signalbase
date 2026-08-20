@@ -37,6 +37,17 @@ export async function login(req, res) {
   });
 }
 
+export async function google(req, res) {
+  const result = await authService.loginWithGoogle(req.body.credential);
+  setRefreshCookie(res, result.refreshCookieValue);
+  res.json({
+    accessToken: result.accessToken,
+    user: result.user,
+    workspace: result.workspace,
+    role: result.role,
+  });
+}
+
 export async function refresh(req, res) {
   const result = await authService.refresh(req.cookies?.[REFRESH_COOKIE]);
   setRefreshCookie(res, result.refreshCookieValue);

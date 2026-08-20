@@ -14,3 +14,10 @@ export const loginSchema = z.object({
   // Defaults to the user's oldest membership.
   workspaceId: z.string().uuid().optional(),
 });
+
+// The ID token (a signed JWT) Google Identity Services hands the frontend
+// after the user picks an account — verified server-side in
+// authService.loginWithGoogle, never trusted as-is.
+export const googleLoginSchema = z.object({
+  credential: z.string().min(1),
+});

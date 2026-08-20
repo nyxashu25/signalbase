@@ -3,7 +3,7 @@ import * as authController from '../controllers/authController.js';
 import { requireAuth } from '../middleware/auth.js';
 import { validateBody } from '../middleware/validate.js';
 import { rateLimit, byIp } from '../middleware/rateLimit.js';
-import { registerSchema, loginSchema } from '../validators/authValidators.js';
+import { registerSchema, loginSchema, googleLoginSchema } from '../validators/authValidators.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 export const authRouter = Router();
@@ -29,6 +29,12 @@ authRouter.post(
   loginLimiter,
   validateBody(loginSchema),
   asyncHandler(authController.login),
+);
+authRouter.post(
+  '/google',
+  loginLimiter,
+  validateBody(googleLoginSchema),
+  asyncHandler(authController.google),
 );
 authRouter.post('/refresh', asyncHandler(authController.refresh));
 authRouter.post('/logout', asyncHandler(authController.logout));

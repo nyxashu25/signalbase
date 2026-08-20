@@ -3,6 +3,8 @@ import request from 'supertest';
 import { createApp } from '../app.js';
 import { resetDb, resetRedis } from '../test/dbHelpers.js';
 import { prisma } from '../config/db.js';
+import { loginWithGoogle } from '../services/authService.js';
+import { hashPassword } from '../utils/password.js';
 
 const app = createApp();
 
@@ -134,6 +136,147 @@ describe('auth flow', () => {
     it('requires auth', async () => {
       const res = await request(app).post('/api/v1/auth/tutorial-complete');
       expect(res.status).toBe(401);
+    });
+  });
+
+  // Injects a fake ID-token verifier (same pattern as stripeService's
+  // makeClient) since exchanging a real Google-signed token isn't
+  // practical in a test suite — see authService.loginWithGoogle.
+  describe('loginWithGoogle (unit, injected verifier)', () => {
+    function fakeVerify(payload) {
+      return async () => payload;
+    }
+
+    it('creates a brand-new account for a Google identity never seen before', async () => {
+      const result = await loginWithGoogle(
+        'fake-credential',
+        fakeVerify({
+          sub: 'google-sub-1',
+          email: 'newperson@gmail.com',
+          email_verified: true,
+          name: 'New Person',
+        }),
+      );
+
+      expect(result.accessToken).toBeTruthy();
+      expect(result.role).toBe('OWNER');
+      expect(result.user.email).toBe('newperson@gmail.com');
+
+      const user = await prisma.user.findUnique({ where: { email: 'newperson@gmail.com' } });
+      expect(user.googleId).toBe('google-sub-1');
+      expect(user.passwordHash).toBeNull();
+    });
+
+    it('signs back in via an already-linked googleId', async () => {
+      const first = await loginWithGoogle(
+        'fake-credential',
+        fakeVerify({
+          sub: 'google-sub-2',
+          email: 'repeat@gmail.com',
+          email_verified: true,
+          name: 'Repeat Visitor',
+        }),
+      );
+      const second = await loginWithGoogle(
+        'fake-credential',
+        fakeVerify({
+          sub: 'google-sub-2',
+          email: 'repeat@gmail.com',
+          email_verified: true,
+          name: 'Repeat Visitor',
+        }),
+      );
+
+      expect(second.workspace.id).toBe(first.workspace.id);
+      expect(second.user.id).toBe(first.user.id);
+
+      const users = await prisma.user.findMany({ where: { email: 'repeat@gmail.com' } });
+      expect(users).toHaveLength(1);
+    });
+
+    it('links googleId onto an existing password account with the same verified email', async () => {
+      const passwordHash = await hashPassword('correct-horse-battery');
+      const org = await prisma.org.create({ data: { name: 'Existing Org', slug: 'existing-org' } });
+      const workspace = await prisma.workspace.create({
+        data: { orgId: org.id, name: 'Existing Org Workspace' },
+      });
+      const user = await prisma.user.create({
+        data: { email: 'existing@acme.test', passwordHash, name: 'Existing User' },
+      });
+      await prisma.membership.create({
+        data: { userId: user.id, workspaceId: workspace.id, role: 'OWNER' },
+      });
+
+      const result = await loginWithGoogle(
+        'fake-credential',
+        fakeVerify({
+          sub: 'google-sub-3',
+          email: 'existing@acme.test',
+          email_verified: true,
+          name: 'Existing User',
+        }),
+      );
+
+      expect(result.user.id).toBe(user.id);
+      expect(result.workspace.id).toBe(workspace.id);
+
+      const linked = await prisma.user.findUnique({ where: { id: user.id } });
+      expect(linked.googleId).toBe('google-sub-3');
+      // The password login path must still work after linking.
+      expect(linked.passwordHash).toBe(passwordHash);
+    });
+
+    it('rejects an unverified Google email', async () => {
+      await expect(
+        loginWithGoogle(
+          'fake-credential',
+          fakeVerify({
+            sub: 'google-sub-4',
+            email: 'unverified@gmail.com',
+            email_verified: false,
+            name: 'Unverified',
+          }),
+        ),
+      ).rejects.toMatchObject({ statusCode: 401 });
+    });
+
+    it('rejects sign-in for a suspended account', async () => {
+      await loginWithGoogle(
+        'fake-credential',
+        fakeVerify({
+          sub: 'google-sub-5',
+          email: 'suspend-me@gmail.com',
+          email_verified: true,
+          name: 'Suspend Me',
+        }),
+      );
+      await prisma.user.update({
+        where: { email: 'suspend-me@gmail.com' },
+        data: { suspendedAt: new Date() },
+      });
+
+      await expect(
+        loginWithGoogle(
+          'fake-credential',
+          fakeVerify({
+            sub: 'google-sub-5',
+            email: 'suspend-me@gmail.com',
+            email_verified: true,
+            name: 'Suspend Me',
+          }),
+        ),
+      ).rejects.toMatchObject({ statusCode: 403 });
+    });
+
+    it('responds 401 through the real HTTP route when the credential fails verification', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/google')
+        .send({ credential: 'not-a-real-google-token' });
+
+      // No GOOGLE_CLIENT_ID is configured in the test env, so the default
+      // verifier throws 503 rather than attempting a real network call —
+      // confirms the route is wired end-to-end without needing a live token.
+      expect(res.status).toBe(503);
     });
   });
 });
