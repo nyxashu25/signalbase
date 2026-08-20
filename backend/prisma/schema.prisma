@@ -92,6 +92,43 @@ model SuperAdmin {
   passwordHash String
   name         String
   createdAt    DateTime @default(now())
+
+  uploadedImportBatches DatabaseImportBatch[] @relation("UploadedBy")
+  approvedImportBatches DatabaseImportBatch[] @relation("ApprovedBy")
+}
+
+enum ImportBatchStatus {
+  PROCESSING
+  PENDING_APPROVAL
+  APPROVED
+  FAILED
+}
+
+// A super-admin-uploaded CSV in the RPF format ("Extend Database"). Parsed
+// rows are inserted into Company/Contact immediately so admins can review
+// the batch, but withheld from Elasticsearch (not searchable) until the
+// batch is explicitly approved — see databaseImportService.js.
+model DatabaseImportBatch {
+  id               String            @id @default(uuid())
+  filename         String
+  status           ImportBatchStatus @default(PROCESSING)
+  totalRows        Int
+  insertedContacts Int               @default(0)
+  insertedCompanies Int              @default(0)
+  errorCount       Int               @default(0)
+  errors           Json?
+  uploadedById     String
+  approvedById     String?
+  createdAt        DateTime          @default(now())
+  processedAt      DateTime?
+  approvedAt       DateTime?
+
+  uploadedBy SuperAdmin  @relation("UploadedBy", fields: [uploadedById], references: [id])
+  approvedBy SuperAdmin? @relation("ApprovedBy", fields: [approvedById], references: [id])
+  companies  Company[]
+  contacts   Contact[]
+
+  @@index([status])
 }
 
 enum Role {
@@ -132,15 +169,21 @@ model Company {
   location     String?
   techStack    String[]
   linkedinUrl  String?
+  // Set when this row came from a super-admin CSV import still awaiting
+  // approval — see DatabaseImportBatch. Null for every pre-existing/seeded
+  // row and for approved-batch rows (cleared on approval).
+  importBatchId String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   contacts     Contact[]
   listItems    ListItem[]
   detailViews  CompanyDetailView[]
+  importBatch  DatabaseImportBatch? @relation(fields: [importBatchId], references: [id])
 
   @@index([industry])
   @@index([name])
+  @@index([importBatchId])
 }
 
 model Contact {
@@ -162,6 +205,8 @@ model Contact {
   // fields above are wiped and this contact is permanently excluded from
   // search/reveal, not just for the workspace that requested it.
   redactedAt    DateTime?
+  // See Company.importBatchId — same staged-for-review semantics.
+  importBatchId String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -169,9 +214,11 @@ model Contact {
   listItems    ListItem[]
   emailReveals EmailReveal[]
   enrollments  SequenceEnrollment[]
+  importBatch  DatabaseImportBatch? @relation(fields: [importBatchId], references: [id])
 
   @@index([companyId])
   @@index([lastName, firstName])
+  @@index([importBatchId])
 }
 
 // ---------------------------------------------------------------------------

@@ -1,8 +1,10 @@
 import { Router } from 'express';
 import * as adminAuthController from '../controllers/adminAuthController.js';
 import * as adminController from '../controllers/adminController.js';
+import * as databaseImportController from '../controllers/databaseImportController.js';
 import { requireSuperAdmin } from '../middleware/adminAuth.js';
 import { validateBody, validateQuery } from '../middleware/validate.js';
+import { uploadCsv } from '../middleware/uploadCsv.js';
 import { rateLimit, byIp } from '../middleware/rateLimit.js';
 import {
   adminLoginSchema,
@@ -69,4 +71,26 @@ adminRouter.put(
   '/settings/stripe',
   validateBody(saveStripeSettingsSchema),
   asyncHandler(adminController.saveStripeSettings),
+);
+
+// Uploads are inherently rarer and heavier than the rest of the admin API —
+// capped well below the general admin traffic pattern.
+const databaseImportLimiter = rateLimit({
+  limit: 10,
+  windowSeconds: 60 * 60,
+  prefix: 'database-import-upload',
+  keyFn: byIp,
+});
+
+adminRouter.get('/database-imports', asyncHandler(databaseImportController.list));
+adminRouter.get('/database-imports/:batchId', asyncHandler(databaseImportController.detail));
+adminRouter.post(
+  '/database-imports',
+  databaseImportLimiter,
+  uploadCsv,
+  asyncHandler(databaseImportController.upload),
+);
+adminRouter.post(
+  '/database-imports/:batchId/approve',
+  asyncHandler(databaseImportController.approve),
 );

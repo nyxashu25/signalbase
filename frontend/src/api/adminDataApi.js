@@ -56,6 +56,22 @@ export const adminDataApi = adminBaseApi.injectEndpoints({
       query: (body) => ({ url: '/settings/stripe', method: 'PUT', body }),
       invalidatesTags: ['StripeSettings'],
     }),
+    listDatabaseImports: builder.query({
+      query: () => '/database-imports',
+      providesTags: ['DatabaseImports'],
+    }),
+    uploadDatabaseImport: builder.mutation({
+      query: (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        return { url: '/database-imports', method: 'POST', body: formData };
+      },
+      invalidatesTags: ['DatabaseImports'],
+    }),
+    approveDatabaseImport: builder.mutation({
+      query: (batchId) => ({ url: `/database-imports/${batchId}/approve`, method: 'POST' }),
+      invalidatesTags: ['DatabaseImports'],
+    }),
   }),
 });
 
@@ -72,4 +88,7 @@ export const {
   useListAdminTransactionsQuery,
   useGetAdminStripeSettingsQuery,
   useSaveAdminStripeSettingsMutation,
+  useListDatabaseImportsQuery,
+  useUploadDatabaseImportMutation,
+  useApproveDatabaseImportMutation,
 } = adminDataApi;

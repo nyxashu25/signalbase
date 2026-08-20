@@ -9,3 +9,4 @@ export const reconciliationQueue = new Queue('credit-reconciliation', {
   connection: bullConnection,
 });
 export const sequenceQueue = new Queue('sequence-tick', { connection: bullConnection });
+export const databaseImportQueue = new Queue('database-import', { connection: bullConnection });

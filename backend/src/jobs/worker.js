@@ -6,6 +6,7 @@ import { esIndexProcessor } from './processors/esIndexProcessor.js';
 import { creditReaperProcessor } from './processors/creditReaperProcessor.js';
 import { reconciliationProcessor } from './processors/reconciliationProcessor.js';
 import { sequenceProcessor } from './processors/sequenceProcessor.js';
+import { databaseImportProcessor } from './processors/databaseImportProcessor.js';
 import { creditReaperQueue, reconciliationQueue, sequenceQueue } from './queues.js';
 
 // Additional queue processors (crm-sync) register here starting in Phase 05.
@@ -42,6 +43,13 @@ async function main() {
     logger.error({ jobId: job?.id, err }, 'sequence-tick job failed');
   });
 
+  const databaseImportWorker = new Worker('database-import', databaseImportProcessor, {
+    connection: bullConnection,
+  });
+  databaseImportWorker.on('failed', (job, err) => {
+    logger.error({ jobId: job?.id, batchId: job?.data?.batchId, err }, 'database-import job failed');
+  });
+
   // Repeatable jobs — BullMQ dedupes by jobId+repeat pattern, so re-running
   // this on every worker boot doesn't stack up duplicate schedules.
   await creditReaperQueue.add(
@@ -57,7 +65,7 @@ async function main() {
   await sequenceQueue.add('tick', {}, { repeat: { every: 60_000 }, jobId: 'sequence-tick' });
 
   logger.info(
-    'Worker process started (es-index, credit-reaper, credit-reconciliation, sequence-tick queues active)',
+    'Worker process started (es-index, credit-reaper, credit-reconciliation, sequence-tick, database-import queues active)',
   );
 
   const shutdown = async () => {
@@ -66,6 +74,7 @@ async function main() {
       creditReaperWorker.close(),
       reconciliationWorker.close(),
       sequenceWorker.close(),
+      databaseImportWorker.close(),
     ]);
     process.exit(0);
   };

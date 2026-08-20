@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { to: '/control', label: 'Overview', end: true },
   { to: '/control/users', label: 'Users' },
   { to: '/control/billing', label: 'Billing' },
+  { to: '/control/extend-database', label: 'Extend database' },
   { to: '/control/settings', label: 'Settings' },
 ];
 
