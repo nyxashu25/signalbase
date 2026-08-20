@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { clearAdminSession } from '../store/adminAuthSlice.js';
+import { useTicketNotifications } from '../hooks/useTicketNotifications.js';
 
 const NAV_ITEMS = [
   { to: '/control', label: 'Overview', end: true },
@@ -16,10 +17,18 @@ export function AdminLayout() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [navOpen, setNavOpen] = useState(false);
+  const { unansweredCount } = useTicketNotifications();
+  const [notifyPermission, setNotifyPermission] = useState(
+    typeof Notification !== 'undefined' ? Notification.permission : 'unsupported',
+  );
 
   function handleLogout() {
     dispatch(clearAdminSession());
     navigate('/control/login', { replace: true });
+  }
+
+  function handleEnableNotifications() {
+    Notification.requestPermission().then(setNotifyPermission);
   }
 
   return (
@@ -34,7 +43,7 @@ export function AdminLayout() {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-56 shrink-0 border-r border-white/10 bg-ink-900 transition-transform duration-200 ease-brand md:static md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-56 shrink-0 flex-col border-r border-white/10 bg-ink-900 transition-transform duration-200 ease-brand md:static md:translate-x-0 ${
           navOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -58,6 +67,24 @@ export function AdminLayout() {
               {item.label}
             </NavLink>
           ))}
+        </nav>
+        <nav className="mt-auto flex flex-col gap-1 border-t border-white/10 px-2 py-2">
+          <NavLink
+            to="/control/tickets"
+            onClick={() => setNavOpen(false)}
+            className={({ isActive }) =>
+              `flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors duration-150 ease-brand ${
+                isActive ? 'bg-gradient-action text-white' : 'text-ink-300 hover:bg-white/5'
+              }`
+            }
+          >
+            <span>Tickets</span>
+            {unansweredCount > 0 && (
+              <span className="rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                {unansweredCount}
+              </span>
+            )}
+          </NavLink>
         </nav>
       </aside>
 
@@ -84,13 +111,24 @@ export function AdminLayout() {
             </button>
             <span className="truncate text-sm font-medium text-ink-300">{admin?.email}</span>
           </div>
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="shrink-0 rounded-md border border-white/15 px-3 py-1.5 text-xs font-bold text-white hover:bg-white/5"
-          >
-            Logout
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            {notifyPermission === 'default' && (
+              <button
+                type="button"
+                onClick={handleEnableNotifications}
+                className="rounded-md border border-white/15 px-3 py-1.5 text-xs font-bold text-white hover:bg-white/5"
+              >
+                Enable ticket notifications
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="rounded-md border border-white/15 px-3 py-1.5 text-xs font-bold text-white hover:bg-white/5"
+            >
+              Logout
+            </button>
+          </div>
         </header>
         <main className="flex-1 overflow-y-auto bg-ink-950 p-4 sm:p-6">
           <Outlet />

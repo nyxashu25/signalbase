@@ -2,6 +2,7 @@ import { Router } from 'express';
 import * as adminAuthController from '../controllers/adminAuthController.js';
 import * as adminController from '../controllers/adminController.js';
 import * as databaseImportController from '../controllers/databaseImportController.js';
+import * as adminTicketController from '../controllers/adminTicketController.js';
 import { requireSuperAdmin } from '../middleware/adminAuth.js';
 import { validateBody, validateQuery } from '../middleware/validate.js';
 import { uploadCsv } from '../middleware/uploadCsv.js';
@@ -14,6 +15,11 @@ import {
   updateUserPlanSchema,
 } from '../validators/adminValidators.js';
 import { saveStripeSettingsSchema } from '../validators/billingValidators.js';
+import {
+  adminListTicketsQuerySchema,
+  addTicketMessageSchema,
+  ticketNotificationsQuerySchema,
+} from '../validators/ticketValidators.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 export const adminRouter = Router();
@@ -94,3 +100,24 @@ adminRouter.post(
   '/database-imports/:batchId/approve',
   asyncHandler(databaseImportController.approve),
 );
+
+// Notifications is polled far more frequently than the list itself (see
+// TicketNotifier.jsx) — listed first so it reads as the "live" endpoint of
+// this group rather than buried among the CRUD routes below.
+adminRouter.get(
+  '/tickets/notifications',
+  validateQuery(ticketNotificationsQuerySchema),
+  asyncHandler(adminTicketController.notifications),
+);
+adminRouter.get(
+  '/tickets',
+  validateQuery(adminListTicketsQuerySchema),
+  asyncHandler(adminTicketController.index),
+);
+adminRouter.get('/tickets/:id', asyncHandler(adminTicketController.show));
+adminRouter.post(
+  '/tickets/:id/messages',
+  validateBody(addTicketMessageSchema),
+  asyncHandler(adminTicketController.reply),
+);
+adminRouter.post('/tickets/:id/close', asyncHandler(adminTicketController.close));

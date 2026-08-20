@@ -17,6 +17,9 @@ import { SequenceBuilder } from './pages/SequenceBuilder.jsx';
 import { SequenceDetail } from './pages/SequenceDetail.jsx';
 import { Profile } from './pages/Profile.jsx';
 import { AddCredits } from './pages/AddCredits.jsx';
+import { Tickets } from './pages/Tickets.jsx';
+import { NewTicket } from './pages/NewTicket.jsx';
+import { TicketDetail } from './pages/TicketDetail.jsx';
 import { Home } from './pages/marketing/Home.jsx';
 import { Pricing } from './pages/marketing/Pricing.jsx';
 import { Product } from './pages/marketing/Product.jsx';
@@ -34,6 +37,8 @@ import { AdminUserDetail } from './pages/admin/AdminUserDetail.jsx';
 import { AdminBilling } from './pages/admin/AdminBilling.jsx';
 import { AdminSettings } from './pages/admin/AdminSettings.jsx';
 import { AdminExtendDatabase } from './pages/admin/AdminExtendDatabase.jsx';
+import { AdminTickets } from './pages/admin/AdminTickets.jsx';
+import { AdminTicketDetail } from './pages/admin/AdminTicketDetail.jsx';
 import { authApi } from './api/authApi.js';
 import { setSession, clearSession } from './store/authSlice.js';
 
@@ -91,6 +96,9 @@ export function App() {
             <Route path="sequences/:id" element={<SequenceDetail />} />
             <Route path="billing" element={<Billing />} />
             <Route path="billing/add-credits" element={<AddCredits />} />
+            <Route path="tickets" element={<Tickets />} />
+            <Route path="tickets/new" element={<NewTicket />} />
+            <Route path="tickets/:id" element={<TicketDetail />} />
             <Route path="profile" element={<Profile />} />
           </Route>
         </Route>
@@ -103,6 +111,8 @@ export function App() {
             <Route path="users/:userId" element={<AdminUserDetail />} />
             <Route path="billing" element={<AdminBilling />} />
             <Route path="extend-database" element={<AdminExtendDatabase />} />
+            <Route path="tickets" element={<AdminTickets />} />
+            <Route path="tickets/:ticketId" element={<AdminTicketDetail />} />
             <Route path="settings" element={<AdminSettings />} />
           </Route>
         </Route>

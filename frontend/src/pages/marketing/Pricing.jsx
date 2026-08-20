@@ -1,8 +1,19 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MarketingNav } from '../../components/marketing/MarketingNav.jsx';
 import { MarketingFooter } from '../../components/marketing/MarketingFooter.jsx';
 import { AnimatedCreditLedgerMockup } from '../../components/marketing/AnimatedCreditLedgerMockup.jsx';
-import { PLANS } from '../../data/plans.js';
+import { PLANS, BILLING_INTERVALS, planPriceForInterval } from '../../data/plans.js';
+
+const CADENCE_LABEL = { MONTH: 'month', QUARTER: 'quarter', YEAR: 'year' };
+
+// Whole monthly prices stay clean ($29); quarterly/annual discounts can
+// land on a fractional dollar (29 * 3 * 0.9 = $78.30) — mirrors the same
+// helper in pages/Billing.jsx so the two pages never format a price
+// differently for the same plan/interval.
+function formatUsd(amount) {
+  return Number.isInteger(amount) ? `$${amount}` : `$${amount.toFixed(2)}`;
+}
 
 const FAQS = [
   {
@@ -24,6 +35,9 @@ const FAQS = [
 ];
 
 export function Pricing() {
+  const [billingIntervalChoice, setBillingIntervalChoice] = useState('MONTH');
+  const cadence = CADENCE_LABEL[billingIntervalChoice];
+
   return (
     <div className="min-h-screen bg-bg">
       <MarketingNav />
@@ -36,63 +50,93 @@ export function Pricing() {
           Every plan runs on the same credit ledger. Pay for seats, spend credits only on the
           contacts you actually reveal.
         </p>
+
+        <div className="mt-8 inline-flex rounded-md border border-border p-0.5">
+          {BILLING_INTERVALS.map((i) => (
+            <button
+              key={i.key}
+              type="button"
+              onClick={() => setBillingIntervalChoice(i.key)}
+              className={`rounded px-4 py-1.5 text-sm font-bold ${
+                billingIntervalChoice === i.key ? 'bg-gradient-action text-white' : 'text-text-muted'
+              }`}
+            >
+              {i.label}
+              {i.discount > 0 && (
+                <span className="ml-1.5 text-[11px] font-medium opacity-80">
+                  −{Math.round(i.discount * 100)}%
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
       </section>
 
       <section className="mx-auto max-w-[1200px] px-6 py-14">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-          {PLANS.map((plan) => (
-            <div
-              key={plan.key}
-              className={`flex flex-col rounded-xl border p-7 ${
-                plan.popular
-                  ? 'border-primary/40 bg-surface-elevated shadow-dp-md ring-2 ring-primary'
-                  : 'border-border bg-surface-elevated shadow-dp'
-              }`}
-            >
-              {plan.popular && (
-                <span className="mb-3 inline-flex w-fit items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-primary">
-                  Most popular
-                </span>
-              )}
-              <h3 className="text-lg font-bold text-text">{plan.name}</h3>
-              <p className="mt-1 text-sm text-text-muted">{plan.tagline}</p>
+          {PLANS.map((plan) => {
+            const displayPrice =
+              plan.key === 'FREE' ? 0 : planPriceForInterval(plan.key, billingIntervalChoice);
+            const unit =
+              plan.key === 'ORGANIZATION'
+                ? `seat/${cadence}, min 3 seats`
+                : plan.unit && `seat/${cadence}`;
 
-              <div className="mt-6 flex items-baseline gap-1">
-                <span className="text-4xl font-extrabold tracking-tight text-text">
-                  ${plan.price}
-                </span>
-                {plan.unit && <span className="text-sm text-text-muted">/{plan.unit}</span>}
-              </div>
-              {!plan.unit && <div className="mt-1 text-sm text-text-muted">forever</div>}
-
-              <div className="mt-3 inline-flex w-fit rounded-full bg-surface px-3 py-1 text-xs font-bold text-text-muted">
-                {plan.credits}
-              </div>
-
-              <Link
-                to={plan.key === 'ORGANIZATION' ? '/contact' : '/login'}
-                className={`mt-7 rounded-md px-4 py-2.5 text-center text-sm font-bold transition-transform duration-150 ease-brand hover:-translate-y-px ${
+            return (
+              <div
+                key={plan.key}
+                className={`flex flex-col rounded-xl border p-7 ${
                   plan.popular
-                    ? 'bg-gradient-action text-white shadow-[0_10px_24px_rgba(148,0,222,0.24)]'
-                    : 'border border-border bg-surface-elevated text-text'
+                    ? 'border-primary/40 bg-surface-elevated shadow-dp-md ring-2 ring-primary'
+                    : 'border-border bg-surface-elevated shadow-dp'
                 }`}
               >
-                {plan.key === 'ORGANIZATION' ? 'Talk to sales' : 'Start free'}
-              </Link>
+                {plan.popular && (
+                  <span className="mb-3 inline-flex w-fit items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-primary">
+                    Most popular
+                  </span>
+                )}
+                <h3 className="text-lg font-bold text-text">{plan.name}</h3>
+                <p className="mt-1 text-sm text-text-muted">{plan.tagline}</p>
 
-              <ul className="mt-7 flex flex-1 flex-col gap-3 text-sm text-text-muted">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2">
-                    <CheckIcon />
-                    <span>{f}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+                <div className="mt-6 flex items-baseline gap-1">
+                  <span className="text-4xl font-extrabold tracking-tight text-text">
+                    {formatUsd(displayPrice)}
+                  </span>
+                  {unit && <span className="text-sm text-text-muted">/{unit}</span>}
+                </div>
+                {!plan.unit && <div className="mt-1 text-sm text-text-muted">forever</div>}
+
+                <div className="mt-3 inline-flex w-fit rounded-full bg-surface px-3 py-1 text-xs font-bold text-text-muted">
+                  {plan.credits}
+                </div>
+
+                <Link
+                  to={plan.key === 'ORGANIZATION' ? '/contact' : '/login'}
+                  className={`mt-7 rounded-md px-4 py-2.5 text-center text-sm font-bold transition-transform duration-150 ease-brand hover:-translate-y-px ${
+                    plan.popular
+                      ? 'bg-gradient-action text-white shadow-[0_10px_24px_rgba(148,0,222,0.24)]'
+                      : 'border border-border bg-surface-elevated text-text'
+                  }`}
+                >
+                  {plan.key === 'ORGANIZATION' ? 'Talk to sales' : 'Start free'}
+                </Link>
+
+                <ul className="mt-7 flex flex-1 flex-col gap-3 text-sm text-text-muted">
+                  {plan.features.map((f) => (
+                    <li key={f} className="flex items-start gap-2">
+                      <CheckIcon />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
         </div>
         <p className="mt-8 text-center text-xs text-text-muted">
-          Prices shown are per seat, billed annually. Monthly billing available at checkout.
+          Prices shown are per seat. Quarterly and annual billing come with a 10% and 20% discount —
+          pick your cadence above or at checkout.
         </p>
       </section>
 

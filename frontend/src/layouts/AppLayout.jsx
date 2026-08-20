@@ -32,7 +32,7 @@ export function AppLayout() {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-56 shrink-0 border-r border-border bg-surface-elevated transition-transform duration-200 ease-brand md:static md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-56 shrink-0 flex-col border-r border-border bg-surface-elevated transition-transform duration-200 ease-brand md:static md:translate-x-0 ${
           navOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -58,6 +58,23 @@ export function AppLayout() {
               {item.label}
             </NavLink>
           ))}
+        </nav>
+        <nav className="mt-auto flex flex-col gap-1 border-t border-border px-2 py-2">
+          <NavLink
+            to="/app/tickets"
+            data-tour="nav-tickets"
+            onClick={() => setNavOpen(false)}
+            className={({ isActive }) =>
+              `flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors duration-150 ease-brand ${
+                isActive
+                  ? 'bg-gradient-action text-white'
+                  : 'text-text-muted hover:bg-surface hover:text-text'
+              }`
+            }
+          >
+            <TicketIcon />
+            Tickets
+          </NavLink>
         </nav>
       </aside>
 
@@ -100,5 +117,18 @@ export function AppLayout() {
       </div>
       <GuidedTour />
     </div>
+  );
+}
+
+function TicketIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path
+        d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V8Z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M10 7v10" strokeLinecap="round" strokeDasharray="2 2" />
+    </svg>
   );
 }

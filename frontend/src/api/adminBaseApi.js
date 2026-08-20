@@ -12,6 +12,13 @@ export const adminBaseApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['AdminUsers', 'AdminSummary', 'StripeSettings', 'DatabaseImports'],
+  tagTypes: [
+    'AdminUsers',
+    'AdminSummary',
+    'StripeSettings',
+    'DatabaseImports',
+    'AdminTickets',
+    'AdminTicket',
+  ],
   endpoints: () => ({}),
 });

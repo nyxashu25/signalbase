@@ -72,6 +72,28 @@ export const adminDataApi = adminBaseApi.injectEndpoints({
       query: (batchId) => ({ url: `/database-imports/${batchId}/approve`, method: 'POST' }),
       invalidatesTags: ['DatabaseImports'],
     }),
+    listAdminTickets: builder.query({
+      query: (params) => ({ url: '/tickets', params }),
+      providesTags: ['AdminTickets'],
+    }),
+    getAdminTicket: builder.query({
+      query: (id) => `/tickets/${id}`,
+      providesTags: (result, error, id) => [{ type: 'AdminTicket', id }],
+    }),
+    replyToAdminTicket: builder.mutation({
+      query: ({ id, body }) => ({ url: `/tickets/${id}/messages`, method: 'POST', body: { body } }),
+      invalidatesTags: (result, error, { id }) => ['AdminTickets', { type: 'AdminTicket', id }],
+    }),
+    closeAdminTicket: builder.mutation({
+      query: (id) => ({ url: `/tickets/${id}/close`, method: 'POST' }),
+      invalidatesTags: (result, error, id) => ['AdminTickets', { type: 'AdminTicket', id }],
+    }),
+    // Polled from AdminLayout to drive the browser Notification popup — not
+    // tagged/invalidated like the rest, it's meant to be read fresh every
+    // poll rather than cached against other ticket mutations.
+    getAdminTicketNotifications: builder.query({
+      query: (since) => ({ url: '/tickets/notifications', params: since ? { since } : undefined }),
+    }),
   }),
 });
 
@@ -91,4 +113,9 @@ export const {
   useListDatabaseImportsQuery,
   useUploadDatabaseImportMutation,
   useApproveDatabaseImportMutation,
+  useListAdminTicketsQuery,
+  useGetAdminTicketQuery,
+  useReplyToAdminTicketMutation,
+  useCloseAdminTicketMutation,
+  useGetAdminTicketNotificationsQuery,
 } = adminDataApi;

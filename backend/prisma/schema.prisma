@@ -43,60 +43,63 @@ enum BillingInterval {
 }
 
 model Workspace {
-  id                 String   @id @default(uuid())
-  orgId              String
-  name               String
-  plan               Plan     @default(FREE)
-  monthlyCreditGrant Int      @default(100)
+  id                   String          @id @default(uuid())
+  orgId                String
+  name                 String
+  plan                 Plan            @default(FREE)
+  monthlyCreditGrant   Int             @default(100)
   // Null until the workspace has ever started a checkout — billing is
   // opt-in, not every workspace has a Stripe customer.
-  stripeCustomerId     String? @unique
-  stripeSubscriptionId String? @unique
+  stripeCustomerId     String?         @unique
+  stripeSubscriptionId String?         @unique
   // Set when a paid subscription checkout activates (see
   // stripeService.activatePlanSubscription) — never touched by the
   // super-admin plan override, which is a support action, not a purchase.
   // Drives the minimum commitment: self-serve downgrade between paid tiers
   // is blocked until billingInterval's length has elapsed since this date
   // (1/3/12 months for MONTH/QUARTER/YEAR — the interval IS the commitment).
-  planActivatedAt   DateTime?
-  billingInterval    BillingInterval @default(MONTH)
-  createdAt          DateTime @default(now())
+  planActivatedAt      DateTime?
+  billingInterval      BillingInterval @default(MONTH)
+  createdAt            DateTime        @default(now())
 
-  org          Org                 @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  memberships  Membership[]
-  lists        List[]
-  creditLedger CreditLedgerEntry[]
+  org                Org                  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  memberships        Membership[]
+  lists              List[]
+  creditLedger       CreditLedgerEntry[]
   emailReveals       EmailReveal[]
   companyDetailViews CompanyDetailView[]
   sequences          Sequence[]
   enrollments        SequenceEnrollment[]
   suppressions       SuppressionEntry[]
+  tickets            Ticket[]
 
   @@index([orgId])
 }
 
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  passwordHash String
-  name         String
+  id                  String    @id @default(uuid())
+  email               String    @unique
+  passwordHash        String
+  name                String
   // Set by a super admin (see SuperAdmin below) to immediately cut off
   // login/refresh — checked in authService.login/refresh, not per-request,
   // matching this app's stateless-access-token design (see docs on
   // ACCESS_TOKEN_TTL_SECONDS). Null means never suspended.
-  suspendedAt  DateTime?
+  suspendedAt         DateTime?
   // Null until the guided first-login tour is finished or skipped — checked
   // once per session by the frontend to decide whether to show it. Set once
   // and never cleared, so it truly shows only the first time, across
   // devices/browsers, not per-localStorage.
   tutorialCompletedAt DateTime?
-  createdAt    DateTime @default(now())
+  createdAt           DateTime  @default(now())
 
   memberships        Membership[]
   emailReveals       EmailReveal[]
   companyDetailViews CompanyDetailView[]
-  createdLists       List[]     @relation("ListCreatedBy")
-  createdSequences   Sequence[] @relation("SequenceCreatedBy")
+  createdLists       List[]              @relation("ListCreatedBy")
+  createdSequences   Sequence[]          @relation("SequenceCreatedBy")
+  createdTickets     Ticket[]
+  ticketMessages     TicketMessage[]
 }
 
 // ---------------------------------------------------------------------------
@@ -116,6 +119,7 @@ model SuperAdmin {
 
   uploadedImportBatches DatabaseImportBatch[] @relation("UploadedBy")
   approvedImportBatches DatabaseImportBatch[] @relation("ApprovedBy")
+  ticketMessages        TicketMessage[]
 }
 
 enum ImportBatchStatus {
@@ -130,19 +134,19 @@ enum ImportBatchStatus {
 // the batch, but withheld from Elasticsearch (not searchable) until the
 // batch is explicitly approved — see databaseImportService.js.
 model DatabaseImportBatch {
-  id               String            @id @default(uuid())
-  filename         String
-  status           ImportBatchStatus @default(PROCESSING)
-  totalRows        Int
-  insertedContacts Int               @default(0)
-  insertedCompanies Int              @default(0)
-  errorCount       Int               @default(0)
-  errors           Json?
-  uploadedById     String
-  approvedById     String?
-  createdAt        DateTime          @default(now())
-  processedAt      DateTime?
-  approvedAt       DateTime?
+  id                String            @id @default(uuid())
+  filename          String
+  status            ImportBatchStatus @default(PROCESSING)
+  totalRows         Int
+  insertedContacts  Int               @default(0)
+  insertedCompanies Int               @default(0)
+  errorCount        Int               @default(0)
+  errors            Json?
+  uploadedById      String
+  approvedById      String?
+  createdAt         DateTime          @default(now())
+  processedAt       DateTime?
+  approvedAt        DateTime?
 
   uploadedBy SuperAdmin  @relation("UploadedBy", fields: [uploadedById], references: [id])
   approvedBy SuperAdmin? @relation("ApprovedBy", fields: [approvedById], references: [id])
@@ -181,26 +185,26 @@ model Membership {
 // ---------------------------------------------------------------------------
 
 model Company {
-  id           String   @id @default(uuid())
-  name         String
-  domain       String   @unique
-  industry     String?
-  headcountMin Int?
-  headcountMax Int?
-  location     String?
-  techStack    String[]
-  linkedinUrl  String?
+  id            String   @id @default(uuid())
+  name          String
+  domain        String   @unique
+  industry      String?
+  headcountMin  Int?
+  headcountMax  Int?
+  location      String?
+  techStack     String[]
+  linkedinUrl   String?
   // Set when this row came from a super-admin CSV import still awaiting
   // approval — see DatabaseImportBatch. Null for every pre-existing/seeded
   // row and for approved-batch rows (cleared on approval).
   importBatchId String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  contacts     Contact[]
-  listItems    ListItem[]
-  detailViews  CompanyDetailView[]
-  importBatch  DatabaseImportBatch? @relation(fields: [importBatchId], references: [id])
+  contacts    Contact[]
+  listItems   ListItem[]
+  detailViews CompanyDetailView[]
+  importBatch DatabaseImportBatch? @relation(fields: [importBatchId], references: [id])
 
   @@index([industry])
   @@index([name])
@@ -208,7 +212,7 @@ model Company {
 }
 
 model Contact {
-  id            String   @id @default(uuid())
+  id            String    @id @default(uuid())
   companyId     String
   firstName     String
   lastName      String
@@ -219,7 +223,7 @@ model Contact {
   // Phase 03). Serializers must mask this field unless the requesting
   // workspace has a matching EmailReveal row — see docs/07-credits-state.
   email         String?
-  emailVerified Boolean  @default(false)
+  emailVerified Boolean   @default(false)
   phone         String?
   linkedinUrl   String?
   // Set by a GDPR/CCPA erasure request (privacyService.js) — once set, PII
@@ -228,8 +232,8 @@ model Contact {
   redactedAt    DateTime?
   // See Company.importBatchId — same staged-for-review semantics.
   importBatchId String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   company      Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
   listItems    ListItem[]
@@ -324,7 +328,7 @@ model CreditLedgerEntry {
 // what makes reveals workspace-wide rather than per-user).
 model EmailReveal {
   id           String   @id @default(uuid())
-  workspaceId String
+  workspaceId  String
   contactId    String
   revealedById String
   createdAt    DateTime @default(now())
@@ -430,9 +434,9 @@ model SequenceEnrollment {
   unenrolledAt     DateTime?
   unenrolledReason String?
 
-  sequence  Sequence             @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
-  workspace Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  contact   Contact              @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  sequence  Sequence            @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  workspace Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contact   Contact             @relation(fields: [contactId], references: [id], onDelete: Cascade)
   events    SequenceStepEvent[]
 
   // A contact can only be enrolled in a given sequence once at a time.
@@ -451,14 +455,14 @@ enum StepEventType {
 }
 
 model SequenceStepEvent {
-  id           String        @id @default(uuid())
-  enrollmentId String
-  stepIndex    Int
-  type         StepEventType
+  id              String        @id @default(uuid())
+  enrollmentId    String
+  stepIndex       Int
+  type            StepEventType
   // The ESP's own event id, when it has one (webhook deliveries). Unique so
   // an at-least-once webhook redelivery can't double-count a SENT/OPENED/etc.
-  providerEventId String?    @unique
-  createdAt    DateTime      @default(now())
+  providerEventId String?       @unique
+  createdAt       DateTime      @default(now())
 
   enrollment SequenceEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
 
@@ -515,4 +519,71 @@ model PaymentGatewaySettings {
   webhookSecretEncrypted String?
   updatedAt              DateTime @updatedAt
   updatedById            String?
+}
+
+// ---------------------------------------------------------------------------
+// Support/sales ticketing. A Ticket is one thread; its opening message and
+// every reply (from either side) are TicketMessage rows in creation order —
+// there's no separate "body" field on Ticket itself, so the UI renders the
+// thread uniformly instead of special-casing the first message. Predefined
+// subjects and the 200-word reply limit live in config/ticketConfig.js, not
+// here, matching the plan/credit config pattern elsewhere in this schema.
+// ---------------------------------------------------------------------------
+
+enum TicketType {
+  SUPPORT
+  SALES
+}
+
+// UNANSWERED: waiting on the admin (just created, or the user replied most
+// recently). ANSWERED: the admin has replied and it's the user's turn.
+// CLOSED: resolved, no further replies accepted. "Active" (shown to the
+// user as their open tickets) is UNANSWERED + ANSWERED.
+enum TicketStatus {
+  UNANSWERED
+  ANSWERED
+  CLOSED
+}
+
+enum TicketAuthorType {
+  USER
+  ADMIN
+}
+
+model Ticket {
+  id          String       @id @default(uuid())
+  workspaceId String
+  createdById String
+  type        TicketType
+  subject     String
+  status      TicketStatus @default(UNANSWERED)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  closedAt    DateTime?
+
+  workspace Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User            @relation(fields: [createdById], references: [id])
+  messages  TicketMessage[]
+
+  @@index([workspaceId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model TicketMessage {
+  id            String           @id @default(uuid())
+  ticketId      String
+  authorType    TicketAuthorType
+  // Exactly one of these is set, matching authorType — enforced in
+  // ticketService.js, same convention as ListItem's contactId/companyId XOR.
+  authorUserId  String?
+  authorAdminId String?
+  body          String
+  createdAt     DateTime         @default(now())
+
+  ticket      Ticket      @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorUser  User?       @relation(fields: [authorUserId], references: [id])
+  authorAdmin SuperAdmin? @relation(fields: [authorAdminId], references: [id])
+
+  @@index([ticketId])
 }
