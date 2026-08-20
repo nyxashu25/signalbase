@@ -4,6 +4,7 @@ export const billingApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getBillingSummary: builder.query({
       query: () => '/billing/summary',
+      providesTags: ['BillingSummary'],
     }),
     listBillingPackages: builder.query({
       query: () => '/billing/packages',

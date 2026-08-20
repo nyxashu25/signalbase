@@ -5,6 +5,7 @@ import { ProfileMenu } from '../components/ProfileMenu.jsx';
 import { ThemeToggle } from '../components/ThemeToggle.jsx';
 import { Logo } from '../components/Logo.jsx';
 import { GuidedTour } from '../components/GuidedTour.jsx';
+import { CreditBadge } from '../components/CreditBadge.jsx';
 
 const NAV_ITEMS = [
   { to: '/app', label: 'Dashboard', end: true, tourId: 'nav-dashboard' },
@@ -83,7 +84,8 @@ export function AppLayout() {
             </button>
             <span className="truncate text-sm font-medium text-text-muted">{workspace?.name}</span>
           </div>
-          <div className="flex shrink-0 items-center gap-1">
+          <div className="flex shrink-0 items-center gap-2">
+            <CreditBadge />
             <span data-tour="theme-toggle" className="inline-flex">
               <ThemeToggle />
             </span>

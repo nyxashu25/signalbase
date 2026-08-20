@@ -31,7 +31,10 @@ export const sequencesApi = baseApi.injectEndpoints({
         method: 'POST',
         body: { contactId },
       }),
-      invalidatesTags: (result, error, { sequenceId }) => [{ type: 'Sequences', id: sequenceId }],
+      invalidatesTags: (result, error, { sequenceId }) => [
+        { type: 'Sequences', id: sequenceId },
+        'BillingSummary',
+      ],
     }),
     pauseEnrollment: builder.mutation({
       query: ({ enrollmentId }) => ({

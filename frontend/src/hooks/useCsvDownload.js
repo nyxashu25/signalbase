@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { baseApi } from '../api/baseApi.js';
 
 // RTK Query's fetchBaseQuery assumes JSON — a file download needs the raw
 // Response (to read Content-Disposition and get a Blob), so this goes
@@ -7,6 +8,7 @@ import { useSelector } from 'react-redux';
 // the same bearer token as every other request.
 export function useCsvDownload() {
   const token = useSelector((s) => s.auth.accessToken);
+  const dispatch = useDispatch();
   const [error, setError] = useState(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -36,6 +38,7 @@ export function useCsvDownload() {
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
+      dispatch(baseApi.util.invalidateTags(['BillingSummary']));
     } catch {
       setError('Export failed — try again.');
     } finally {

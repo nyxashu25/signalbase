@@ -27,6 +27,16 @@ export const searchApi = baseApi.injectEndpoints({
     getCompanyDetail: builder.query({
       query: (id) => `/search/companies/${id}`,
       transformResponse: (res) => res.company,
+      // Only the first view per workspace actually charges (see
+      // searchService.getCompanyDetail) — viewCost is 0 on every repeat
+      // view, so this only triggers a billing refetch when a charge
+      // really happened.
+      async onQueryStarted(id, { dispatch, queryFulfilled }) {
+        const { data } = await queryFulfilled;
+        if (data.viewCost > 0) {
+          dispatch(baseApi.util.invalidateTags(['BillingSummary']));
+        }
+      },
     }),
   }),
 });
