@@ -6,7 +6,7 @@ import {
   useSubscribeToPlanMutation,
 } from '../api/billingApi.js';
 import { Pagination } from '../components/Pagination.jsx';
-import { PLANS, findPlan } from '../data/plans.js';
+import { PLANS, findPlan, BILLING_INTERVALS, planPriceForInterval } from '../data/plans.js';
 
 const PAGE_SIZE = 25;
 
@@ -37,8 +37,25 @@ function formatCents(cents) {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
+// Whole monthly prices stay clean ($29); quarterly/annual discounts can
+// land on a fractional dollar (29 * 3 * 0.9 = $78.30) and shouldn't be
+// truncated to a single stray decimal digit.
+function formatUsd(amount) {
+  return Number.isInteger(amount) ? `$${amount}` : `$${amount.toFixed(2)}`;
+}
+
+// Adds calendar months (not a flat day count) — matches the backend's
+// addMonths in stripeService.js, so the displayed lock date agrees with
+// what the server actually enforces.
+function addMonths(date, months) {
+  const result = new Date(date);
+  result.setMonth(result.getMonth() + months);
+  return result;
+}
+
 export function Billing() {
   const [page, setPage] = useState(1);
+  const [billingIntervalChoice, setBillingIntervalChoice] = useState('MONTH');
   const { data: summary } = useGetBillingSummaryQuery();
   const { data: transactions, isFetching } = useListBillingTransactionsQuery({
     page,
@@ -49,21 +66,26 @@ export function Billing() {
   const [subscribeError, setSubscribeError] = useState(null);
 
   const currentPlan = summary ? findPlan(summary.plan) : null;
+  const currentInterval = BILLING_INTERVALS.find((i) => i.key === summary?.billingInterval);
 
-  // Pay-as-you-go: a paid plan can't be downgraded for 3 months after it
-  // was taken (see stripeService.createPlanSubscriptionSession) — mirrored
-  // here so the UI reflects the lock before the user ever clicks Downgrade,
-  // rather than only surfacing it as a rejected-request error.
+  // Pay-as-you-go: a paid plan can't be downgraded until the billing
+  // interval it was taken at has run its course (see
+  // stripeService.createPlanSubscriptionSession) — mirrored here so the UI
+  // reflects the lock before the user ever clicks Downgrade, rather than
+  // only surfacing it as a rejected-request error.
   const lockedUntil =
     summary?.planActivatedAt &&
-    new Date(new Date(summary.planActivatedAt).getTime() + 90 * 24 * 60 * 60 * 1000);
+    addMonths(new Date(summary.planActivatedAt), currentInterval?.months ?? 1);
   const isLocked = Boolean(lockedUntil && lockedUntil > new Date());
 
   async function handleSubscribe(planKey) {
     setSubscribeError(null);
     setSubscribingKey(planKey);
     try {
-      const session = await subscribeToPlan({ plan: planKey }).unwrap();
+      const session = await subscribeToPlan({
+        plan: planKey,
+        interval: billingIntervalChoice,
+      }).unwrap();
       window.location.href = session.url;
     } catch (err) {
       setSubscribeError(err.data?.error?.message || 'Could not start checkout. Please try again.');
@@ -91,9 +113,10 @@ export function Billing() {
             </p>
             <p className="mt-1 text-2xl font-extrabold text-text">
               {currentPlan?.name ?? '—'}
-              {currentPlan?.price > 0 && (
+              {currentPlan && currentPlan.price > 0 && currentInterval && (
                 <span className="ml-2 text-sm font-medium text-text-muted">
-                  ${currentPlan.price}/{currentPlan.unit}
+                  {formatUsd(planPriceForInterval(currentPlan.key, currentInterval.key))}/seat/
+                  {{ MONTH: 'month', QUARTER: 'quarter', YEAR: 'year' }[currentInterval.key]}
                 </span>
               )}
             </p>
@@ -125,15 +148,43 @@ export function Billing() {
         </div>
       </div>
 
-      <h2 className="mt-10 text-sm font-bold uppercase tracking-wide text-text-muted">
-        {summary?.plan === 'ORGANIZATION' ? 'Your plan' : 'Upgrade your plan'}
-      </h2>
+      <div className="mt-10 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-sm font-bold uppercase tracking-wide text-text-muted">
+          {summary?.plan === 'ORGANIZATION' ? 'Your plan' : 'Upgrade your plan'}
+        </h2>
+        <div className="inline-flex rounded-md border border-border p-0.5">
+          {BILLING_INTERVALS.map((i) => (
+            <button
+              key={i.key}
+              type="button"
+              onClick={() => setBillingIntervalChoice(i.key)}
+              className={`rounded px-3 py-1 text-xs font-bold ${
+                billingIntervalChoice === i.key ? 'bg-gradient-action text-white' : 'text-text-muted'
+              }`}
+            >
+              {i.label}
+              {i.discount > 0 && (
+                <span className="ml-1 text-[10px] font-medium opacity-80">
+                  −{Math.round(i.discount * 100)}%
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
       {subscribeError && <p className="mt-2 text-sm text-red-600">{subscribeError}</p>}
       <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {PLANS.map((plan) => {
           const isCurrent = summary?.plan === plan.key;
           const isDowngrade =
             summary && PLAN_ORDER.indexOf(plan.key) < PLAN_ORDER.indexOf(summary.plan);
+          const displayPrice =
+            plan.key === 'FREE' ? 0 : planPriceForInterval(plan.key, billingIntervalChoice);
+          const cadence = { MONTH: 'month', QUARTER: 'quarter', YEAR: 'year' }[
+            billingIntervalChoice
+          ];
+          const cadenceUnit =
+            plan.key === 'ORGANIZATION' ? `seat/${cadence}, min 3 seats` : `seat/${cadence}`;
 
           return (
             <div
@@ -160,9 +211,9 @@ export function Billing() {
                 )}
               </div>
               <p className="mt-2 text-2xl font-extrabold text-text">
-                ${plan.price}
-                {plan.unit && (
-                  <span className="text-xs font-medium text-text-muted">/{plan.unit}</span>
+                {formatUsd(displayPrice)}
+                {plan.key !== 'FREE' && (
+                  <span className="text-xs font-medium text-text-muted">/{cadenceUnit}</span>
                 )}
               </p>
               <p className="mt-1 text-xs text-text-muted">{plan.credits}</p>

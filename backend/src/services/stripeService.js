@@ -10,8 +10,16 @@ import {
   PLAN_MONTHLY_CREDITS,
   PLAN_PRICE_USD_CENTS,
   PLAN_ORDER,
-  MIN_COMMITMENT_DAYS,
+  INTERVAL_MONTHS,
+  planPriceForInterval,
 } from '../config/planConfig.js';
+
+/** Adds calendar months (not a flat day count) — correct across variable month lengths. */
+function addMonths(date, months) {
+  const result = new Date(date);
+  result.setMonth(result.getMonth() + months);
+  return result;
+}
 
 const PROCESSED_EVENT_TTL_SECONDS = 30 * 24 * 60 * 60; // Stripe retries for up to ~3 days; comfortable margin
 
@@ -89,7 +97,7 @@ async function updateSubscriptionState(subscription) {
 // granting only happens in grantMonthlyCredits below. Granting in both
 // places would double-credit the first cycle.
 async function activatePlanSubscription(session) {
-  const { workspaceId, plan } = session.metadata ?? {};
+  const { workspaceId, plan, interval } = session.metadata ?? {};
   if (!workspaceId || !plan) {
     logger.error(
       { sessionId: session.id },
@@ -105,14 +113,18 @@ async function activatePlanSubscription(session) {
       monthlyCreditGrant: PLAN_MONTHLY_CREDITS[plan],
       stripeCustomerId: session.customer,
       stripeSubscriptionId: session.subscription,
-      // Starts (or restarts) the 3-month minimum commitment — every paid
-      // checkout is a fresh subscription, whether it's a first purchase,
-      // an upgrade, or a downgrade taken after an earlier lock expired.
+      billingInterval: interval || 'MONTH',
+      // Starts (or restarts) the minimum commitment — every paid checkout
+      // is a fresh subscription, whether it's a first purchase, an
+      // upgrade, or a downgrade taken after an earlier lock expired.
       planActivatedAt: new Date(),
     },
   });
 
-  logger.info({ workspaceId, plan }, 'Workspace plan activated via Stripe subscription checkout');
+  logger.info(
+    { workspaceId, plan, interval },
+    'Workspace plan activated via Stripe subscription checkout',
+  );
 }
 
 // Fires for every paid subscription invoice, including the very first one —
@@ -130,7 +142,7 @@ async function grantMonthlyCredits(invoice) {
 
   const workspace = await prisma.workspace.findFirst({
     where: { stripeSubscriptionId: invoice.subscription },
-    select: { id: true, monthlyCreditGrant: true },
+    select: { id: true, monthlyCreditGrant: true, billingInterval: true },
   });
   if (!workspace) {
     logger.warn(
@@ -140,19 +152,22 @@ async function grantMonthlyCredits(invoice) {
     return;
   }
 
+  // A quarterly/annual invoice covers that many months of usage in one
+  // charge — grant that many months' worth of credits, not just one, or a
+  // quarterly subscriber would get 1/3 the credits of a monthly one for
+  // the same money.
+  const amount = workspace.monthlyCreditGrant * INTERVAL_MONTHS[workspace.billingInterval];
+
   await prisma.creditLedgerEntry.create({
     data: {
       workspaceId: workspace.id,
-      delta: workspace.monthlyCreditGrant,
+      delta: amount,
       reason: 'MONTHLY_GRANT',
     },
   });
-  await redis.incrby(`credits:balance:${workspace.id}`, workspace.monthlyCreditGrant);
+  await redis.incrby(`credits:balance:${workspace.id}`, amount);
 
-  logger.info(
-    { workspaceId: workspace.id, amount: workspace.monthlyCreditGrant },
-    'Monthly plan credits granted',
-  );
+  logger.info({ workspaceId: workspace.id, amount }, 'Monthly plan credits granted');
 }
 
 export async function handleEvent(event) {
@@ -247,28 +262,42 @@ export async function createCheckoutSession(
  * handleEvent), never here, so a browser that never returns to the success
  * URL doesn't leave the workspace stuck half-upgraded.
  */
+// Stripe's `recurring` shape per interval — QUARTER isn't a native Stripe
+// interval, so it's a month interval with interval_count: 3.
+const STRIPE_RECURRING = {
+  MONTH: { interval: 'month' },
+  QUARTER: { interval: 'month', interval_count: 3 },
+  YEAR: { interval: 'year' },
+};
+
+const INTERVAL_LABEL = { MONTH: 'monthly', QUARTER: 'quarterly', YEAR: 'annual' };
+
 export async function createPlanSubscriptionSession(
-  { workspaceId, plan },
+  { workspaceId, plan, interval = 'MONTH' },
   makeClient = (key) => new Stripe(key),
 ) {
-  const amountMinor = PLAN_PRICE_USD_CENTS[plan];
-  if (amountMinor === undefined) {
+  if (PLAN_PRICE_USD_CENTS[plan] === undefined) {
     throw new ApiError(400, 'Unknown plan');
   }
+  if (!STRIPE_RECURRING[interval]) {
+    throw new ApiError(400, 'Unknown billing interval');
+  }
+  const amountMinor = planPriceForInterval(plan, interval);
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    select: { plan: true, planActivatedAt: true },
+    select: { plan: true, planActivatedAt: true, billingInterval: true },
   });
   const isDowngrade = PLAN_ORDER.indexOf(plan) < PLAN_ORDER.indexOf(workspace.plan);
   if (workspace.plan !== 'FREE' && isDowngrade && workspace.planActivatedAt) {
-    const lockedUntil = new Date(
-      workspace.planActivatedAt.getTime() + MIN_COMMITMENT_DAYS * 24 * 60 * 60 * 1000,
+    const lockedUntil = addMonths(
+      workspace.planActivatedAt,
+      INTERVAL_MONTHS[workspace.billingInterval],
     );
     if (lockedUntil > new Date()) {
       throw new ApiError(
         400,
-        `Your ${workspace.plan} plan is locked in until ${lockedUntil.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} under the 3-month minimum commitment. You can upgrade to a higher plan any time.`,
+        `Your ${workspace.plan} plan (billed ${INTERVAL_LABEL[workspace.billingInterval].toLowerCase()}) is locked in until ${lockedUntil.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}. You can upgrade to a higher plan any time.`,
       );
     }
   }
@@ -277,7 +306,7 @@ export async function createPlanSubscriptionSession(
   if (!credentials?.secretKey) {
     const sessionId = `cs_simulated_plan_${workspaceId}_${Date.now()}`;
     logger.info(
-      { workspaceId, plan, amountMinor, sessionId },
+      { workspaceId, plan, interval, amountMinor, sessionId },
       'Stripe plan subscription checkout simulated (no key configured in admin settings)',
     );
     return { sessionId, url: `https://billing.simulated.local/checkout/${sessionId}` };
@@ -291,16 +320,16 @@ export async function createPlanSubscriptionSession(
       {
         price_data: {
           currency: 'usd',
-          product_data: { name: `DataPit ${plan} plan` },
+          product_data: { name: `DataPit ${plan} plan (${INTERVAL_LABEL[interval]})` },
           unit_amount: amountMinor,
-          recurring: { interval: 'month' },
+          recurring: STRIPE_RECURRING[interval],
         },
         quantity: 1,
       },
     ],
     success_url: `${env.CORS_ORIGIN}/app/billing?checkout=success`,
     cancel_url: `${env.CORS_ORIGIN}/app/billing?checkout=cancelled`,
-    metadata: { workspaceId, plan },
+    metadata: { workspaceId, plan, interval },
   });
 
   return { sessionId: session.id, url: session.url };

@@ -216,6 +216,71 @@ describe('POST /webhooks/stripe', () => {
     expect(ledger.filter((e) => e.reason === 'MONTHLY_GRANT')).toHaveLength(2);
   });
 
+  it('sets billingInterval from checkout metadata on activation', async () => {
+    const workspace = await makeWorkspace();
+
+    await postStripeWebhook({
+      id: 'evt_plan_interval_1',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_plan_interval_1',
+          mode: 'subscription',
+          customer: 'cus_plan_interval_1',
+          subscription: 'sub_plan_interval_1',
+          metadata: { workspaceId: workspace.id, plan: 'BASIC', interval: 'QUARTER' },
+        },
+      },
+    });
+
+    const updated = await prisma.workspace.findUnique({ where: { id: workspace.id } });
+    expect(updated.billingInterval).toBe('QUARTER');
+  });
+
+  it('grants 3 months of credits per invoice for a quarterly subscription', async () => {
+    const workspace = await makeWorkspace();
+    await prisma.workspace.update({
+      where: { id: workspace.id },
+      data: {
+        plan: 'BASIC',
+        monthlyCreditGrant: 500,
+        billingInterval: 'QUARTER',
+        stripeSubscriptionId: 'sub_quarterly_1',
+      },
+    });
+    const before = await getBalance(workspace.id);
+
+    await postStripeWebhook({
+      id: 'evt_quarterly_1',
+      type: 'invoice.paid',
+      data: { object: { id: 'in_q1', subscription: 'sub_quarterly_1' } },
+    });
+
+    expect(await getBalance(workspace.id)).toBe(before + 1500); // 500 * 3 months
+  });
+
+  it('grants 12 months of credits per invoice for an annual subscription', async () => {
+    const workspace = await makeWorkspace();
+    await prisma.workspace.update({
+      where: { id: workspace.id },
+      data: {
+        plan: 'PROFESSIONAL',
+        monthlyCreditGrant: 1200,
+        billingInterval: 'YEAR',
+        stripeSubscriptionId: 'sub_annual_1',
+      },
+    });
+    const before = await getBalance(workspace.id);
+
+    await postStripeWebhook({
+      id: 'evt_annual_1',
+      type: 'invoice.paid',
+      data: { object: { id: 'in_y1', subscription: 'sub_annual_1' } },
+    });
+
+    expect(await getBalance(workspace.id)).toBe(before + 14400); // 1200 * 12 months
+  });
+
   it('ignores a non-subscription invoice (no invoice.subscription)', async () => {
     const workspace = await makeWorkspace();
     const before = await getBalance(workspace.id);
@@ -320,7 +385,11 @@ describe('stripeService.createPlanSubscriptionSession (unit, injected client)', 
       expect(params.mode).toBe('subscription');
       expect(params.line_items[0].price_data.unit_amount).toBe(5900);
       expect(params.line_items[0].price_data.recurring).toEqual({ interval: 'month' });
-      expect(params.metadata).toEqual({ workspaceId: workspace.id, plan: 'PROFESSIONAL' });
+      expect(params.metadata).toEqual({
+        workspaceId: workspace.id,
+        plan: 'PROFESSIONAL',
+        interval: 'MONTH',
+      });
       return { id: 'cs_test_sub', url: 'https://checkout.stripe.com/pay/cs_test_sub' };
     };
     const makeClient = (key) => {
@@ -377,6 +446,89 @@ describe('stripeService.createPlanSubscriptionSession (unit, injected client)', 
     const session = await createPlanSubscriptionSession({
       workspaceId: workspace.id,
       plan: 'PROFESSIONAL',
+    });
+    expect(session.sessionId).toMatch(/^cs_simulated_plan_/);
+  });
+
+  it('prices a quarterly subscription at 3 months minus a 10% discount', async () => {
+    const workspace = await makeWorkspace();
+    await saveStripeSettings({ secretKey: 'sk_test_configured' }, null);
+    const create = async (params) => {
+      // BASIC is 2900/mo -> 2900 * 3 * 0.9 = 7830
+      expect(params.line_items[0].price_data.unit_amount).toBe(7830);
+      expect(params.line_items[0].price_data.recurring).toEqual({
+        interval: 'month',
+        interval_count: 3,
+      });
+      expect(params.metadata.interval).toBe('QUARTER');
+      return { id: 'cs_test_q', url: 'https://checkout.stripe.com/pay/cs_test_q' };
+    };
+    const makeClient = () => ({ checkout: { sessions: { create } } });
+
+    const session = await createPlanSubscriptionSession(
+      { workspaceId: workspace.id, plan: 'BASIC', interval: 'QUARTER' },
+      makeClient,
+    );
+    expect(session.sessionId).toBe('cs_test_q');
+  });
+
+  it('prices an annual subscription at 12 months minus a 20% discount', async () => {
+    const workspace = await makeWorkspace();
+    await saveStripeSettings({ secretKey: 'sk_test_configured' }, null);
+    const create = async (params) => {
+      // PROFESSIONAL is 5900/mo -> 5900 * 12 * 0.8 = 56640
+      expect(params.line_items[0].price_data.unit_amount).toBe(56640);
+      expect(params.line_items[0].price_data.recurring).toEqual({ interval: 'year' });
+      expect(params.metadata.interval).toBe('YEAR');
+      return { id: 'cs_test_y', url: 'https://checkout.stripe.com/pay/cs_test_y' };
+    };
+    const makeClient = () => ({ checkout: { sessions: { create } } });
+
+    const session = await createPlanSubscriptionSession(
+      { workspaceId: workspace.id, plan: 'PROFESSIONAL', interval: 'YEAR' },
+      makeClient,
+    );
+    expect(session.sessionId).toBe('cs_test_y');
+  });
+
+  it('locks a quarterly downgrade for a full 3 months, not just 90 days', async () => {
+    const workspace = await makeWorkspace();
+    // 89 days ago is within 3 calendar months for every month length, so
+    // this specifically checks calendar-month arithmetic, not day counting.
+    const eightyNineDaysAgo = new Date(Date.now() - 89 * 24 * 60 * 60 * 1000);
+    await prisma.workspace.update({
+      where: { id: workspace.id },
+      data: { plan: 'PROFESSIONAL', billingInterval: 'QUARTER', planActivatedAt: eightyNineDaysAgo },
+    });
+
+    await expect(
+      createPlanSubscriptionSession({ workspaceId: workspace.id, plan: 'BASIC' }),
+    ).rejects.toThrow(/locked in until/);
+  });
+
+  it('unlocks an annual downgrade only after a full 12 months', async () => {
+    const workspace = await makeWorkspace();
+    const elevenMonthsAgo = new Date();
+    elevenMonthsAgo.setMonth(elevenMonthsAgo.getMonth() - 11);
+    await prisma.workspace.update({
+      where: { id: workspace.id },
+      data: { plan: 'PROFESSIONAL', billingInterval: 'YEAR', planActivatedAt: elevenMonthsAgo },
+    });
+
+    await expect(
+      createPlanSubscriptionSession({ workspaceId: workspace.id, plan: 'BASIC' }),
+    ).rejects.toThrow(/locked in until/);
+
+    const thirteenMonthsAgo = new Date();
+    thirteenMonthsAgo.setMonth(thirteenMonthsAgo.getMonth() - 13);
+    await prisma.workspace.update({
+      where: { id: workspace.id },
+      data: { planActivatedAt: thirteenMonthsAgo },
+    });
+
+    const session = await createPlanSubscriptionSession({
+      workspaceId: workspace.id,
+      plan: 'BASIC',
     });
     expect(session.sessionId).toMatch(/^cs_simulated_plan_/);
   });

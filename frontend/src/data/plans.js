@@ -71,3 +71,19 @@ export const PLANS = [
 export function findPlan(key) {
   return PLANS.find((p) => p.key === key);
 }
+
+// Mirrors backend/src/config/planConfig.js's INTERVAL_MONTHS/INTERVAL_DISCOUNT
+// — keep both in sync by hand, same as PLANS above.
+export const BILLING_INTERVALS = [
+  { key: 'MONTH', label: 'Monthly', months: 1, discount: 0 },
+  { key: 'QUARTER', label: 'Quarterly', months: 3, discount: 0.1 },
+  { key: 'YEAR', label: 'Annually', months: 12, discount: 0.2 },
+];
+
+/** What one invoice at this plan/interval actually charges, in whole USD. */
+export function planPriceForInterval(planKey, intervalKey) {
+  const plan = findPlan(planKey);
+  const interval = BILLING_INTERVALS.find((i) => i.key === intervalKey);
+  if (!plan || !interval) return null;
+  return Math.round(plan.price * interval.months * (1 - interval.discount) * 100) / 100;
+}

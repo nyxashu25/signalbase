@@ -35,7 +35,12 @@ export async function getSummary(req, res) {
     creditService.getBalance(workspaceId),
     prisma.workspace.findUnique({
       where: { id: workspaceId },
-      select: { plan: true, monthlyCreditGrant: true, planActivatedAt: true },
+      select: {
+        plan: true,
+        monthlyCreditGrant: true,
+        planActivatedAt: true,
+        billingInterval: true,
+      },
     }),
     prisma.creditLedgerEntry.aggregate({
       where: { workspaceId, delta: { lt: 0 } },
@@ -49,6 +54,7 @@ export async function getSummary(req, res) {
     monthlyCreditGrant: workspace.monthlyCreditGrant,
     creditsUsed: Math.abs(usedAgg._sum.delta ?? 0),
     planActivatedAt: workspace.planActivatedAt,
+    billingInterval: workspace.billingInterval,
   });
 }
 
@@ -108,9 +114,13 @@ export async function createCheckoutSession(req, res) {
 
 export async function createPlanSubscriptionSession(req, res) {
   const { workspaceId } = req.auth;
-  const { plan } = req.body;
+  const { plan, interval } = req.body;
 
-  const session = await stripeService.createPlanSubscriptionSession({ workspaceId, plan });
+  const session = await stripeService.createPlanSubscriptionSession({
+    workspaceId,
+    plan,
+    interval,
+  });
   res.status(201).json({ provider: 'stripe', ...session });
 }
 

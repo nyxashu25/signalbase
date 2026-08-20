@@ -34,6 +34,14 @@ enum Plan {
   ORGANIZATION
 }
 
+// How often a paid subscription bills — see config/planConfig.js for the
+// month-count and discount each maps to.
+enum BillingInterval {
+  MONTH
+  QUARTER
+  YEAR
+}
+
 model Workspace {
   id                 String   @id @default(uuid())
   orgId              String
@@ -47,9 +55,11 @@ model Workspace {
   // Set when a paid subscription checkout activates (see
   // stripeService.activatePlanSubscription) — never touched by the
   // super-admin plan override, which is a support action, not a purchase.
-  // Drives the 3-month minimum commitment: self-serve downgrade between
-  // paid tiers is blocked until 90 days after this date.
+  // Drives the minimum commitment: self-serve downgrade between paid tiers
+  // is blocked until billingInterval's length has elapsed since this date
+  // (1/3/12 months for MONTH/QUARTER/YEAR — the interval IS the commitment).
   planActivatedAt   DateTime?
+  billingInterval    BillingInterval @default(MONTH)
   createdAt          DateTime @default(now())
 
   org          Org                 @relation(fields: [orgId], references: [id], onDelete: Cascade)

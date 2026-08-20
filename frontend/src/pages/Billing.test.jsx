@@ -116,6 +116,74 @@ describe('Billing', () => {
     expect(screen.getByRole('button', { name: 'Downgrade' })).toBeEnabled();
   });
 
+  it('shows discounted prices when Quarterly or Annually is selected', async () => {
+    const user = userEvent.setup();
+    mockFetchRoutes([summaryRoute('FREE'), emptyTransactionsRoute]);
+    renderWithProviders(<Billing />, { preloadedState: authenticatedState });
+    await screen.findByText('Current');
+
+    // BASIC is $29/mo -> monthly default shown first.
+    expect(screen.getByText('$29')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /Quarterly/ }));
+    // 29 * 3 * 0.9 = 78.30
+    expect(await screen.findByText('$78.30')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /Annually/ }));
+    // 29 * 12 * 0.8 = 278.40
+    expect(await screen.findByText('$278.40')).toBeInTheDocument();
+  });
+
+  it('locks a quarterly plan for a full 3 months', async () => {
+    const eightyNineDaysAgo = new Date(Date.now() - 89 * 24 * 60 * 60 * 1000).toISOString();
+    mockFetchRoutes([
+      {
+        url: '/billing/summary',
+        respond: {
+          body: {
+            balance: 96,
+            plan: 'PROFESSIONAL',
+            monthlyCreditGrant: 1200,
+            creditsUsed: 4,
+            planActivatedAt: eightyNineDaysAgo,
+            billingInterval: 'QUARTER',
+          },
+        },
+      },
+      emptyTransactionsRoute,
+    ]);
+    renderWithProviders(<Billing />, { preloadedState: authenticatedState });
+
+    await screen.findByText('Current');
+    expect(screen.queryByRole('button', { name: 'Downgrade' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Locked until/ })).toBeDisabled();
+  });
+
+  it('locks an annual plan for a full 12 months', async () => {
+    const elevenMonthsAgo = new Date();
+    elevenMonthsAgo.setMonth(elevenMonthsAgo.getMonth() - 11);
+    mockFetchRoutes([
+      {
+        url: '/billing/summary',
+        respond: {
+          body: {
+            balance: 96,
+            plan: 'PROFESSIONAL',
+            monthlyCreditGrant: 1200,
+            creditsUsed: 4,
+            planActivatedAt: elevenMonthsAgo.toISOString(),
+            billingInterval: 'YEAR',
+          },
+        },
+      },
+      emptyTransactionsRoute,
+    ]);
+    renderWithProviders(<Billing />, { preloadedState: authenticatedState });
+
+    await screen.findByText('Current');
+    expect(screen.getByRole('button', { name: /^Locked until/ })).toBeDisabled();
+  });
+
   it('shows an error message when starting checkout fails', async () => {
     const user = userEvent.setup();
     mockFetchRoutes([

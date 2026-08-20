@@ -36,7 +36,20 @@ export function planIncludesSequences(plan) {
 export const PLAN_ORDER = ['FREE', 'BASIC', 'PROFESSIONAL', 'ORGANIZATION'];
 
 // Pay-as-you-go model: once a paid plan is taken it can't be downgraded to
-// a lower paid tier for 3 months (Workspace.planActivatedAt) — upgrading is
+// a lower paid tier until the billing interval it was taken at has run its
+// course (Workspace.planActivatedAt + billingInterval below) — upgrading is
 // always allowed, and this never applies to the Free plan or to a
 // super-admin override (a support action, not a purchase).
-export const MIN_COMMITMENT_DAYS = 90;
+export const INTERVAL_MONTHS = { MONTH: 1, QUARTER: 3, YEAR: 12 };
+
+// Discount off the monthly rate for committing to a longer billing
+// interval — e.g. QUARTER charges 3 * monthly * (1 - 0.10) up front.
+export const INTERVAL_DISCOUNT = { MONTH: 0, QUARTER: 0.1, YEAR: 0.2 };
+
+/** What one invoice at this plan/interval actually charges, in USD cents. */
+export function planPriceForInterval(plan, interval) {
+  const monthly = PLAN_PRICE_USD_CENTS[plan];
+  const months = INTERVAL_MONTHS[interval];
+  const discount = INTERVAL_DISCOUNT[interval];
+  return Math.round(monthly * months * (1 - discount));
+}

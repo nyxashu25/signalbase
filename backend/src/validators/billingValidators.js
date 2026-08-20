@@ -9,6 +9,7 @@ export const createCheckoutSessionSchema = z.object({
 
 export const createPlanSubscriptionSchema = z.object({
   plan: z.enum(['BASIC', 'PROFESSIONAL', 'ORGANIZATION']),
+  interval: z.enum(['MONTH', 'QUARTER', 'YEAR']).optional(),
 });
 
 // Matches CUSTOM_CREDITS_MIN/MAX in config/creditPackages.js.
