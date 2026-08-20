@@ -69,6 +69,11 @@ model User {
   // matching this app's stateless-access-token design (see docs on
   // ACCESS_TOKEN_TTL_SECONDS). Null means never suspended.
   suspendedAt  DateTime?
+  // Null until the guided first-login tour is finished or skipped — checked
+  // once per session by the frontend to decide whether to show it. Set once
+  // and never cleared, so it truly shows only the first time, across
+  // devices/browsers, not per-localStorage.
+  tutorialCompletedAt DateTime?
   createdAt    DateTime @default(now())
 
   memberships        Membership[]

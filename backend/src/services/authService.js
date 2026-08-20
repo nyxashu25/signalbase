@@ -153,10 +153,24 @@ export async function getCurrentUser({ userId, workspaceId }) {
   if (!membership) throw new ApiError(401, 'Session no longer valid');
 
   return {
-    user: { id: membership.user.id, email: membership.user.email, name: membership.user.name },
+    user: {
+      id: membership.user.id,
+      email: membership.user.email,
+      name: membership.user.name,
+      tutorialCompletedAt: membership.user.tutorialCompletedAt,
+    },
     workspace: { id: membership.workspace.id, name: membership.workspace.name },
     role: membership.role,
   };
+}
+
+/** Marks the guided first-login tour finished or skipped — never shown again. */
+export async function completeTutorial(userId) {
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: { tutorialCompletedAt: new Date() },
+  });
+  return { tutorialCompletedAt: user.tutorialCompletedAt };
 }
 
 async function issueSession({ userId, workspaceId, orgId, role, user, workspace }) {
@@ -166,7 +180,12 @@ async function issueSession({ userId, workspaceId, orgId, role, user, workspace 
   return {
     accessToken,
     refreshCookieValue: cookieValue,
-    user: { id: user.id, email: user.email, name: user.name },
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      tutorialCompletedAt: user.tutorialCompletedAt ?? null,
+    },
     workspace: { id: workspace.id, name: workspace.name },
     role,
   };

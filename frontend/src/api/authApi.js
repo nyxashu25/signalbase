@@ -17,6 +17,9 @@ export const authApi = baseApi.injectEndpoints({
     me: builder.query({
       query: () => '/auth/me',
     }),
+    completeTutorial: builder.mutation({
+      query: () => ({ url: '/auth/tutorial-complete', method: 'POST' }),
+    }),
   }),
 });
 
@@ -26,4 +29,5 @@ export const {
   useRefreshMutation,
   useLogoutMutation,
   useMeQuery,
+  useCompleteTutorialMutation,
 } = authApi;

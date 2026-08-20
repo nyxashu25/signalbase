@@ -4,14 +4,15 @@ import { useSelector } from 'react-redux';
 import { ProfileMenu } from '../components/ProfileMenu.jsx';
 import { ThemeToggle } from '../components/ThemeToggle.jsx';
 import { Logo } from '../components/Logo.jsx';
+import { GuidedTour } from '../components/GuidedTour.jsx';
 
 const NAV_ITEMS = [
-  { to: '/app', label: 'Dashboard', end: true },
-  { to: '/app/people', label: 'People' },
-  { to: '/app/companies', label: 'Companies' },
-  { to: '/app/lists', label: 'Lists' },
-  { to: '/app/sequences', label: 'Sequences' },
-  { to: '/app/billing', label: 'Billing' },
+  { to: '/app', label: 'Dashboard', end: true, tourId: 'nav-dashboard' },
+  { to: '/app/people', label: 'People', tourId: 'nav-people' },
+  { to: '/app/companies', label: 'Companies', tourId: 'nav-companies' },
+  { to: '/app/lists', label: 'Lists', tourId: 'nav-lists' },
+  { to: '/app/sequences', label: 'Sequences', tourId: 'nav-sequences' },
+  { to: '/app/billing', label: 'Billing', tourId: 'nav-billing' },
 ];
 
 export function AppLayout() {
@@ -43,6 +44,7 @@ export function AppLayout() {
               key={item.to}
               to={item.to}
               end={item.end}
+              data-tour={item.tourId}
               onClick={() => setNavOpen(false)}
               className={({ isActive }) =>
                 `rounded-md px-3 py-2 text-sm font-medium transition-colors duration-150 ease-brand ${
@@ -82,14 +84,19 @@ export function AppLayout() {
             <span className="truncate text-sm font-medium text-text-muted">{workspace?.name}</span>
           </div>
           <div className="flex shrink-0 items-center gap-1">
-            <ThemeToggle />
-            <ProfileMenu />
+            <span data-tour="theme-toggle" className="inline-flex">
+              <ThemeToggle />
+            </span>
+            <span data-tour="profile-menu" className="inline-flex">
+              <ProfileMenu />
+            </span>
           </div>
         </header>
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           <Outlet />
         </main>
       </div>
+      <GuidedTour />
     </div>
   );
 }

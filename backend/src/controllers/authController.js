@@ -49,6 +49,10 @@ export async function logout(req, res) {
   res.status(204).end();
 }
 
+export async function completeTutorial(req, res) {
+  res.json(await authService.completeTutorial(req.auth.userId));
+}
+
 export async function me(req, res) {
   const result = await authService.getCurrentUser(req.auth);
   res.json(result);

@@ -102,4 +102,38 @@ describe('auth flow', () => {
     const afterLogout = await request(app).post('/api/v1/auth/refresh').set('Cookie', cookie);
     expect(afterLogout.status).toBe(401);
   });
+
+  describe('first-login tutorial', () => {
+    it('is null until the tutorial is completed, for a fresh registration', async () => {
+      const register = await request(app).post('/api/v1/auth/register').send(validRegistration);
+      expect(register.body.user.tutorialCompletedAt).toBeNull();
+
+      const me = await request(app)
+        .get('/api/v1/auth/me')
+        .set('Authorization', `Bearer ${register.body.accessToken}`);
+      expect(me.body.user.tutorialCompletedAt).toBeNull();
+    });
+
+    it('POST /tutorial-complete sets it once and persists across logins', async () => {
+      const register = await request(app).post('/api/v1/auth/register').send(validRegistration);
+      const token = register.body.accessToken;
+
+      const complete = await request(app)
+        .post('/api/v1/auth/tutorial-complete')
+        .set('Authorization', `Bearer ${token}`);
+      expect(complete.status).toBe(200);
+      expect(complete.body.tutorialCompletedAt).toBeTruthy();
+
+      const login = await request(app).post('/api/v1/auth/login').send({
+        email: validRegistration.email,
+        password: validRegistration.password,
+      });
+      expect(login.body.user.tutorialCompletedAt).toBeTruthy();
+    });
+
+    it('requires auth', async () => {
+      const res = await request(app).post('/api/v1/auth/tutorial-complete');
+      expect(res.status).toBe(401);
+    });
+  });
 });

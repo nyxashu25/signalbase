@@ -30,8 +30,11 @@ const authSlice = createSlice({
       state.role = null;
       state.status = 'anonymous';
     },
+    markTutorialCompleted(state) {
+      if (state.user) state.user.tutorialCompletedAt = new Date().toISOString();
+    },
   },
 });
 
-export const { setSession, clearSession } = authSlice.actions;
+export const { setSession, clearSession, markTutorialCompleted } = authSlice.actions;
 export default authSlice.reducer;

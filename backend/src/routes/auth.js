@@ -33,3 +33,4 @@ authRouter.post(
 authRouter.post('/refresh', asyncHandler(authController.refresh));
 authRouter.post('/logout', asyncHandler(authController.logout));
 authRouter.get('/me', requireAuth, asyncHandler(authController.me));
+authRouter.post('/tutorial-complete', requireAuth, asyncHandler(authController.completeTutorial));
