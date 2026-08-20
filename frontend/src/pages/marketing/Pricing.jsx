@@ -112,7 +112,7 @@ export function Pricing() {
                 </div>
 
                 <Link
-                  to={plan.key === 'ORGANIZATION' ? '/contact' : '/login'}
+                  to={plan.key === 'ORGANIZATION' ? '/contact' : '/login?mode=register'}
                   className={`mt-7 rounded-md px-4 py-2.5 text-center text-sm font-bold transition-transform duration-150 ease-brand hover:-translate-y-px ${
                     plan.popular
                       ? 'bg-gradient-action text-white shadow-[0_10px_24px_rgba(148,0,222,0.24)]'

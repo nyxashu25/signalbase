@@ -1,12 +1,18 @@
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useLoginMutation, useRegisterMutation } from '../api/authApi.js';
 import { setSession } from '../store/authSlice.js';
 import { Logo } from '../components/Logo.jsx';
 
 export function Login() {
-  const [mode, setMode] = useState('login');
+  // Marketing "Start free" CTAs link here with ?mode=register so they land
+  // straight on the create-workspace form instead of Sign in — a query
+  // param (not router state) so it also works from a full page load/refresh.
+  const location = useLocation();
+  const initialMode =
+    new URLSearchParams(location.search).get('mode') === 'register' ? 'register' : 'login';
+  const [mode, setMode] = useState(initialMode);
   const [form, setForm] = useState({ email: '', password: '', name: '', orgName: '' });
   const dispatch = useDispatch();
   const navigate = useNavigate();

@@ -87,7 +87,7 @@ export function About() {
             Free to start. No credit card required.
           </p>
           <Link
-            to="/login"
+            to="/login?mode=register"
             className="mt-8 inline-block rounded-md bg-white px-7 py-3.5 text-sm font-bold text-primary transition-transform duration-150 ease-brand hover:-translate-y-px"
           >
             Start free

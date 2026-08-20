@@ -48,7 +48,7 @@ export function MarketingNav() {
                 Log in
               </Link>
               <Link
-                to="/login"
+                to="/login?mode=register"
                 className="rounded-md bg-gradient-action px-4 py-2 text-sm font-bold text-white shadow-[0_10px_24px_rgba(148,0,222,0.24)] transition-transform duration-150 ease-brand hover:-translate-y-px"
               >
                 Start free

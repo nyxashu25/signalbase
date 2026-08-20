@@ -74,7 +74,7 @@ export function Home() {
             </p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
               <Link
-                to="/login"
+                to="/login?mode=register"
                 className="rounded-md bg-gradient-action px-7 py-3.5 text-center text-sm font-bold text-white shadow-[0_14px_32px_rgba(148,0,222,0.4)] transition-transform duration-150 ease-brand hover:-translate-y-px"
               >
                 Start free
@@ -228,7 +228,7 @@ export function Home() {
             Free to start. No credit card required.
           </p>
           <Link
-            to="/login"
+            to="/login?mode=register"
             className="mt-8 inline-block rounded-md bg-white px-7 py-3.5 text-sm font-bold text-primary transition-transform duration-150 ease-brand hover:-translate-y-px"
           >
             Start free
