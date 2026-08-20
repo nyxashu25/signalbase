@@ -4,6 +4,7 @@ import { requireAuth } from '../middleware/auth.js';
 import { validateBody } from '../middleware/validate.js';
 import { createSequenceSchema, enrollSchema } from '../validators/sequenceValidators.js';
 import { reserveCredits, releaseOnError } from '../middleware/reserveCredits.js';
+import { requireSequencesPlan } from '../middleware/requireSequencesPlan.js';
 import { CREDIT_COSTS } from '../config/creditPricing.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
@@ -16,12 +17,18 @@ sequencesRouter.get('/:id', asyncHandler(sequenceController.show));
 sequencesRouter.get('/:id/analytics', asyncHandler(sequenceController.analytics));
 sequencesRouter.post(
   '/',
+  requireSequencesPlan,
   validateBody(createSequenceSchema),
   asyncHandler(sequenceController.create),
 );
-sequencesRouter.post('/:id/activate', asyncHandler(sequenceController.activate));
+sequencesRouter.post(
+  '/:id/activate',
+  requireSequencesPlan,
+  asyncHandler(sequenceController.activate),
+);
 sequencesRouter.post(
   '/:id/enrollments',
+  requireSequencesPlan,
   validateBody(enrollSchema),
   reserveCredits(CREDIT_COSTS.SEQUENCE_ENROLLMENT),
   asyncHandler(sequenceController.enroll),

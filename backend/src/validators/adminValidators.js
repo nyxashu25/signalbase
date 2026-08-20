@@ -24,3 +24,7 @@ export const addCreditsSchema = z.object({
     .max(1_000_000)
     .refine((n) => n !== 0, 'amount must not be zero'),
 });
+
+export const updateUserPlanSchema = z.object({
+  plan: z.enum(['FREE', 'BASIC', 'PROFESSIONAL', 'ORGANIZATION']),
+});

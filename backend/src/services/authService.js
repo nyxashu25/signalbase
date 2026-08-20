@@ -1,6 +1,7 @@
 import { prisma } from '../config/db.js';
 import { hashPassword, verifyPassword } from '../utils/password.js';
 import { initializeBalance } from './creditService.js';
+import { PLAN_MONTHLY_CREDITS } from '../config/planConfig.js';
 import {
   signAccessToken,
   issueRefreshToken,
@@ -33,7 +34,12 @@ export async function register({ email, password, name, orgName }) {
   const { user, workspace, membership, org } = await prisma.$transaction(async (tx) => {
     const org = await tx.org.create({ data: { name: orgName, slug: slugify(orgName) } });
     const workspace = await tx.workspace.create({
-      data: { orgId: org.id, name: `${orgName} Workspace` },
+      data: {
+        orgId: org.id,
+        name: `${orgName} Workspace`,
+        plan: 'FREE',
+        monthlyCreditGrant: PLAN_MONTHLY_CREDITS.FREE,
+      },
     });
     const user = await tx.user.create({ data: { email, passwordHash, name } });
     const membership = await tx.membership.create({

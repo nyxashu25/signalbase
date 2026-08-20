@@ -22,11 +22,24 @@ model Org {
   workspaces Workspace[]
 }
 
+// Mirrors the four tiers on the public Pricing page (pages/marketing/
+// Pricing.jsx) — FREE is the default every workspace starts on, matching
+// the "no plan = Free plan, limited" behavior. Credit grants and feature
+// gates per plan live in config/planConfig.js, not here, so pricing changes
+// never need a migration.
+enum Plan {
+  FREE
+  BASIC
+  PROFESSIONAL
+  ORGANIZATION
+}
+
 model Workspace {
   id                 String   @id @default(uuid())
   orgId              String
   name               String
-  monthlyCreditGrant Int      @default(1000)
+  plan               Plan     @default(FREE)
+  monthlyCreditGrant Int      @default(100)
   // Null until the workspace has ever started a checkout — billing is
   // opt-in, not every workspace has a Stripe customer.
   stripeCustomerId     String? @unique

@@ -3,6 +3,7 @@ import { redis } from '../config/redis.js';
 import { getBalance } from './creditService.js';
 import { ApiError } from '../middleware/errorHandler.js';
 import { getStripeSettings } from './paymentSettingsService.js';
+import { PLAN_MONTHLY_CREDITS } from '../config/planConfig.js';
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -114,11 +115,33 @@ export async function getUserDetail(userId) {
     workspace: {
       id: workspace.id,
       name: workspace.name,
+      plan: workspace.plan,
       monthlyCreditGrant: workspace.monthlyCreditGrant,
     },
     balance,
     creditsUsed: Math.abs(usedAgg._sum.delta ?? 0),
   };
+}
+
+/**
+ * Support-desk override, not a payment — changes the plan (and its credit
+ * grant) directly, same "instant, out of band" spirit as addCredits above.
+ * Does not touch Stripe (stripeCustomerId/stripeSubscriptionId), so a
+ * workspace with a real subscription would drift from what Stripe thinks
+ * it's paying for until the next billing-side sync; acceptable for a
+ * support tool used sparingly, not something to build real dunning logic
+ * around yet.
+ */
+export async function updateUserPlan(userId, plan) {
+  const { membership } = await loadUserWithPrimaryWorkspace(userId);
+  const workspaceId = membership.workspace.id;
+
+  const workspace = await prisma.workspace.update({
+    where: { id: workspaceId },
+    data: { plan, monthlyCreditGrant: PLAN_MONTHLY_CREDITS[plan] },
+  });
+
+  return { workspaceId, plan: workspace.plan, monthlyCreditGrant: workspace.monthlyCreditGrant };
 }
 
 export async function suspendUser(userId) {

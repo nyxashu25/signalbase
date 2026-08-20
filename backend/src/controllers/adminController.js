@@ -32,6 +32,11 @@ export async function addCredits(req, res) {
   res.json(result);
 }
 
+export async function updateUserPlan(req, res) {
+  const result = await adminService.updateUserPlan(req.params.userId, req.body.plan);
+  res.json(result);
+}
+
 export async function getBillingOverview(req, res) {
   res.json(await adminService.getBillingOverview());
 }

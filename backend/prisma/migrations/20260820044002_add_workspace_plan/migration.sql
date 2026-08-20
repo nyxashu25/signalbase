@@ -1,0 +1,6 @@
+-- CreateEnum
+CREATE TYPE "Plan" AS ENUM ('FREE', 'BASIC', 'PROFESSIONAL', 'ORGANIZATION');
+
+-- AlterTable
+ALTER TABLE "Workspace" ADD COLUMN     "plan" "Plan" NOT NULL DEFAULT 'FREE',
+ALTER COLUMN "monthlyCreditGrant" SET DEFAULT 100;

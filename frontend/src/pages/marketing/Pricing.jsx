@@ -2,70 +2,7 @@ import { Link } from 'react-router-dom';
 import { MarketingNav } from '../../components/marketing/MarketingNav.jsx';
 import { MarketingFooter } from '../../components/marketing/MarketingFooter.jsx';
 import { AnimatedCreditLedgerMockup } from '../../components/marketing/AnimatedCreditLedgerMockup.jsx';
-
-const PLANS = [
-  {
-    name: 'Free',
-    price: 0,
-    unit: null,
-    credits: '100 credits / month',
-    tagline: "Try DataPit's search and reveal on a real workspace.",
-    cta: 'Start free',
-    features: [
-      'People & company search',
-      'Masked email results',
-      '100 reveal credits / month',
-      '1 saved list',
-      '1 seat',
-    ],
-  },
-  {
-    name: 'Basic',
-    price: 29,
-    unit: 'seat / month, billed annually',
-    credits: '500 credits / seat / month',
-    tagline: 'Take prospecting and outreach further.',
-    cta: 'Start free',
-    features: [
-      'Everything in Free',
-      '500 reveal credits / seat / month',
-      'Unlimited lists',
-      'Sequences with wait steps',
-      'Email support',
-    ],
-  },
-  {
-    name: 'Professional',
-    price: 59,
-    unit: 'seat / month, billed annually',
-    credits: '1,200 credits / seat / month',
-    tagline: 'Multi-touch outreach with room to scale a team.',
-    cta: 'Start free',
-    popular: true,
-    features: [
-      'Everything in Basic',
-      '1,200 reveal credits / seat / month',
-      'Sequence pause/resume & analytics',
-      'API access',
-      'Priority support',
-    ],
-  },
-  {
-    name: 'Organization',
-    price: 99,
-    unit: 'seat / month, min 3 seats, billed annually',
-    credits: '2,500 credits / seat / month',
-    tagline: 'Advanced controls for larger go-to-market teams.',
-    cta: 'Talk to sales',
-    features: [
-      'Everything in Professional',
-      '2,500 reveal credits / seat / month',
-      'Single sign-on (SSO)',
-      'Dedicated onboarding',
-      'Custom credit pooling',
-    ],
-  },
-];
+import { PLANS } from '../../data/plans.js';
 
 const FAQS = [
   {
@@ -105,7 +42,7 @@ export function Pricing() {
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
           {PLANS.map((plan) => (
             <div
-              key={plan.name}
+              key={plan.key}
               className={`flex flex-col rounded-xl border p-7 ${
                 plan.popular
                   ? 'border-primary/40 bg-surface-elevated shadow-dp-md ring-2 ring-primary'
@@ -133,14 +70,14 @@ export function Pricing() {
               </div>
 
               <Link
-                to="/login"
+                to={plan.key === 'ORGANIZATION' ? '/contact' : '/login'}
                 className={`mt-7 rounded-md px-4 py-2.5 text-center text-sm font-bold transition-transform duration-150 ease-brand hover:-translate-y-px ${
                   plan.popular
                     ? 'bg-gradient-action text-white shadow-[0_10px_24px_rgba(148,0,222,0.24)]'
                     : 'border border-border bg-surface-elevated text-text'
                 }`}
               >
-                {plan.cta}
+                {plan.key === 'ORGANIZATION' ? 'Talk to sales' : 'Start free'}
               </Link>
 
               <ul className="mt-7 flex flex-1 flex-col gap-3 text-sm text-text-muted">

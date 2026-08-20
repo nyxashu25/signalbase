@@ -135,6 +135,49 @@ describe('admin data routes', () => {
     expect(ledgerEntry.amountCents).toBeNull();
   });
 
+  it('changes a workspace plan and its monthly credit grant, without touching the balance', async () => {
+    const token = await loginAsAdmin();
+    const { user, workspace } = await createTenantUser();
+    const balanceBefore = await request(app)
+      .get(`/api/v1/admin/users/${user.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .then((r) => r.body.balance);
+
+    const res = await request(app)
+      .put(`/api/v1/admin/users/${user.id}/plan`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ plan: 'PROFESSIONAL' });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      workspaceId: workspace.id,
+      plan: 'PROFESSIONAL',
+      monthlyCreditGrant: 1200,
+    });
+
+    const updated = await prisma.workspace.findUnique({ where: { id: workspace.id } });
+    expect(updated.plan).toBe('PROFESSIONAL');
+    expect(updated.monthlyCreditGrant).toBe(1200);
+
+    const detail = await request(app)
+      .get(`/api/v1/admin/users/${user.id}`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(detail.body.workspace.plan).toBe('PROFESSIONAL');
+    expect(detail.body.balance).toBe(balanceBefore); // no credits granted just from switching plans
+  });
+
+  it('rejects an unknown plan value', async () => {
+    const token = await loginAsAdmin();
+    const { user } = await createTenantUser();
+
+    const res = await request(app)
+      .put(`/api/v1/admin/users/${user.id}/plan`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ plan: 'GOLD_TIER' });
+
+    expect(res.status).toBe(400);
+  });
+
   it('billing overview only counts TOPUP amountCents as revenue, never ADJUSTMENT grants', async () => {
     const token = await loginAsAdmin();
     const { user, workspace } = await createTenantUser();

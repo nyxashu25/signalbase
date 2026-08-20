@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useListSequencesQuery } from '../api/sequencesApi.js';
+import { useGetBillingSummaryQuery } from '../api/billingApi.js';
 
 const STATUS_STYLES = {
   DRAFT: 'bg-surface text-text-muted',
@@ -10,18 +11,40 @@ const STATUS_STYLES = {
 
 export function Sequences() {
   const { data: sequences, isLoading } = useListSequencesQuery();
+  const { data: summary } = useGetBillingSummaryQuery();
+  const isFreePlan = summary?.plan === 'FREE';
 
   return (
     <div>
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-text">Sequences</h1>
-        <Link
-          to="/app/sequences/new"
-          className="rounded-md bg-gradient-action px-4 py-2 text-sm font-bold text-white shadow-[0_10px_24px_rgba(148,0,222,0.24)] transition-transform duration-150 ease-brand hover:-translate-y-px"
-        >
-          New sequence
-        </Link>
+        {isFreePlan ? (
+          <Link
+            to="/app/billing"
+            className="rounded-md border border-primary/40 px-4 py-2 text-sm font-bold text-primary hover:bg-primary/5"
+          >
+            Upgrade to unlock Sequences
+          </Link>
+        ) : (
+          <Link
+            to="/app/sequences/new"
+            className="rounded-md bg-gradient-action px-4 py-2 text-sm font-bold text-white shadow-[0_10px_24px_rgba(148,0,222,0.24)] transition-transform duration-150 ease-brand hover:-translate-y-px"
+          >
+            New sequence
+          </Link>
+        )}
       </div>
+
+      {isFreePlan && (
+        <p className="mt-3 rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-text-muted">
+          Sequences aren't available on the Free plan. You can still see sequences built before a
+          downgrade below —{' '}
+          <Link to="/app/billing" className="font-bold text-primary hover:underline">
+            upgrade your workspace
+          </Link>{' '}
+          to build or enroll contacts into new ones.
+        </p>
+      )}
 
       <div className="mt-6 overflow-x-auto rounded-lg border border-border bg-surface-elevated">
         <table className="w-full">
@@ -51,7 +74,9 @@ export function Sequences() {
                     {seq.status}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-sm tabular-nums text-text-muted">{seq._count?.steps ?? 0}</td>
+                <td className="px-4 py-3 text-sm tabular-nums text-text-muted">
+                  {seq._count?.steps ?? 0}
+                </td>
                 <td className="px-4 py-3 text-sm tabular-nums text-text-muted">
                   {seq._count?.enrollments ?? 0}
                 </td>

@@ -5,7 +5,16 @@ import {
   useSuspendAdminUserMutation,
   useUnsuspendAdminUserMutation,
   useAddAdminUserCreditsMutation,
+  useUpdateAdminUserPlanMutation,
 } from '../../api/adminDataApi.js';
+
+const PLANS = ['FREE', 'BASIC', 'PROFESSIONAL', 'ORGANIZATION'];
+const PLAN_LABELS = {
+  FREE: 'Free',
+  BASIC: 'Basic',
+  PROFESSIONAL: 'Professional',
+  ORGANIZATION: 'Organization',
+};
 
 export function AdminUserDetail() {
   const { userId } = useParams();
@@ -13,8 +22,10 @@ export function AdminUserDetail() {
   const [suspend, { isLoading: suspending }] = useSuspendAdminUserMutation();
   const [unsuspend, { isLoading: unsuspending }] = useUnsuspendAdminUserMutation();
   const [addCredits, { isLoading: addingCredits }] = useAddAdminUserCreditsMutation();
+  const [updatePlan, { isLoading: updatingPlan }] = useUpdateAdminUserPlanMutation();
   const [amount, setAmount] = useState('');
   const [feedback, setFeedback] = useState(null);
+  const [planFeedback, setPlanFeedback] = useState(null);
 
   async function handleAddCredits(e) {
     e.preventDefault();
@@ -23,6 +34,15 @@ export function AdminUserDetail() {
     const result = await addCredits({ userId, amount: parsed }).unwrap();
     setAmount('');
     setFeedback(`New balance: ${result.balance} credits`);
+  }
+
+  async function handlePlanChange(e) {
+    const plan = e.target.value;
+    if (plan === user.workspace.plan) return;
+    const result = await updatePlan({ userId, plan }).unwrap();
+    setPlanFeedback(
+      `Now on ${PLAN_LABELS[result.plan]} — ${result.monthlyCreditGrant} credits/month`,
+    );
   }
 
   if (isLoading || !user) {
@@ -62,6 +82,20 @@ export function AdminUserDetail() {
             <dd className="mt-1 text-sm font-semibold text-white">{user.role}</dd>
           </div>
           <div>
+            <dt className="text-xs font-bold uppercase tracking-wide text-ink-300">Plan</dt>
+            <dd className="mt-1 text-sm font-semibold text-white">
+              {PLAN_LABELS[user.workspace.plan]}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs font-bold uppercase tracking-wide text-ink-300">
+              Monthly grant
+            </dt>
+            <dd className="mt-1 text-sm font-semibold text-white">
+              {user.workspace.monthlyCreditGrant} credits
+            </dd>
+          </div>
+          <div>
             <dt className="text-xs font-bold uppercase tracking-wide text-ink-300">Credits used</dt>
             <dd className="mt-1 text-sm font-semibold text-white">{user.creditsUsed}</dd>
           </div>
@@ -95,6 +129,27 @@ export function AdminUserDetail() {
             </button>
           </form>
           {feedback && <p className="mt-2 text-xs text-emerald-400">{feedback}</p>}
+        </div>
+
+        <div className="mt-6 border-t border-white/10 pt-6">
+          <p className="text-xs font-bold uppercase tracking-wide text-ink-300">Plan</p>
+          <p className="mt-1 text-xs text-ink-300">
+            Support override — changes the plan and its monthly credit grant instantly, without
+            touching Stripe or the current balance.
+          </p>
+          <select
+            value={user.workspace.plan}
+            onChange={handlePlanChange}
+            disabled={updatingPlan}
+            className="mt-3 h-10 rounded-md border border-white/15 bg-white/5 px-3 text-sm text-white outline-none focus:border-neon-violet disabled:opacity-50"
+          >
+            {PLANS.map((plan) => (
+              <option key={plan} value={plan} className="bg-ink-900">
+                {PLAN_LABELS[plan]}
+              </option>
+            ))}
+          </select>
+          {planFeedback && <p className="mt-2 text-xs text-emerald-400">{planFeedback}</p>}
         </div>
 
         <div className="mt-6 border-t border-white/10 pt-6">

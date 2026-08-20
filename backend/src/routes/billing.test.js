@@ -6,7 +6,7 @@ import { resetDb, resetRedis } from '../test/dbHelpers.js';
 import { prisma } from '../config/db.js';
 import { getBalance, initializeBalance } from '../services/creditService.js';
 import { saveStripeSettings } from '../services/paymentSettingsService.js';
-import { createCheckoutSession } from '../services/stripeService.js';
+import { createCheckoutSession, createPlanSubscriptionSession } from '../services/stripeService.js';
 
 const app = createApp();
 // A local Stripe client with a placeholder key — generateTestHeaderString is
@@ -140,6 +140,187 @@ describe('POST /webhooks/stripe', () => {
     const updated = await prisma.workspace.findUnique({ where: { id: workspace.id } });
     expect(updated.stripeSubscriptionId).toBe('sub_123');
   });
+
+  it('activates the plan on a subscription checkout, without granting credits yet', async () => {
+    const workspace = await makeWorkspace();
+    const before = await getBalance(workspace.id);
+
+    const res = await postStripeWebhook({
+      id: 'evt_plan_1',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_plan_1',
+          mode: 'subscription',
+          customer: 'cus_plan_1',
+          subscription: 'sub_plan_1',
+          metadata: { workspaceId: workspace.id, plan: 'PROFESSIONAL' },
+        },
+      },
+    });
+
+    expect(res.status).toBe(204);
+    const updated = await prisma.workspace.findUnique({ where: { id: workspace.id } });
+    expect(updated.plan).toBe('PROFESSIONAL');
+    expect(updated.monthlyCreditGrant).toBe(1200);
+    expect(updated.stripeCustomerId).toBe('cus_plan_1');
+    expect(updated.stripeSubscriptionId).toBe('sub_plan_1');
+    // No grant on activation itself — invoice.paid is the only place credits move (below).
+    expect(await getBalance(workspace.id)).toBe(before);
+  });
+
+  it('grants the plan’s monthly credits on invoice.paid, including the first invoice', async () => {
+    const workspace = await makeWorkspace();
+    await prisma.workspace.update({
+      where: { id: workspace.id },
+      data: { plan: 'PROFESSIONAL', monthlyCreditGrant: 1200, stripeSubscriptionId: 'sub_plan_2' },
+    });
+    const before = await getBalance(workspace.id);
+
+    const res = await postStripeWebhook({
+      id: 'evt_plan_2',
+      type: 'invoice.paid',
+      data: { object: { id: 'in_1', subscription: 'sub_plan_2', customer: 'cus_plan_2' } },
+    });
+
+    expect(res.status).toBe(204);
+    expect(await getBalance(workspace.id)).toBe(before + 1200);
+    const ledger = await prisma.creditLedgerEntry.findMany({
+      where: { workspaceId: workspace.id },
+    });
+    expect(ledger).toHaveLength(1);
+    expect(ledger[0]).toMatchObject({ delta: 1200, reason: 'MONTHLY_GRANT' });
+  });
+
+  it('grants credits again on a second invoice.paid (renewal), not just the first', async () => {
+    const workspace = await makeWorkspace();
+    await prisma.workspace.update({
+      where: { id: workspace.id },
+      data: { plan: 'BASIC', monthlyCreditGrant: 500, stripeSubscriptionId: 'sub_plan_3' },
+    });
+
+    await postStripeWebhook({
+      id: 'evt_plan_3a',
+      type: 'invoice.paid',
+      data: { object: { id: 'in_2', subscription: 'sub_plan_3' } },
+    });
+    await postStripeWebhook({
+      id: 'evt_plan_3b',
+      type: 'invoice.paid',
+      data: { object: { id: 'in_3', subscription: 'sub_plan_3' } },
+    });
+
+    const ledger = await prisma.creditLedgerEntry.findMany({
+      where: { workspaceId: workspace.id },
+    });
+    expect(ledger.filter((e) => e.reason === 'MONTHLY_GRANT')).toHaveLength(2);
+  });
+
+  it('ignores a non-subscription invoice (no invoice.subscription)', async () => {
+    const workspace = await makeWorkspace();
+    const before = await getBalance(workspace.id);
+
+    const res = await postStripeWebhook({
+      id: 'evt_plan_4',
+      type: 'invoice.paid',
+      data: { object: { id: 'in_4', subscription: null } },
+    });
+
+    expect(res.status).toBe(204);
+    expect(await getBalance(workspace.id)).toBe(before);
+  });
+});
+
+describe('POST /billing/subscribe', () => {
+  beforeEach(async () => {
+    await resetDb();
+    await resetRedis();
+  });
+
+  afterAll(async () => {
+    await prisma.$disconnect();
+  });
+
+  async function registerOwner() {
+    const res = await request(app).post('/api/v1/auth/register').send({
+      email: 'owner@subscribe.test',
+      password: 'correct-horse-battery',
+      name: 'Owner',
+      orgName: 'Subscribe Co',
+    });
+    return { accessToken: res.body.accessToken, workspaceId: res.body.workspace.id };
+  }
+
+  it('returns a simulated subscription session when no key is configured', async () => {
+    const { accessToken } = await registerOwner();
+
+    const res = await request(app)
+      .post('/api/v1/billing/subscribe')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ plan: 'BASIC' });
+
+    expect(res.status).toBe(201);
+    expect(res.body.provider).toBe('stripe');
+    expect(res.body.sessionId).toMatch(/^cs_simulated_plan_/);
+  });
+
+  it('rejects an unknown plan', async () => {
+    const { accessToken } = await registerOwner();
+
+    const res = await request(app)
+      .post('/api/v1/billing/subscribe')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ plan: 'ENTERPRISE_DELUXE' });
+
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects subscribing to Free (not a purchasable plan)', async () => {
+    const { accessToken } = await registerOwner();
+
+    const res = await request(app)
+      .post('/api/v1/billing/subscribe')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ plan: 'FREE' });
+
+    expect(res.status).toBe(400);
+  });
+});
+
+describe('stripeService.createPlanSubscriptionSession (unit, injected client)', () => {
+  beforeEach(async () => {
+    await resetDb();
+    await resetRedis();
+  });
+
+  afterAll(async () => {
+    await prisma.$disconnect();
+  });
+
+  it('passes recurring monthly pricing and plan metadata to the Stripe client', async () => {
+    await saveStripeSettings({ secretKey: 'sk_test_configured' }, null);
+    const create = async (params) => {
+      expect(params.mode).toBe('subscription');
+      expect(params.line_items[0].price_data.unit_amount).toBe(5900);
+      expect(params.line_items[0].price_data.recurring).toEqual({ interval: 'month' });
+      expect(params.metadata).toEqual({ workspaceId: 'ws_1', plan: 'PROFESSIONAL' });
+      return { id: 'cs_test_sub', url: 'https://checkout.stripe.com/pay/cs_test_sub' };
+    };
+    const makeClient = (key) => {
+      expect(key).toBe('sk_test_configured');
+      return { checkout: { sessions: { create } } };
+    };
+
+    const session = await createPlanSubscriptionSession(
+      { workspaceId: 'ws_1', plan: 'PROFESSIONAL' },
+      makeClient,
+    );
+
+    expect(session).toEqual({
+      sessionId: 'cs_test_sub',
+      url: 'https://checkout.stripe.com/pay/cs_test_sub',
+    });
+  });
 });
 
 describe('POST /billing/checkout-session', () => {
@@ -209,7 +390,11 @@ describe('stripeService.createCheckoutSession (unit, injected client)', () => {
     const create = async (params) => {
       expect(params.line_items[0].price_data.currency).toBe('inr');
       expect(params.line_items[0].price_data.unit_amount).toBe(125_000);
-      expect(params.metadata).toEqual({ workspaceId: 'ws_1', credits: '250', amountCents: '125000' });
+      expect(params.metadata).toEqual({
+        workspaceId: 'ws_1',
+        credits: '250',
+        amountCents: '125000',
+      });
       return { id: 'cs_test_inr', url: 'https://checkout.stripe.com/pay/cs_test_inr' };
     };
     const makeClient = (key) => {
@@ -222,7 +407,10 @@ describe('stripeService.createCheckoutSession (unit, injected client)', () => {
       makeClient,
     );
 
-    expect(session).toEqual({ sessionId: 'cs_test_inr', url: 'https://checkout.stripe.com/pay/cs_test_inr' });
+    expect(session).toEqual({
+      sessionId: 'cs_test_inr',
+      url: 'https://checkout.stripe.com/pay/cs_test_inr',
+    });
   });
 });
 
@@ -269,7 +457,13 @@ describe('GET /billing/transactions', () => {
       },
     });
     await prisma.creditLedgerEntry.create({
-      data: { workspaceId, delta: 250, reason: 'TOPUP', amountCents: 1500, createdAt: new Date(now) },
+      data: {
+        workspaceId,
+        delta: 250,
+        reason: 'TOPUP',
+        amountCents: 1500,
+        createdAt: new Date(now),
+      },
     });
 
     const res = await request(app)
@@ -278,7 +472,11 @@ describe('GET /billing/transactions', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.total).toBe(3);
-    expect(res.body.results.map((r) => r.reason)).toEqual(['TOPUP', 'EMAIL_REVEAL', 'MONTHLY_GRANT']);
+    expect(res.body.results.map((r) => r.reason)).toEqual([
+      'TOPUP',
+      'EMAIL_REVEAL',
+      'MONTHLY_GRANT',
+    ]);
 
     const revealRow = res.body.results.find((r) => r.reason === 'EMAIL_REVEAL');
     expect(revealRow.contact).toMatchObject({ firstName: 'Jordan', lastName: 'Bennett' });
@@ -321,7 +519,9 @@ describe('GET /billing/packages', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.packages).toEqual(
-      expect.arrayContaining([expect.objectContaining({ credits: 250, usdCents: 1500, inrPaise: 125_000 })]),
+      expect.arrayContaining([
+        expect.objectContaining({ credits: 250, usdCents: 1500, inrPaise: 125_000 }),
+      ]),
     );
   });
 });
@@ -334,7 +534,7 @@ describe('GET /billing/credit-costs', () => {
     expect(res.body.costs).toEqual({
       REVEAL: 2,
       COMPANY_DETAIL_VIEW: 20,
-      CSV_EXPORT: 50,
+      CSV_EXPORT: 20,
       SEQUENCE_ENROLLMENT: 250,
     });
   });

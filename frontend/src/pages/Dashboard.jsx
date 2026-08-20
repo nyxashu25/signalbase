@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useGetBillingSummaryQuery, useListBillingTransactionsQuery } from '../api/billingApi.js';
 import { useListSequencesQuery } from '../api/sequencesApi.js';
 import { useListListsQuery } from '../api/listsApi.js';
+import { EmailVerifier } from '../components/EmailVerifier.jsx';
 
 const REASON_LABELS = {
   MONTHLY_GRANT: 'Monthly grant',
@@ -76,6 +77,10 @@ export function Dashboard() {
             {action.label}
           </Link>
         ))}
+      </div>
+
+      <div className="mt-10">
+        <EmailVerifier />
       </div>
 
       <h2 className="mt-10 text-sm font-bold uppercase tracking-wide text-text-muted">

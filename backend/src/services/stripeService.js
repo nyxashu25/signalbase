@@ -6,6 +6,7 @@ import { ApiError } from '../middleware/errorHandler.js';
 import { logger } from '../config/logger.js';
 import { findPackage } from '../config/creditPackages.js';
 import { getDecryptedStripeCredentials } from './paymentSettingsService.js';
+import { PLAN_MONTHLY_CREDITS, PLAN_PRICE_USD_CENTS } from '../config/planConfig.js';
 
 const PROCESSED_EVENT_TTL_SECONDS = 30 * 24 * 60 * 60; // Stripe retries for up to ~3 days; comfortable margin
 
@@ -77,6 +78,74 @@ async function updateSubscriptionState(subscription) {
   });
 }
 
+// Sets the plan and links the subscription — deliberately does NOT grant
+// credits here. Stripe always generates an invoice for a new subscription
+// (even a $0 one) and fires invoice.paid for it, same as every renewal, so
+// granting only happens in grantMonthlyCredits below. Granting in both
+// places would double-credit the first cycle.
+async function activatePlanSubscription(session) {
+  const { workspaceId, plan } = session.metadata ?? {};
+  if (!workspaceId || !plan) {
+    logger.error(
+      { sessionId: session.id },
+      'Stripe plan session missing workspaceId/plan metadata',
+    );
+    return;
+  }
+
+  await prisma.workspace.update({
+    where: { id: workspaceId },
+    data: {
+      plan,
+      monthlyCreditGrant: PLAN_MONTHLY_CREDITS[plan],
+      stripeCustomerId: session.customer,
+      stripeSubscriptionId: session.subscription,
+    },
+  });
+
+  logger.info({ workspaceId, plan }, 'Workspace plan activated via Stripe subscription checkout');
+}
+
+// Fires for every paid subscription invoice, including the very first one —
+// the single source of truth for plan credit grants (see
+// activatePlanSubscription above). Looked up by stripeSubscriptionId, which
+// activatePlanSubscription sets in the same moment the subscription is
+// created; Stripe doesn't strictly guarantee checkout.session.completed
+// arrives before this event, so on the rare invoice-first ordering this
+// grant is silently skipped rather than crediting the wrong (or no)
+// workspace — acceptable for now since this app has no real Stripe traffic
+// yet, but worth revisiting (e.g. falling back to a customer-id lookup)
+// before this is load-bearing.
+async function grantMonthlyCredits(invoice) {
+  if (!invoice.subscription) return; // one-off invoice, not a subscription cycle
+
+  const workspace = await prisma.workspace.findFirst({
+    where: { stripeSubscriptionId: invoice.subscription },
+    select: { id: true, monthlyCreditGrant: true },
+  });
+  if (!workspace) {
+    logger.warn(
+      { subscriptionId: invoice.subscription },
+      'No workspace found for this subscription — skipping credit grant',
+    );
+    return;
+  }
+
+  await prisma.creditLedgerEntry.create({
+    data: {
+      workspaceId: workspace.id,
+      delta: workspace.monthlyCreditGrant,
+      reason: 'MONTHLY_GRANT',
+    },
+  });
+  await redis.incrby(`credits:balance:${workspace.id}`, workspace.monthlyCreditGrant);
+
+  logger.info(
+    { workspaceId: workspace.id, amount: workspace.monthlyCreditGrant },
+    'Monthly plan credits granted',
+  );
+}
+
 export async function handleEvent(event) {
   const isNew = await claimEvent(event.id);
   if (!isNew) {
@@ -85,8 +154,17 @@ export async function handleEvent(event) {
   }
 
   switch (event.type) {
-    case 'checkout.session.completed':
-      await topUpCredits(event.data.object);
+    case 'checkout.session.completed': {
+      const session = event.data.object;
+      if (session.mode === 'subscription') {
+        await activatePlanSubscription(session);
+      } else {
+        await topUpCredits(session);
+      }
+      break;
+    }
+    case 'invoice.paid':
+      await grantMonthlyCredits(event.data.object);
       break;
     case 'customer.subscription.updated':
     case 'customer.subscription.deleted':
@@ -146,6 +224,56 @@ export async function createCheckoutSession(
     success_url: `${env.CORS_ORIGIN}/app/billing?checkout=success`,
     cancel_url: `${env.CORS_ORIGIN}/app/billing/add-credits?checkout=cancelled`,
     metadata: { workspaceId, credits: String(credits), amountCents: String(amountMinor) },
+  });
+
+  return { sessionId: session.id, url: session.url };
+}
+
+/**
+ * Same simulate-until-a-real-key-exists pattern as createCheckoutSession
+ * above, but mode: 'subscription' — recurring monthly billing per seat,
+ * matching the Pricing page's per-seat/month tiers. Activation (setting
+ * workspace.plan) and the first credit grant both happen off webhooks (see
+ * handleEvent), never here, so a browser that never returns to the success
+ * URL doesn't leave the workspace stuck half-upgraded.
+ */
+export async function createPlanSubscriptionSession(
+  { workspaceId, plan },
+  makeClient = (key) => new Stripe(key),
+) {
+  const amountMinor = PLAN_PRICE_USD_CENTS[plan];
+  if (amountMinor === undefined) {
+    throw new ApiError(400, 'Unknown plan');
+  }
+
+  const credentials = await getDecryptedStripeCredentials();
+  if (!credentials?.secretKey) {
+    const sessionId = `cs_simulated_plan_${workspaceId}_${Date.now()}`;
+    logger.info(
+      { workspaceId, plan, amountMinor, sessionId },
+      'Stripe plan subscription checkout simulated (no key configured in admin settings)',
+    );
+    return { sessionId, url: `https://billing.simulated.local/checkout/${sessionId}` };
+  }
+
+  const stripe = makeClient(credentials.secretKey);
+  const session = await stripe.checkout.sessions.create({
+    mode: 'subscription',
+    payment_method_types: ['card'],
+    line_items: [
+      {
+        price_data: {
+          currency: 'usd',
+          product_data: { name: `DataPit ${plan} plan` },
+          unit_amount: amountMinor,
+          recurring: { interval: 'month' },
+        },
+        quantity: 1,
+      },
+    ],
+    success_url: `${env.CORS_ORIGIN}/app/billing?checkout=success`,
+    cancel_url: `${env.CORS_ORIGIN}/app/billing?checkout=cancelled`,
+    metadata: { workspaceId, plan },
   });
 
   return { sessionId: session.id, url: session.url };

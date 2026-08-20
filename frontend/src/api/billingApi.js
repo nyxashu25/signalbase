@@ -16,6 +16,9 @@ export const billingApi = baseApi.injectEndpoints({
     createCheckoutSession: builder.mutation({
       query: (body) => ({ url: '/billing/checkout-session', method: 'POST', body }),
     }),
+    subscribeToPlan: builder.mutation({
+      query: (body) => ({ url: '/billing/subscribe', method: 'POST', body }),
+    }),
     listBillingTransactions: builder.query({
       query: ({ page, pageSize }) => `/billing/transactions?page=${page}&pageSize=${pageSize}`,
     }),
@@ -27,5 +30,6 @@ export const {
   useListBillingPackagesQuery,
   useGetCreditCostsQuery,
   useCreateCheckoutSessionMutation,
+  useSubscribeToPlanMutation,
   useListBillingTransactionsQuery,
 } = billingApi;

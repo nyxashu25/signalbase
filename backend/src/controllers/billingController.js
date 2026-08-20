@@ -19,7 +19,7 @@ export async function getSummary(req, res) {
     creditService.getBalance(workspaceId),
     prisma.workspace.findUnique({
       where: { id: workspaceId },
-      select: { monthlyCreditGrant: true },
+      select: { plan: true, monthlyCreditGrant: true },
     }),
     prisma.creditLedgerEntry.aggregate({
       where: { workspaceId, delta: { lt: 0 } },
@@ -29,6 +29,7 @@ export async function getSummary(req, res) {
 
   res.json({
     balance,
+    plan: workspace.plan,
     monthlyCreditGrant: workspace.monthlyCreditGrant,
     creditsUsed: Math.abs(usedAgg._sum.delta ?? 0),
   });
@@ -88,8 +89,19 @@ export async function createCheckoutSession(req, res) {
   res.status(201).json({ provider: 'stripe', ...session });
 }
 
+export async function createPlanSubscriptionSession(req, res) {
+  const { workspaceId } = req.auth;
+  const { plan } = req.body;
+
+  const session = await stripeService.createPlanSubscriptionSession({ workspaceId, plan });
+  res.status(201).json({ provider: 'stripe', ...session });
+}
+
 export async function stripeWebhook(req, res) {
-  const event = await stripeService.verifyAndParseEvent(req.rawBody, req.headers['stripe-signature']);
+  const event = await stripeService.verifyAndParseEvent(
+    req.rawBody,
+    req.headers['stripe-signature'],
+  );
   await stripeService.handleEvent(event);
   res.status(204).end();
 }

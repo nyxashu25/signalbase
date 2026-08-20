@@ -14,7 +14,14 @@ async function registerOrg(orgName, email) {
   const res = await request(app)
     .post('/api/v1/auth/register')
     .send({ email, password: 'correct-horse-battery', name: 'Owner', orgName });
-  return { accessToken: res.body.accessToken, workspaceId: res.body.workspace.id };
+  const workspaceId = res.body.workspace.id;
+  // Sequences are gated to paid plans (see config/planConfig.js) — every
+  // test in this file exercises sequence routes, so upgrade past the Free
+  // default and give it enough credits for enrollment tests, matching
+  // sequenceService.test.js's own approach.
+  await prisma.workspace.update({ where: { id: workspaceId }, data: { plan: 'BASIC' } });
+  await redis.set(`credits:balance:${workspaceId}`, 10_000);
+  return { accessToken: res.body.accessToken, workspaceId };
 }
 
 async function seedContact(email = null) {
@@ -42,6 +49,39 @@ describe('sequences routes', () => {
 
   afterAll(async () => {
     await prisma.$disconnect();
+  });
+
+  describe('Free plan gating', () => {
+    async function registerFreeOrg(orgName, email) {
+      const res = await request(app)
+        .post('/api/v1/auth/register')
+        .send({ email, password: 'correct-horse-battery', name: 'Owner', orgName });
+      return { accessToken: res.body.accessToken, workspaceId: res.body.workspace.id };
+    }
+
+    it('blocks creating a sequence on the Free plan', async () => {
+      const owner = await registerFreeOrg('Free Org', 'owner@free-org.test');
+
+      const res = await request(app)
+        .post('/api/v1/sequences')
+        .set('Authorization', `Bearer ${owner.accessToken}`)
+        .send(twoStepSequence);
+
+      expect(res.status).toBe(403);
+      expect(res.body.error.message).toMatch(/Upgrade your workspace/);
+    });
+
+    it('allows creating a sequence once the workspace is on a paid plan', async () => {
+      const owner = await registerFreeOrg('Upgraded Org', 'owner@upgraded-org.test');
+      await prisma.workspace.update({ where: { id: owner.workspaceId }, data: { plan: 'BASIC' } });
+
+      const res = await request(app)
+        .post('/api/v1/sequences')
+        .set('Authorization', `Bearer ${owner.accessToken}`)
+        .send(twoStepSequence);
+
+      expect(res.status).toBe(201);
+    });
   });
 
   it('creates a DRAFT sequence with ordered steps', async () => {
@@ -318,7 +358,9 @@ describe('sequences routes', () => {
 
       expect(res.status).toBe(201);
       expect(await getBalance(owner.workspaceId)).toBe(before - CREDIT_COSTS.SEQUENCE_ENROLLMENT);
-      const ledger = await prisma.creditLedgerEntry.findMany({ where: { workspaceId: owner.workspaceId } });
+      const ledger = await prisma.creditLedgerEntry.findMany({
+        where: { workspaceId: owner.workspaceId },
+      });
       expect(ledger).toHaveLength(1);
       expect(ledger[0]).toMatchObject({
         delta: -CREDIT_COSTS.SEQUENCE_ENROLLMENT,
@@ -342,7 +384,9 @@ describe('sequences routes', () => {
 
       expect(res.status).toBe(409);
       expect(await getBalance(owner.workspaceId)).toBe(before);
-      const ledger = await prisma.creditLedgerEntry.findMany({ where: { workspaceId: owner.workspaceId } });
+      const ledger = await prisma.creditLedgerEntry.findMany({
+        where: { workspaceId: owner.workspaceId },
+      });
       expect(ledger).toHaveLength(0);
     });
 

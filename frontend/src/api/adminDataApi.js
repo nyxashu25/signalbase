@@ -34,6 +34,14 @@ export const adminDataApi = adminBaseApi.injectEndpoints({
       }),
       invalidatesTags: ['AdminUsers'],
     }),
+    updateAdminUserPlan: builder.mutation({
+      query: ({ userId, plan }) => ({
+        url: `/users/${userId}/plan`,
+        method: 'PUT',
+        body: { plan },
+      }),
+      invalidatesTags: ['AdminUsers'],
+    }),
     getAdminBillingOverview: builder.query({
       query: () => '/billing/overview',
     }),
@@ -59,6 +67,7 @@ export const {
   useSuspendAdminUserMutation,
   useUnsuspendAdminUserMutation,
   useAddAdminUserCreditsMutation,
+  useUpdateAdminUserPlanMutation,
   useGetAdminBillingOverviewQuery,
   useListAdminTransactionsQuery,
   useGetAdminStripeSettingsQuery,

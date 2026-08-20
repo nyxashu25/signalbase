@@ -9,6 +9,7 @@ import {
   listUsersQuerySchema,
   paginationQuerySchema,
   addCreditsSchema,
+  updateUserPlanSchema,
 } from '../validators/adminValidators.js';
 import { saveStripeSettingsSchema } from '../validators/billingValidators.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -49,6 +50,11 @@ adminRouter.post(
   '/users/:userId/credits',
   validateBody(addCreditsSchema),
   asyncHandler(adminController.addCredits),
+);
+adminRouter.put(
+  '/users/:userId/plan',
+  validateBody(updateUserPlanSchema),
+  asyncHandler(adminController.updateUserPlan),
 );
 
 adminRouter.get('/billing/overview', asyncHandler(adminController.getBillingOverview));
