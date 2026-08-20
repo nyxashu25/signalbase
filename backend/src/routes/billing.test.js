@@ -285,6 +285,22 @@ describe('POST /billing/subscribe', () => {
 
     expect(res.status).toBe(400);
   });
+
+  it('rejects a self-serve downgrade before the 3-month commitment ends', async () => {
+    const { accessToken, workspaceId } = await registerOwner();
+    await prisma.workspace.update({
+      where: { id: workspaceId },
+      data: { plan: 'PROFESSIONAL', planActivatedAt: new Date() },
+    });
+
+    const res = await request(app)
+      .post('/api/v1/billing/subscribe')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ plan: 'BASIC' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.message).toMatch(/locked in until/);
+  });
 });
 
 describe('stripeService.createPlanSubscriptionSession (unit, injected client)', () => {
@@ -298,12 +314,13 @@ describe('stripeService.createPlanSubscriptionSession (unit, injected client)', 
   });
 
   it('passes recurring monthly pricing and plan metadata to the Stripe client', async () => {
+    const workspace = await makeWorkspace();
     await saveStripeSettings({ secretKey: 'sk_test_configured' }, null);
     const create = async (params) => {
       expect(params.mode).toBe('subscription');
       expect(params.line_items[0].price_data.unit_amount).toBe(5900);
       expect(params.line_items[0].price_data.recurring).toEqual({ interval: 'month' });
-      expect(params.metadata).toEqual({ workspaceId: 'ws_1', plan: 'PROFESSIONAL' });
+      expect(params.metadata).toEqual({ workspaceId: workspace.id, plan: 'PROFESSIONAL' });
       return { id: 'cs_test_sub', url: 'https://checkout.stripe.com/pay/cs_test_sub' };
     };
     const makeClient = (key) => {
@@ -312,7 +329,7 @@ describe('stripeService.createPlanSubscriptionSession (unit, injected client)', 
     };
 
     const session = await createPlanSubscriptionSession(
-      { workspaceId: 'ws_1', plan: 'PROFESSIONAL' },
+      { workspaceId: workspace.id, plan: 'PROFESSIONAL' },
       makeClient,
     );
 
@@ -320,6 +337,48 @@ describe('stripeService.createPlanSubscriptionSession (unit, injected client)', 
       sessionId: 'cs_test_sub',
       url: 'https://checkout.stripe.com/pay/cs_test_sub',
     });
+  });
+
+  it('rejects a downgrade to a lower paid tier within the 3-month commitment', async () => {
+    const workspace = await makeWorkspace();
+    await prisma.workspace.update({
+      where: { id: workspace.id },
+      data: { plan: 'PROFESSIONAL', planActivatedAt: new Date() },
+    });
+    await saveStripeSettings({ secretKey: 'sk_test_configured' }, null);
+
+    await expect(
+      createPlanSubscriptionSession({ workspaceId: workspace.id, plan: 'BASIC' }),
+    ).rejects.toThrow(/locked in until/);
+  });
+
+  it('allows a downgrade once the 3-month commitment has elapsed', async () => {
+    const workspace = await makeWorkspace();
+    const ninetyOneDaysAgo = new Date(Date.now() - 91 * 24 * 60 * 60 * 1000);
+    await prisma.workspace.update({
+      where: { id: workspace.id },
+      data: { plan: 'PROFESSIONAL', planActivatedAt: ninetyOneDaysAgo },
+    });
+    // No key configured — falls into the simulated-session path, which
+    // only runs once the commitment check above has already passed.
+    const session = await createPlanSubscriptionSession({
+      workspaceId: workspace.id,
+      plan: 'BASIC',
+    });
+    expect(session.sessionId).toMatch(/^cs_simulated_plan_/);
+  });
+
+  it('always allows an upgrade, even within the 3-month commitment', async () => {
+    const workspace = await makeWorkspace();
+    await prisma.workspace.update({
+      where: { id: workspace.id },
+      data: { plan: 'BASIC', planActivatedAt: new Date() },
+    });
+    const session = await createPlanSubscriptionSession({
+      workspaceId: workspace.id,
+      plan: 'PROFESSIONAL',
+    });
+    expect(session.sessionId).toMatch(/^cs_simulated_plan_/);
   });
 });
 
@@ -378,11 +437,21 @@ describe('stripeService.createCheckoutSession (unit, injected client)', () => {
     expect(session.sessionId).toMatch(/^cs_simulated_/);
   });
 
-  it('throws for an unknown credit package', async () => {
+  it('prices a non-package amount at the closest package\'s per-credit rate', async () => {
     await saveStripeSettings({ secretKey: 'sk_test_configured' }, null);
-    await expect(createCheckoutSession({ workspaceId: 'ws_1', credits: 999 })).rejects.toThrow(
-      /Unknown credit package/,
+    // Closest to 999 is the 600-credit package ($30.00 = 5c/credit) —
+    // 300-credit gap vs. 501 to the 1500-credit package.
+    const create = async (params) => {
+      expect(params.line_items[0].price_data.unit_amount).toBe(4995);
+      return { id: 'cs_test_custom', url: 'https://checkout.stripe.com/pay/cs_test_custom' };
+    };
+    const makeClient = () => ({ checkout: { sessions: { create } } });
+
+    const session = await createCheckoutSession(
+      { workspaceId: 'ws_1', credits: 999 },
+      makeClient,
     );
+    expect(session.sessionId).toBe('cs_test_custom');
   });
 
   it('passes the right amount/currency/metadata to the Stripe client and returns its session', async () => {
@@ -537,5 +606,29 @@ describe('GET /billing/credit-costs', () => {
       CSV_EXPORT: 20,
       SEQUENCE_ENROLLMENT: 250,
     });
+  });
+});
+
+describe('GET /billing/custom-credits-price', () => {
+  it('prices an exact package amount the same as the package price', async () => {
+    const res = await request(app).get('/api/v1/billing/custom-credits-price?credits=250');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ usdCents: 1500, inrPaise: 125_000 });
+  });
+
+  it('prices a non-package amount at the closest package rate', async () => {
+    const res = await request(app).get('/api/v1/billing/custom-credits-price?credits=999');
+    expect(res.status).toBe(200);
+    expect(res.body.usdCents).toBe(4995);
+  });
+
+  it('rejects an amount below the 200 floor', async () => {
+    const res = await request(app).get('/api/v1/billing/custom-credits-price?credits=199');
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects an amount above the 50,000 ceiling', async () => {
+    const res = await request(app).get('/api/v1/billing/custom-credits-price?credits=50001');
+    expect(res.status).toBe(400);
   });
 });

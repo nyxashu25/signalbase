@@ -44,6 +44,12 @@ model Workspace {
   // opt-in, not every workspace has a Stripe customer.
   stripeCustomerId     String? @unique
   stripeSubscriptionId String? @unique
+  // Set when a paid subscription checkout activates (see
+  // stripeService.activatePlanSubscription) — never touched by the
+  // super-admin plan override, which is a support action, not a purchase.
+  // Drives the 3-month minimum commitment: self-serve downgrade between
+  // paid tiers is blocked until 90 days after this date.
+  planActivatedAt   DateTime?
   createdAt          DateTime @default(now())
 
   org          Org                 @relation(fields: [orgId], references: [id], onDelete: Cascade)

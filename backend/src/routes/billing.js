@@ -5,6 +5,7 @@ import { validateBody, validateQuery } from '../middleware/validate.js';
 import {
   createCheckoutSessionSchema,
   createPlanSubscriptionSchema,
+  customCreditsQuerySchema,
   transactionsQuerySchema,
 } from '../validators/billingValidators.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -13,6 +14,11 @@ export const billingRouter = Router();
 
 billingRouter.get('/packages', billingController.getPackages);
 billingRouter.get('/credit-costs', billingController.getCreditCosts);
+billingRouter.get(
+  '/custom-credits-price',
+  validateQuery(customCreditsQuerySchema),
+  billingController.getCustomCreditsPrice,
+);
 billingRouter.get('/summary', requireAuth, asyncHandler(billingController.getSummary));
 billingRouter.get(
   '/transactions',

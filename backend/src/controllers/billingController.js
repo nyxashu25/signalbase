@@ -1,11 +1,27 @@
 import * as stripeService from '../services/stripeService.js';
 import * as creditService from '../services/creditService.js';
-import { CREDIT_PACKAGES } from '../config/creditPackages.js';
+import {
+  CREDIT_PACKAGES,
+  CUSTOM_CREDITS_MIN,
+  CUSTOM_CREDITS_MAX,
+  priceCustomCredits,
+} from '../config/creditPackages.js';
 import { CREDIT_COSTS } from '../config/creditPricing.js';
 import { prisma } from '../config/db.js';
 
 export function getPackages(req, res) {
-  res.json({ packages: CREDIT_PACKAGES });
+  res.json({
+    packages: CREDIT_PACKAGES,
+    customRange: { min: CUSTOM_CREDITS_MIN, max: CUSTOM_CREDITS_MAX },
+  });
+}
+
+// Lets the frontend show a live price as the user types a custom amount,
+// without duplicating priceCustomCredits' per-credit-rate math client-side.
+// req.validatedQuery.credits is already range-checked by
+// customCreditsQuerySchema (see routes/billing.js).
+export function getCustomCreditsPrice(req, res) {
+  res.json(priceCustomCredits(req.validatedQuery.credits));
 }
 
 export function getCreditCosts(req, res) {
@@ -19,7 +35,7 @@ export async function getSummary(req, res) {
     creditService.getBalance(workspaceId),
     prisma.workspace.findUnique({
       where: { id: workspaceId },
-      select: { plan: true, monthlyCreditGrant: true },
+      select: { plan: true, monthlyCreditGrant: true, planActivatedAt: true },
     }),
     prisma.creditLedgerEntry.aggregate({
       where: { workspaceId, delta: { lt: 0 } },
@@ -32,6 +48,7 @@ export async function getSummary(req, res) {
     plan: workspace.plan,
     monthlyCreditGrant: workspace.monthlyCreditGrant,
     creditsUsed: Math.abs(usedAgg._sum.delta ?? 0),
+    planActivatedAt: workspace.planActivatedAt,
   });
 }
 

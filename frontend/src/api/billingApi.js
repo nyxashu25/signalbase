@@ -8,11 +8,13 @@ export const billingApi = baseApi.injectEndpoints({
     }),
     listBillingPackages: builder.query({
       query: () => '/billing/packages',
-      transformResponse: (res) => res.packages,
     }),
     getCreditCosts: builder.query({
       query: () => '/billing/credit-costs',
       transformResponse: (res) => res.costs,
+    }),
+    getCustomCreditsPrice: builder.query({
+      query: (credits) => `/billing/custom-credits-price?credits=${credits}`,
     }),
     createCheckoutSession: builder.mutation({
       query: (body) => ({ url: '/billing/checkout-session', method: 'POST', body }),
@@ -30,6 +32,7 @@ export const {
   useGetBillingSummaryQuery,
   useListBillingPackagesQuery,
   useGetCreditCostsQuery,
+  useGetCustomCreditsPriceQuery,
   useCreateCheckoutSessionMutation,
   useSubscribeToPlanMutation,
   useListBillingTransactionsQuery,

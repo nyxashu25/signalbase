@@ -50,6 +50,15 @@ export function Billing() {
 
   const currentPlan = summary ? findPlan(summary.plan) : null;
 
+  // Pay-as-you-go: a paid plan can't be downgraded for 3 months after it
+  // was taken (see stripeService.createPlanSubscriptionSession) — mirrored
+  // here so the UI reflects the lock before the user ever clicks Downgrade,
+  // rather than only surfacing it as a rejected-request error.
+  const lockedUntil =
+    summary?.planActivatedAt &&
+    new Date(new Date(summary.planActivatedAt).getTime() + 90 * 24 * 60 * 60 * 1000);
+  const isLocked = Boolean(lockedUntil && lockedUntil > new Date());
+
   async function handleSubscribe(planKey) {
     setSubscribeError(null);
     setSubscribingKey(planKey);
@@ -172,8 +181,13 @@ export function Billing() {
               ) : (
                 <button
                   type="button"
-                  disabled={isCurrent || subscribing}
+                  disabled={isCurrent || subscribing || (isDowngrade && isLocked)}
                   onClick={() => handleSubscribe(plan.key)}
+                  title={
+                    isDowngrade && isLocked
+                      ? `Your ${currentPlan?.name} plan is locked in until ${lockedUntil.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} under the 3-month minimum commitment.`
+                      : undefined
+                  }
                   className={`mt-4 rounded-md px-3 py-2 text-xs font-bold transition-transform duration-150 ease-brand disabled:cursor-not-allowed disabled:opacity-50 ${
                     isCurrent
                       ? 'border border-border text-text-muted'
@@ -184,9 +198,11 @@ export function Billing() {
                     ? 'Current plan'
                     : subscribingKey === plan.key && subscribing
                       ? 'Starting checkout…'
-                      : isDowngrade
-                        ? 'Downgrade'
-                        : 'Upgrade'}
+                      : isDowngrade && isLocked
+                        ? `Locked until ${lockedUntil.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                        : isDowngrade
+                          ? 'Downgrade'
+                          : 'Upgrade'}
                 </button>
               )}
 

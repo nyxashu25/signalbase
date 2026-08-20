@@ -69,6 +69,53 @@ describe('Billing', () => {
     window.location = original;
   });
 
+  it('shows a locked state instead of Downgrade within the 3-month commitment', async () => {
+    mockFetchRoutes([
+      {
+        url: '/billing/summary',
+        respond: {
+          body: {
+            balance: 96,
+            plan: 'PROFESSIONAL',
+            monthlyCreditGrant: 1200,
+            creditsUsed: 4,
+            planActivatedAt: new Date().toISOString(),
+          },
+        },
+      },
+      emptyTransactionsRoute,
+    ]);
+    renderWithProviders(<Billing />, { preloadedState: authenticatedState });
+
+    await screen.findByText('Current');
+    expect(screen.queryByRole('button', { name: 'Downgrade' })).not.toBeInTheDocument();
+    const locked = screen.getByRole('button', { name: /^Locked until/ });
+    expect(locked).toBeDisabled();
+  });
+
+  it('allows Downgrade once the 3-month commitment has elapsed', async () => {
+    const ninetyOneDaysAgo = new Date(Date.now() - 91 * 24 * 60 * 60 * 1000).toISOString();
+    mockFetchRoutes([
+      {
+        url: '/billing/summary',
+        respond: {
+          body: {
+            balance: 96,
+            plan: 'PROFESSIONAL',
+            monthlyCreditGrant: 1200,
+            creditsUsed: 4,
+            planActivatedAt: ninetyOneDaysAgo,
+          },
+        },
+      },
+      emptyTransactionsRoute,
+    ]);
+    renderWithProviders(<Billing />, { preloadedState: authenticatedState });
+
+    await screen.findByText('Current');
+    expect(screen.getByRole('button', { name: 'Downgrade' })).toBeEnabled();
+  });
+
   it('shows an error message when starting checkout fails', async () => {
     const user = userEvent.setup();
     mockFetchRoutes([

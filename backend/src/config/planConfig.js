@@ -31,3 +31,12 @@ export const PLAN_HAS_SEQUENCES = {
 export function planIncludesSequences(plan) {
   return PLAN_HAS_SEQUENCES[plan] ?? false;
 }
+
+// Low to high — index comparison is how a "downgrade" is detected.
+export const PLAN_ORDER = ['FREE', 'BASIC', 'PROFESSIONAL', 'ORGANIZATION'];
+
+// Pay-as-you-go model: once a paid plan is taken it can't be downgraded to
+// a lower paid tier for 3 months (Workspace.planActivatedAt) — upgrading is
+// always allowed, and this never applies to the Free plan or to a
+// super-admin override (a support action, not a purchase).
+export const MIN_COMMITMENT_DAYS = 90;

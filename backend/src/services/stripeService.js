@@ -4,9 +4,14 @@ import { redis } from '../config/redis.js';
 import { prisma } from '../config/db.js';
 import { ApiError } from '../middleware/errorHandler.js';
 import { logger } from '../config/logger.js';
-import { findPackage } from '../config/creditPackages.js';
+import { findPackage, priceCustomCredits } from '../config/creditPackages.js';
 import { getDecryptedStripeCredentials } from './paymentSettingsService.js';
-import { PLAN_MONTHLY_CREDITS, PLAN_PRICE_USD_CENTS } from '../config/planConfig.js';
+import {
+  PLAN_MONTHLY_CREDITS,
+  PLAN_PRICE_USD_CENTS,
+  PLAN_ORDER,
+  MIN_COMMITMENT_DAYS,
+} from '../config/planConfig.js';
 
 const PROCESSED_EVENT_TTL_SECONDS = 30 * 24 * 60 * 60; // Stripe retries for up to ~3 days; comfortable margin
 
@@ -100,6 +105,10 @@ async function activatePlanSubscription(session) {
       monthlyCreditGrant: PLAN_MONTHLY_CREDITS[plan],
       stripeCustomerId: session.customer,
       stripeSubscriptionId: session.subscription,
+      // Starts (or restarts) the 3-month minimum commitment — every paid
+      // checkout is a fresh subscription, whether it's a first purchase,
+      // an upgrade, or a downgrade taken after an earlier lock expired.
+      planActivatedAt: new Date(),
     },
   });
 
@@ -191,11 +200,12 @@ export async function createCheckoutSession(
   { workspaceId, credits, currency = 'USD' },
   makeClient = (key) => new Stripe(key),
 ) {
-  const pkg = findPackage(credits);
-  if (!pkg) {
-    throw new ApiError(400, 'Unknown credit package');
-  }
-  const amountMinor = currency === 'INR' ? pkg.inrPaise : pkg.usdCents;
+  // An exact package match keeps its own listed price; anything else (a
+  // custom amount, validated to 200-50,000 credits by
+  // createCheckoutSessionSchema) is priced at the closest package's
+  // per-credit rate rather than rejected.
+  const priced = findPackage(credits) ?? priceCustomCredits(credits);
+  const amountMinor = currency === 'INR' ? priced.inrPaise : priced.usdCents;
 
   const credentials = await getDecryptedStripeCredentials();
   if (!credentials?.secretKey) {
@@ -244,6 +254,23 @@ export async function createPlanSubscriptionSession(
   const amountMinor = PLAN_PRICE_USD_CENTS[plan];
   if (amountMinor === undefined) {
     throw new ApiError(400, 'Unknown plan');
+  }
+
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    select: { plan: true, planActivatedAt: true },
+  });
+  const isDowngrade = PLAN_ORDER.indexOf(plan) < PLAN_ORDER.indexOf(workspace.plan);
+  if (workspace.plan !== 'FREE' && isDowngrade && workspace.planActivatedAt) {
+    const lockedUntil = new Date(
+      workspace.planActivatedAt.getTime() + MIN_COMMITMENT_DAYS * 24 * 60 * 60 * 1000,
+    );
+    if (lockedUntil > new Date()) {
+      throw new ApiError(
+        400,
+        `Your ${workspace.plan} plan is locked in until ${lockedUntil.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} under the 3-month minimum commitment. You can upgrade to a higher plan any time.`,
+      );
+    }
   }
 
   const credentials = await getDecryptedStripeCredentials();
