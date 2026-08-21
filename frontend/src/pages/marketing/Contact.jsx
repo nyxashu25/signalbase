@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { MarketingNav } from '../../components/marketing/MarketingNav.jsx';
 import { MarketingFooter } from '../../components/marketing/MarketingFooter.jsx';
 import { useSubmitContactRequestMutation } from '../../api/marketingApi.js';
-import { FadeIn, Stagger, StaggerItem } from '../../components/marketing/motion.jsx';
+import { PageHero } from '../../components/marketing/PageHero.jsx';
+import { SmoothScroll } from '../../components/marketing/SmoothScroll.jsx';
+import { FadeIn } from '../../components/marketing/motion.jsx';
 
 export function Contact() {
   const [form, setForm] = useState({ name: '', email: '', company: '', message: '' });
@@ -19,27 +21,27 @@ export function Contact() {
 
   return (
     <div className="min-h-screen bg-bg">
+      <SmoothScroll />
       <MarketingNav />
 
-      <section className="mx-auto max-w-[900px] px-6 py-20">
-        <Stagger as="div" whileInView={false} staggerDelay={0.1} className="text-center">
-          <StaggerItem as="span" className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-primary">
-            Contact
-          </StaggerItem>
-          <StaggerItem as="h1" className="mt-5 text-4xl font-extrabold tracking-tight text-text sm:text-5xl">
-            Talk to us
-          </StaggerItem>
-          <StaggerItem as="p" className="mx-auto mt-4 max-w-[520px] text-base text-text-muted">
-            Questions about a plan, a bulk credit package, or whether DataPit fits your workflow —
-            tell us and we'll get back to you.
-          </StaggerItem>
-        </Stagger>
+      <PageHero
+        eyebrow="Contact"
+        lines={[
+          {
+            content: (
+              <span className="bg-gradient-brand bg-clip-text text-transparent">Talk to us.</span>
+            ),
+          },
+        ]}
+        sub="Questions about a plan, a bulk credit package, or whether DataPit fits your workflow — tell us and we'll get back to you."
+      />
 
+      <section className="mx-auto max-w-[900px] px-6 py-20">
         <FadeIn
           as="div"
           whileInView={false}
           delay={0.3}
-          className="mx-auto mt-14 max-w-[560px] rounded-xl border border-border bg-surface-elevated p-8 shadow-dp"
+          className="mx-auto max-w-[560px] rounded-xl border border-border bg-surface-elevated p-8 shadow-dp"
         >
           {isSuccess ? (
             <div className="py-6 text-center">

@@ -1,8 +1,10 @@
-import { Link } from 'react-router-dom';
 import { MarketingNav } from '../../components/marketing/MarketingNav.jsx';
 import { MarketingFooter } from '../../components/marketing/MarketingFooter.jsx';
 import { RoleAccent } from '../../components/marketing/RoleAccent.jsx';
-import { FadeIn, Stagger, StaggerItem } from '../../components/marketing/motion.jsx';
+import { PageHero } from '../../components/marketing/PageHero.jsx';
+import { GiantCTA } from '../../components/marketing/GiantCTA.jsx';
+import { SmoothScroll } from '../../components/marketing/SmoothScroll.jsx';
+import { Stagger, StaggerItem } from '../../components/marketing/motion.jsx';
 
 const ROLES = [
   {
@@ -46,24 +48,26 @@ const ROLES = [
 export function Solutions() {
   return (
     <div className="min-h-screen bg-bg">
+      <SmoothScroll />
       <MarketingNav />
 
-      <section className="border-b border-border bg-surface">
-        <Stagger as="div" whileInView={false} staggerDelay={0.1} className="mx-auto max-w-[900px] px-6 py-20 text-center">
-          <StaggerItem as="span" className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-primary">
-            Solutions
-          </StaggerItem>
-          <StaggerItem as="h1" className="mt-5 text-4xl font-extrabold tracking-tight text-text sm:text-5xl">
-            Built for whoever's actually chasing the number
-          </StaggerItem>
-          <StaggerItem as="p" className="mx-auto mt-5 max-w-[600px] text-base text-text-muted">
-            The same workspace, the same credit ledger — just a different reason to open it every
-            morning.
-          </StaggerItem>
-        </Stagger>
-      </section>
+      <PageHero
+        eyebrow="Solutions"
+        lines={[
+          { content: "Built for whoever's" },
+          {
+            content: (
+              <span className="bg-gradient-brand bg-clip-text text-transparent">
+                chasing the number.
+              </span>
+            ),
+            className: 'sm:ml-[6vw]',
+          },
+        ]}
+        sub="The same workspace, the same credit ledger — just a different reason to open it every morning."
+      />
 
-      <section className="mx-auto max-w-[1200px] px-6 py-20">
+      <section className="mx-auto max-w-[1200px] px-6 py-24">
         <Stagger as="div" className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {ROLES.map((r) => (
             <StaggerItem
@@ -82,22 +86,7 @@ export function Solutions() {
         </Stagger>
       </section>
 
-      <section className="mx-auto max-w-[1200px] px-6 pb-24">
-        <FadeIn as="div" className="rounded-xl bg-gradient-action px-8 py-16 text-center text-white sm:px-16">
-          <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
-            Find out what it looks like for your role
-          </h2>
-          <p className="mx-auto mt-4 max-w-[480px] text-base text-white/85">
-            Free to start. No credit card required.
-          </p>
-          <Link
-            to="/login?mode=register"
-            className="mt-8 inline-block rounded-md bg-white px-7 py-3.5 text-sm font-bold text-primary transition-transform duration-150 ease-brand hover:-translate-y-px"
-          >
-            Start free
-          </Link>
-        </FadeIn>
-      </section>
+      <GiantCTA title="Find out what it looks like for your role." />
 
       <MarketingFooter />
     </div>

@@ -6,13 +6,14 @@ import { AnimatedRevealMockup } from '../../components/marketing/AnimatedRevealM
 import { AnimatedSequenceMockup } from '../../components/marketing/AnimatedSequenceMockup.jsx';
 import { AnimatedCreditLedgerMockup } from '../../components/marketing/AnimatedCreditLedgerMockup.jsx';
 import { AmbientCanvas } from '../../components/marketing/AmbientCanvas.jsx';
-import { SplitHeadline } from '../../components/marketing/SplitHeadline.jsx';
+import { MaskedLines } from '../../components/marketing/MaskedLines.jsx';
 import { ScrubHeadline } from '../../components/marketing/ScrubHeadline.jsx';
 import { StatCounter } from '../../components/marketing/StatCounter.jsx';
 import { ScrollSteps } from '../../components/marketing/ScrollSteps.jsx';
-import { Parallax } from '../../components/marketing/Parallax.jsx';
 import { Marquee } from '../../components/marketing/Marquee.jsx';
 import { SmoothScroll } from '../../components/marketing/SmoothScroll.jsx';
+import { EditorialChapter } from '../../components/marketing/EditorialChapter.jsx';
+import { GiantCTA } from '../../components/marketing/GiantCTA.jsx';
 import { FadeIn, Stagger, StaggerItem } from '../../components/marketing/motion.jsx';
 
 const MARQUEE_ITEMS = [
@@ -25,9 +26,6 @@ const MARQUEE_ITEMS = [
   'Workspace roles',
 ];
 
-// The numbered editorial chapters — each one full-bleed, with an oversized
-// index number and a scroll-scrubbed title, in the style of the reference
-// sites' service sections.
 const CHAPTERS = [
   {
     n: '01',
@@ -109,34 +107,52 @@ export function Home() {
       <SmoothScroll />
       <MarketingNav />
 
-      {/* Hero — full-viewport editorial type over the ambient canvas */}
+      {/* Hero — art-directed masked lines with staggered indents */}
       <section id="product" className="relative isolate overflow-hidden bg-ink-950 text-white">
         <AmbientCanvas />
         <div className="relative mx-auto flex min-h-[92vh] max-w-[1400px] flex-col justify-center px-6 py-28">
-          <FadeIn as="div" whileInView={false}>
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-mauve-magic">
-              B2B sales intelligence
-            </span>
-          </FadeIn>
+          <div className="flex items-start justify-between">
+            <FadeIn as="div" whileInView={false}>
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-mauve-magic">
+                B2B sales intelligence
+              </span>
+            </FadeIn>
+            <FadeIn
+              as="div"
+              whileInView={false}
+              delay={0.2}
+              className="hidden text-right text-[11px] font-bold uppercase tracking-[0.25em] text-ink-500 sm:block"
+            >
+              <p>Search · Reveal · Outreach</p>
+              <p className="mt-1.5">One credit ledger</p>
+            </FadeIn>
+          </div>
 
-          <SplitHeadline
+          <MaskedLines
             as="h1"
-            delay={0.15}
-            className="mt-8 text-[clamp(2.9rem,8.5vw,8.5rem)] font-extrabold uppercase leading-[0.95] tracking-tight"
-          >
-            Find verified contacts.
-            <br />
-            <span className="bg-gradient-brand bg-clip-text text-transparent">
-              Track buying signals.
-            </span>
-          </SplitHeadline>
+            delay={0.2}
+            className="mt-10 text-[clamp(2.9rem,9vw,9rem)] font-extrabold uppercase leading-[0.92] tracking-tight"
+            lines={[
+              { content: 'Find verified' },
+              {
+                content: (
+                  <span className="bg-gradient-brand bg-clip-text text-transparent">
+                    contacts.
+                  </span>
+                ),
+                className: 'sm:ml-[8vw]',
+              },
+              { content: 'Track buying' },
+              { content: <span className="text-outline">signals.</span>, className: 'sm:ml-[16vw]' },
+            ]}
+          />
 
-          <div className="mt-12 flex flex-col gap-10 sm:flex-row sm:items-end sm:justify-between">
-            <FadeIn as="p" whileInView={false} delay={0.9} className="max-w-[480px] text-lg text-ink-300">
+          <div className="mt-14 flex flex-col gap-10 sm:flex-row sm:items-end sm:justify-between">
+            <FadeIn as="p" whileInView={false} delay={0.9} className="max-w-[460px] text-lg text-ink-300">
               DataPit is the search, reveal, and outreach platform for teams who'd rather spend
               credits on real contacts than guess at spreadsheets.
             </FadeIn>
-            <FadeIn as="div" whileInView={false} delay={1.05} className="flex shrink-0 flex-col gap-3 sm:flex-row">
+            <FadeIn as="div" whileInView={false} delay={1.05} className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-center">
               <Link
                 to="/login?mode=register"
                 className="rounded-md bg-gradient-action px-7 py-3.5 text-center text-sm font-bold text-white shadow-[0_14px_32px_rgba(148,0,222,0.4)] transition-transform duration-150 ease-brand hover:-translate-y-px"
@@ -151,6 +167,18 @@ export function Home() {
               </Link>
             </FadeIn>
           </div>
+
+          <FadeIn
+            as="div"
+            whileInView={false}
+            delay={1.3}
+            className="mt-16 flex items-center gap-4 text-[11px] font-bold uppercase tracking-[0.25em] text-ink-500"
+          >
+            Scroll
+            <span className="relative block h-px w-20 bg-white/15">
+              <span className="absolute left-0 top-1/2 h-1.5 w-1.5 -translate-y-1/2 animate-pulse rounded-full bg-mauve-magic" />
+            </span>
+          </FadeIn>
         </div>
 
         {/* Ticker band */}
@@ -184,47 +212,7 @@ export function Home() {
 
       {/* Numbered chapters */}
       {CHAPTERS.map((chapter, i) => (
-        <section
-          key={chapter.n}
-          className={`relative overflow-hidden ${i % 2 === 1 ? 'border-y border-border bg-surface' : ''}`}
-        >
-          <span
-            aria-hidden="true"
-            className="text-outline pointer-events-none absolute -top-8 right-2 select-none text-[clamp(8rem,22vw,20rem)] font-extrabold leading-none sm:right-6"
-          >
-            {chapter.n}
-          </span>
-          <div className="relative mx-auto max-w-[1200px] px-6 py-28 sm:py-36">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
-              {chapter.n} — {chapter.eyebrow}
-            </p>
-            <ScrubHeadline
-              as="h2"
-              className="mt-6 max-w-[820px] text-[clamp(1.9rem,4.6vw,4rem)] font-extrabold uppercase leading-[1.05] tracking-tight text-text"
-            >
-              {chapter.title}
-            </ScrubHeadline>
-            <div className="mt-14 grid grid-cols-1 items-center gap-14 lg:grid-cols-2">
-              <FadeIn as="div" className={i % 2 === 1 ? 'lg:order-2' : ''}>
-                <p className="text-base leading-relaxed text-text-muted">{chapter.desc}</p>
-                <ul className="mt-8 flex flex-col text-sm text-text">
-                  {chapter.points.map((p) => (
-                    <li
-                      key={p}
-                      className="flex items-start gap-3 border-t border-border py-4 last:border-b"
-                    >
-                      <CheckIcon />
-                      <span className="font-medium">{p}</span>
-                    </li>
-                  ))}
-                </ul>
-              </FadeIn>
-              <FadeIn as="div" delay={0.15} className={i % 2 === 1 ? 'lg:order-1' : ''}>
-                <Parallax amount={32}>{chapter.mockup}</Parallax>
-              </FadeIn>
-            </div>
-          </div>
-        </section>
+        <EditorialChapter key={chapter.n} {...chapter} alt={i % 2 === 1} />
       ))}
 
       {/* 04 — everything else */}
@@ -300,57 +288,10 @@ export function Home() {
       {/* How it works — scroll-pinned on desktop, plain grid elsewhere */}
       <ScrollSteps eyebrow="How it works" steps={STEPS} />
 
-      {/* Giant footer CTA */}
-      <section className="relative isolate overflow-hidden border-t border-border bg-ink-950 text-white">
-        <AmbientCanvas />
-        <Link
-          to="/login?mode=register"
-          className="group relative mx-auto block max-w-[1400px] px-6 py-32 sm:py-44"
-        >
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-mauve-magic">
-            Free to start · No credit card required
-          </p>
-          <ScrubHeadline
-            as="h2"
-            className="mt-8 text-[clamp(2.6rem,8vw,8rem)] font-extrabold uppercase leading-[0.95] tracking-tight"
-          >
-            Start finding your next customers.
-          </ScrubHeadline>
-          <span className="mt-12 inline-flex items-center gap-3 text-sm font-bold uppercase tracking-[0.2em] text-white">
-            Start free
-            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-action transition-transform duration-200 ease-brand group-hover:translate-x-2">
-              <ArrowIcon />
-            </span>
-          </span>
-        </Link>
-      </section>
+      <GiantCTA title="Start finding your next customers." />
 
       <MarketingFooter />
     </div>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      className="mt-0.5 shrink-0 text-primary"
-    >
-      <path d="M5 12.5l4.5 4.5L19 7" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function ArrowIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M4 12h15M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
   );
 }
 

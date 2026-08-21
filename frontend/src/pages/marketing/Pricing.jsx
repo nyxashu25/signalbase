@@ -4,6 +4,11 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { MarketingNav } from '../../components/marketing/MarketingNav.jsx';
 import { MarketingFooter } from '../../components/marketing/MarketingFooter.jsx';
 import { AnimatedCreditLedgerMockup } from '../../components/marketing/AnimatedCreditLedgerMockup.jsx';
+import { PageHero } from '../../components/marketing/PageHero.jsx';
+import { ScrubHeadline } from '../../components/marketing/ScrubHeadline.jsx';
+import { GiantCTA } from '../../components/marketing/GiantCTA.jsx';
+import { SmoothScroll } from '../../components/marketing/SmoothScroll.jsx';
+import { Parallax } from '../../components/marketing/Parallax.jsx';
 import { FadeIn, Stagger, StaggerItem } from '../../components/marketing/motion.jsx';
 import { PLANS, BILLING_INTERVALS, planPriceForInterval } from '../../data/plans.js';
 
@@ -65,41 +70,44 @@ export function Pricing() {
 
   return (
     <div className="min-h-screen bg-bg">
+      <SmoothScroll />
       <MarketingNav />
 
-      <section className="mx-auto max-w-[1120px] px-6 pb-6 pt-20 text-center">
-        <Stagger as="div" whileInView={false} staggerDelay={0.1}>
-          <StaggerItem as="h1" className="text-4xl font-extrabold tracking-tight text-text sm:text-5xl">
-            Simple, seat-based pricing
-          </StaggerItem>
-          <StaggerItem as="p" className="mx-auto mt-4 max-w-[560px] text-base text-text-muted">
-            Every plan runs on the same credit ledger. Pay for seats, spend credits only on the
-            contacts you actually reveal.
-          </StaggerItem>
+      <PageHero
+        eyebrow="Pricing"
+        lines={[
+          { content: 'Simple, seat-based' },
+          {
+            content: (
+              <span className="bg-gradient-brand bg-clip-text text-transparent">pricing.</span>
+            ),
+            className: 'sm:ml-[6vw]',
+          },
+        ]}
+        sub="Every plan runs on the same credit ledger. Pay for seats, spend credits only on the contacts you actually reveal."
+      >
+        <div className="inline-flex rounded-md border border-white/15 bg-white/5 p-0.5">
+          {BILLING_INTERVALS.map((i) => (
+            <button
+              key={i.key}
+              type="button"
+              onClick={() => setBillingIntervalChoice(i.key)}
+              className={`rounded px-4 py-1.5 text-sm font-bold ${
+                billingIntervalChoice === i.key ? 'bg-gradient-action text-white' : 'text-ink-300'
+              }`}
+            >
+              {i.label}
+              {i.discount > 0 && (
+                <span className="ml-1.5 text-[11px] font-medium opacity-80">
+                  −{Math.round(i.discount * 100)}%
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      </PageHero>
 
-          <StaggerItem as="div" className="mt-8 inline-flex rounded-md border border-border p-0.5">
-            {BILLING_INTERVALS.map((i) => (
-              <button
-                key={i.key}
-                type="button"
-                onClick={() => setBillingIntervalChoice(i.key)}
-                className={`rounded px-4 py-1.5 text-sm font-bold ${
-                  billingIntervalChoice === i.key ? 'bg-gradient-action text-white' : 'text-text-muted'
-                }`}
-              >
-                {i.label}
-                {i.discount > 0 && (
-                  <span className="ml-1.5 text-[11px] font-medium opacity-80">
-                    −{Math.round(i.discount * 100)}%
-                  </span>
-                )}
-              </button>
-            ))}
-          </StaggerItem>
-        </Stagger>
-      </section>
-
-      <section className="mx-auto max-w-[1200px] px-6 py-14">
+      <section className="mx-auto max-w-[1200px] px-6 py-20">
         <Stagger as="div" className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4" staggerDelay={0.1}>
           {PLANS.map((plan) => {
             const displayPrice =
@@ -169,50 +177,54 @@ export function Pricing() {
         </p>
       </section>
 
-      <section className="border-t border-border bg-ink-950">
-        <Stagger
-          as="div"
-          className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-14 px-6 py-24 lg:grid-cols-2"
-          staggerDelay={0.15}
-        >
-          <StaggerItem as="div">
-            <span className="text-xs font-bold uppercase tracking-wide text-mauve-magic">
-              How billing actually works
-            </span>
-            <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-              You only spend a credit when a reveal succeeds
-            </h2>
-            <p className="mt-4 text-base leading-relaxed text-ink-300">
+      <section className="border-t border-border bg-surface">
+        <div className="mx-auto max-w-[1200px] px-6 py-28 sm:py-36">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
+            How billing actually works
+          </p>
+          <ScrubHeadline
+            as="h2"
+            className="mt-6 max-w-[820px] text-[clamp(1.9rem,4.6vw,4rem)] font-extrabold uppercase leading-[1.05] tracking-tight text-text"
+          >
+            You only spend a credit when a reveal succeeds
+          </ScrubHeadline>
+          <div className="mt-14 grid grid-cols-1 items-center gap-14 lg:grid-cols-2">
+            <FadeIn as="p" className="text-base leading-relaxed text-text-muted">
               Your seat price covers the platform. Credits are the only thing that moves when you
               actually use it &mdash; every grant, reveal, and top-up lands in the same append-only
               ledger you can see in your workspace at any time.
-            </p>
-          </StaggerItem>
-          <StaggerItem as="div">
-            <AnimatedCreditLedgerMockup />
-          </StaggerItem>
+            </FadeIn>
+            <FadeIn as="div" delay={0.15}>
+              <Parallax amount={28}>
+                <AnimatedCreditLedgerMockup />
+              </Parallax>
+            </FadeIn>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-[900px] px-6 py-28">
+        <ScrubHeadline
+          as="h2"
+          className="text-[clamp(1.9rem,4.6vw,4rem)] font-extrabold uppercase leading-[1.05] tracking-tight text-text"
+        >
+          Frequently asked questions
+        </ScrubHeadline>
+        <Stagger as="div" className="mt-12 flex flex-col gap-6" staggerDelay={0.08}>
+          {FAQS.map((item) => (
+            <StaggerItem
+              key={item.q}
+              as="div"
+              className="rounded-lg border border-border bg-surface-elevated p-6"
+            >
+              <h3 className="text-sm font-bold text-text">{item.q}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-text-muted">{item.a}</p>
+            </StaggerItem>
+          ))}
         </Stagger>
       </section>
 
-      <section className="border-t border-border bg-surface">
-        <div className="mx-auto max-w-[760px] px-6 py-24">
-          <FadeIn as="h2" className="text-center text-3xl font-extrabold tracking-tight text-text">
-            Frequently asked questions
-          </FadeIn>
-          <Stagger as="div" className="mt-10 flex flex-col gap-6" staggerDelay={0.08}>
-            {FAQS.map((item) => (
-              <StaggerItem
-                key={item.q}
-                as="div"
-                className="rounded-lg border border-border bg-surface-elevated p-6"
-              >
-                <h3 className="text-sm font-bold text-text">{item.q}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-text-muted">{item.a}</p>
-              </StaggerItem>
-            ))}
-          </Stagger>
-        </div>
-      </section>
+      <GiantCTA title="Start free. Upgrade when it pays for itself." />
 
       <MarketingFooter />
     </div>
