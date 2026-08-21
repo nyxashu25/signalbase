@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { MarketingNav } from '../../components/marketing/MarketingNav.jsx';
 import { MarketingFooter } from '../../components/marketing/MarketingFooter.jsx';
 import { AnimatedCreditLedgerMockup } from '../../components/marketing/AnimatedCreditLedgerMockup.jsx';
+import { FadeIn, Stagger, StaggerItem } from '../../components/marketing/motion.jsx';
 import { PLANS, BILLING_INTERVALS, planPriceForInterval } from '../../data/plans.js';
 
 const CADENCE_LABEL = { MONTH: 'month', QUARTER: 'quarter', YEAR: 'year' };
@@ -13,6 +15,29 @@ const CADENCE_LABEL = { MONTH: 'month', QUARTER: 'quarter', YEAR: 'year' };
 // differently for the same plan/interval.
 function formatUsd(amount) {
   return Number.isInteger(amount) ? `$${amount}` : `$${amount.toFixed(2)}`;
+}
+
+// Crossfades to the new digits when the billing interval toggle changes the
+// price, rather than the number just snapping — small enough to skip
+// entirely under prefers-reduced-motion.
+function AnimatedPrice({ value, className }) {
+  const reduceMotion = useReducedMotion();
+  if (reduceMotion) return <span className={className}>{value}</span>;
+
+  return (
+    <AnimatePresence mode="popLayout" initial={false}>
+      <motion.span
+        key={value}
+        className={className}
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 8 }}
+        transition={{ duration: 0.25, ease: [0.2, 0.8, 0.2, 1] }}
+      >
+        {value}
+      </motion.span>
+    </AnimatePresence>
+  );
 }
 
 const FAQS = [
@@ -43,37 +68,39 @@ export function Pricing() {
       <MarketingNav />
 
       <section className="mx-auto max-w-[1120px] px-6 pb-6 pt-20 text-center">
-        <h1 className="text-4xl font-extrabold tracking-tight text-text sm:text-5xl">
-          Simple, seat-based pricing
-        </h1>
-        <p className="mx-auto mt-4 max-w-[560px] text-base text-text-muted">
-          Every plan runs on the same credit ledger. Pay for seats, spend credits only on the
-          contacts you actually reveal.
-        </p>
+        <Stagger as="div" whileInView={false} staggerDelay={0.1}>
+          <StaggerItem as="h1" className="text-4xl font-extrabold tracking-tight text-text sm:text-5xl">
+            Simple, seat-based pricing
+          </StaggerItem>
+          <StaggerItem as="p" className="mx-auto mt-4 max-w-[560px] text-base text-text-muted">
+            Every plan runs on the same credit ledger. Pay for seats, spend credits only on the
+            contacts you actually reveal.
+          </StaggerItem>
 
-        <div className="mt-8 inline-flex rounded-md border border-border p-0.5">
-          {BILLING_INTERVALS.map((i) => (
-            <button
-              key={i.key}
-              type="button"
-              onClick={() => setBillingIntervalChoice(i.key)}
-              className={`rounded px-4 py-1.5 text-sm font-bold ${
-                billingIntervalChoice === i.key ? 'bg-gradient-action text-white' : 'text-text-muted'
-              }`}
-            >
-              {i.label}
-              {i.discount > 0 && (
-                <span className="ml-1.5 text-[11px] font-medium opacity-80">
-                  −{Math.round(i.discount * 100)}%
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
+          <StaggerItem as="div" className="mt-8 inline-flex rounded-md border border-border p-0.5">
+            {BILLING_INTERVALS.map((i) => (
+              <button
+                key={i.key}
+                type="button"
+                onClick={() => setBillingIntervalChoice(i.key)}
+                className={`rounded px-4 py-1.5 text-sm font-bold ${
+                  billingIntervalChoice === i.key ? 'bg-gradient-action text-white' : 'text-text-muted'
+                }`}
+              >
+                {i.label}
+                {i.discount > 0 && (
+                  <span className="ml-1.5 text-[11px] font-medium opacity-80">
+                    −{Math.round(i.discount * 100)}%
+                  </span>
+                )}
+              </button>
+            ))}
+          </StaggerItem>
+        </Stagger>
       </section>
 
       <section className="mx-auto max-w-[1200px] px-6 py-14">
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+        <Stagger as="div" className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4" staggerDelay={0.1}>
           {PLANS.map((plan) => {
             const displayPrice =
               plan.key === 'FREE' ? 0 : planPriceForInterval(plan.key, billingIntervalChoice);
@@ -83,8 +110,9 @@ export function Pricing() {
                 : plan.unit && `seat/${cadence}`;
 
             return (
-              <div
+              <StaggerItem
                 key={plan.key}
+                as="div"
                 className={`flex flex-col rounded-xl border p-7 ${
                   plan.popular
                     ? 'border-primary/40 bg-surface-elevated shadow-dp-md ring-2 ring-primary'
@@ -99,10 +127,11 @@ export function Pricing() {
                 <h3 className="text-lg font-bold text-text">{plan.name}</h3>
                 <p className="mt-1 text-sm text-text-muted">{plan.tagline}</p>
 
-                <div className="mt-6 flex items-baseline gap-1">
-                  <span className="text-4xl font-extrabold tracking-tight text-text">
-                    {formatUsd(displayPrice)}
-                  </span>
+                <div className="relative mt-6 flex items-baseline gap-1">
+                  <AnimatedPrice
+                    value={formatUsd(displayPrice)}
+                    className="text-4xl font-extrabold tracking-tight text-text"
+                  />
                   {unit && <span className="text-sm text-text-muted">/{unit}</span>}
                 </div>
                 {!plan.unit && <div className="mt-1 text-sm text-text-muted">forever</div>}
@@ -130,10 +159,10 @@ export function Pricing() {
                     </li>
                   ))}
                 </ul>
-              </div>
+              </StaggerItem>
             );
           })}
-        </div>
+        </Stagger>
         <p className="mt-8 text-center text-xs text-text-muted">
           Prices shown are per seat. Quarterly and annual billing come with a 10% and 20% discount —
           pick your cadence above or at checkout.
@@ -141,8 +170,12 @@ export function Pricing() {
       </section>
 
       <section className="border-t border-border bg-ink-950">
-        <div className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-14 px-6 py-24 lg:grid-cols-2">
-          <div>
+        <Stagger
+          as="div"
+          className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-14 px-6 py-24 lg:grid-cols-2"
+          staggerDelay={0.15}
+        >
+          <StaggerItem as="div">
             <span className="text-xs font-bold uppercase tracking-wide text-mauve-magic">
               How billing actually works
             </span>
@@ -154,24 +187,30 @@ export function Pricing() {
               actually use it &mdash; every grant, reveal, and top-up lands in the same append-only
               ledger you can see in your workspace at any time.
             </p>
-          </div>
-          <AnimatedCreditLedgerMockup />
-        </div>
+          </StaggerItem>
+          <StaggerItem as="div">
+            <AnimatedCreditLedgerMockup />
+          </StaggerItem>
+        </Stagger>
       </section>
 
       <section className="border-t border-border bg-surface">
         <div className="mx-auto max-w-[760px] px-6 py-24">
-          <h2 className="text-center text-3xl font-extrabold tracking-tight text-text">
+          <FadeIn as="h2" className="text-center text-3xl font-extrabold tracking-tight text-text">
             Frequently asked questions
-          </h2>
-          <div className="mt-10 flex flex-col gap-6">
+          </FadeIn>
+          <Stagger as="div" className="mt-10 flex flex-col gap-6" staggerDelay={0.08}>
             {FAQS.map((item) => (
-              <div key={item.q} className="rounded-lg border border-border bg-surface-elevated p-6">
+              <StaggerItem
+                key={item.q}
+                as="div"
+                className="rounded-lg border border-border bg-surface-elevated p-6"
+              >
                 <h3 className="text-sm font-bold text-text">{item.q}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-text-muted">{item.a}</p>
-              </div>
+              </StaggerItem>
             ))}
-          </div>
+          </Stagger>
         </div>
       </section>
 

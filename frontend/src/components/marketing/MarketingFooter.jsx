@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Logo } from '../Logo.jsx';
+import { FadeIn } from './motion.jsx';
 
 const COLUMNS = [
   {
@@ -29,7 +30,7 @@ const COLUMNS = [
 export function MarketingFooter() {
   return (
     <footer className="border-t border-border bg-surface">
-      <div className="mx-auto max-w-[1200px] px-6 py-16">
+      <FadeIn as="div" className="mx-auto max-w-[1200px] px-6 py-16">
         <div className="grid grid-cols-2 gap-10 sm:grid-cols-4">
           <div className="col-span-2 sm:col-span-1">
             <Logo className="h-6 opacity-90" />
@@ -61,7 +62,7 @@ export function MarketingFooter() {
             Log in
           </Link>
         </div>
-      </div>
+      </FadeIn>
     </footer>
   );
 }

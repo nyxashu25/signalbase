@@ -5,6 +5,7 @@ import { AnimatedSearchMockup } from '../../components/marketing/AnimatedSearchM
 import { AnimatedRevealMockup } from '../../components/marketing/AnimatedRevealMockup.jsx';
 import { AnimatedSequenceMockup } from '../../components/marketing/AnimatedSequenceMockup.jsx';
 import { AnimatedCreditLedgerMockup } from '../../components/marketing/AnimatedCreditLedgerMockup.jsx';
+import { FadeIn, Stagger, StaggerItem } from '../../components/marketing/motion.jsx';
 
 const MODULES = [
   {
@@ -59,25 +60,25 @@ export function Product() {
       <MarketingNav />
 
       <section className="border-b border-border bg-surface">
-        <div className="mx-auto max-w-[900px] px-6 py-20 text-center">
-          <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-primary">
+        <Stagger as="div" whileInView={false} staggerDelay={0.1} className="mx-auto max-w-[900px] px-6 py-20 text-center">
+          <StaggerItem as="span" className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-primary">
             Product
-          </span>
-          <h1 className="mt-5 text-4xl font-extrabold tracking-tight text-text sm:text-5xl">
+          </StaggerItem>
+          <StaggerItem as="h1" className="mt-5 text-4xl font-extrabold tracking-tight text-text sm:text-5xl">
             One workspace, four things that actually move a pipeline
-          </h1>
-          <p className="mx-auto mt-5 max-w-[600px] text-base text-text-muted">
+          </StaggerItem>
+          <StaggerItem as="p" className="mx-auto mt-5 max-w-[600px] text-base text-text-muted">
             No bundled modules you'll never touch. Search, reveal, sequence, and pay for it all on
             one credit ledger.
-          </p>
-        </div>
+          </StaggerItem>
+        </Stagger>
       </section>
 
       {MODULES.map((mod, i) => (
         <section key={mod.eyebrow} className={i % 2 === 1 ? 'bg-surface' : ''}>
           <div className="mx-auto max-w-[1200px] px-6 py-20">
-            <div className="grid grid-cols-1 items-center gap-14 lg:grid-cols-2">
-              <div className={i % 2 === 1 ? 'lg:order-2' : ''}>
+            <Stagger as="div" className="grid grid-cols-1 items-center gap-14 lg:grid-cols-2" staggerDelay={0.15}>
+              <StaggerItem as="div" className={i % 2 === 1 ? 'lg:order-2' : ''}>
                 <span className="text-xs font-bold uppercase tracking-wide text-primary">
                   {mod.eyebrow}
                 </span>
@@ -107,15 +108,17 @@ export function Product() {
                     </li>
                   ))}
                 </ul>
-              </div>
-              <div className={i % 2 === 1 ? 'lg:order-1' : ''}>{mod.mockup}</div>
-            </div>
+              </StaggerItem>
+              <StaggerItem as="div" className={i % 2 === 1 ? 'lg:order-1' : ''}>
+                {mod.mockup}
+              </StaggerItem>
+            </Stagger>
           </div>
         </section>
       ))}
 
       <section className="mx-auto max-w-[1200px] px-6 py-24">
-        <div className="rounded-xl bg-gradient-action px-8 py-16 text-center text-white sm:px-16">
+        <FadeIn as="div" className="rounded-xl bg-gradient-action px-8 py-16 text-center text-white sm:px-16">
           <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
             See it on your own data
           </h2>
@@ -128,7 +131,7 @@ export function Product() {
           >
             Start free
           </Link>
-        </div>
+        </FadeIn>
       </section>
 
       <MarketingFooter />

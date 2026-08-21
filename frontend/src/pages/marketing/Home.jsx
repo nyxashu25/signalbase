@@ -5,6 +5,7 @@ import { HeroDemo } from '../../components/marketing/HeroDemo.jsx';
 import { AnimatedRevealMockup } from '../../components/marketing/AnimatedRevealMockup.jsx';
 import { AnimatedSequenceMockup } from '../../components/marketing/AnimatedSequenceMockup.jsx';
 import { AnimatedCreditLedgerMockup } from '../../components/marketing/AnimatedCreditLedgerMockup.jsx';
+import { FadeIn, Stagger, StaggerItem } from '../../components/marketing/motion.jsx';
 
 const SECONDARY_FEATURES = [
   {
@@ -57,22 +58,22 @@ export function Home() {
           }}
         />
         <div className="relative mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-16 px-6 py-24 sm:py-28 lg:grid-cols-[1.05fr_1fr]">
-          <div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-mauve-magic">
+          <Stagger as="div" whileInView={false} staggerDelay={0.1}>
+            <StaggerItem as="span" className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-mauve-magic">
               B2B sales intelligence
-            </span>
-            <h1 className="mt-6 text-balance text-5xl font-extrabold leading-[1.08] tracking-tight sm:text-6xl">
+            </StaggerItem>
+            <StaggerItem as="h1" className="mt-6 text-balance text-5xl font-extrabold leading-[1.08] tracking-tight sm:text-6xl">
               Find verified contacts.
               <br />
               <span className="bg-gradient-brand bg-clip-text text-transparent">
                 Track buying signals.
               </span>
-            </h1>
-            <p className="mt-6 max-w-[520px] text-lg text-ink-300">
+            </StaggerItem>
+            <StaggerItem as="p" className="mt-6 max-w-[520px] text-lg text-ink-300">
               DataPit is the search, reveal, and outreach platform for teams who'd rather spend
               credits on real contacts than guess at spreadsheets.
-            </p>
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+            </StaggerItem>
+            <StaggerItem as="div" className="mt-9 flex flex-col gap-3 sm:flex-row">
               <Link
                 to="/login?mode=register"
                 className="rounded-md bg-gradient-action px-7 py-3.5 text-center text-sm font-bold text-white shadow-[0_14px_32px_rgba(148,0,222,0.4)] transition-transform duration-150 ease-brand hover:-translate-y-px"
@@ -85,20 +86,22 @@ export function Home() {
               >
                 See pricing
               </Link>
-            </div>
-            <p className="mt-5 text-xs text-ink-500">
+            </StaggerItem>
+            <StaggerItem as="p" className="mt-5 text-xs text-ink-500">
               No credit card required &middot; 100 free credits every month
-            </p>
-          </div>
+            </StaggerItem>
+          </Stagger>
 
-          <HeroDemo className="lg:translate-x-4" />
+          <FadeIn as="div" whileInView={false} delay={0.35}>
+            <HeroDemo className="lg:translate-x-4" />
+          </FadeIn>
         </div>
       </section>
 
       {/* Feature: People search + reveal */}
       <section className="mx-auto max-w-[1200px] px-6 py-24">
-        <div className="grid grid-cols-1 items-center gap-14 lg:grid-cols-2">
-          <div>
+        <Stagger as="div" className="grid grid-cols-1 items-center gap-14 lg:grid-cols-2" staggerDelay={0.15}>
+          <StaggerItem as="div">
             <span className="text-xs font-bold uppercase tracking-wide text-primary">
               Search &amp; reveal
             </span>
@@ -117,19 +120,21 @@ export function Home() {
               </FeatureCheck>
               <FeatureCheck>Workspace-wide reveals, not per-seat</FeatureCheck>
             </ul>
-          </div>
-          <AnimatedRevealMockup />
-        </div>
+          </StaggerItem>
+          <StaggerItem as="div">
+            <AnimatedRevealMockup />
+          </StaggerItem>
+        </Stagger>
       </section>
 
       {/* Feature: Sequences */}
       <section className="border-y border-border bg-surface">
         <div className="mx-auto max-w-[1200px] px-6 py-24">
-          <div className="grid grid-cols-1 items-center gap-14 lg:grid-cols-2">
-            <div className="order-2 lg:order-1">
+          <Stagger as="div" className="grid grid-cols-1 items-center gap-14 lg:grid-cols-2" staggerDelay={0.15}>
+            <StaggerItem as="div" className="order-2 lg:order-1">
               <AnimatedSequenceMockup />
-            </div>
-            <div className="order-1 lg:order-2">
+            </StaggerItem>
+            <StaggerItem as="div" className="order-1 lg:order-2">
               <span className="text-xs font-bold uppercase tracking-wide text-primary">
                 Outreach
               </span>
@@ -145,15 +150,15 @@ export function Home() {
                 <FeatureCheck>Enroll straight from a saved list</FeatureCheck>
                 <FeatureCheck>Suppression list enforced automatically on every send</FeatureCheck>
               </ul>
-            </div>
-          </div>
+            </StaggerItem>
+          </Stagger>
         </div>
       </section>
 
       {/* Feature: Credits */}
       <section className="mx-auto max-w-[1200px] px-6 py-24">
-        <div className="grid grid-cols-1 items-center gap-14 lg:grid-cols-2">
-          <div>
+        <Stagger as="div" className="grid grid-cols-1 items-center gap-14 lg:grid-cols-2" staggerDelay={0.15}>
+          <StaggerItem as="div">
             <span className="text-xs font-bold uppercase tracking-wide text-primary">
               Credits &amp; billing
             </span>
@@ -170,23 +175,26 @@ export function Home() {
               <FeatureCheck>Buy more credits any time from your profile</FeatureCheck>
               <FeatureCheck>Auto-refund on a failed or expired reveal</FeatureCheck>
             </ul>
-          </div>
-          <AnimatedCreditLedgerMockup />
-        </div>
+          </StaggerItem>
+          <StaggerItem as="div">
+            <AnimatedCreditLedgerMockup />
+          </StaggerItem>
+        </Stagger>
       </section>
 
       {/* Secondary features grid */}
       <section className="border-t border-border bg-surface">
         <div className="mx-auto max-w-[1200px] px-6 py-24">
-          <div className="mx-auto max-w-[640px] text-center">
+          <FadeIn as="div" className="mx-auto max-w-[640px] text-center">
             <h2 className="text-3xl font-extrabold tracking-tight text-text sm:text-4xl">
               Everything else a go-to-market team needs
             </h2>
-          </div>
-          <div className="mt-14 grid grid-cols-1 gap-6 sm:grid-cols-3">
+          </FadeIn>
+          <Stagger as="div" className="mt-14 grid grid-cols-1 gap-6 sm:grid-cols-3">
             {SECONDARY_FEATURES.map((f) => (
-              <div
+              <StaggerItem
                 key={f.title}
+                as="div"
                 className="rounded-lg border border-border bg-surface-elevated p-6 shadow-dp transition-transform duration-150 ease-brand hover:-translate-y-0.5"
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-md bg-gradient-action text-white">
@@ -194,33 +202,33 @@ export function Home() {
                 </div>
                 <h3 className="mt-4 text-base font-bold text-text">{f.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-text-muted">{f.desc}</p>
-              </div>
+              </StaggerItem>
             ))}
-          </div>
+          </Stagger>
         </div>
       </section>
 
       {/* How it works */}
       <section className="mx-auto max-w-[1200px] px-6 py-24">
-        <div className="mx-auto max-w-[640px] text-center">
+        <FadeIn as="div" className="mx-auto max-w-[640px] text-center">
           <h2 className="text-3xl font-extrabold tracking-tight text-text sm:text-4xl">
             How it works
           </h2>
-        </div>
-        <div className="mt-14 grid grid-cols-1 gap-10 sm:grid-cols-3">
+        </FadeIn>
+        <Stagger as="div" className="mt-14 grid grid-cols-1 gap-10 sm:grid-cols-3" staggerDelay={0.12}>
           {STEPS.map((s) => (
-            <div key={s.n}>
+            <StaggerItem as="div" key={s.n}>
               <span className="text-sm font-extrabold text-primary">{s.n}</span>
               <h3 className="mt-2 text-lg font-bold text-text">{s.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-text-muted">{s.desc}</p>
-            </div>
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
       </section>
 
       {/* CTA band */}
       <section className="mx-auto max-w-[1200px] px-6 pb-24">
-        <div className="rounded-xl bg-gradient-action px-8 py-16 text-center text-white sm:px-16">
+        <FadeIn as="div" className="rounded-xl bg-gradient-action px-8 py-16 text-center text-white sm:px-16">
           <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
             Start finding your next customers
           </h2>
@@ -233,7 +241,7 @@ export function Home() {
           >
             Start free
           </Link>
-        </div>
+        </FadeIn>
       </section>
 
       <MarketingFooter />

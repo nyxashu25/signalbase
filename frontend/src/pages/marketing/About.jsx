@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { MarketingNav } from '../../components/marketing/MarketingNav.jsx';
 import { MarketingFooter } from '../../components/marketing/MarketingFooter.jsx';
+import { FadeIn, Stagger, StaggerItem } from '../../components/marketing/motion.jsx';
 
 const PRINCIPLES = [
   {
@@ -29,29 +30,30 @@ export function About() {
             background: 'radial-gradient(50% 40% at 85% 0%, rgba(148,0,222,0.3), transparent)',
           }}
         />
-        <div className="relative mx-auto max-w-[800px] px-6 py-24 text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-mauve-magic">
+        <Stagger as="div" whileInView={false} staggerDelay={0.1} className="relative mx-auto max-w-[800px] px-6 py-24 text-center">
+          <StaggerItem as="span" className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-mauve-magic">
             About DataPit
-          </span>
-          <h1 className="mt-6 text-4xl font-extrabold tracking-tight sm:text-5xl">
+          </StaggerItem>
+          <StaggerItem as="h1" className="mt-6 text-4xl font-extrabold tracking-tight sm:text-5xl">
             We got tired of paying for lists that were already stale
-          </h1>
-          <p className="mt-6 text-lg text-ink-300">
+          </StaggerItem>
+          <StaggerItem as="p" className="mt-6 text-lg text-ink-300">
             DataPit started from a simple complaint: most sales intelligence tools charge you before
             they've actually found anything. We built the credit ledger first, and the search
             product around it — so the money only moves when the data does.
-          </p>
-        </div>
+          </StaggerItem>
+        </Stagger>
       </section>
 
       <section className="mx-auto max-w-[900px] px-6 py-24">
-        <h2 className="text-3xl font-extrabold tracking-tight text-text">
+        <FadeIn as="h2" className="text-3xl font-extrabold tracking-tight text-text">
           What we actually believe
-        </h2>
-        <div className="mt-10 flex flex-col gap-8">
+        </FadeIn>
+        <Stagger as="div" className="mt-10 flex flex-col gap-8" staggerDelay={0.1}>
           {PRINCIPLES.map((p, i) => (
-            <div
+            <StaggerItem
               key={p.title}
+              as="div"
               className="flex gap-6 border-t border-border pt-8 first:border-0 first:pt-0"
             >
               <span className="text-2xl font-extrabold text-primary">
@@ -61,13 +63,13 @@ export function About() {
                 <h3 className="text-lg font-bold text-text">{p.title}</h3>
                 <p className="mt-2 text-base leading-relaxed text-text-muted">{p.desc}</p>
               </div>
-            </div>
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
       </section>
 
       <section className="border-t border-border bg-surface">
-        <div className="mx-auto max-w-[900px] px-6 py-24">
+        <FadeIn as="div" className="mx-auto max-w-[900px] px-6 py-24">
           <h2 className="text-3xl font-extrabold tracking-tight text-text">Where we're headed</h2>
           <p className="mt-5 max-w-[640px] text-base leading-relaxed text-text-muted">
             DataPit is early. The core — search, verified reveal, sequences, and a credit ledger you
@@ -75,11 +77,11 @@ export function About() {
             data are next, in that order, because that's the order our own users have asked for
             them.
           </p>
-        </div>
+        </FadeIn>
       </section>
 
       <section className="mx-auto max-w-[1200px] px-6 py-24">
-        <div className="rounded-xl bg-gradient-action px-8 py-16 text-center text-white sm:px-16">
+        <FadeIn as="div" className="rounded-xl bg-gradient-action px-8 py-16 text-center text-white sm:px-16">
           <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
             Come see it for yourself
           </h2>
@@ -92,7 +94,7 @@ export function About() {
           >
             Start free
           </Link>
-        </div>
+        </FadeIn>
       </section>
 
       <MarketingFooter />

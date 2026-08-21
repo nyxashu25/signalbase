@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { MarketingNav } from '../../components/marketing/MarketingNav.jsx';
 import { MarketingFooter } from '../../components/marketing/MarketingFooter.jsx';
 import { RoleAccent } from '../../components/marketing/RoleAccent.jsx';
+import { FadeIn, Stagger, StaggerItem } from '../../components/marketing/motion.jsx';
 
 const ROLES = [
   {
@@ -48,25 +49,26 @@ export function Solutions() {
       <MarketingNav />
 
       <section className="border-b border-border bg-surface">
-        <div className="mx-auto max-w-[900px] px-6 py-20 text-center">
-          <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-primary">
+        <Stagger as="div" whileInView={false} staggerDelay={0.1} className="mx-auto max-w-[900px] px-6 py-20 text-center">
+          <StaggerItem as="span" className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-primary">
             Solutions
-          </span>
-          <h1 className="mt-5 text-4xl font-extrabold tracking-tight text-text sm:text-5xl">
+          </StaggerItem>
+          <StaggerItem as="h1" className="mt-5 text-4xl font-extrabold tracking-tight text-text sm:text-5xl">
             Built for whoever's actually chasing the number
-          </h1>
-          <p className="mx-auto mt-5 max-w-[600px] text-base text-text-muted">
+          </StaggerItem>
+          <StaggerItem as="p" className="mx-auto mt-5 max-w-[600px] text-base text-text-muted">
             The same workspace, the same credit ledger — just a different reason to open it every
             morning.
-          </p>
-        </div>
+          </StaggerItem>
+        </Stagger>
       </section>
 
       <section className="mx-auto max-w-[1200px] px-6 py-20">
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <Stagger as="div" className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {ROLES.map((r) => (
-            <div
+            <StaggerItem
               key={r.title}
+              as="div"
               className="rounded-lg border border-border bg-surface-elevated p-6 shadow-dp transition-transform duration-150 ease-brand hover:-translate-y-0.5"
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-md bg-gradient-action text-white">
@@ -75,13 +77,13 @@ export function Solutions() {
               <h3 className="mt-4 text-base font-bold text-text">{r.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-text-muted">{r.desc}</p>
               <RoleAccent {...r.accent} />
-            </div>
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
       </section>
 
       <section className="mx-auto max-w-[1200px] px-6 pb-24">
-        <div className="rounded-xl bg-gradient-action px-8 py-16 text-center text-white sm:px-16">
+        <FadeIn as="div" className="rounded-xl bg-gradient-action px-8 py-16 text-center text-white sm:px-16">
           <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
             Find out what it looks like for your role
           </h2>
@@ -94,7 +96,7 @@ export function Solutions() {
           >
             Start free
           </Link>
-        </div>
+        </FadeIn>
       </section>
 
       <MarketingFooter />
