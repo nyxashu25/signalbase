@@ -42,6 +42,14 @@ picked up or completed — don't let it drift from reality.
       `backend/src/utils/createSuperAdmin.js` — appears deliberate).
 - [ ] Frontend test coverage is thin on the oldest core screens: Login,
       Dashboard, People, Companies, Sequences, marketing pages.
+- [ ] **Code-split the marketing site from the authenticated app.** Adding
+      framer-motion (for the marketing-page animations) pushed the single JS
+      bundle to ~170KB gzipped, past Vite's 500KB (minified) chunk warning.
+      Everyone pays that weight on first load, including users who only ever
+      hit `/app`. Splitting the marketing routes (`pages/marketing/*`) from
+      the authenticated app routes via `React.lazy`/dynamic `import()` in
+      `App.jsx` would let each side load only what it needs. Not urgent today
+      — worth doing before the bundle grows further.
 
 ## Done
 
@@ -56,3 +64,10 @@ picked up or completed — don't let it drift from reality.
       `User.googleId` was added. Configured via `GOOGLE_CLIENT_ID`
       (backend/.env) and `VITE_GOOGLE_CLIENT_ID` (frontend/.env) — both set
       locally and on titans7.com.
+- [x] **Polished the marketing site with Framer Motion.** Staggered entrance
+      animations and scroll-triggered reveals on Home, Pricing, Product,
+      Solutions, About, Contact, and the footer; a price crossfade on
+      Pricing's billing-interval toggle. Shared primitives in
+      `components/marketing/motion.jsx`, respects prefers-reduced-motion.
+      (See the code-splitting item above — this is what pushed the bundle
+      size warning.)
