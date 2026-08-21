@@ -7,10 +7,65 @@ import { AnimatedSequenceMockup } from '../../components/marketing/AnimatedSeque
 import { AnimatedCreditLedgerMockup } from '../../components/marketing/AnimatedCreditLedgerMockup.jsx';
 import { AmbientCanvas } from '../../components/marketing/AmbientCanvas.jsx';
 import { SplitHeadline } from '../../components/marketing/SplitHeadline.jsx';
+import { ScrubHeadline } from '../../components/marketing/ScrubHeadline.jsx';
 import { StatCounter } from '../../components/marketing/StatCounter.jsx';
 import { ScrollSteps } from '../../components/marketing/ScrollSteps.jsx';
 import { Parallax } from '../../components/marketing/Parallax.jsx';
+import { Marquee } from '../../components/marketing/Marquee.jsx';
+import { SmoothScroll } from '../../components/marketing/SmoothScroll.jsx';
 import { FadeIn, Stagger, StaggerItem } from '../../components/marketing/motion.jsx';
+
+const MARQUEE_ITEMS = [
+  'Verified reveals',
+  'Atomic credit ledger',
+  'Multi-step sequences',
+  'Company search',
+  'Saved lists',
+  'CSV export',
+  'Workspace roles',
+];
+
+// The numbered editorial chapters — each one full-bleed, with an oversized
+// index number and a scroll-scrubbed title, in the style of the reference
+// sites' service sections.
+const CHAPTERS = [
+  {
+    n: '01',
+    eyebrow: 'Search & reveal',
+    title: 'Every contact, verified before you spend a credit',
+    desc: 'Filter by title, seniority, department, and company signal across a live database. Results stay masked until you reveal them — so you never pay for a guess, and once anyone on your team reveals a contact, the whole workspace can see it for free.',
+    points: [
+      'Pattern-based email finding plus verification',
+      'Atomic credit ledger — never double-charged, even under load',
+      'Workspace-wide reveals, not per-seat',
+    ],
+    mockup: <AnimatedRevealMockup />,
+  },
+  {
+    n: '02',
+    eyebrow: 'Outreach',
+    title: 'Sequences that keep working after the first email',
+    desc: "Build multi-step cadences with wait steps, enroll a list in one click, and pause or resume without losing a contact's place in the sequence.",
+    points: [
+      'Email and wait steps in any order',
+      'Enroll straight from a saved list',
+      'Suppression list enforced automatically on every send',
+    ],
+    mockup: <AnimatedSequenceMockup />,
+  },
+  {
+    n: '03',
+    eyebrow: 'Credits & billing',
+    title: 'A credit ledger you can actually audit',
+    desc: 'Every credit movement is an append-only ledger entry — monthly grants, reveals, and top-ups. Reserve-then-commit accounting means a burst of concurrent reveals can never push your balance negative.',
+    points: [
+      'Full transaction history, not just a balance',
+      'Buy more credits any time from your profile',
+      'Auto-refund on a failed or expired reveal',
+    ],
+    mockup: <AnimatedCreditLedgerMockup />,
+  },
+];
 
 const SECONDARY_FEATURES = [
   {
@@ -51,13 +106,14 @@ const STEPS = [
 export function Home() {
   return (
     <div className="min-h-screen bg-bg">
+      <SmoothScroll />
       <MarketingNav />
 
-      {/* Hero */}
+      {/* Hero — full-viewport editorial type over the ambient canvas */}
       <section id="product" className="relative isolate overflow-hidden bg-ink-950 text-white">
         <AmbientCanvas />
-        <div className="relative mx-auto max-w-[1100px] px-6 pb-20 pt-28 sm:pb-28 sm:pt-36">
-          <FadeIn as="div" whileInView={false} className="flex justify-center">
+        <div className="relative mx-auto flex min-h-[92vh] max-w-[1400px] flex-col justify-center px-6 py-28">
+          <FadeIn as="div" whileInView={false}>
             <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-mauve-magic">
               B2B sales intelligence
             </span>
@@ -66,7 +122,7 @@ export function Home() {
           <SplitHeadline
             as="h1"
             delay={0.15}
-            className="mt-8 text-balance text-center text-6xl font-extrabold leading-[1.03] tracking-tight sm:text-7xl lg:text-8xl"
+            className="mt-8 text-[clamp(2.9rem,8.5vw,8.5rem)] font-extrabold uppercase leading-[0.95] tracking-tight"
           >
             Find verified contacts.
             <br />
@@ -75,173 +131,120 @@ export function Home() {
             </span>
           </SplitHeadline>
 
-          <FadeIn
-            as="p"
-            whileInView={false}
-            delay={0.9}
-            className="mx-auto mt-8 max-w-[560px] text-center text-lg text-ink-300"
-          >
-            DataPit is the search, reveal, and outreach platform for teams who'd rather spend
-            credits on real contacts than guess at spreadsheets.
-          </FadeIn>
-
-          <FadeIn
-            as="div"
-            whileInView={false}
-            delay={1.05}
-            className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row"
-          >
-            <Link
-              to="/login?mode=register"
-              className="rounded-md bg-gradient-action px-7 py-3.5 text-center text-sm font-bold text-white shadow-[0_14px_32px_rgba(148,0,222,0.4)] transition-transform duration-150 ease-brand hover:-translate-y-px"
-            >
-              Start free
-            </Link>
-            <Link
-              to="/pricing"
-              className="rounded-md border border-white/20 bg-white/5 px-7 py-3.5 text-center text-sm font-bold text-white transition-colors duration-150 ease-brand hover:bg-white/10"
-            >
-              See pricing
-            </Link>
-          </FadeIn>
-
-          <FadeIn
-            as="div"
-            whileInView={false}
-            delay={1.2}
-            className="mx-auto mt-16 flex max-w-[560px] flex-wrap items-start justify-center gap-x-12 gap-y-6 border-t border-white/10 pt-10"
-          >
-            <StatBlock>
-              <StatCounter value={2} className="text-3xl font-extrabold tabular-nums text-white" />
-              <span className="mt-1 text-xs uppercase tracking-wide text-ink-500">
-                credits per verified reveal
-              </span>
-            </StatBlock>
-            <StatBlock>
-              <StatCounter
-                value={100}
-                className="text-3xl font-extrabold tabular-nums text-white"
-              />
-              <span className="mt-1 text-xs uppercase tracking-wide text-ink-500">
-                free credits every month
-              </span>
-            </StatBlock>
-            <StatBlock>
-              <span className="text-3xl font-extrabold text-white">$0</span>
-              <span className="mt-1 text-xs uppercase tracking-wide text-ink-500">
-                to start, no card required
-              </span>
-            </StatBlock>
-          </FadeIn>
+          <div className="mt-12 flex flex-col gap-10 sm:flex-row sm:items-end sm:justify-between">
+            <FadeIn as="p" whileInView={false} delay={0.9} className="max-w-[480px] text-lg text-ink-300">
+              DataPit is the search, reveal, and outreach platform for teams who'd rather spend
+              credits on real contacts than guess at spreadsheets.
+            </FadeIn>
+            <FadeIn as="div" whileInView={false} delay={1.05} className="flex shrink-0 flex-col gap-3 sm:flex-row">
+              <Link
+                to="/login?mode=register"
+                className="rounded-md bg-gradient-action px-7 py-3.5 text-center text-sm font-bold text-white shadow-[0_14px_32px_rgba(148,0,222,0.4)] transition-transform duration-150 ease-brand hover:-translate-y-px"
+              >
+                Start free
+              </Link>
+              <Link
+                to="/pricing"
+                className="rounded-md border border-white/20 bg-white/5 px-7 py-3.5 text-center text-sm font-bold text-white transition-colors duration-150 ease-brand hover:bg-white/10"
+              >
+                See pricing
+              </Link>
+            </FadeIn>
+          </div>
         </div>
 
-        {/* Live product walkthrough */}
-        <FadeIn as="div" className="relative mx-auto max-w-[880px] px-6 pb-24 sm:pb-32">
-          <p className="text-center text-xs font-bold uppercase tracking-wide text-mauve-magic">
+        {/* Ticker band */}
+        <Marquee
+          items={MARQUEE_ITEMS}
+          className="relative border-t border-white/10 py-5 text-sm font-bold uppercase tracking-[0.2em] text-ink-300"
+        />
+      </section>
+
+      {/* Manifesto — one big scrubbed statement */}
+      <section className="mx-auto max-w-[1200px] px-6 py-32 sm:py-40">
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Why DataPit</p>
+        <ScrubHeadline
+          as="h2"
+          className="mt-8 max-w-[1000px] text-[clamp(1.9rem,4.6vw,4rem)] font-extrabold uppercase leading-[1.05] tracking-tight text-text"
+        >
+          Most sales tools charge you before they've found anything. Here, the money only moves
+          when the data does.
+        </ScrubHeadline>
+      </section>
+
+      {/* Live walkthrough */}
+      <section className="border-y border-border bg-surface">
+        <FadeIn as="div" className="mx-auto max-w-[880px] px-6 py-24 sm:py-28">
+          <p className="text-center text-xs font-bold uppercase tracking-[0.2em] text-primary">
             Live product walkthrough
           </p>
-          <HeroDemo className="mx-auto mt-8 max-w-[560px]" />
+          <HeroDemo className="mx-auto mt-10 max-w-[560px]" />
         </FadeIn>
       </section>
 
-      {/* Feature: People search + reveal */}
-      <section className="mx-auto max-w-[1200px] px-6 py-24">
-        <Stagger as="div" className="grid grid-cols-1 items-center gap-14 lg:grid-cols-2" staggerDelay={0.15}>
-          <StaggerItem as="div">
-            <span className="text-xs font-bold uppercase tracking-wide text-primary">
-              Search &amp; reveal
-            </span>
-            <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-text sm:text-4xl">
-              Every contact, verified before you spend a credit
-            </h2>
-            <p className="mt-4 text-base leading-relaxed text-text-muted">
-              Filter by title, seniority, department, and company signal across a live database.
-              Results stay masked until you reveal them — so you never pay for a guess, and once
-              anyone on your team reveals a contact, the whole workspace can see it for free.
+      {/* Numbered chapters */}
+      {CHAPTERS.map((chapter, i) => (
+        <section
+          key={chapter.n}
+          className={`relative overflow-hidden ${i % 2 === 1 ? 'border-y border-border bg-surface' : ''}`}
+        >
+          <span
+            aria-hidden="true"
+            className="text-outline pointer-events-none absolute -top-8 right-2 select-none text-[clamp(8rem,22vw,20rem)] font-extrabold leading-none sm:right-6"
+          >
+            {chapter.n}
+          </span>
+          <div className="relative mx-auto max-w-[1200px] px-6 py-28 sm:py-36">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
+              {chapter.n} — {chapter.eyebrow}
             </p>
-            <ul className="mt-6 flex flex-col gap-3 text-sm text-text">
-              <FeatureCheck>Pattern-based email finding plus verification</FeatureCheck>
-              <FeatureCheck>
-                Atomic credit ledger — never double-charged, even under load
-              </FeatureCheck>
-              <FeatureCheck>Workspace-wide reveals, not per-seat</FeatureCheck>
-            </ul>
-          </StaggerItem>
-          <StaggerItem as="div">
-            <Parallax amount={28}>
-              <AnimatedRevealMockup />
-            </Parallax>
-          </StaggerItem>
-        </Stagger>
-      </section>
+            <ScrubHeadline
+              as="h2"
+              className="mt-6 max-w-[820px] text-[clamp(1.9rem,4.6vw,4rem)] font-extrabold uppercase leading-[1.05] tracking-tight text-text"
+            >
+              {chapter.title}
+            </ScrubHeadline>
+            <div className="mt-14 grid grid-cols-1 items-center gap-14 lg:grid-cols-2">
+              <FadeIn as="div" className={i % 2 === 1 ? 'lg:order-2' : ''}>
+                <p className="text-base leading-relaxed text-text-muted">{chapter.desc}</p>
+                <ul className="mt-8 flex flex-col text-sm text-text">
+                  {chapter.points.map((p) => (
+                    <li
+                      key={p}
+                      className="flex items-start gap-3 border-t border-border py-4 last:border-b"
+                    >
+                      <CheckIcon />
+                      <span className="font-medium">{p}</span>
+                    </li>
+                  ))}
+                </ul>
+              </FadeIn>
+              <FadeIn as="div" delay={0.15} className={i % 2 === 1 ? 'lg:order-1' : ''}>
+                <Parallax amount={32}>{chapter.mockup}</Parallax>
+              </FadeIn>
+            </div>
+          </div>
+        </section>
+      ))}
 
-      {/* Feature: Sequences */}
-      <section className="border-y border-border bg-surface">
-        <div className="mx-auto max-w-[1200px] px-6 py-24">
-          <Stagger as="div" className="grid grid-cols-1 items-center gap-14 lg:grid-cols-2" staggerDelay={0.15}>
-            <StaggerItem as="div" className="order-2 lg:order-1">
-              <Parallax amount={28}>
-                <AnimatedSequenceMockup />
-              </Parallax>
-            </StaggerItem>
-            <StaggerItem as="div" className="order-1 lg:order-2">
-              <span className="text-xs font-bold uppercase tracking-wide text-primary">
-                Outreach
-              </span>
-              <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-text sm:text-4xl">
-                Sequences that keep working after the first email
-              </h2>
-              <p className="mt-4 text-base leading-relaxed text-text-muted">
-                Build multi-step cadences with wait steps, enroll a list in one click, and pause or
-                resume without losing a contact's place in the sequence.
-              </p>
-              <ul className="mt-6 flex flex-col gap-3 text-sm text-text">
-                <FeatureCheck>Email and wait steps in any order</FeatureCheck>
-                <FeatureCheck>Enroll straight from a saved list</FeatureCheck>
-                <FeatureCheck>Suppression list enforced automatically on every send</FeatureCheck>
-              </ul>
-            </StaggerItem>
-          </Stagger>
-        </div>
-      </section>
-
-      {/* Feature: Credits */}
-      <section className="mx-auto max-w-[1200px] px-6 py-24">
-        <Stagger as="div" className="grid grid-cols-1 items-center gap-14 lg:grid-cols-2" staggerDelay={0.15}>
-          <StaggerItem as="div">
-            <span className="text-xs font-bold uppercase tracking-wide text-primary">
-              Credits &amp; billing
-            </span>
-            <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-text sm:text-4xl">
-              A credit ledger you can actually audit
-            </h2>
-            <p className="mt-4 text-base leading-relaxed text-text-muted">
-              Every credit movement is an append-only ledger entry — monthly grants, reveals, and
-              top-ups. Reserve-then-commit accounting means a burst of concurrent reveals can never
-              push your balance negative.
-            </p>
-            <ul className="mt-6 flex flex-col gap-3 text-sm text-text">
-              <FeatureCheck>Full transaction history, not just a balance</FeatureCheck>
-              <FeatureCheck>Buy more credits any time from your profile</FeatureCheck>
-              <FeatureCheck>Auto-refund on a failed or expired reveal</FeatureCheck>
-            </ul>
-          </StaggerItem>
-          <StaggerItem as="div">
-            <Parallax amount={28}>
-              <AnimatedCreditLedgerMockup />
-            </Parallax>
-          </StaggerItem>
-        </Stagger>
-      </section>
-
-      {/* Secondary features grid */}
-      <section className="border-t border-border bg-surface">
-        <div className="mx-auto max-w-[1200px] px-6 py-24">
-          <FadeIn as="div" className="mx-auto max-w-[640px] text-center">
-            <h2 className="text-3xl font-extrabold tracking-tight text-text sm:text-4xl">
-              Everything else a go-to-market team needs
-            </h2>
-          </FadeIn>
+      {/* 04 — everything else */}
+      <section className="relative overflow-hidden border-y border-border bg-surface">
+        <span
+          aria-hidden="true"
+          className="text-outline pointer-events-none absolute -top-8 right-2 select-none text-[clamp(8rem,22vw,20rem)] font-extrabold leading-none sm:right-6"
+        >
+          04
+        </span>
+        <div className="relative mx-auto max-w-[1200px] px-6 py-28 sm:py-36">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
+            04 — And the rest
+          </p>
+          <ScrubHeadline
+            as="h2"
+            className="mt-6 max-w-[820px] text-[clamp(1.9rem,4.6vw,4rem)] font-extrabold uppercase leading-[1.05] tracking-tight text-text"
+          >
+            Everything else a go-to-market team needs
+          </ScrubHeadline>
           <Stagger as="div" className="mt-14 grid grid-cols-1 gap-6 sm:grid-cols-3">
             {SECONDARY_FEATURES.map((f) => (
               <StaggerItem
@@ -260,25 +263,66 @@ export function Home() {
         </div>
       </section>
 
+      {/* Stats band — every number true by construction, never usage claims */}
+      <section className="bg-ink-950 text-white">
+        <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-14 px-6 py-28 sm:grid-cols-3 sm:py-36">
+          <div>
+            <StatCounter
+              value={2}
+              className="block text-[clamp(3.5rem,8vw,7rem)] font-extrabold leading-none tabular-nums"
+            />
+            <p className="mt-4 text-sm font-bold uppercase tracking-[0.2em] text-ink-300">
+              Credits per verified reveal
+            </p>
+          </div>
+          <div>
+            <StatCounter
+              value={100}
+              className="block text-[clamp(3.5rem,8vw,7rem)] font-extrabold leading-none tabular-nums"
+            />
+            <p className="mt-4 text-sm font-bold uppercase tracking-[0.2em] text-ink-300">
+              Free credits every month
+            </p>
+          </div>
+          <div>
+            <StatCounter
+              value={0}
+              prefix="$"
+              className="block text-[clamp(3.5rem,8vw,7rem)] font-extrabold leading-none tabular-nums"
+            />
+            <p className="mt-4 text-sm font-bold uppercase tracking-[0.2em] text-ink-300">
+              To start — no card required
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* How it works — scroll-pinned on desktop, plain grid elsewhere */}
       <ScrollSteps eyebrow="How it works" steps={STEPS} />
 
-      {/* CTA band */}
-      <section className="mx-auto max-w-[1200px] px-6 pb-24">
-        <FadeIn as="div" className="rounded-xl bg-gradient-action px-8 py-16 text-center text-white sm:px-16">
-          <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
-            Start finding your next customers
-          </h2>
-          <p className="mx-auto mt-4 max-w-[480px] text-base text-white/85">
-            Free to start. No credit card required.
+      {/* Giant footer CTA */}
+      <section className="relative isolate overflow-hidden border-t border-border bg-ink-950 text-white">
+        <AmbientCanvas />
+        <Link
+          to="/login?mode=register"
+          className="group relative mx-auto block max-w-[1400px] px-6 py-32 sm:py-44"
+        >
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-mauve-magic">
+            Free to start · No credit card required
           </p>
-          <Link
-            to="/login?mode=register"
-            className="mt-8 inline-block rounded-md bg-white px-7 py-3.5 text-sm font-bold text-primary transition-transform duration-150 ease-brand hover:-translate-y-px"
+          <ScrubHeadline
+            as="h2"
+            className="mt-8 text-[clamp(2.6rem,8vw,8rem)] font-extrabold uppercase leading-[0.95] tracking-tight"
           >
+            Start finding your next customers.
+          </ScrubHeadline>
+          <span className="mt-12 inline-flex items-center gap-3 text-sm font-bold uppercase tracking-[0.2em] text-white">
             Start free
-          </Link>
-        </FadeIn>
+            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-action transition-transform duration-200 ease-brand group-hover:translate-x-2">
+              <ArrowIcon />
+            </span>
+          </span>
+        </Link>
       </section>
 
       <MarketingFooter />
@@ -286,26 +330,27 @@ export function Home() {
   );
 }
 
-function StatBlock({ children }) {
-  return <div className="flex flex-col items-center text-center">{children}</div>;
+function CheckIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      className="mt-0.5 shrink-0 text-primary"
+    >
+      <path d="M5 12.5l4.5 4.5L19 7" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
 }
 
-function FeatureCheck({ children }) {
+function ArrowIcon() {
   return (
-    <li className="flex items-start gap-2.5">
-      <svg
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        className="mt-0.5 shrink-0 text-primary"
-      >
-        <path d="M5 12.5l4.5 4.5L19 7" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-      <span>{children}</span>
-    </li>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M4 12h15M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
 

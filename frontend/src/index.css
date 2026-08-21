@@ -153,3 +153,30 @@ body {
     transform: rotateY(2.5deg) rotateX(-1.2deg);
   }
 }
+
+/* Marketing marquee ticker (components/marketing/Marquee.jsx) — the track
+   holds two identical copies of its content, so sliding exactly -50% and
+   looping reads as one seamless, infinite band. Paused entirely under
+   reduced motion (the first copy alone still shows every item). */
+@keyframes marquee-slide {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none !important;
+  }
+}
+
+/* Hollow display type for the editorial numbered chapters on the marketing
+   Home — stroke only, no fill, like the oversized index numbers on the
+   reference sites this borrows from. */
+.text-outline {
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(170, 0, 255, 0.45);
+}
