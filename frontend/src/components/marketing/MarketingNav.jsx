@@ -20,7 +20,7 @@ export function MarketingNav() {
     <header className="sticky top-0 z-20 border-b border-border bg-surface-elevated/90 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between px-6">
         <Link to="/" onClick={() => setMenuOpen(false)}>
-          <Logo className="h-6" />
+          <Logo className="h-8" />
         </Link>
 
         <nav className="hidden items-center gap-8 text-sm font-medium text-text-muted md:flex">

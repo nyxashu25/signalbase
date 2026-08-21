@@ -88,16 +88,19 @@ const STEPS = [
     n: '01',
     title: 'Find verified contacts',
     desc: 'Search by role, seniority, and company signal until you have a list worth pursuing.',
+    icon: StepFindGraphic,
   },
   {
     n: '02',
     title: 'Reveal what you need',
     desc: 'Spend a credit only on the contacts you actually want to reach — nothing is charged up front.',
+    icon: StepRevealGraphic,
   },
   {
     n: '03',
     title: 'Track buying signals',
     desc: 'Enroll into a sequence, keep lists organized, and watch replies come back into one workspace.',
+    icon: StepSignalsGraphic,
   },
 ];
 
@@ -202,11 +205,11 @@ export function Home() {
 
       {/* Live walkthrough */}
       <section className="border-y border-border bg-surface">
-        <FadeIn as="div" className="mx-auto max-w-[880px] px-6 py-24 sm:py-28">
+        <FadeIn as="div" className="mx-auto max-w-[1000px] px-6 py-24 sm:py-28">
           <p className="text-center text-xs font-bold uppercase tracking-[0.2em] text-primary">
             Live product walkthrough
           </p>
-          <HeroDemo className="mx-auto mt-10 max-w-[560px]" />
+          <HeroDemo className="mx-auto mt-10 max-w-[760px]" />
         </FadeIn>
       </section>
 
@@ -292,6 +295,64 @@ export function Home() {
 
       <MarketingFooter />
     </div>
+  );
+}
+
+// Large decorative graphics for the "How it works" walkthrough — line-art
+// in the brand purples so they hold on both the light and dark grounds.
+function StepFindGraphic() {
+  return (
+    <svg viewBox="0 0 120 120" fill="none" className="h-full w-full">
+      <defs>
+        <linearGradient id="dpg-find" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#9400de" />
+          <stop offset="1" stopColor="#cf70ff" />
+        </linearGradient>
+      </defs>
+      <rect x="10" y="16" width="66" height="12" rx="6" stroke="#aa00ff" strokeOpacity="0.35" strokeWidth="3" />
+      <rect x="10" y="40" width="82" height="12" rx="6" stroke="#aa00ff" strokeOpacity="0.35" strokeWidth="3" />
+      <rect x="10" y="64" width="54" height="12" rx="6" stroke="#aa00ff" strokeOpacity="0.35" strokeWidth="3" />
+      <circle cx="78" cy="74" r="24" stroke="url(#dpg-find)" strokeWidth="4.5" />
+      <path d="M96 92l14 14" stroke="url(#dpg-find)" strokeWidth="4.5" strokeLinecap="round" />
+      <path d="M68 74h20M78 64v20" stroke="#cf70ff" strokeWidth="3" strokeLinecap="round" strokeOpacity="0.7" />
+    </svg>
+  );
+}
+
+function StepRevealGraphic() {
+  return (
+    <svg viewBox="0 0 120 120" fill="none" className="h-full w-full">
+      <defs>
+        <linearGradient id="dpg-reveal" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#9400de" />
+          <stop offset="1" stopColor="#cf70ff" />
+        </linearGradient>
+      </defs>
+      <rect x="14" y="30" width="92" height="62" rx="10" stroke="url(#dpg-reveal)" strokeWidth="4.5" />
+      <path d="M18 36l42 34 42-34" stroke="url(#dpg-reveal)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="96" cy="30" r="16" fill="#aa00ff" fillOpacity="0.14" stroke="#cf70ff" strokeWidth="3.5" />
+      <path d="M89 30l5 5 9-10" stroke="#cf70ff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M24 14l3 6M36 8l1.5 6.5M12 24l6 3" stroke="#cf70ff" strokeWidth="3" strokeLinecap="round" strokeOpacity="0.7" />
+    </svg>
+  );
+}
+
+function StepSignalsGraphic() {
+  return (
+    <svg viewBox="0 0 120 120" fill="none" className="h-full w-full">
+      <defs>
+        <linearGradient id="dpg-signals" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#9400de" />
+          <stop offset="1" stopColor="#cf70ff" />
+        </linearGradient>
+      </defs>
+      <rect x="16" y="72" width="16" height="34" rx="5" stroke="#aa00ff" strokeOpacity="0.4" strokeWidth="3.5" />
+      <rect x="44" y="54" width="16" height="52" rx="5" stroke="#aa00ff" strokeOpacity="0.6" strokeWidth="3.5" />
+      <rect x="72" y="34" width="16" height="72" rx="5" stroke="url(#dpg-signals)" strokeWidth="4" />
+      <path d="M18 44c18 2 34-6 46-18" stroke="url(#dpg-signals)" strokeWidth="4.5" strokeLinecap="round" />
+      <path d="M56 22l10-1-2 10" stroke="url(#dpg-signals)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="103" cy="20" r="5" fill="#cf70ff" fillOpacity="0.8" />
+    </svg>
   );
 }
 

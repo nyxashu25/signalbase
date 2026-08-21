@@ -38,7 +38,7 @@ export function MarketingFooter() {
       <FadeIn as="div" className="mx-auto max-w-[1400px] px-6 pt-20">
         <div className="grid grid-cols-2 gap-10 sm:grid-cols-4">
           <div className="col-span-2 sm:col-span-1">
-            <img src="/logos/datapit-logo-dark.svg" alt="DataPit" className="h-6" />
+            <img src="/logos/datapit-logo-dark.svg" alt="DataPit" className="h-8" />
             <p className="mt-4 max-w-[220px] text-sm text-ink-300">
               Search, reveal, and outreach on one credit ledger.
             </p>

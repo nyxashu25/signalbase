@@ -5,6 +5,8 @@ import { useLoginMutation, useRegisterMutation, useGoogleLoginMutation } from '.
 import { setSession } from '../store/authSlice.js';
 import { Logo } from '../components/Logo.jsx';
 import { GoogleSignInButton } from '../components/GoogleSignInButton.jsx';
+import { MarketingNav } from '../components/marketing/MarketingNav.jsx';
+import { MarketingFooter } from '../components/marketing/MarketingFooter.jsx';
 
 export function Login() {
   // Marketing "Start free" CTAs link here with ?mode=register so they land
@@ -55,9 +57,11 @@ export function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface">
-      <div className="w-full max-w-sm rounded-xl border border-border bg-surface-elevated p-7 shadow-dp">
-        <Logo className="h-7" />
+    <div className="flex min-h-screen flex-col bg-surface">
+      <MarketingNav />
+      <div className="flex flex-1 items-center justify-center px-6 py-16">
+        <div className="w-full max-w-sm rounded-xl border border-border bg-surface-elevated p-7 shadow-dp">
+          <Logo className="h-9" />
         <p className="mt-3 text-sm text-text-muted">
           {mode === 'login' ? 'Sign in to your workspace' : 'Create a new workspace'}
         </p>
@@ -122,8 +126,10 @@ export function Login() {
           {mode === 'login'
             ? "Don't have a workspace? Create one"
             : 'Already have an account? Sign in'}
-        </button>
+          </button>
+        </div>
       </div>
+      <MarketingFooter />
     </div>
   );
 }

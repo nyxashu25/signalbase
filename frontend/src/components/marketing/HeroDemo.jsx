@@ -106,7 +106,7 @@ export function HeroDemo({ className = '' }) {
   return (
     <div className={`[perspective:1400px] ${className}`}>
       <div
-        className="relative h-[460px] overflow-hidden rounded-xl border border-white/10 bg-ink-900 shadow-[0_30px_80px_rgba(148,0,222,0.35)] animate-[ambient-tilt_9s_ease-in-out_infinite]"
+        className="relative h-[520px] overflow-hidden rounded-xl border border-white/10 bg-ink-900 shadow-[0_30px_80px_rgba(148,0,222,0.35)] animate-[ambient-tilt_9s_ease-in-out_infinite]"
         style={{ transformStyle: 'preserve-3d' }}
       >
         {/* App chrome + screens */}
