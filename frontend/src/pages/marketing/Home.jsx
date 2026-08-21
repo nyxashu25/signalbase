@@ -5,6 +5,11 @@ import { HeroDemo } from '../../components/marketing/HeroDemo.jsx';
 import { AnimatedRevealMockup } from '../../components/marketing/AnimatedRevealMockup.jsx';
 import { AnimatedSequenceMockup } from '../../components/marketing/AnimatedSequenceMockup.jsx';
 import { AnimatedCreditLedgerMockup } from '../../components/marketing/AnimatedCreditLedgerMockup.jsx';
+import { AmbientCanvas } from '../../components/marketing/AmbientCanvas.jsx';
+import { SplitHeadline } from '../../components/marketing/SplitHeadline.jsx';
+import { StatCounter } from '../../components/marketing/StatCounter.jsx';
+import { ScrollSteps } from '../../components/marketing/ScrollSteps.jsx';
+import { Parallax } from '../../components/marketing/Parallax.jsx';
 import { FadeIn, Stagger, StaggerItem } from '../../components/marketing/motion.jsx';
 
 const SECONDARY_FEATURES = [
@@ -49,53 +54,94 @@ export function Home() {
       <MarketingNav />
 
       {/* Hero */}
-      <section id="product" className="relative overflow-hidden bg-ink-950 text-white">
-        <div
-          className="pointer-events-none absolute inset-0 opacity-60"
-          style={{
-            background:
-              'radial-gradient(60% 50% at 15% 0%, rgba(148,0,222,0.35), transparent), radial-gradient(50% 40% at 100% 20%, rgba(190,61,255,0.25), transparent)',
-          }}
-        />
-        <div className="relative mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-16 px-6 py-24 sm:py-28 lg:grid-cols-[1.05fr_1fr]">
-          <Stagger as="div" whileInView={false} staggerDelay={0.1}>
-            <StaggerItem as="span" className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-mauve-magic">
+      <section id="product" className="relative isolate overflow-hidden bg-ink-950 text-white">
+        <AmbientCanvas />
+        <div className="relative mx-auto max-w-[1100px] px-6 pb-20 pt-28 sm:pb-28 sm:pt-36">
+          <FadeIn as="div" whileInView={false} className="flex justify-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-mauve-magic">
               B2B sales intelligence
-            </StaggerItem>
-            <StaggerItem as="h1" className="mt-6 text-balance text-5xl font-extrabold leading-[1.08] tracking-tight sm:text-6xl">
-              Find verified contacts.
-              <br />
-              <span className="bg-gradient-brand bg-clip-text text-transparent">
-                Track buying signals.
-              </span>
-            </StaggerItem>
-            <StaggerItem as="p" className="mt-6 max-w-[520px] text-lg text-ink-300">
-              DataPit is the search, reveal, and outreach platform for teams who'd rather spend
-              credits on real contacts than guess at spreadsheets.
-            </StaggerItem>
-            <StaggerItem as="div" className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <Link
-                to="/login?mode=register"
-                className="rounded-md bg-gradient-action px-7 py-3.5 text-center text-sm font-bold text-white shadow-[0_14px_32px_rgba(148,0,222,0.4)] transition-transform duration-150 ease-brand hover:-translate-y-px"
-              >
-                Start free
-              </Link>
-              <Link
-                to="/pricing"
-                className="rounded-md border border-white/20 bg-white/5 px-7 py-3.5 text-center text-sm font-bold text-white transition-colors duration-150 ease-brand hover:bg-white/10"
-              >
-                See pricing
-              </Link>
-            </StaggerItem>
-            <StaggerItem as="p" className="mt-5 text-xs text-ink-500">
-              No credit card required &middot; 100 free credits every month
-            </StaggerItem>
-          </Stagger>
+            </span>
+          </FadeIn>
 
-          <FadeIn as="div" whileInView={false} delay={0.35}>
-            <HeroDemo className="lg:translate-x-4" />
+          <SplitHeadline
+            as="h1"
+            delay={0.15}
+            className="mt-8 text-balance text-center text-6xl font-extrabold leading-[1.03] tracking-tight sm:text-7xl lg:text-8xl"
+          >
+            Find verified contacts.
+            <br />
+            <span className="bg-gradient-brand bg-clip-text text-transparent">
+              Track buying signals.
+            </span>
+          </SplitHeadline>
+
+          <FadeIn
+            as="p"
+            whileInView={false}
+            delay={0.9}
+            className="mx-auto mt-8 max-w-[560px] text-center text-lg text-ink-300"
+          >
+            DataPit is the search, reveal, and outreach platform for teams who'd rather spend
+            credits on real contacts than guess at spreadsheets.
+          </FadeIn>
+
+          <FadeIn
+            as="div"
+            whileInView={false}
+            delay={1.05}
+            className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row"
+          >
+            <Link
+              to="/login?mode=register"
+              className="rounded-md bg-gradient-action px-7 py-3.5 text-center text-sm font-bold text-white shadow-[0_14px_32px_rgba(148,0,222,0.4)] transition-transform duration-150 ease-brand hover:-translate-y-px"
+            >
+              Start free
+            </Link>
+            <Link
+              to="/pricing"
+              className="rounded-md border border-white/20 bg-white/5 px-7 py-3.5 text-center text-sm font-bold text-white transition-colors duration-150 ease-brand hover:bg-white/10"
+            >
+              See pricing
+            </Link>
+          </FadeIn>
+
+          <FadeIn
+            as="div"
+            whileInView={false}
+            delay={1.2}
+            className="mx-auto mt-16 flex max-w-[560px] flex-wrap items-start justify-center gap-x-12 gap-y-6 border-t border-white/10 pt-10"
+          >
+            <StatBlock>
+              <StatCounter value={2} className="text-3xl font-extrabold tabular-nums text-white" />
+              <span className="mt-1 text-xs uppercase tracking-wide text-ink-500">
+                credits per verified reveal
+              </span>
+            </StatBlock>
+            <StatBlock>
+              <StatCounter
+                value={100}
+                className="text-3xl font-extrabold tabular-nums text-white"
+              />
+              <span className="mt-1 text-xs uppercase tracking-wide text-ink-500">
+                free credits every month
+              </span>
+            </StatBlock>
+            <StatBlock>
+              <span className="text-3xl font-extrabold text-white">$0</span>
+              <span className="mt-1 text-xs uppercase tracking-wide text-ink-500">
+                to start, no card required
+              </span>
+            </StatBlock>
           </FadeIn>
         </div>
+
+        {/* Live product walkthrough */}
+        <FadeIn as="div" className="relative mx-auto max-w-[880px] px-6 pb-24 sm:pb-32">
+          <p className="text-center text-xs font-bold uppercase tracking-wide text-mauve-magic">
+            Live product walkthrough
+          </p>
+          <HeroDemo className="mx-auto mt-8 max-w-[560px]" />
+        </FadeIn>
       </section>
 
       {/* Feature: People search + reveal */}
@@ -122,7 +168,9 @@ export function Home() {
             </ul>
           </StaggerItem>
           <StaggerItem as="div">
-            <AnimatedRevealMockup />
+            <Parallax amount={28}>
+              <AnimatedRevealMockup />
+            </Parallax>
           </StaggerItem>
         </Stagger>
       </section>
@@ -132,7 +180,9 @@ export function Home() {
         <div className="mx-auto max-w-[1200px] px-6 py-24">
           <Stagger as="div" className="grid grid-cols-1 items-center gap-14 lg:grid-cols-2" staggerDelay={0.15}>
             <StaggerItem as="div" className="order-2 lg:order-1">
-              <AnimatedSequenceMockup />
+              <Parallax amount={28}>
+                <AnimatedSequenceMockup />
+              </Parallax>
             </StaggerItem>
             <StaggerItem as="div" className="order-1 lg:order-2">
               <span className="text-xs font-bold uppercase tracking-wide text-primary">
@@ -177,7 +227,9 @@ export function Home() {
             </ul>
           </StaggerItem>
           <StaggerItem as="div">
-            <AnimatedCreditLedgerMockup />
+            <Parallax amount={28}>
+              <AnimatedCreditLedgerMockup />
+            </Parallax>
           </StaggerItem>
         </Stagger>
       </section>
@@ -208,23 +260,8 @@ export function Home() {
         </div>
       </section>
 
-      {/* How it works */}
-      <section className="mx-auto max-w-[1200px] px-6 py-24">
-        <FadeIn as="div" className="mx-auto max-w-[640px] text-center">
-          <h2 className="text-3xl font-extrabold tracking-tight text-text sm:text-4xl">
-            How it works
-          </h2>
-        </FadeIn>
-        <Stagger as="div" className="mt-14 grid grid-cols-1 gap-10 sm:grid-cols-3" staggerDelay={0.12}>
-          {STEPS.map((s) => (
-            <StaggerItem as="div" key={s.n}>
-              <span className="text-sm font-extrabold text-primary">{s.n}</span>
-              <h3 className="mt-2 text-lg font-bold text-text">{s.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-text-muted">{s.desc}</p>
-            </StaggerItem>
-          ))}
-        </Stagger>
-      </section>
+      {/* How it works — scroll-pinned on desktop, plain grid elsewhere */}
+      <ScrollSteps eyebrow="How it works" steps={STEPS} />
 
       {/* CTA band */}
       <section className="mx-auto max-w-[1200px] px-6 pb-24">
@@ -247,6 +284,10 @@ export function Home() {
       <MarketingFooter />
     </div>
   );
+}
+
+function StatBlock({ children }) {
+  return <div className="flex flex-col items-center text-center">{children}</div>;
 }
 
 function FeatureCheck({ children }) {
