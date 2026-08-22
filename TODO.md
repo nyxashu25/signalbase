@@ -26,6 +26,13 @@ picked up or completed — don't let it drift from reality.
       rate-limited, but the Privacy marketing page just says "contact us" —
       nothing calls the endpoint.
 
+## In progress — in-app UX overhaul (see `docs/UX-ROADMAP.md`)
+
+Benchmarked against Apollo.io's authenticated app. Phase 1 (app shell +
+design-system primitives) and Phase 2 (People/Companies search screens) are
+approved and underway; Phases 3–5 (getting-started hub, empty states,
+settings area) are specced in the roadmap and wait on a review of 1+2 live.
+
 ## P1 — real gaps, not urgent
 
 - [ ] **Admin audit log only covers 4 actions.** `AdminAuditLog` records
