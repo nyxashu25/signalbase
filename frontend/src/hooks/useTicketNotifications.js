@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useGetAdminTicketNotificationsQuery } from '../api/adminDataApi.js';
 
 // Polls GET /admin/tickets/notifications and fires a native browser
-// Notification for each newly-arrived unanswered ticket — only while the
+// Notification for each newly-arrived unanswered ticket — a brand-new one or
+// a customer replying to an answered thread (kind: 'reply') — only while the
 // control panel is open in a tab. No service worker or push subscription:
 // this is the "in-app while /control is open" tier, not true web push.
 const POLL_INTERVAL_MS = 20_000;
@@ -26,7 +27,7 @@ export function useTicketNotifications() {
       // shouldn't get a flood of notifications for the existing backlog of
       // unanswered tickets that predate this session.
       initializedRef.current = true;
-      if (data.latestCreatedAt) setSince(data.latestCreatedAt);
+      if (data.latestAt ?? data.latestCreatedAt) setSince(data.latestAt ?? data.latestCreatedAt);
       return;
     }
 
@@ -36,10 +37,15 @@ export function useTicketNotifications() {
       Notification.permission === 'granted'
     ) {
       for (const ticket of data.tickets) {
-        const notification = new Notification('New ticket raised', {
-          body: `${ticket.workspace?.name ?? 'A workspace'} — ${ticket.subject}`,
-          tag: ticket.id,
-        });
+        const notification = new Notification(
+          ticket.kind === 'reply' ? 'Customer replied to a ticket' : 'New ticket raised',
+          {
+            body: `${ticket.workspace?.name ?? 'A workspace'} — ${ticket.subject}`,
+            // Include the poll's watermark in the tag so a second reply on the
+            // same thread isn't silently collapsed into the first popup.
+            tag: `${ticket.id}:${ticket.updatedAt}`,
+          },
+        );
         notification.onclick = () => {
           window.focus();
           window.location.href = `/control/tickets/${ticket.id}`;
@@ -47,7 +53,7 @@ export function useTicketNotifications() {
       }
     }
 
-    if (data.latestCreatedAt) setSince(data.latestCreatedAt);
+    if (data.latestAt ?? data.latestCreatedAt) setSince(data.latestAt ?? data.latestCreatedAt);
   }, [data]);
 
   return { unansweredCount: data?.unansweredCount ?? 0 };

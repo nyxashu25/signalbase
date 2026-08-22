@@ -1,7 +1,10 @@
+import { useDispatch } from 'react-redux';
 import { Link, useParams } from 'react-router-dom';
-import { Users, Building2, Search, X } from 'lucide-react';
-import { useGetListQuery, useRemoveListItemMutation } from '../api/listsApi.js';
+import { Search, X } from 'lucide-react';
+import { listsApi, useGetListQuery, useRemoveListItemMutation } from '../api/listsApi.js';
+import { useRevealContactMutation } from '../api/contactsApi.js';
 import { ExportCsvButton } from '../components/ExportCsvButton.jsx';
+import { ContactRow, CONTACT_COLUMNS } from '../components/ContactRow.jsx';
 import { PageHeader } from '../components/ui/PageHeader.jsx';
 import { Button } from '../components/ui/Button.jsx';
 import { TableFrame, thClass, tdClass, tdMutedClass, trClass } from '../components/ui/Card.jsx';
@@ -9,11 +12,34 @@ import { EmptyState } from '../components/ui/EmptyState.jsx';
 import { Skeleton, SkeletonRows } from '../components/ui/Skeleton.jsx';
 import { LetterAvatar } from '../components/ui/LetterAvatar.jsx';
 import { Tooltip } from '../components/ui/Tooltip.jsx';
+import { Illustration } from '../components/ui/illustrations.jsx';
+
+// The people view of a list reuses the search table's ContactRow, so a
+// saved contact can be revealed (email + phone) right here and the row
+// matches People column-for-column (docs/UX-ROADMAP.md §4.5).
+const LIST_CONTACT_COLUMNS = CONTACT_COLUMNS.map((c) => c.key);
 
 export function ListDetail() {
   const { id } = useParams();
+  const dispatch = useDispatch();
   const { data: list, isLoading } = useGetListQuery(id);
   const [removeItem] = useRemoveListItemMutation();
+  const [revealContact] = useRevealContactMutation();
+
+  async function handleReveal(contactId) {
+    const result = await revealContact({ contactId, idempotencyKey: crypto.randomUUID() }).unwrap();
+    dispatch(
+      listsApi.util.updateQueryData('getList', id, (draft) => {
+        const item = draft.items.find((i) => i.contact?.id === contactId);
+        if (item?.contact) {
+          item.contact.email = result.email;
+          item.contact.emailVerified = result.emailVerified;
+          item.contact.phone = result.phone ?? item.contact.phone;
+          item.contact.revealed = true;
+        }
+      }),
+    );
+  }
 
   if (isLoading || !list) {
     return (
@@ -52,15 +78,15 @@ export function ListDetail() {
       />
 
       <TableFrame>
-        <table className="w-full">
+        <table className={isContacts ? 'w-full min-w-[1040px]' : 'w-full'}>
           <thead>
             <tr>
               {isContacts ? (
-                <>
-                  <th className={thClass}>Name</th>
-                  <th className={thClass}>Title</th>
-                  <th className={thClass}>Company</th>
-                </>
+                CONTACT_COLUMNS.map((c) => (
+                  <th key={c.key} className={`${thClass} ${c.key === 'linkedin' ? '!px-3' : ''}`}>
+                    {c.key === 'linkedin' ? <span className="sr-only">LinkedIn</span> : c.label}
+                  </th>
+                ))
               ) : (
                 <>
                   <th className={thClass}>Name</th>
@@ -74,57 +100,60 @@ export function ListDetail() {
             </tr>
           </thead>
           <tbody>
-            {list.items.map((item) => (
-              <tr key={item.id} className={trClass}>
-                {isContacts ? (
-                  <>
-                    <td className={tdClass}>
-                      <span className="flex items-center gap-2.5 font-semibold">
-                        <LetterAvatar
-                          name={`${item.contact?.firstName ?? ''} ${item.contact?.lastName ?? ''}`}
-                          size="sm"
-                        />
-                        {item.contact?.firstName} {item.contact?.lastName}
-                      </span>
-                    </td>
-                    <td className={tdMutedClass}>{item.contact?.title ?? '—'}</td>
-                    <td className={tdMutedClass}>{item.contact?.company?.name ?? '—'}</td>
-                  </>
-                ) : (
-                  <>
-                    <td className={tdClass}>
-                      <Link
-                        to={`/app/companies/${item.company?.id}`}
-                        className="flex items-center gap-2.5 font-semibold hover:text-primary hover:underline"
-                      >
-                        <LetterAvatar name={item.company?.name ?? ''} size="sm" square />
-                        {item.company?.name}
-                      </Link>
-                    </td>
-                    <td className={tdMutedClass}>{item.company?.domain}</td>
-                    <td className={tdMutedClass}>{item.company?.industry ?? '—'}</td>
-                  </>
-                )}
-                <td className="px-4 py-2 text-right">
-                  <Tooltip content="Remove from list">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      iconOnly
-                      icon={X}
-                      aria-label="Remove from list"
-                      onClick={() => removeItem({ listId: list.id, itemId: item.id })}
-                    />
-                  </Tooltip>
-                </td>
-              </tr>
-            ))}
+            {list.items.map((item) =>
+              isContacts && item.contact ? (
+                <ContactRow
+                  key={item.id}
+                  contact={item.contact}
+                  onReveal={handleReveal}
+                  columns={LIST_CONTACT_COLUMNS}
+                  trailingAction={
+                    <Tooltip content="Remove from list">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        iconOnly
+                        icon={X}
+                        aria-label={`Remove ${item.contact.firstName} ${item.contact.lastName} from list`}
+                        onClick={() => removeItem({ listId: list.id, itemId: item.id })}
+                      />
+                    </Tooltip>
+                  }
+                />
+              ) : (
+                <tr key={item.id} className={trClass}>
+                  <td className={tdClass}>
+                    <Link
+                      to={`/app/companies/${item.company?.id}`}
+                      className="flex items-center gap-2.5 font-semibold hover:text-primary hover:underline"
+                    >
+                      <LetterAvatar name={item.company?.name ?? ''} size="sm" square />
+                      {item.company?.name}
+                    </Link>
+                  </td>
+                  <td className={tdMutedClass}>{item.company?.domain}</td>
+                  <td className={tdMutedClass}>{item.company?.industry ?? '—'}</td>
+                  <td className="px-4 py-2 text-right">
+                    <Tooltip content="Remove from list">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        iconOnly
+                        icon={X}
+                        aria-label="Remove from list"
+                        onClick={() => removeItem({ listId: list.id, itemId: item.id })}
+                      />
+                    </Tooltip>
+                  </td>
+                </tr>
+              ),
+            )}
             {list.items.length === 0 && (
               <tr>
-                <td colSpan={4}>
+                <td colSpan={isContacts ? CONTACT_COLUMNS.length + 1 : 4}>
                   <EmptyState
                     compact
-                    icon={isContacts ? Users : Building2}
+                    illustration={isContacts ? <Illustration.People /> : <Illustration.Companies />}
                     title="Nothing saved here yet"
                     actions={
                       <Button variant="primary" icon={Search} to={searchTo}>

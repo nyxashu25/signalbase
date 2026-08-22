@@ -27,6 +27,7 @@ import { Button } from '../components/ui/Button.jsx';
 import { Banner } from '../components/ui/Banner.jsx';
 import { TableFrame, thClass, tdClass, tdMutedClass, trClass } from '../components/ui/Card.jsx';
 import { EmptyState } from '../components/ui/EmptyState.jsx';
+import { Illustration } from '../components/ui/illustrations.jsx';
 import { SkeletonRows } from '../components/ui/Skeleton.jsx';
 import { StatusPill, CountPill } from '../components/ui/StatusPill.jsx';
 import { LetterAvatar } from '../components/ui/LetterAvatar.jsx';
@@ -378,7 +379,7 @@ export function Companies() {
                     <tr>
                       <td colSpan={columnCount}>
                         <EmptyState
-                          icon={Building2}
+                          illustration={hasActiveFilters ? <Illustration.Search /> : <Illustration.Companies />}
                           title={hasActiveFilters ? 'No companies match these filters' : 'No companies yet'}
                           actions={
                             hasActiveFilters ? (

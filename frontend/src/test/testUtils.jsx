@@ -55,7 +55,18 @@ export function mockFetchRoutes(routes) {
     if (!match) {
       throw new Error(`Unhandled fetch in test: ${method} ${url}`);
     }
-    const result = typeof match.respond === 'function' ? match.respond(url, init) : match.respond;
+    // Hand function responders the request body as text (a Request's body is
+    // a stream, not the string the test wrote) so they can assert on it.
+    let requestBody = init.body;
+    if (isRequest) {
+      try {
+        requestBody = await input.clone().text();
+      } catch {
+        requestBody = undefined;
+      }
+    }
+    const result =
+      typeof match.respond === 'function' ? match.respond(url, { ...init, method, body: requestBody }) : match.respond;
     const status = result.status ?? 200;
     const body = result.body ?? {};
     // The Fetch spec forbids a body on these statuses — the real Response

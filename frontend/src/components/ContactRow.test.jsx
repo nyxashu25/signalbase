@@ -113,4 +113,31 @@ describe('ContactRow', () => {
     renderRow({ id: 'c1', firstName: 'Ada', lastName: 'Lovelace', revealed: false, email: null });
     expect(screen.queryByRole('link', { name: /LinkedIn profile/ })).not.toBeInTheDocument();
   });
+
+  it('masks the phone number until revealed, then shows it as a tel: link with copy', () => {
+    const { unmount } = renderRow({
+      id: 'c1',
+      firstName: 'Ada',
+      lastName: 'Lovelace',
+      revealed: false,
+      email: 'a****@acme.com',
+      phone: '+1 415 *** **32',
+      hasPhone: true,
+    });
+    expect(screen.getByText('+1 415 *** **32')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /415/ })).not.toBeInTheDocument();
+    unmount();
+
+    renderRow({
+      id: 'c1',
+      firstName: 'Ada',
+      lastName: 'Lovelace',
+      revealed: true,
+      email: 'ada@acme.com',
+      phone: '+1 415 555 0132',
+      hasPhone: true,
+    });
+    expect(screen.getByRole('link', { name: '+1 415 555 0132' })).toHaveAttribute('href', 'tel:+14155550132');
+    expect(screen.getByRole('button', { name: 'Copy phone' })).toBeInTheDocument();
+  });
 });

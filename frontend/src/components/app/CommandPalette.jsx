@@ -11,6 +11,7 @@ import {
   CreditCard,
   LifeBuoy,
   UserCircle,
+  Settings,
   BookOpen,
   Plus,
   Coins,
@@ -29,7 +30,12 @@ const PAGES = [
   { label: 'Sequences', to: '/app/sequences', icon: Send, keywords: 'outreach campaigns email' },
   { label: 'Billing', to: '/app/billing', icon: CreditCard, keywords: 'plan credits invoices' },
   { label: 'Tickets', to: '/app/tickets', icon: LifeBuoy, keywords: 'support help' },
-  { label: 'Profile', to: '/app/profile', icon: UserCircle, keywords: 'account settings' },
+  { label: 'Settings', to: '/app/settings', icon: Settings, keywords: 'account preferences' },
+  { label: 'Profile settings', to: '/app/settings/profile', icon: UserCircle, keywords: 'name account' },
+  { label: 'Workspace settings', to: '/app/settings/workspace', icon: Settings, keywords: 'rename plan' },
+  { label: 'Users & teams', to: '/app/settings/members', icon: Users, keywords: 'seats invite members' },
+  { label: 'Security settings', to: '/app/settings/security', icon: Settings, keywords: 'password google' },
+  { label: 'Notification settings', to: '/app/settings/notifications', icon: Settings, keywords: 'email opt out' },
   { label: 'Help', to: '/app/help', icon: BookOpen, keywords: 'docs guide how credits work faq' },
 ];
 

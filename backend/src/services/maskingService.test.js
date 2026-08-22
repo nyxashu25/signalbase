@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import { prisma } from '../config/db.js';
 import { resetDb } from '../test/dbHelpers.js';
-import { maskEmail, attachRevealStatus } from './maskingService.js';
+import { maskEmail, maskPhone, attachRevealStatus } from './maskingService.js';
 
 describe('maskEmail', () => {
   it('keeps the first character of local and domain, masks the rest', () => {
@@ -13,6 +13,17 @@ describe('maskEmail', () => {
 
   it('never reveals length exactly for very short parts (floors at 3 stars)', () => {
     expect(maskEmail('ab@cd.io')).toBe('a***@c***.io');
+  });
+});
+
+describe('maskPhone', () => {
+  it('keeps the leading prefix and last two digits, masks the middle, preserves separators', () => {
+    expect(maskPhone('+1 415 555 0132')).toBe('+1 415 *** **32');
+    expect(maskPhone('020-7946-0958')).toBe('020-7***-**58');
+  });
+
+  it('masks everything for very short numbers', () => {
+    expect(maskPhone('1234')).toBe('****');
   });
 });
 

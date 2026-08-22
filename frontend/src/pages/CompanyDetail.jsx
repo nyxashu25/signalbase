@@ -36,6 +36,7 @@ export function CompanyDetail() {
         if (contact) {
           contact.email = result.email;
           contact.emailVerified = result.emailVerified;
+          contact.phone = result.phone ?? contact.phone;
           contact.revealed = true;
         }
       }),
@@ -169,6 +170,7 @@ export function CompanyDetail() {
               <th className={thClass}>Company</th>
               <th className={thClass}>Department</th>
               <th className={thClass}>Email</th>
+              <th className={thClass}>Phone</th>
               <th className={thClass}>
                 <span className="sr-only">Actions</span>
               </th>

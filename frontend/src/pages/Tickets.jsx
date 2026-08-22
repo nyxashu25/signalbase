@@ -8,6 +8,7 @@ import { Button } from '../components/ui/Button.jsx';
 import { TableFrame, thClass, tdClass, tdMutedClass, trClass } from '../components/ui/Card.jsx';
 import { StatusPill } from '../components/ui/StatusPill.jsx';
 import { EmptyState } from '../components/ui/EmptyState.jsx';
+import { Illustration } from '../components/ui/illustrations.jsx';
 import { SkeletonRows } from '../components/ui/Skeleton.jsx';
 
 const PAGE_SIZE = 25;
@@ -43,7 +44,11 @@ export function Tickets() {
             New ticket
           </Button>
         }
-        tabs={TABS}
+        tabs={TABS.map((tab) => ({
+          ...tab,
+          count: data?.counts ? data.counts[tab.key] : undefined,
+          emphasize: tab.key === 'ANSWERED',
+        }))}
         activeTab={status}
         onTabChange={(key) => {
           setStatus(key);
@@ -87,7 +92,7 @@ export function Tickets() {
                 <td colSpan={4}>
                   <EmptyState
                     compact
-                    icon={LifeBuoy}
+                    illustration={<Illustration.Tickets />}
                     title="No tickets here"
                     actions={
                       status === 'ACTIVE' || status === 'UNANSWERED' ? (

@@ -43,11 +43,20 @@ export function AdminTickets() {
                 setStatus(tab.key);
                 setPage(1);
               }}
-              className={`rounded px-3 py-1.5 text-xs font-bold ${
+              className={`flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-bold ${
                 status === tab.key ? 'bg-gradient-action text-white' : 'text-ink-300'
               }`}
             >
               {tab.label}
+              {data?.counts && (
+                <span
+                  className={`rounded-full px-1.5 text-[10px] tabular-nums ${
+                    status === tab.key ? 'bg-white/20' : 'bg-white/10'
+                  }`}
+                >
+                  {data.counts[tab.key]}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -97,8 +106,18 @@ export function AdminTickets() {
                 <td className="px-4 py-3 text-sm text-ink-300">{t.workspace?.name ?? '—'}</td>
                 <td className="px-4 py-3 text-sm text-ink-300">{t.createdBy?.email ?? '—'}</td>
                 <td className="px-4 py-3 text-sm">
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${STATUS_STYLES[t.status]}`}>
-                    {t.status}
+                  <span className="inline-flex flex-wrap items-center gap-1.5">
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${STATUS_STYLES[t.status]}`}>
+                      {t.status}
+                    </span>
+                    {t.status === 'UNANSWERED' && t.lastMessageAuthorType === 'USER' && (t.messageCount ?? 1) > 1 && (
+                      <span
+                        className="rounded-full bg-red-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-300"
+                        title="The customer replied to an answered thread — it needs you again"
+                      >
+                        Customer replied
+                      </span>
+                    )}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-sm text-ink-300">

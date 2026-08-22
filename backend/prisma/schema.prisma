@@ -152,6 +152,9 @@ enum AdminAuditAction {
   UNSUSPEND_USER
   UPDATE_PLAN
   ADD_CREDITS
+  SAVE_STRIPE_SETTINGS
+  APPROVE_IMPORT
+  SEND_PROMOTION
 }
 
 // Compliance trail for support-desk overrides — who (which super admin) did

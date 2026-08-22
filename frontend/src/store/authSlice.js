@@ -33,8 +33,17 @@ const authSlice = createSlice({
     markTutorialCompleted(state) {
       if (state.user) state.user.tutorialCompletedAt = new Date().toISOString();
     },
+    // Settings pages patch the cached user/workspace after a successful save
+    // so the shell (avatar, top bar name) updates without a refetch of /me.
+    updateUser(state, action) {
+      if (state.user) state.user = { ...state.user, ...action.payload };
+    },
+    updateWorkspace(state, action) {
+      if (state.workspace) state.workspace = { ...state.workspace, ...action.payload };
+    },
   },
 });
 
-export const { setSession, clearSession, markTutorialCompleted } = authSlice.actions;
+export const { setSession, clearSession, markTutorialCompleted, updateUser, updateWorkspace } =
+  authSlice.actions;
 export default authSlice.reducer;

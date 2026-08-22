@@ -63,9 +63,17 @@ export async function getStripeSettings(req, res) {
 
 export async function saveStripeSettings(req, res) {
   const result = await paymentSettingsService.saveStripeSettings(req.body, req.superAdmin.adminId);
+  // Which secrets were (re)set — never the values.
+  await adminService.recordAuditLog({
+    superAdminId: req.superAdmin.adminId,
+    action: 'SAVE_STRIPE_SETTINGS',
+    metadata: {
+      fields: ['secretKey', 'webhookSecret'].filter((k) => Boolean(req.body[k])),
+    },
+  });
   res.json(result);
 }
 
 export async function sendPromotion(req, res) {
-  res.json(await adminService.sendPromotionalBroadcast(req.body));
+  res.json(await adminService.sendPromotionalBroadcast(req.body, req.superAdmin.adminId));
 }

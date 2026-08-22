@@ -30,6 +30,7 @@ import { Button } from '../components/ui/Button.jsx';
 import { Banner } from '../components/ui/Banner.jsx';
 import { TableFrame, thClass } from '../components/ui/Card.jsx';
 import { EmptyState } from '../components/ui/EmptyState.jsx';
+import { Illustration } from '../components/ui/illustrations.jsx';
 import { SkeletonRows } from '../components/ui/Skeleton.jsx';
 import { CountPill } from '../components/ui/StatusPill.jsx';
 import { useToast } from '../components/ui/toast.jsx';
@@ -155,6 +156,7 @@ export function People() {
         if (contact) {
           contact.email = result.email;
           contact.emailVerified = result.emailVerified;
+          contact.phone = result.phone ?? contact.phone;
           contact.revealed = true;
         }
       }),
@@ -408,7 +410,7 @@ export function People() {
                     <tr>
                       <td colSpan={columnCount}>
                         <EmptyState
-                          icon={Users}
+                          illustration={hasActiveFilters ? <Illustration.Search /> : <Illustration.People />}
                           title={hasActiveFilters ? 'No people match these filters' : 'No people yet'}
                           actions={
                             hasActiveFilters ? (

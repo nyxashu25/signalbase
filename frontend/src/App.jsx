@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { Loader2 } from 'lucide-react';
 import { ChatWidget } from './components/ChatWidget.jsx';
@@ -41,12 +41,27 @@ const ListDetail = lazyNamed(() => import('./pages/ListDetail.jsx'), 'ListDetail
 const Sequences = lazyNamed(() => import('./pages/Sequences.jsx'), 'Sequences');
 const SequenceBuilder = lazyNamed(() => import('./pages/SequenceBuilder.jsx'), 'SequenceBuilder');
 const SequenceDetail = lazyNamed(() => import('./pages/SequenceDetail.jsx'), 'SequenceDetail');
-const Profile = lazyNamed(() => import('./pages/Profile.jsx'), 'Profile');
 const AddCredits = lazyNamed(() => import('./pages/AddCredits.jsx'), 'AddCredits');
 const Tickets = lazyNamed(() => import('./pages/Tickets.jsx'), 'Tickets');
 const NewTicket = lazyNamed(() => import('./pages/NewTicket.jsx'), 'NewTicket');
 const TicketDetail = lazyNamed(() => import('./pages/TicketDetail.jsx'), 'TicketDetail');
 const Help = lazyNamed(() => import('./pages/Help.jsx'), 'Help');
+const SettingsLayout = lazyNamed(() => import('./pages/settings/SettingsLayout.jsx'), 'SettingsLayout');
+const SettingsProfile = lazyNamed(() => import('./pages/settings/SettingsProfile.jsx'), 'SettingsProfile');
+const SettingsWorkspace = lazyNamed(
+  () => import('./pages/settings/SettingsWorkspace.jsx'),
+  'SettingsWorkspace',
+);
+const SettingsMembers = lazyNamed(() => import('./pages/settings/SettingsMembers.jsx'), 'SettingsMembers');
+const SettingsSecurity = lazyNamed(() => import('./pages/settings/SettingsSecurity.jsx'), 'SettingsSecurity');
+const SettingsNotifications = lazyNamed(
+  () => import('./pages/settings/SettingsNotifications.jsx'),
+  'SettingsNotifications',
+);
+const SettingsIntegrations = lazyNamed(
+  () => import('./pages/settings/SettingsIntegrations.jsx'),
+  'SettingsIntegrations',
+);
 
 // Admin panel
 const AdminLayout = lazyNamed(() => import('./layouts/AdminLayout.jsx'), 'AdminLayout');
@@ -135,7 +150,17 @@ export function App() {
               <Route path="tickets" element={<Tickets />} />
               <Route path="tickets/new" element={<NewTicket />} />
               <Route path="tickets/:id" element={<TicketDetail />} />
-              <Route path="profile" element={<Profile />} />
+              {/* Profile moved into Settings (UX roadmap Phase 5); old links keep working. */}
+              <Route path="profile" element={<Navigate to="/app/settings/profile" replace />} />
+              <Route path="settings" element={<SettingsLayout />}>
+                <Route index element={<Navigate to="/app/settings/profile" replace />} />
+                <Route path="profile" element={<SettingsProfile />} />
+                <Route path="workspace" element={<SettingsWorkspace />} />
+                <Route path="members" element={<SettingsMembers />} />
+                <Route path="security" element={<SettingsSecurity />} />
+                <Route path="notifications" element={<SettingsNotifications />} />
+                <Route path="integrations" element={<SettingsIntegrations />} />
+              </Route>
               <Route path="help" element={<Help />} />
             </Route>
           </Route>

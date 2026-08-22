@@ -375,3 +375,40 @@ describe('admin data routes', () => {
     });
   });
 });
+
+describe('audit log coverage for settings, imports and promotions', () => {
+  beforeEach(async () => {
+    await resetDb();
+    await resetRedis();
+  });
+
+  it('records SEND_PROMOTION with the subject and recipient count', async () => {
+    const token = await loginAsAdmin();
+    await createTenantUser();
+    const res = await request(app)
+      .post('/api/v1/admin/promotions')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ subject: 'Big news', body: '<p>Hi</p>' });
+    expect(res.status).toBe(200);
+
+    const log = await request(app).get('/api/v1/admin/audit-log').set('Authorization', `Bearer ${token}`);
+    const entry = log.body.results.find((e) => e.action === 'SEND_PROMOTION');
+    expect(entry).toBeTruthy();
+    expect(entry.metadata).toEqual({ subject: 'Big news', recipientCount: res.body.recipientCount });
+    expect(entry.targetUser).toBeFalsy();
+  });
+
+  it('records SAVE_STRIPE_SETTINGS naming which fields were set — never the values', async () => {
+    const token = await loginAsAdmin();
+    const res = await request(app)
+      .put('/api/v1/admin/settings/stripe')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ secretKey: 'sk_test_abc123', webhookSecret: 'whsec_abc123' });
+    expect(res.status).toBe(200);
+
+    const log = await request(app).get('/api/v1/admin/audit-log').set('Authorization', `Bearer ${token}`);
+    const entry = log.body.results.find((e) => e.action === 'SAVE_STRIPE_SETTINGS');
+    expect(entry.metadata).toEqual({ fields: ['secretKey', 'webhookSecret'] });
+    expect(JSON.stringify(entry)).not.toContain('sk_test_abc123');
+  });
+});

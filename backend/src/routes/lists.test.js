@@ -421,3 +421,55 @@ describe('list creation rate limit', () => {
     expect(overLimit.status).toBe(429);
   });
 });
+
+describe('GET /lists/:id masks contact emails and phones like search does', () => {
+  beforeEach(async () => {
+    await resetDb();
+    await resetRedis();
+  });
+
+  it('returns a masked email/phone until the workspace has revealed the contact', async () => {
+    const org = await registerOrg('Acme', 'owner@acme.test');
+    const company = await prisma.company.create({ data: { name: 'Nova', domain: 'nova.test' } });
+    const contact = await prisma.contact.create({
+      data: {
+        companyId: company.id,
+        firstName: 'Ada',
+        lastName: 'Lovelace',
+        email: 'ada@nova.test',
+        phone: '+1 415 555 0132',
+      },
+    });
+    const list = await request(app)
+      .post('/api/v1/lists')
+      .set('Authorization', `Bearer ${org.accessToken}`)
+      .send({ name: 'Leads', type: 'CONTACTS' });
+    await request(app)
+      .post(`/api/v1/lists/${list.body.list.id}/items`)
+      .set('Authorization', `Bearer ${org.accessToken}`)
+      .send({ contactId: contact.id });
+
+    const masked = await request(app)
+      .get(`/api/v1/lists/${list.body.list.id}`)
+      .set('Authorization', `Bearer ${org.accessToken}`);
+    expect(masked.status).toBe(200);
+    const item = masked.body.list.items[0];
+    expect(item.contact.revealed).toBe(false);
+    expect(item.contact.email).not.toBe('ada@nova.test');
+    expect(item.contact.phone).toBe('+1 415 *** **32');
+    expect(item.contact.hasPhone).toBe(true);
+
+    const owner = await prisma.user.findUnique({ where: { email: 'owner@acme.test' } });
+    await prisma.emailReveal.create({
+      data: { workspaceId: org.workspaceId, contactId: contact.id, revealedById: owner.id },
+    });
+    const clear = await request(app)
+      .get(`/api/v1/lists/${list.body.list.id}`)
+      .set('Authorization', `Bearer ${org.accessToken}`);
+    expect(clear.body.list.items[0].contact).toMatchObject({
+      revealed: true,
+      email: 'ada@nova.test',
+      phone: '+1 415 555 0132',
+    });
+  });
+});

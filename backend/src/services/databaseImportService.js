@@ -105,6 +105,8 @@ async function insertContact(row, firstName, lastName, companyId, batchId) {
       seniority: row['Seniority']?.trim() || null,
       email,
       emailVerified: false,
+      // Both RPF phone columns feed one field — the primary number wins.
+      phone: row['TelephoneNo']?.trim() || row['Alternative No.']?.trim() || null,
       linkedinUrl: row['Prospect Linkedin profile Link']?.trim() || null,
       importBatchId: batchId,
     },

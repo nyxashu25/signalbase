@@ -93,7 +93,7 @@ Title (+ optional `0 records` sub-line) · **underline sub-tabs** with count pil
 Phase 1 is the biggest perceived-quality jump per hour and unblocks everything
 after it (the shell components get reused by every later phase).
 
-> **Status (2026-08-22):** Phases 1, 2 and 3 shipped and are live on
+> **Status (2026-08-22):** All five phases shipped and are live on
 > titans7.com. Notes on what deviated from the spec below: 1.4's Settings
 > link waits on Phase 5 (there's no settings page yet); 2.1's "Saved" count in
 > the rail was dropped (no cheap endpoint — `/dashboard/stats` now returns
@@ -110,7 +110,15 @@ after it (the shell components get reused by every later phase).
 > not-built tables, which aren't for customers. The route-level code split
 > (TODO.md) shipped alongside: the first-load bundle went from ~280 KB gzip to
 > ~108 KB, with marketing, app and admin chunks loaded per audience.
-> Everything else below in Phases 1–3 is done as written.
+> Phase 4: 4.2/4.3 were already done in Phase 1; 4.4's analytics tab is a
+> workspace roll-up (`GET /sequences/analytics`); 4.5's ListDetail now *is*
+> the search table (ContactRow with reveal + phone). Phase 5: *Users & teams*
+> lists seats but invites stay honestly disabled until the P0 ships;
+> *Security* got change-password (and first-set for Google-only accounts) —
+> forgot-password (the unauthenticated flow) is still the P0. 5.2's admin-
+> style flyout was dropped in favour of a plain Settings link + the page's
+> own sub-nav + ⌘K entries for every section.
+> Everything else below is done as written.
 
 ### Phase 1 — App shell & design system foundation ✅
 
@@ -217,39 +225,39 @@ after it (the shell components get reused by every later phase).
 - [x] **3.5 "Getting started / Overview / Tools" tabs** — `?view=` deep
       links; Home defaults to Overview once the checklist reads 100%.
 
-### Phase 4 — Empty states, detail pages, polish
+### Phase 4 — Empty states, detail pages, polish ✅
 
-- [ ] **4.1 `<EmptyState>`** component (illustration · headline · body ·
+- [x] **4.1 `<EmptyState>`** component (illustration · headline · body ·
       primary/secondary CTA · learn-more) and use it on Lists, ListDetail,
       Sequences, Tickets, Billing transactions, search results, audit log.
       Illustrations: a small set of on-brand line illustrations (one per
       object type) — SVG, themed via `currentColor`.
-- [ ] **4.2 Skeleton loaders** everywhere `Loading…` appears today.
-- [ ] **4.3 Status pill system** — one `<StatusPill tone="neutral|success|
+- [x] **4.2 Skeleton loaders** everywhere `Loading…` appears today.
+- [x] **4.3 Status pill system** — one `<StatusPill tone="neutral|success|
       warning|danger|info">` used for sequence status, ticket status, plan,
       email-verified, audit actions; drop the ad-hoc `bg-emerald-500/15`
       strings.
-- [ ] **4.4 Sequences** — sub-tabs *All sequences · Analytics*; designed
+- [x] **4.4 Sequences** — sub-tabs *All sequences · Analytics*; designed
       empty state with two CTAs; analytics tab = KPI grid (sent / opened /
       clicked / replied / bounced with ⓘ) + per-sequence table.
-- [ ] **4.5 Lists** — designed empty state (*Create a people list / Create a
+- [x] **4.5 Lists** — designed empty state (*Create a people list / Create a
       company list*), list cards or table with type icon + item count + last
       updated; ListDetail gets the same table upgrade as search.
-- [ ] **4.6 Tickets** — sub-tabs with count pills (Active **n** · Answered
+- [x] **4.6 Tickets** — sub-tabs with count pills (Active **n** · Answered
       **n** · Closed **n**), status pills, designed empty state.
-- [ ] **4.7 Billing** — plan overview card (current plan · renewal · seats ·
+- [x] **4.7 Billing** — plan overview card (current plan · renewal · seats ·
       ⓘ), credits usage bar, transactions table with status pills and a
       designed empty state.
 
-### Phase 5 — Settings area (depends on open P0s)
+### Phase 5 — Settings area ✅ (invites / forgot-password still P0)
 
-- [ ] **5.1 `/app/settings`** with a left sub-nav: *Profile* (existing
+- [x] **5.1 `/app/settings`** with a left sub-nav: *Profile* (existing
       Profile page), *Workspace* (name, plan overview → Billing), *Users &
       teams* (⟵ **blocked on team/seat invites P0**), *Security* (change
       password ⟵ **pairs with password-reset P0**; connected Google
       account), *Notifications* (marketing opt-out toggle — we have
       `marketingOptOut`), *Integrations* (honest "nothing yet" state).
-- [ ] **5.2 Sidebar "Settings" link + the admin-style flyout** listing those
+- [x] **5.2 Sidebar "Settings" link + the admin-style flyout** listing those
       sections.
 
 ---

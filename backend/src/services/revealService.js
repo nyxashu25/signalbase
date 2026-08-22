@@ -30,7 +30,12 @@ export async function revealContactEmail({ workspaceId, userId, contactId, reser
     // stay safe under a race between two concurrent reveal requests for
     // the same contact — refund rather than charge twice.
     await releaseReservation(reservationId);
-    return { email: contact.email, emailVerified: contact.emailVerified, alreadyRevealed: true };
+    return {
+      email: contact.email,
+      emailVerified: contact.emailVerified,
+      phone: contact.phone,
+      alreadyRevealed: true,
+    };
   }
 
   let { email, emailVerified } = contact;
@@ -78,12 +83,19 @@ export async function revealContactEmail({ workspaceId, userId, contactId, reser
       // rather than double-charge for a result someone else just paid for.
       await refundAmount(workspaceId, amount);
       const winner = await prisma.contact.findUnique({ where: { id: contactId } });
-      return { email: winner.email, emailVerified: winner.emailVerified, alreadyRevealed: true };
+      return {
+        email: winner.email,
+        emailVerified: winner.emailVerified,
+        phone: winner.phone,
+        alreadyRevealed: true,
+      };
     }
     throw err;
   }
 
   await enqueueIndex('contact', contactId);
 
-  return { email, emailVerified, alreadyRevealed: false };
+  // One reveal unlocks everything we hold on the contact — the phone number
+  // comes from the dataset (seed/CSV import), there's no phone finder.
+  return { email, emailVerified, phone: contact.phone, alreadyRevealed: false };
 }

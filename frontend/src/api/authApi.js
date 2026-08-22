@@ -26,6 +26,15 @@ export const authApi = baseApi.injectEndpoints({
     me: builder.query({
       query: () => '/auth/me',
     }),
+    updateProfile: builder.mutation({
+      query: (body) => ({ url: '/auth/me', method: 'PATCH', body }),
+    }),
+    updatePreferences: builder.mutation({
+      query: (body) => ({ url: '/auth/me/preferences', method: 'PATCH', body }),
+    }),
+    changePassword: builder.mutation({
+      query: (body) => ({ url: '/auth/change-password', method: 'POST', body }),
+    }),
     completeTutorial: builder.mutation({
       query: () => ({ url: '/auth/tutorial-complete', method: 'POST' }),
       invalidatesTags: ['Onboarding'],
@@ -43,4 +52,7 @@ export const {
   useLogoutMutation,
   useMeQuery,
   useCompleteTutorialMutation,
+  useUpdateProfileMutation,
+  useUpdatePreferencesMutation,
+  useChangePasswordMutation,
 } = authApi;

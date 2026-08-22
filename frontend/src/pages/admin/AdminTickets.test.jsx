@@ -50,3 +50,30 @@ describe('AdminTickets', () => {
     await waitFor(() => expect(screen.getByText('No tickets here')).toBeInTheDocument());
   });
 });
+
+describe('AdminTickets customer-replied nudge', () => {
+  it('flags an unanswered ticket whose last message came from the customer on a multi-message thread', async () => {
+    mockFetchRoutes([
+      {
+        url: /\/tickets\?/,
+        method: 'GET',
+        respond: {
+          body: {
+            results: [
+              { ...ticket, id: 'fresh', subject: 'Brand new', lastMessageAuthorType: 'USER', messageCount: 1 },
+              { ...ticket, id: 'replied', subject: 'They came back', lastMessageAuthorType: 'USER', messageCount: 3 },
+            ],
+            total: 2,
+            page: 1,
+            pageSize: 25,
+            counts: { ACTIVE: 2, UNANSWERED: 2, ANSWERED: 0, CLOSED: 0 },
+          },
+        },
+      },
+    ]);
+    renderWithProviders(<AdminTickets />, { preloadedState: authenticatedAdminState });
+    expect(await screen.findByText('They came back')).toBeInTheDocument();
+    expect(screen.getAllByText('Customer replied')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: /^Unanswered/ })).toHaveTextContent('2');
+  });
+});

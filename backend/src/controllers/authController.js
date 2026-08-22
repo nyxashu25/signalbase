@@ -75,6 +75,18 @@ export async function completeTutorial(req, res) {
   res.json(await authService.completeTutorial(req.auth.userId));
 }
 
+export async function updateProfile(req, res) {
+  res.json(await authService.updateProfile(req.auth.userId, req.body));
+}
+
+export async function updatePreferences(req, res) {
+  res.json(await authService.updatePreferences(req.auth.userId, req.body));
+}
+
+export async function changePassword(req, res) {
+  res.json(await authService.changePassword(req.auth.userId, req.body));
+}
+
 export async function me(req, res) {
   const result = await authService.getCurrentUser(req.auth);
   res.json(result);

@@ -21,6 +21,8 @@ const createLimiter = rateLimit({
 });
 
 sequencesRouter.get('/', asyncHandler(sequenceController.index));
+// Declared before /:id so the literal path wins.
+sequencesRouter.get('/analytics', asyncHandler(sequenceController.workspaceAnalytics));
 sequencesRouter.get('/:id', asyncHandler(sequenceController.show));
 sequencesRouter.get('/:id/analytics', asyncHandler(sequenceController.analytics));
 sequencesRouter.post(

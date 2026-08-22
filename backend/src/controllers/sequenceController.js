@@ -11,6 +11,10 @@ export async function show(req, res) {
   res.json({ sequence });
 }
 
+export async function workspaceAnalytics(req, res) {
+  res.json({ analytics: await sequenceService.getWorkspaceAnalytics(req.auth.workspaceId) });
+}
+
 export async function analytics(req, res) {
   const analytics = await sequenceService.getSequenceAnalytics(req.auth.workspaceId, req.params.id);
   res.json({ analytics });

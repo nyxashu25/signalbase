@@ -26,6 +26,19 @@ export const verifyEmailSchema = z.object({
   token: z.string().min(1),
 });
 
+export const updateProfileSchema = z.object({
+  name: z.string().trim().min(1, 'Name is required').max(120),
+});
+
+export const updatePreferencesSchema = z.object({
+  marketingOptOut: z.boolean(),
+});
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1).optional(),
+  newPassword: z.string().min(8, 'New password must be at least 8 characters').max(200),
+});
+
 export const resendVerificationSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
 });

@@ -34,8 +34,20 @@ Conventions used in the tables below:
 | POST | `/resend-verification` | — | 5/hour/IP (shares the register limiter) | Silently no-ops for an unknown or already-verified email — never reveals which. |
 | POST | `/refresh` | — (reads the httpOnly refresh cookie) | — | Rotates the refresh token; re-reads membership so a role change/suspension takes effect immediately. |
 | POST | `/logout` | — | — | Revokes the refresh token. |
-| GET | `/me` | User | — | Current user/workspace/role. |
+| GET | `/me` | User | — | Current user (`emailVerified`, `marketingOptOut`, `hasPassword`, `googleLinked`, `createdAt`), workspace (`plan`, `createdAt`) and role. |
+| PATCH | `/me` | User | — | `{ name }` — rename the signed-in user. |
+| PATCH | `/me/preferences` | User | — | `{ marketingOptOut }` — the Settings → Notifications toggle (same flag the promo unsubscribe link sets). |
+| POST | `/change-password` | User | 10/min/IP (shares the login limiter) | `{ currentPassword?, newPassword }` — current is required when the account has a password; a Google-only account sets its first one without it. |
 | POST | `/tutorial-complete` | User | — | Marks the first-login tour finished (once, permanently). |
+
+## Workspace — `/api/v1/workspace` (`routes/workspace.js`)
+
+The signed-in user's *current* workspace (from the token) — no `:id` by design.
+
+| Method | Path | Auth | Notes |
+|---|---|---|---|
+| GET | `/members` | User | Everyone with a seat: `{ id, role, joinedAt, user: { id, name, email } }`, owner first. Read-only until seat invites (TODO.md P0) land. |
+| PATCH | `/` | User, `ADMIN`+ | `{ name }` — rename the workspace. |
 
 ## Search — `/api/v1/search` (`routes/search.js`)
 
@@ -49,14 +61,14 @@ All routes require auth.
 | GET | `/companies` | — | — | Faceted Elasticsearch query; hydrated from Postgres. Params: `q`, `industry[]`, `location[]`, `techStack[]`, `headcount[]` (bucket keys `1-10 … 5001+`, matched on `headcountMin`), `sort` (`relevance|name_asc|name_desc|headcount_desc|newest`), `page`, `pageSize`. Facets: `industry`, `location`, `techStack`, `headcount` (range agg, declared bucket order). |
 | GET | `/companies/export` | 20 (`CSV_EXPORT`) | 10/min/workspace | Unpaginated, capped at 5000 rows. Same filters as `/companies` minus paging. Must be declared before `/companies/:id`. |
 | GET | `/companies/:id` | 20 (`COMPANY_DETAIL_VIEW`), skipped if already viewed | — | `reserveCompanyViewCredits` checks `CompanyDetailView` first — a repeat view by the same workspace is free. |
-| GET | `/people` | — | — | Contact search; results run through `attachRevealStatus` (masked unless revealed). Params: `q`, `title` / `company` (prefix-phrase "contains"), `seniority[]`, `department[]`, `industry[]`, `location[]`, `emailStatus[]` (`verified|unverified|not_found`, derived from the indexed `hasEmail`/`emailVerified` booleans), `sort` (`relevance|name_asc|name_desc|newest`), `page`, `pageSize`. Facets: the four term facets + `emailStatus` (filters agg). |
+| GET | `/people` | — | — | Contact search; results run through `attachRevealStatus` (email **and phone** masked unless revealed — `+1 415 *** **32`; `hasPhone` says whether a number exists). Params: `q`, `title` / `company` (prefix-phrase "contains"), `seniority[]`, `department[]`, `industry[]`, `location[]`, `emailStatus[]` (`verified|unverified|not_found`, derived from the indexed `hasEmail`/`emailVerified` booleans), `sort` (`relevance|name_asc|name_desc|newest`), `page`, `pageSize`. Facets: the four term facets + `emailStatus` (filters agg). |
 | GET | `/people/export` | 20 (`CSV_EXPORT`) | 10/min/workspace | Same 5000-row cap and filters as `/people`. |
 
 ## Contacts (reveal) — `/api/v1/contacts` (`routes/contacts.js`)
 
 | Method | Path | Auth | Credits | Rate limit | Notes |
 |---|---|---|---|---|---|
-| POST | `/:id/reveal` | User | 2 (`REVEAL`) | 30/min/workspace | Requires `Idempotency-Key` header (cached replay for 24h). `skipIfAlreadyRevealed` short-circuits if the workspace already revealed this contact. Runs pattern-find + optional Hunter.io verify; a confirmed-bad result refunds instead of charging. |
+| POST | `/:id/reveal` | User | 2 (`REVEAL`) | 30/min/workspace | Requires `Idempotency-Key` header (cached replay for 24h). `skipIfAlreadyRevealed` short-circuits if the workspace already revealed this contact. Runs pattern-find + optional Hunter.io verify; a confirmed-bad result refunds instead of charging. Response `{ email, emailVerified, phone, alreadyRevealed }` — one reveal unlocks the phone number too (from the dataset; there is no phone finder). |
 
 ## Lists — `/api/v1/lists` (`routes/lists.js`)
 
@@ -71,6 +83,8 @@ All routes require auth.
 | DELETE | `/:id` | Admin+ | — | — | |
 | POST | `/:id/items` | Member+ | — | — | |
 | DELETE | `/:id/items/:itemId` | Member+ | — | — | |
+
+> `GET /lists/:id` runs the same `attachRevealStatus` gate as search on a people list's contacts — email/phone are masked until revealed. (Before 2026-08-22 this route returned them in the clear — fixed.)
 
 ## Sequences — `/api/v1/sequences` (`routes/sequences.js`)
 
@@ -101,7 +115,11 @@ All routes require auth. `requireSequencesPlan` gates create/activate/enroll to 
 | POST | `/checkout-session` | User | 10/hour/workspace | One-off credit top-up. Simulated (returns a fake `billing.simulated.local` URL) unless a Stripe secret key is configured via `/control/settings`. |
 | POST | `/subscribe` | User | 10/hour/workspace | Recurring plan subscription checkout. Blocks a downgrade while the current paid interval's minimum commitment hasn't elapsed. Same simulate-until-configured behavior as checkout-session. |
 
+> `GET /sequences/analytics` (declared before `/:id`) — workspace-wide roll-up for the Sequences → Analytics tab: `totals` (SENT/OPENED/CLICKED/REPLIED/BOUNCED/UNSUBSCRIBED), `rates`, `enrollments { total, active }`, and one row per sequence with its own counts.
+
 ## Tickets (tenant side) — `/api/v1/tickets` (`routes/tickets.js`)
+
+> List responses now also carry `counts { UNANSWERED, ANSWERED, CLOSED, ACTIVE }` (tab pills) and per-ticket `lastMessageAuthorType` / `messageCount`.
 
 All routes require auth.
 
@@ -127,6 +145,8 @@ All routes require auth.
 |---|---|---|
 | GET | `/onboarding` | The getting-started checklist (`config/onboardingConfig.js`): groups → tasks with real completion state detected from existing data (`EmailReveal`, `ListItem`, `SavedSearch`, `Sequence`, `SequenceEnrollment`, `CompanyDetailView`, `User.emailVerified`/`tutorialCompletedAt`; the people search is recorded by `GET /search/people` since it leaves no row of its own). **Side-effecting read:** newly-detected completions are persisted (`OnboardingTaskCompletion`) and any unpaid reward — +5 per task, +10 per completed group, 75 max — is written as an `ONBOARDING_REWARD` ledger row + Redis balance increment, once, under a guarded `updateMany`. Response carries `percent`, `completedCount/totalCount`, `creditsEarned/creditsAvailable`, `nextTask`, per-task `requiresPlan` (sequence tasks on FREE), and `justRewarded[]` (what this call paid out — the frontend toasts it). |
 | GET | `/stats` | Stat tiles: `revealsThisMonth`, `creditsUsedThisMonth` (current UTC calendar month), `activeSequences`, `lists`, `savedContacts`. |
+
+> Admin `GET /admin/tickets/notifications` is keyed on `updatedAt` (was `createdAt`): a customer replying to an answered thread surfaces too, tagged `kind: 'reply'` (vs `'new'`); the watermark field is `latestAt` (`latestCreatedAt` kept as an alias). `GET /admin/audit-log` now also lists `SAVE_STRIPE_SETTINGS` (metadata `{ fields }`, never values), `APPROVE_IMPORT` (`{ batchId, filename, insertedContacts, insertedCompanies }`) and `SEND_PROMOTION` (`{ subject, recipientCount }`).
 
 ## Privacy — `/api/v1/privacy` (`routes/privacy.js`)
 

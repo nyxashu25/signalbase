@@ -24,6 +24,7 @@ import { Card, TableFrame, tdClass, tdMutedClass, trClass } from '../components/
 import { InfoHint } from '../components/ui/Tooltip.jsx';
 import { EmptyState } from '../components/ui/EmptyState.jsx';
 import { SkeletonRows, Skeleton } from '../components/ui/Skeleton.jsx';
+import { Illustration } from '../components/ui/illustrations.jsx';
 
 export const REASON_LABELS = {
   MONTHLY_GRANT: 'Monthly grant',
@@ -232,7 +233,7 @@ function Overview() {
                   <td colSpan={4}>
                     <EmptyState
                       compact
-                      icon={Activity}
+                      illustration={<Illustration.Activity />}
                       title="No activity yet"
                       actions={
                         <Button variant="primary" size="sm" icon={Search} to="/app/people">

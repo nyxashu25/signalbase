@@ -15,7 +15,25 @@ function serializeTicket(t) {
     createdBy: t.createdBy
       ? { id: t.createdBy.id, name: t.createdBy.name, email: t.createdBy.email }
       : undefined,
+    // When the list query included the newest message: who spoke last and
+    // how many messages the thread has — enough for the admin panel to tell
+    // "brand-new ticket" from "customer replied to an answered thread".
+    lastMessageAuthorType: t.messages?.[0]?.authorType,
+    messageCount: t._count?.messages,
   };
+}
+
+const LAST_MESSAGE_INCLUDE = {
+  messages: { orderBy: { createdAt: 'desc' }, take: 1, select: { authorType: true } },
+  _count: { select: { messages: true } },
+};
+
+/** Per-status totals for the tab pills — one grouped query. */
+async function countTicketsByStatus(where) {
+  const rows = await prisma.ticket.groupBy({ by: ['status'], where, _count: true });
+  const counts = { UNANSWERED: 0, ANSWERED: 0, CLOSED: 0 };
+  for (const row of rows) counts[row.status] = row._count;
+  return { ...counts, ACTIVE: counts.UNANSWERED + counts.ANSWERED };
 }
 
 function serializeMessage(m) {
@@ -56,16 +74,18 @@ export async function createTicket({ workspaceId, userId, type, subject, body })
 
 export async function listTicketsForWorkspace(workspaceId, { status, page, pageSize }) {
   const where = { workspaceId, ...statusWhere(status) };
-  const [total, tickets] = await Promise.all([
+  const [total, tickets, counts] = await Promise.all([
     prisma.ticket.count({ where }),
     prisma.ticket.findMany({
       where,
       orderBy: { updatedAt: 'desc' },
       skip: (page - 1) * pageSize,
       take: pageSize,
+      include: LAST_MESSAGE_INCLUDE,
     }),
+    countTicketsByStatus({ workspaceId }),
   ]);
-  return { results: tickets.map(serializeTicket), total, page, pageSize };
+  return { results: tickets.map(serializeTicket), total, page, pageSize, counts };
 }
 
 export async function getTicketForWorkspace(workspaceId, ticketId) {
@@ -95,17 +115,18 @@ export async function addUserReply(workspaceId, ticketId, userId, body) {
 
 export async function listAllTickets({ status, type, page, pageSize }) {
   const where = { ...statusWhere(status), ...(type ? { type } : {}) };
-  const [total, tickets] = await Promise.all([
+  const [total, tickets, counts] = await Promise.all([
     prisma.ticket.count({ where }),
     prisma.ticket.findMany({
       where,
       orderBy: { updatedAt: 'desc' },
       skip: (page - 1) * pageSize,
       take: pageSize,
-      include: { workspace: true, createdBy: true },
+      include: { workspace: true, createdBy: true, ...LAST_MESSAGE_INCLUDE },
     }),
+    countTicketsByStatus(type ? { type } : {}),
   ]);
-  return { results: tickets.map(serializeTicket), total, page, pageSize };
+  return { results: tickets.map(serializeTicket), total, page, pageSize, counts };
 }
 
 export async function getTicketForAdmin(ticketId) {
@@ -151,19 +172,28 @@ export async function closeTicket(ticketId) {
 // createdAt the client has already notified about, so a freshly-opened
 // panel doesn't fire a notification for every pre-existing ticket at once.
 export async function getTicketNotifications(since) {
+  // Keyed on updatedAt, not createdAt, so a customer's reply to an already-
+  // answered thread (which flips it back to UNANSWERED and bumps updatedAt)
+  // surfaces as a notification too, not just brand-new tickets.
   const [tickets, unansweredCount] = await Promise.all([
     prisma.ticket.findMany({
-      where: { status: 'UNANSWERED', ...(since ? { createdAt: { gt: new Date(since) } } : {}) },
-      orderBy: { createdAt: 'asc' },
+      where: { status: 'UNANSWERED', ...(since ? { updatedAt: { gt: new Date(since) } } : {}) },
+      orderBy: { updatedAt: 'asc' },
       take: 20,
-      include: { workspace: true },
+      include: { workspace: true, ...LAST_MESSAGE_INCLUDE },
     }),
     prisma.ticket.count({ where: { status: 'UNANSWERED' } }),
   ]);
 
+  const latestAt = tickets.length ? tickets[tickets.length - 1].updatedAt : (since ?? null);
   return {
-    tickets: tickets.map(serializeTicket),
+    tickets: tickets.map((t) => ({
+      ...serializeTicket(t),
+      kind: (t._count?.messages ?? 1) > 1 ? 'reply' : 'new',
+    })),
     unansweredCount,
-    latestCreatedAt: tickets.length ? tickets[tickets.length - 1].createdAt : (since ?? null),
+    latestAt,
+    // Back-compat name for the field the panel's poller keyed on.
+    latestCreatedAt: latestAt,
   };
 }

@@ -9,6 +9,9 @@ import {
   googleLoginSchema,
   verifyEmailSchema,
   resendVerificationSchema,
+  updateProfileSchema,
+  updatePreferencesSchema,
+  changePasswordSchema,
 } from '../validators/authValidators.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
@@ -58,4 +61,25 @@ authRouter.post(
 authRouter.post('/refresh', asyncHandler(authController.refresh));
 authRouter.post('/logout', asyncHandler(authController.logout));
 authRouter.get('/me', requireAuth, asyncHandler(authController.me));
+authRouter.patch(
+  '/me',
+  requireAuth,
+  validateBody(updateProfileSchema),
+  asyncHandler(authController.updateProfile),
+);
+authRouter.patch(
+  '/me/preferences',
+  requireAuth,
+  validateBody(updatePreferencesSchema),
+  asyncHandler(authController.updatePreferences),
+);
+// Same per-IP budget as login — a wrong "current password" is the same
+// guessing surface as a wrong login password.
+authRouter.post(
+  '/change-password',
+  requireAuth,
+  loginLimiter,
+  validateBody(changePasswordSchema),
+  asyncHandler(authController.changePassword),
+);
 authRouter.post('/tutorial-complete', requireAuth, asyncHandler(authController.completeTutorial));

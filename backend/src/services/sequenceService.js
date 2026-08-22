@@ -118,6 +118,76 @@ function rate(numerator, denominator) {
   return denominator > 0 ? numerator / denominator : 0;
 }
 
+/**
+ * Every sequence in the workspace rolled up for the Sequences → Analytics
+ * tab: one KPI row (totals + rates) plus a per-sequence table. Two grouped
+ * queries regardless of how many sequences exist.
+ */
+export async function getWorkspaceAnalytics(workspaceId) {
+  const [sequences, eventGroups, enrollmentGroups] = await Promise.all([
+    prisma.sequence.findMany({
+      where: { workspaceId },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, name: true, status: true },
+    }),
+    prisma.sequenceStepEvent.groupBy({
+      by: ['type'],
+      where: { enrollment: { workspaceId } },
+      _count: true,
+    }),
+    prisma.sequenceEnrollment.groupBy({
+      by: ['sequenceId', 'status'],
+      where: { workspaceId },
+      _count: true,
+    }),
+  ]);
+
+  const totals = EMPTY_EVENT_COUNTS();
+  for (const row of eventGroups) totals[row.type] += row._count;
+
+  // Per-sequence event counts need the sequence id, which lives on the
+  // enrollment, so group via a raw-ish second pass keyed by enrollment.
+  const perSequenceEvents = new Map();
+  if (sequences.length > 0) {
+    const rows = await prisma.sequenceStepEvent.findMany({
+      where: { enrollment: { workspaceId } },
+      select: { type: true, enrollment: { select: { sequenceId: true } } },
+    });
+    for (const row of rows) {
+      const key = row.enrollment.sequenceId;
+      if (!perSequenceEvents.has(key)) perSequenceEvents.set(key, EMPTY_EVENT_COUNTS());
+      perSequenceEvents.get(key)[row.type] += 1;
+    }
+  }
+
+  const enrolledBySequence = new Map();
+  let enrolledTotal = 0;
+  let activeEnrollments = 0;
+  for (const row of enrollmentGroups) {
+    enrolledBySequence.set(row.sequenceId, (enrolledBySequence.get(row.sequenceId) ?? 0) + row._count);
+    enrolledTotal += row._count;
+    if (row.status === 'ACTIVE') activeEnrollments += row._count;
+  }
+
+  return {
+    totals,
+    rates: {
+      openRate: rate(totals.OPENED, totals.SENT),
+      clickRate: rate(totals.CLICKED, totals.SENT),
+      replyRate: rate(totals.REPLIED, totals.SENT),
+      bounceRate: rate(totals.BOUNCED, totals.SENT),
+    },
+    enrollments: { total: enrolledTotal, active: activeEnrollments },
+    sequences: sequences.map((s) => ({
+      id: s.id,
+      name: s.name,
+      status: s.status,
+      enrolled: enrolledBySequence.get(s.id) ?? 0,
+      ...(perSequenceEvents.get(s.id) ?? EMPTY_EVENT_COUNTS()),
+    })),
+  };
+}
+
 export async function getSequenceAnalytics(workspaceId, sequenceId) {
   const sequence = await prisma.sequence.findFirst({
     where: { id: sequenceId, workspaceId },

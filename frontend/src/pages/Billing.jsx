@@ -17,6 +17,7 @@ import { SegmentedControl } from '../components/ui/SegmentedControl.jsx';
 import { InfoHint } from '../components/ui/Tooltip.jsx';
 import { EmptyState } from '../components/ui/EmptyState.jsx';
 import { SkeletonRows } from '../components/ui/Skeleton.jsx';
+import { Illustration } from '../components/ui/illustrations.jsx';
 
 const PAGE_SIZE = 25;
 
@@ -40,6 +41,10 @@ const REASON_TONE = {
 
 const PLAN_ORDER = ['FREE', 'BASIC', 'PROFESSIONAL', 'ORGANIZATION'];
 const CADENCE = { MONTH: 'month', QUARTER: 'quarter', YEAR: 'year' };
+
+function nextMonthStart(now = new Date()) {
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+}
 
 function formatCents(cents) {
   if (cents == null) return '—';
@@ -121,7 +126,7 @@ export function Billing() {
 
       {/* Plan overview */}
       <Card className="p-5">
-        <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-6 md:grid-cols-5">
           <Metric label="Current plan" hint="Change plans below — upgrades apply immediately.">
             <span className="text-2xl font-extrabold text-text">{currentPlan?.name ?? '—'}</span>
             {currentPlan && currentPlan.price > 0 && currentInterval && (
@@ -144,6 +149,20 @@ export function Billing() {
           <Metric label="Used this cycle" hint="Credits spent since your last grant.">
             <span className="text-2xl font-extrabold tabular-nums text-text">
               {summary?.creditsUsed ?? '—'}
+            </span>
+          </Metric>
+          <Metric
+            label={isLocked ? 'Committed until' : 'Renews'}
+            hint={
+              isLocked
+                ? 'Your billing interval is the minimum commitment — downgrades open up after this date.'
+                : 'Monthly credits are granted on the 1st of every month.'
+            }
+          >
+            <span className="text-base font-bold text-text">
+              {isLocked && lockedUntil
+                ? lockedUntil.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
+                : nextMonthStart().toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
             </span>
           </Metric>
         </div>
@@ -300,7 +319,7 @@ export function Billing() {
             {transactions && transactions.results.length === 0 && (
               <tr>
                 <td colSpan={5}>
-                  <EmptyState compact icon={Coins} title="No transactions yet">
+                  <EmptyState compact illustration={<Illustration.Billing />} title="No transactions yet">
                     Reveals, exports, grants, and purchases all show up here as they happen.{' '}
                     <Link to="/app/people" className="font-semibold text-primary hover:underline">
                       Find your first contact

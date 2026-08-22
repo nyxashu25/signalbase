@@ -469,3 +469,45 @@ describe('sequences routes', () => {
     expect(overLimit.status).toBe(429);
   });
 });
+
+describe('GET /sequences/analytics (workspace roll-up)', () => {
+  beforeEach(async () => {
+    await resetDb();
+    await resetRedis();
+  });
+
+  it('returns zeroed totals and one row per sequence', async () => {
+    const org = await registerOrg('Acme', 'owner@acme.test');
+    await request(app)
+      .post('/api/v1/sequences')
+      .set('Authorization', `Bearer ${org.accessToken}`)
+      .send({ name: 'Q3 push', steps: [{ type: 'EMAIL', subject: 'Hi', body: 'Hello' }] });
+
+    const res = await request(app)
+      .get('/api/v1/sequences/analytics')
+      .set('Authorization', `Bearer ${org.accessToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body.analytics.totals).toEqual({
+      SENT: 0,
+      OPENED: 0,
+      CLICKED: 0,
+      BOUNCED: 0,
+      REPLIED: 0,
+      UNSUBSCRIBED: 0,
+    });
+    expect(res.body.analytics.rates.openRate).toBe(0);
+    expect(res.body.analytics.enrollments).toEqual({ total: 0, active: 0 });
+    expect(res.body.analytics.sequences).toHaveLength(1);
+    expect(res.body.analytics.sequences[0]).toMatchObject({ name: 'Q3 push', status: 'DRAFT', enrolled: 0, SENT: 0 });
+  });
+
+  it('is workspace-isolated and needs auth', async () => {
+    await registerOrg('Acme', 'owner@acme.test');
+    const other = await registerOrg('Globex', 'owner@globex.test');
+    const res = await request(app)
+      .get('/api/v1/sequences/analytics')
+      .set('Authorization', `Bearer ${other.accessToken}`);
+    expect(res.body.analytics.sequences).toHaveLength(0);
+    expect((await request(app).get('/api/v1/sequences/analytics')).status).toBe(401);
+  });
+});

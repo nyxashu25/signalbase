@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
-import { UserCircle, CreditCard, LifeBuoy, LogOut, ChevronDown } from 'lucide-react';
+import { UserCircle, Settings, CreditCard, LifeBuoy, LogOut, ChevronDown } from 'lucide-react';
 import { useLogoutMutation } from '../api/authApi.js';
 import { clearSession } from '../store/authSlice.js';
 import { LetterAvatar } from './ui/LetterAvatar.jsx';
 
 const ITEMS = [
-  { to: '/app/profile', label: 'Profile', icon: UserCircle },
+  { to: '/app/settings/profile', label: 'Profile', icon: UserCircle },
+  { to: '/app/settings', label: 'Settings', icon: Settings },
   { to: '/app/billing', label: 'Billing & plan', icon: CreditCard },
   { to: '/app/tickets', label: 'Support', icon: LifeBuoy },
 ];

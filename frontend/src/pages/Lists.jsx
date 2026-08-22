@@ -6,6 +6,7 @@ import { PageHeader } from '../components/ui/PageHeader.jsx';
 import { Button } from '../components/ui/Button.jsx';
 import { Card, TableFrame, thClass, tdClass, tdMutedClass, trClass } from '../components/ui/Card.jsx';
 import { EmptyState } from '../components/ui/EmptyState.jsx';
+import { Illustration } from '../components/ui/illustrations.jsx';
 import { SkeletonRows } from '../components/ui/Skeleton.jsx';
 import { SegmentedControl } from '../components/ui/SegmentedControl.jsx';
 import { Tooltip } from '../components/ui/Tooltip.jsx';
@@ -107,7 +108,7 @@ export function Lists() {
       {isEmpty && !showForm ? (
         <Card>
           <EmptyState
-            icon={ListChecks}
+            illustration={<Illustration.Lists />}
             title="Welcome to your lists"
             actions={
               <>

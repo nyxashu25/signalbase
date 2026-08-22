@@ -73,3 +73,28 @@ describe('Tickets', () => {
     expect(await screen.findByText('No tickets here')).toBeInTheDocument();
   });
 });
+
+describe('Tickets tab counts', () => {
+  it('shows per-status counts in the tab pills when the API provides them', async () => {
+    mockFetchRoutes([
+      {
+        url: /\/tickets\?/,
+        method: 'GET',
+        respond: {
+          body: {
+            results: [activeTicket],
+            total: 1,
+            page: 1,
+            pageSize: 25,
+            counts: { ACTIVE: 3, UNANSWERED: 1, ANSWERED: 2, CLOSED: 5 },
+          },
+        },
+      },
+    ]);
+    renderWithProviders(<Tickets />, { preloadedState: authenticatedState });
+    await screen.findByText('Bug report');
+    expect(screen.getByRole('button', { name: /^Active/ })).toHaveTextContent('3');
+    expect(screen.getByRole('button', { name: /^Answered/ })).toHaveTextContent('2');
+    expect(screen.getByRole('button', { name: /^Closed/ })).toHaveTextContent('5');
+  });
+});

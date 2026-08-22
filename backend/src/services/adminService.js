@@ -42,7 +42,7 @@ export async function getUsage() {
  * the request, since a support action that can't be logged shouldn't
  * silently succeed unlogged.
  */
-async function recordAuditLog({ superAdminId, action, targetUserId, metadata }) {
+export async function recordAuditLog({ superAdminId, action, targetUserId = null, metadata }) {
   await prisma.adminAuditLog.create({
     data: { superAdminId, action, targetUserId, metadata },
   });
@@ -308,11 +308,16 @@ export async function addCredits(userId, amount, actorAdminId) {
  * user who hasn't unsubscribed and isn't suspended — a suspended account
  * shouldn't hear about product offers it can't act on.
  */
-export async function sendPromotionalBroadcast({ subject, body }) {
+export async function sendPromotionalBroadcast({ subject, body }, actorAdminId) {
   const users = await prisma.user.findMany({
     where: { suspendedAt: null, marketingOptOut: false },
     select: { id: true, email: true, name: true },
   });
   await notificationService.sendPromotionalBroadcast(users, subject, body);
+  await recordAuditLog({
+    superAdminId: actorAdminId,
+    action: 'SEND_PROMOTION',
+    metadata: { subject, recipientCount: users.length },
+  });
   return { recipientCount: users.length };
 }

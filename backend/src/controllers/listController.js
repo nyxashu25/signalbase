@@ -17,6 +17,18 @@ export async function create(req, res) {
 
 export async function show(req, res) {
   const list = await listService.getList(req.auth.workspaceId, req.params.id);
+  // Same credit gate as search: a list item's contact only carries a clear
+  // email/phone if this workspace has revealed it.
+  if (list.type === 'CONTACTS') {
+    const contacts = await attachRevealStatus(
+      req.auth.workspaceId,
+      list.items.map((item) => item.contact).filter(Boolean),
+    );
+    const byId = new Map(contacts.map((c) => [c.id, c]));
+    list.items = list.items.map((item) =>
+      item.contact ? { ...item, contact: byId.get(item.contact.id) ?? item.contact } : item,
+    );
+  }
   res.json({ list });
 }
 

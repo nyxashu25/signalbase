@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mail, Copy, Check, BadgeCheck } from 'lucide-react';
+import { Mail, Copy, Check, BadgeCheck, Phone } from 'lucide-react';
 import { AddToListButton } from './AddToListButton.jsx';
 import { LinkedInIcon } from './LinkedInIcon.jsx';
 import { useGetCreditCostsQuery } from '../api/billingApi.js';
@@ -15,6 +15,7 @@ export const CONTACT_COLUMNS = [
   { key: 'company', label: 'Company' },
   { key: 'department', label: 'Department' },
   { key: 'email', label: 'Email', locked: true },
+  { key: 'phone', label: 'Phone' },
 ];
 const ALL_COLUMNS = CONTACT_COLUMNS.map((c) => c.key);
 
@@ -24,7 +25,8 @@ const ALL_COLUMNS = CONTACT_COLUMNS.map((c) => c.key);
  * look like one. `selectable`/`selected`/`onSelectChange` add the bulk-select
  * checkbox used by the search table; the CompanyDetail contacts table
  * leaves them off. `columns` (keys from CONTACT_COLUMNS) drives the column
- * picker — the header in the page must render the same set.
+ * picker — the header in the page must render the same set. `trailingAction`
+ * slots an extra control after the row's buttons (ListDetail's remove ×).
  */
 export function ContactRow({
   contact,
@@ -33,11 +35,12 @@ export function ContactRow({
   selected = false,
   onSelectChange,
   columns = ALL_COLUMNS,
+  trailingAction = null,
 }) {
   const show = (key) => columns.includes(key);
   const [status, setStatus] = useState('idle'); // idle | revealing | error
   const [error, setError] = useState(null);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState(null); // 'email' | 'phone' | null
   const { data: costs } = useGetCreditCostsQuery();
   const fullName = `${contact.firstName} ${contact.lastName}`;
 
@@ -53,13 +56,13 @@ export function ContactRow({
     }
   }
 
-  async function copyEmail() {
+  async function copy(kind, value) {
     try {
-      await navigator.clipboard.writeText(contact.email);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      await navigator.clipboard.writeText(value);
+      setCopied(kind);
+      setTimeout(() => setCopied(null), 1500);
     } catch {
-      // clipboard unavailable — nothing to do, the address is visible anyway
+      // clipboard unavailable — nothing to do, the value is visible anyway
     }
   }
 
@@ -134,14 +137,14 @@ export function ContactRow({
                 <BadgeCheck className="h-4 w-4 shrink-0 text-emerald-500" aria-label="Verified" />
               </Tooltip>
             )}
-            <Tooltip content={copied ? 'Copied' : 'Copy email'}>
+            <Tooltip content={copied === 'email' ? 'Copied' : 'Copy email'}>
               <button
                 type="button"
-                onClick={copyEmail}
+                onClick={() => copy('email', contact.email)}
                 aria-label="Copy email"
                 className="rounded-sm p-0.5 text-text-muted hover:text-text"
               >
-                {copied ? (
+                {copied === 'email' ? (
                   <Check className="h-3.5 w-3.5 text-emerald-500" aria-hidden="true" />
                 ) : (
                   <Copy className="h-3.5 w-3.5" aria-hidden="true" />
@@ -156,11 +159,42 @@ export function ContactRow({
         )}
         {status === 'error' && <div className="mt-1 text-xs text-red-600">{error}</div>}
       </td>
+      {show('phone') && (
+        <td className="whitespace-nowrap px-4 py-3 text-sm">
+          {contact.revealed && contact.phone ? (
+            <span className="flex items-center gap-1.5">
+              <a href={`tel:${contact.phone.replace(/[^\d+]/g, '')}`} className="text-text hover:underline">
+                {contact.phone}
+              </a>
+              <Tooltip content={copied === 'phone' ? 'Copied' : 'Copy phone'}>
+                <button
+                  type="button"
+                  onClick={() => copy('phone', contact.phone)}
+                  aria-label="Copy phone"
+                  className="rounded-sm p-0.5 text-text-muted hover:text-text"
+                >
+                  {copied === 'phone' ? (
+                    <Check className="h-3.5 w-3.5 text-emerald-500" aria-hidden="true" />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                  )}
+                </button>
+              </Tooltip>
+            </span>
+          ) : !contact.revealed && contact.phone ? (
+            <span className="font-mono text-xs text-text-muted" title="Revealed with the email">
+              {contact.phone}
+            </span>
+          ) : (
+            <span className="text-text-muted/50">—</span>
+          )}
+        </td>
+      )}
       <td className="whitespace-nowrap px-4 py-2">
         <div className="flex items-center justify-end gap-2">
           {!contact.revealed && (
             <Tooltip
-              content={`Spends ${costs?.REVEAL ?? '…'} credits — finds and unlocks this contact's email`}
+              content={`Spends ${costs?.REVEAL ?? '…'} credits — unlocks this contact's email${contact.phone ? ' and phone number' : ''}`}
             >
               <Button
                 variant="primary"
@@ -179,6 +213,7 @@ export function ContactRow({
             </Tooltip>
           )}
           <AddToListButton type="CONTACTS" contactId={contact.id} label="List" />
+          {trailingAction}
         </div>
       </td>
     </tr>

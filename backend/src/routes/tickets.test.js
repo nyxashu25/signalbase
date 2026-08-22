@@ -327,3 +327,71 @@ describe('tickets', () => {
     expect(overLimit.status).toBe(429);
   });
 });
+
+describe('tickets: counts + reply notifications', () => {
+  beforeEach(async () => {
+    await resetDb();
+    await resetRedis();
+  });
+
+  it('list responses carry per-status counts for the tab pills', async () => {
+    const org = await registerOrg('Acme', 'owner@acme.test');
+    await request(app)
+      .post('/api/v1/tickets')
+      .set('Authorization', `Bearer ${org.accessToken}`)
+      .send({ type: 'SUPPORT', subject: 'Bug report', body: 'One' });
+    await request(app)
+      .post('/api/v1/tickets')
+      .set('Authorization', `Bearer ${org.accessToken}`)
+      .send({ type: 'SALES', subject: 'Request a demo', body: 'Two' });
+
+    const res = await request(app)
+      .get('/api/v1/tickets?status=CLOSED')
+      .set('Authorization', `Bearer ${org.accessToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body.results).toHaveLength(0);
+    expect(res.body.counts).toEqual({ UNANSWERED: 2, ANSWERED: 0, CLOSED: 0, ACTIVE: 2 });
+  });
+
+  it("a customer's reply to an answered ticket surfaces in admin notifications as kind=reply", async () => {
+    const org = await registerOrg('Acme', 'owner@acme.test');
+    const adminToken = await seedAdmin();
+
+    const created = await request(app)
+      .post('/api/v1/tickets')
+      .set('Authorization', `Bearer ${org.accessToken}`)
+      .send({ type: 'SUPPORT', subject: 'Bug report', body: 'It broke' });
+    const ticketId = created.body.id;
+
+    await request(app)
+      .post(`/api/v1/admin/tickets/${ticketId}/messages`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ body: 'Looking into it' });
+
+    const baseline = await request(app)
+      .get('/api/v1/admin/tickets/notifications')
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(baseline.body.unansweredCount).toBe(0);
+    const since = new Date().toISOString();
+
+    await request(app)
+      .post(`/api/v1/tickets/${ticketId}/messages`)
+      .set('Authorization', `Bearer ${org.accessToken}`)
+      .send({ body: 'Still broken' });
+
+    const after = await request(app)
+      .get(`/api/v1/admin/tickets/notifications?since=${encodeURIComponent(since)}`)
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(after.body.unansweredCount).toBe(1);
+    expect(after.body.tickets).toHaveLength(1);
+    expect(after.body.tickets[0]).toMatchObject({ id: ticketId, kind: 'reply', messageCount: 3 });
+    expect(after.body.latestAt).toBeTruthy();
+
+    // The admin list flags it too.
+    const list = await request(app)
+      .get('/api/v1/admin/tickets?status=UNANSWERED')
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(list.body.results[0]).toMatchObject({ lastMessageAuthorType: 'USER', messageCount: 3 });
+    expect(list.body.counts.UNANSWERED).toBe(1);
+  });
+});

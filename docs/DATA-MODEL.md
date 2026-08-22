@@ -226,7 +226,7 @@ credit config elsewhere.
 | `TicketType` | `SUPPORT`, `SALES` |
 | `TicketStatus` | `UNANSWERED`, `ANSWERED`, `CLOSED` |
 | `TicketAuthorType` | `USER`, `ADMIN` |
-| `AdminAuditAction` | `SUSPEND_USER`, `UNSUSPEND_USER`, `UPDATE_PLAN`, `ADD_CREDITS` |
+| `AdminAuditAction` | `SUSPEND_USER`, `UNSUSPEND_USER`, `UPDATE_PLAN`, `ADD_CREDITS`, `SAVE_STRIPE_SETTINGS`, `APPROVE_IMPORT`, `SEND_PROMOTION` |
 | `SavedSearchType` | `PEOPLE`, `COMPANIES` |
 
 ---

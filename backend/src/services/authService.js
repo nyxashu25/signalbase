@@ -324,15 +324,61 @@ export async function getCurrentUser({ userId, workspaceId }) {
   if (!membership) throw new ApiError(401, 'Session no longer valid');
 
   return {
-    user: {
-      id: membership.user.id,
-      email: membership.user.email,
-      name: membership.user.name,
-      tutorialCompletedAt: membership.user.tutorialCompletedAt,
+    user: serializeUser(membership.user),
+    workspace: {
+      id: membership.workspace.id,
+      name: membership.workspace.name,
+      plan: membership.workspace.plan,
+      createdAt: membership.workspace.createdAt,
     },
-    workspace: { id: membership.workspace.id, name: membership.workspace.name },
     role: membership.role,
   };
+}
+
+// What /auth/me and the settings routes hand back about the signed-in user.
+// `hasPassword`/`googleLinked` drive the Security settings page — a Google-
+// only account sets its first password without a "current" one.
+function serializeUser(user) {
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    tutorialCompletedAt: user.tutorialCompletedAt,
+    emailVerified: user.emailVerified,
+    marketingOptOut: user.marketingOptOut,
+    hasPassword: Boolean(user.passwordHash),
+    googleLinked: Boolean(user.googleId),
+    createdAt: user.createdAt,
+  };
+}
+
+export async function updateProfile(userId, { name }) {
+  const user = await prisma.user.update({ where: { id: userId }, data: { name } });
+  return { user: serializeUser(user) };
+}
+
+export async function updatePreferences(userId, { marketingOptOut }) {
+  const user = await prisma.user.update({ where: { id: userId }, data: { marketingOptOut } });
+  return { user: serializeUser(user) };
+}
+
+/**
+ * Sets a new password. An account that already has one must prove the
+ * current one; a Google-only account (no hash) may set its first password
+ * with nothing more than its live session — it's already authenticated, and
+ * this is how it gains a second way in.
+ */
+export async function changePassword(userId, { currentPassword, newPassword }) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new ApiError(401, 'Session no longer valid');
+  if (user.passwordHash) {
+    if (!currentPassword || !(await verifyPassword(user.passwordHash, currentPassword))) {
+      throw new ApiError(400, 'Current password is incorrect');
+    }
+  }
+  const passwordHash = await hashPassword(newPassword);
+  const updated = await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+  return { user: serializeUser(updated) };
 }
 
 /** Marks the guided first-login tour finished or skipped — never shown again. */

@@ -1,4 +1,5 @@
 import * as databaseImportService from '../services/databaseImportService.js';
+import * as adminService from '../services/adminService.js';
 import { ApiError } from '../middleware/errorHandler.js';
 
 export async function upload(req, res) {
@@ -23,5 +24,19 @@ export async function detail(req, res) {
 }
 
 export async function approve(req, res) {
-  res.json(await databaseImportService.approveImportBatch(req.params.batchId, req.superAdmin.adminId));
+  const batch = await databaseImportService.approveImportBatch(
+    req.params.batchId,
+    req.superAdmin.adminId,
+  );
+  await adminService.recordAuditLog({
+    superAdminId: req.superAdmin.adminId,
+    action: 'APPROVE_IMPORT',
+    metadata: {
+      batchId: batch.id,
+      filename: batch.filename,
+      insertedContacts: batch.insertedContacts,
+      insertedCompanies: batch.insertedCompanies,
+    },
+  });
+  res.json(batch);
 }

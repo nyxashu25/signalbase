@@ -8,7 +8,7 @@ import {
   ListChecks,
   Send,
   CreditCard,
-  UserCircle,
+  Settings,
   LifeBuoy,
   BookOpen,
   ChevronDown,
@@ -57,7 +57,7 @@ const NAV_GROUPS = [
     label: 'Account',
     items: [
       { to: '/app/billing', label: 'Billing', icon: CreditCard, tourId: 'nav-billing' },
-      { to: '/app/profile', label: 'Profile', icon: UserCircle },
+      { to: '/app/settings', label: 'Settings', icon: Settings },
     ],
   },
   {
@@ -292,7 +292,7 @@ export function AppLayout() {
             </header>
 
             <main className="flex-1 overflow-y-auto">
-              <div className="mx-auto w-full max-w-[1440px] p-4 sm:p-6">
+              <div className="w-full p-4 sm:p-6 xl:px-8">
                 <Outlet />
               </div>
             </main>
