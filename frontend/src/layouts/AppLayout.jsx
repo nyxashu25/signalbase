@@ -10,6 +10,7 @@ import {
   CreditCard,
   UserCircle,
   LifeBuoy,
+  BookOpen,
   ChevronDown,
   PanelLeftClose,
   PanelLeftOpen,
@@ -22,6 +23,8 @@ import { GuidedTour } from '../components/GuidedTour.jsx';
 import { CreditBadge } from '../components/CreditBadge.jsx';
 import { NotificationBell } from '../components/app/NotificationBell.jsx';
 import { UpgradeCard } from '../components/app/UpgradeCard.jsx';
+import { OnboardingCard } from '../components/app/OnboardingCard.jsx';
+import { useOnboardingRewards } from '../hooks/useOnboardingRewards.js';
 import { CommandPalette, CommandPaletteTrigger } from '../components/app/CommandPalette.jsx';
 import { TooltipProvider, Tooltip } from '../components/ui/Tooltip.jsx';
 import { ToastProvider } from '../components/ui/toast.jsx';
@@ -60,7 +63,10 @@ const NAV_GROUPS = [
   {
     key: 'support',
     label: 'Support',
-    items: [{ to: '/app/tickets', label: 'Tickets', icon: LifeBuoy, tourId: 'nav-tickets', badge: 'tickets' }],
+    items: [
+      { to: '/app/tickets', label: 'Tickets', icon: LifeBuoy, tourId: 'nav-tickets', badge: 'tickets' },
+      { to: '/app/help', label: 'Help', icon: BookOpen },
+    ],
   },
 ];
 
@@ -247,7 +253,8 @@ export function AppLayout() {
               })}
             </nav>
 
-            <div className={cn('shrink-0 border-t border-border', showLabels ? 'p-3' : 'py-3')}>
+            <div className={cn('flex shrink-0 flex-col gap-2 border-t border-border', showLabels ? 'p-3' : 'py-3')}>
+              <OnboardingCard collapsed={!showLabels} />
               <UpgradeCard collapsed={!showLabels} />
             </div>
           </aside>
@@ -293,8 +300,16 @@ export function AppLayout() {
 
           <GuidedTour />
           <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+          <OnboardingRewardToasts />
         </div>
       </ToastProvider>
     </TooltipProvider>
   );
+}
+
+// Has to live *inside* ToastProvider (the hook toasts), hence not a plain
+// hook call in AppLayout itself.
+function OnboardingRewardToasts() {
+  useOnboardingRewards();
+  return null;
 }

@@ -1,5 +1,6 @@
 import * as searchService from '../services/searchService.js';
 import * as savedSearchService from '../services/savedSearchService.js';
+import * as onboardingService from '../services/onboardingService.js';
 import { toCsv } from '../utils/csv.js';
 import { resolveReservationForCommit } from '../services/creditService.js';
 import { prisma } from '../config/db.js';
@@ -15,6 +16,9 @@ export async function people(req, res) {
     workspaceId: req.auth.workspaceId,
   });
   res.json(result);
+  // After the response — a search leaves no data trail of its own, so the
+  // getting-started checklist learns about it here. Never throws.
+  await onboardingService.recordEvent(req.auth.workspaceId, 'SEARCH_PEOPLE');
 }
 
 export async function companyDetail(req, res) {

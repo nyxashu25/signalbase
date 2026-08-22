@@ -46,7 +46,7 @@ export const searchApi = baseApi.injectEndpoints({
     createSavedSearch: builder.mutation({
       query: (body) => ({ url: '/search/saved', method: 'POST', body }),
       transformResponse: (res) => res.savedSearch,
-      invalidatesTags: ['SavedSearches'],
+      invalidatesTags: ['SavedSearches', 'Onboarding'],
     }),
     deleteSavedSearch: builder.mutation({
       query: (id) => ({ url: `/search/saved/${id}`, method: 'DELETE' }),

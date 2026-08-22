@@ -8,7 +8,7 @@ export const contactsApi = baseApi.injectEndpoints({
         method: 'POST',
         headers: { 'Idempotency-Key': idempotencyKey },
       }),
-      invalidatesTags: ['BillingSummary'],
+      invalidatesTags: ['BillingSummary', 'Onboarding'],
     }),
   }),
 });

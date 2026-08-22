@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useSearchParams } from 'react-router-dom';
 import { useCompleteTutorialMutation } from '../api/authApi.js';
 import { markTutorialCompleted } from '../store/authSlice.js';
 import { TOUR_STEPS } from '../data/tourSteps.js';
@@ -58,12 +59,28 @@ export function GuidedTour() {
   const user = useSelector((s) => s.auth.user);
   const status = useSelector((s) => s.auth.status);
   const dispatch = useDispatch();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [completeTutorial] = useCompleteTutorialMutation();
   const [stepIndex, setStepIndex] = useState(0);
   const [rect, setRect] = useState(null);
   const [visible, setVisible] = useState(false);
+  // `?tour=1` replays the tour on demand (the getting-started checklist
+  // links here) — held in state so the tour survives the param being
+  // cleared, and reset when it's finished.
+  const [replay, setReplay] = useState(false);
+  const wantsReplay = searchParams.get('tour') === '1';
 
-  const eligible = status === 'authenticated' && Boolean(user) && !user.tutorialCompletedAt;
+  useEffect(() => {
+    if (!wantsReplay) return;
+    setReplay(true);
+    setStepIndex(0);
+    const params = new URLSearchParams(searchParams);
+    params.delete('tour');
+    setSearchParams(params, { replace: true });
+  }, [wantsReplay, searchParams, setSearchParams]);
+
+  const eligible =
+    status === 'authenticated' && Boolean(user) && (replay || !user.tutorialCompletedAt);
   const step = TOUR_STEPS[stepIndex];
 
   // Let the page render first — popping a full-screen tour before layout
@@ -111,6 +128,7 @@ export function GuidedTour() {
   async function finishTour() {
     await ensureMobileNavStateFor(null);
     setVisible(false);
+    setReplay(false);
     try {
       await completeTutorial().unwrap();
     } catch {

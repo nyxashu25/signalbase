@@ -93,13 +93,24 @@ Title (+ optional `0 records` sub-line) · **underline sub-tabs** with count pil
 Phase 1 is the biggest perceived-quality jump per hour and unblocks everything
 after it (the shell components get reused by every later phase).
 
-> **Status (2026-08-22):** Phase 1 and Phase 2 shipped and are live on
-> titans7.com. Notes on what deviated from the spec below: 1.4's onboarding-hub
-> card is deferred to Phase 3 (it needs the checklist data); 1.4's Settings
+> **Status (2026-08-22):** Phases 1, 2 and 3 shipped and are live on
+> titans7.com. Notes on what deviated from the spec below: 1.4's Settings
 > link waits on Phase 5 (there's no settings page yet); 2.1's "Saved" count in
-> the rail was dropped (no cheap endpoint — revisit with Phase 3's stats);
-> 2.3's column sorting is a toolbar Sort control rather than clickable
-> headers. Everything else below in Phases 1–2 is done as written.
+> the rail was dropped (no cheap endpoint — `/dashboard/stats` now returns
+> `savedContacts` if it's wanted later); 2.3's column sorting is a toolbar
+> Sort control rather than clickable headers. Phase 3: the checklist's
+> "complete profile" task was dropped (the Profile page is read-only — nothing
+> to complete) and "raise a support ticket" was dropped (rewarding that would
+> manufacture tickets) in favour of *Save a search*, *Take the product tour*
+> (replayable via `?tour=1`) and *Open a company profile*, which are real,
+> detectable actions; "invite a teammate" is shown greyed as coming soon. Group
+> bonus is +10 (not +25) so 9 tasks × 5 + 3 groups × 10 lands exactly on the
+> agreed 75-credit total. 3.4's "publish docs/FEATURES.md" became a proper
+> user-facing Help page (`/app/help`) — the internal doc has file paths and
+> not-built tables, which aren't for customers. The route-level code split
+> (TODO.md) shipped alongside: the first-load bundle went from ~280 KB gzip to
+> ~108 KB, with marketing, app and admin chunks loaded per audience.
+> Everything else below in Phases 1–3 is done as written.
 
 ### Phase 1 — App shell & design system foundation ✅
 
@@ -116,7 +127,7 @@ after it (the shell components get reused by every later phase).
       Every item gets an icon; groups remember collapsed state
       (localStorage); collapse-to-rail toggle (icons only, tooltip on hover);
       `New` pill support for future items.
-- [x] **1.4 Sidebar bottom stack** (Upgrade card shipped; onboarding card → Phase 3, Settings link → Phase 5) — **Upgrade** card (FREE/BASIC plans only,
+- [x] **1.4 Sidebar bottom stack** (Upgrade card + onboarding card shipped; Settings link → Phase 5) — **Upgrade** card (FREE/BASIC plans only,
       reads plan from billing summary, links to `/app/billing`), **Onboarding
       hub** progress card (% from Phase 3's checklist; hidden once 100%),
       **Settings** link.
@@ -180,29 +191,31 @@ after it (the shell components get reused by every later phase).
       "Searching…"); designed empty state ("0 people match" + *Reset
       filters*).
 
-### Phase 3 — Dashboard → Getting-started hub
+### Phase 3 — Dashboard → Getting-started hub ✅
 
-- [ ] **3.1 Onboarding checklist** — grouped tasks with real completion
+- [x] **3.1 Onboarding checklist** — grouped tasks with real completion
       detection from existing data: *Find your first contacts* (run a people
-      search · reveal a contact · add a contact to a list · save a company)
-      · *Reach out* (create a sequence · activate it · enroll a contact) ·
-      *Set up your workspace* (complete profile · raise a support ticket ·
-      verify email — already done at this point · invite a teammate ⟵
-      gated on the invites P0). Progress bar; the *next* task's CTA is
-      primary; completed rows collapse. Drives the sidebar Onboarding-hub %.
-- [ ] **3.2 Optional credit rewards** — e.g. +5 credits per task, +25 on
-      completing a group, via the existing `ADJUSTMENT` ledger reason (see
-      Open questions — product decision). Fires a success toast.
-- [ ] **3.3 Stat tiles** — keep Credits / Active sequences / Saved lists, add
-      **Reveals this month** and **Credits used this month**, each with a ⓘ
-      tooltip and a ↗ to its page; small sparkline from the ledger later.
-- [ ] **3.4 Resources strip** — 3 illustrated cards: "Read the docs"
-      (`/docs` → we just wrote them; publish `docs/FEATURES.md` as a help
-      page), "How credits work" (link to Billing), "Talk to us" (→ raise a
-      ticket). Replaces the orphaned EmailVerifier block (move it to a Tools
-      sub-tab or keep as a small card).
-- [ ] **3.5 "Getting started ▾ / Overview" view switcher** — once the
-      checklist is complete the Home defaults to the stats view.
+      search · reveal an email · add a contact to a list · save a search) ·
+      *Reach out* (create a sequence · activate it · enroll a contact — shown
+      plan-locked on Free) · *Know your way around* (verify email — already
+      done · take the product tour · open a company profile · invite a
+      teammate ⟵ greyed "coming soon", gated on the invites P0). Progress
+      bar; the *next* task's CTA is primary; completed rows collapse. Drives
+      the sidebar Onboarding-hub card (hidden at 100%). `GET
+      /dashboard/onboarding`, `OnboardingTaskCompletion`.
+- [x] **3.2 Credit rewards** — +5 per task, +10 per completed group, 75 max,
+      as `ONBOARDING_REWARD` ledger rows (a new reason so the ledger reads
+      honestly), paid exactly once under a guarded update. Success toast
+      with a deep link to the checklist; credits pill refreshes.
+- [x] **3.3 Stat tiles** — Credits / **Reveals this month** / **Credits used
+      this month** / Active sequences / Saved lists, each with ⓘ + ↗. (`GET
+      /dashboard/stats`; sparklines still later.)
+- [x] **3.4 Resources strip** — "Read the guide" (→ new in-app `/app/help`,
+      also in the sidebar under Support and in ⌘K), "How credits work" (→
+      `/app/help#credits`, prices read from the API), "Talk to us" (→ new
+      ticket). EmailVerifier moved to a **Tools** tab on Home.
+- [x] **3.5 "Getting started / Overview / Tools" tabs** — `?view=` deep
+      links; Home defaults to Overview once the checklist reads 100%.
 
 ### Phase 4 — Empty states, detail pages, polish
 
@@ -250,9 +263,11 @@ after it (the shell components get reused by every later phase).
 2. **Primary button** — flat solid primary; the brand **gradient is reserved
    for the single hero action per screen** (e.g. "Create sequence", the
    Upgrade card). Everything else flat / outline / ghost.
-3. **Onboarding credit rewards** — **yes**: +5 credits per task, +25 on
-   completing a group, capped at 75 per workspace, written as `ADJUSTMENT`
-   ledger rows so they show in transaction history.
+3. **Onboarding credit rewards** — **yes**: +5 credits per task, +10 on
+   completing a group (9 rewarded tasks + 3 groups = exactly the agreed 75
+   per workspace, which is also enforced as a hard cap), written as
+   `ONBOARDING_REWARD` ledger rows so they show in transaction history under
+   their own name.
 4. **Company logos** — letter-avatars (deterministic color from the name),
    no external favicon service — zero third-party requests per row.
 5. **Scope** — **Phase 1 + 2 first**, ship, review live, then decide on 3–5.

@@ -26,7 +26,11 @@ export const listsApi = baseApi.injectEndpoints({
         method: 'POST',
         body: contactId ? { contactId } : { companyId },
       }),
-      invalidatesTags: (result, error, { listId }) => ['Lists', { type: 'Lists', id: listId }],
+      invalidatesTags: (result, error, { listId }) => [
+        'Lists',
+        { type: 'Lists', id: listId },
+        'Onboarding',
+      ],
     }),
     removeListItem: builder.mutation({
       query: ({ listId, itemId }) => ({ url: `/lists/${listId}/items/${itemId}`, method: 'DELETE' }),

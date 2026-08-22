@@ -377,3 +377,65 @@ body {
   color: transparent;
   -webkit-text-stroke: 1.5px rgba(170, 0, 255, 0.45);
 }
+
+/* Long-form copy inside the in-app Help page (pages/Help.jsx) — plain
+   elements styled once here rather than a utility class on every <p>. */
+.help-prose p + p,
+.help-prose p + ul,
+.help-prose p + table,
+.help-prose ul + p,
+.help-prose table + p {
+  margin-top: 0.75rem;
+}
+.help-prose ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+}
+.help-prose li + li {
+  margin-top: 0.25rem;
+}
+.help-prose strong {
+  color: var(--dp-text);
+  font-weight: 600;
+}
+.help-prose em {
+  font-style: normal;
+  color: var(--dp-text);
+}
+.help-prose kbd {
+  display: inline-block;
+  border: 1px solid var(--dp-border);
+  border-radius: 4px;
+  padding: 0 0.35rem;
+  font-size: 0.75rem;
+  font-family: inherit;
+  color: var(--dp-text);
+  background: var(--dp-surface-sunken);
+}
+.help-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+.help-prose th,
+.help-prose td {
+  text-align: left;
+  padding: 0.45rem 0.5rem;
+  border-bottom: 1px solid var(--dp-border);
+}
+.help-prose th {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--dp-text-muted);
+}
+.help-prose td:last-child,
+.help-prose th:last-child {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.help-prose tr:last-child td {
+  border-bottom: 0;
+}

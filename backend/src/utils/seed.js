@@ -156,10 +156,13 @@ async function seedDemoTenant() {
   });
 
   const passwordHash = await hashPassword(DEMO_USER_PASSWORD);
+  // emailVerified: the demo account has no inbox to confirm from, and login
+  // rejects unverified accounts — so the seed verifies it up front (and on
+  // re-run, in case it was created before the verification gate existed).
   const user = await prisma.user.upsert({
     where: { email: DEMO_USER_EMAIL },
-    update: {},
-    create: { email: DEMO_USER_EMAIL, passwordHash, name: 'Demo User' },
+    update: { emailVerified: true },
+    create: { email: DEMO_USER_EMAIL, passwordHash, name: 'Demo User', emailVerified: true },
   });
 
   await prisma.membership.upsert({

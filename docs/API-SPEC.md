@@ -119,6 +119,15 @@ All routes require auth.
 |---|---|---|---|---|
 | POST | `/unsubscribe` | — | 20/hour/IP | Click-target for the promotional-broadcast unsubscribe link. Token itself is the credential. |
 
+## Dashboard (Home screen) — `/api/v1/dashboard` (`routes/dashboard.js`)
+
+All routes require auth.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/onboarding` | The getting-started checklist (`config/onboardingConfig.js`): groups → tasks with real completion state detected from existing data (`EmailReveal`, `ListItem`, `SavedSearch`, `Sequence`, `SequenceEnrollment`, `CompanyDetailView`, `User.emailVerified`/`tutorialCompletedAt`; the people search is recorded by `GET /search/people` since it leaves no row of its own). **Side-effecting read:** newly-detected completions are persisted (`OnboardingTaskCompletion`) and any unpaid reward — +5 per task, +10 per completed group, 75 max — is written as an `ONBOARDING_REWARD` ledger row + Redis balance increment, once, under a guarded `updateMany`. Response carries `percent`, `completedCount/totalCount`, `creditsEarned/creditsAvailable`, `nextTask`, per-task `requiresPlan` (sequence tasks on FREE), and `justRewarded[]` (what this call paid out — the frontend toasts it). |
+| GET | `/stats` | Stat tiles: `revealsThisMonth`, `creditsUsedThisMonth` (current UTC calendar month), `activeSequences`, `lists`, `savedContacts`. |
+
 ## Privacy — `/api/v1/privacy` (`routes/privacy.js`)
 
 | Method | Path | Auth | Rate limit | Notes |

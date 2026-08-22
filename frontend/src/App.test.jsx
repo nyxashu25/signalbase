@@ -27,27 +27,35 @@ function renderApp({ authenticated, path = '/app' }) {
   );
 }
 
+// Routes are code-split (React.lazy), so every page assertion awaits the
+// chunk via findBy*.
 describe('App', () => {
-  it('renders the dashboard at /app when authenticated', () => {
+  it('renders the dashboard at /app when authenticated', async () => {
     renderApp({ authenticated: true, path: '/app' });
-    expect(screen.getByRole('heading', { name: 'Welcome back, Demo' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Welcome back, Demo' })).toBeInTheDocument();
   });
 
-  it('redirects to login when visiting /app unauthenticated', () => {
+  it('renders the in-app help guide at /app/help', async () => {
+    renderApp({ authenticated: true, path: '/app/help' });
+    expect(await screen.findByRole('heading', { name: 'Help & guide' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'How credits work' })).toBeInTheDocument();
+  });
+
+  it('redirects to login when visiting /app unauthenticated', async () => {
     renderApp({ authenticated: false, path: '/app' });
     // Logo renders both theme variants (light/dark) — CSS picks the visible
     // one in a real browser; that stylesheet isn't loaded in this test env.
-    expect(screen.getAllByAltText('DataPit').length).toBeGreaterThan(0);
+    expect((await screen.findAllByAltText('DataPit')).length).toBeGreaterThan(0);
     expect(screen.getByText('Sign in to your workspace')).toBeInTheDocument();
   });
 
-  it('renders the public marketing home page at / without requiring auth', () => {
+  it('renders the public marketing home page at / without requiring auth', async () => {
     renderApp({ authenticated: false, path: '/' });
-    expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1 })).toBeInTheDocument();
   });
 
-  it('renders the public pricing page at /pricing without requiring auth', () => {
+  it('renders the public pricing page at /pricing without requiring auth', async () => {
     renderApp({ authenticated: false, path: '/pricing' });
-    expect(screen.getByRole('heading', { name: 'Professional' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Professional' })).toBeInTheDocument();
   });
 });

@@ -20,6 +20,7 @@ export async function resetDb() {
   await prisma.listItem.deleteMany();
   await prisma.list.deleteMany();
   await prisma.savedSearch.deleteMany();
+  await prisma.onboardingTaskCompletion.deleteMany();
   await prisma.ticketMessage.deleteMany();
   await prisma.ticket.deleteMany();
   await prisma.membership.deleteMany();

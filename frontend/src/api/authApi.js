@@ -28,6 +28,7 @@ export const authApi = baseApi.injectEndpoints({
     }),
     completeTutorial: builder.mutation({
       query: () => ({ url: '/auth/tutorial-complete', method: 'POST' }),
+      invalidatesTags: ['Onboarding'],
     }),
   }),
 });

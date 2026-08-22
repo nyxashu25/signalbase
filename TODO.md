@@ -29,10 +29,11 @@ picked up or completed — don't let it drift from reality.
 ## In progress — in-app UX overhaul (see `docs/UX-ROADMAP.md`)
 
 Benchmarked against Apollo.io's authenticated app. **Phase 1 (app shell +
-design-system primitives) and Phase 2 (People/Companies search screens) are
-shipped and live.** Phases 3–5 (getting-started hub with credit rewards,
-designed empty states everywhere, settings area) are specced in the roadmap
-and wait on a review of 1+2 live before starting.
+design-system primitives), Phase 2 (People/Companies search screens) and
+Phase 3 (Home → getting-started hub with credit rewards, overview stats,
+in-app Help guide) are shipped and live.** Phases 4–5 (designed empty states
+everywhere, settings area — the latter blocked on the invites/password-reset
+P0s) are specced in the roadmap and wait on a review of Phase 3 live.
 
 ## P1 — real gaps, not urgent
 
@@ -56,16 +57,24 @@ and wait on a review of 1+2 live before starting.
       `backend/src/utils/createSuperAdmin.js` — appears deliberate).
 - [ ] Frontend test coverage is thin on the oldest core screens: Login,
       Dashboard, People, Companies, Sequences, marketing pages.
-- [ ] **Code-split the marketing site from the authenticated app.** The
-      single JS bundle is now ~280KB gzipped (900KB minified) after
-      framer-motion/GSAP/Lenis for marketing and lucide/cmdk/Radix for the
-      app shell. Everyone pays that weight on first load, including users
-      who only ever hit `/app` (and vice versa). Splitting the marketing
-      routes (`pages/marketing/*`) from the authenticated app routes via
-      `React.lazy`/dynamic `import()` in `App.jsx` would let each side load
-      only what it needs. **Promote to P1 before Phase 3 adds more.**
 
 ## Done
+
+- [x] **UX roadmap Phase 3 — Home as a getting-started hub.** A 10-task,
+      3-group checklist detected from real data (`onboardingService.js`,
+      `OnboardingTaskCompletion`), paying +5/task and +10/group up to 75
+      credits as `ONBOARDING_REWARD` ledger rows exactly once, with success
+      toasts and a sidebar progress card; Overview tab with Reveals /
+      Credits-used this month tiles (`GET /dashboard/stats`); Tools tab for
+      the email verifier; Resources strip → a new in-app Help guide
+      (`/app/help`, also in the sidebar + ⌘K); the tour is replayable via
+      `?tour=1`. "Invite a teammate" is shown greyed as coming soon (P0
+      above). Details and deviations in `docs/UX-ROADMAP.md`.
+- [x] **Code-split the marketing site / app / admin panel.** `App.jsx` now
+      `React.lazy`-loads every page; the first-load bundle dropped from
+      ~280KB gzip (900KB minified) to ~108KB gzip (331KB), with the
+      framer-motion/GSAP/Lenis marketing chunk (~51KB gzip) and the app
+      shell (~21KB gzip) only fetched on their own routes.
 
 - [x] **Closed out the five P1 gaps in one pass:**
       **Unread ticket badge** — `AppLayout`'s Tickets nav link shows a count

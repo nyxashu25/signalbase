@@ -28,12 +28,14 @@ const REASON_LABELS = {
   SEQUENCE_ENROLLMENT: 'Sequence enrollment',
   TOPUP: 'Payment',
   ADJUSTMENT: 'Adjustment',
+  ONBOARDING_REWARD: 'Onboarding reward',
 };
 
 const REASON_TONE = {
   MONTHLY_GRANT: 'accent',
   TOPUP: 'success',
   ADJUSTMENT: 'warning',
+  ONBOARDING_REWARD: 'success',
 };
 
 const PLAN_ORDER = ['FREE', 'BASIC', 'PROFESSIONAL', 'ORGANIZATION'];

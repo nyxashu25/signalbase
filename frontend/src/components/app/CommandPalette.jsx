@@ -11,6 +11,7 @@ import {
   CreditCard,
   LifeBuoy,
   UserCircle,
+  BookOpen,
   Plus,
   Coins,
   ArrowRight,
@@ -21,7 +22,7 @@ import { useListSequencesQuery } from '../../api/sequencesApi.js';
 import { LetterAvatar } from '../ui/LetterAvatar.jsx';
 
 const PAGES = [
-  { label: 'Dashboard', to: '/app', icon: LayoutDashboard, keywords: 'home overview' },
+  { label: 'Home', to: '/app', icon: LayoutDashboard, keywords: 'dashboard overview getting started' },
   { label: 'People', to: '/app/people', icon: Users, keywords: 'contacts search find' },
   { label: 'Companies', to: '/app/companies', icon: Building2, keywords: 'accounts search' },
   { label: 'Lists', to: '/app/lists', icon: ListChecks, keywords: 'saved' },
@@ -29,6 +30,7 @@ const PAGES = [
   { label: 'Billing', to: '/app/billing', icon: CreditCard, keywords: 'plan credits invoices' },
   { label: 'Tickets', to: '/app/tickets', icon: LifeBuoy, keywords: 'support help' },
   { label: 'Profile', to: '/app/profile', icon: UserCircle, keywords: 'account settings' },
+  { label: 'Help', to: '/app/help', icon: BookOpen, keywords: 'docs guide how credits work faq' },
 ];
 
 const ACTIONS = [

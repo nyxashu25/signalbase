@@ -107,6 +107,19 @@ pick the keys they understand. The backend validates size (≤4KB) and shape but
 keys, so adding a filter to the search screens needs no migration here. Capped at 50 per type per
 workspace (`savedSearchService.js`); deleting another workspace's row 404s rather than 403s.
 
+### Getting-started checklist
+
+`OnboardingTaskCompletion` (`workspaceId`, `key`, `completedAt`, `rewardCredits`, `rewardedAt`;
+`@@unique([workspaceId, key])`) records that a checklist task — or, for `group:<key>` rows, a whole
+group — is done. The checklist itself (keys, labels, CTAs, reward amounts) is code, in
+`config/onboardingConfig.js`; this table only holds completion + payout state. Completion is
+*detected* from the rows the task naturally produces (`EmailReveal`, `ListItem`, `SavedSearch`,
+`Sequence`, `SequenceEnrollment`, `CompanyDetailView`, `User.emailVerified`/`tutorialCompletedAt`)
+the next time the checklist is read, except `SEARCH_PEOPLE`, which has no row of its own and is
+written by the people-search controller. `rewardedAt` is flipped with a guarded `updateMany … WHERE
+rewardedAt IS NULL`, which is what makes a reward pay out exactly once under concurrent reads. Rows
+are never deleted or un-completed.
+
 ### Credits & the append-only ledger
 
 `CreditLedgerEntry` is **append-only** — the app never `UPDATE`s or `DELETE`s a row. A workspace's
@@ -117,7 +130,9 @@ workspace.monthlyCreditGrant + SUM(ledger.delta) − [credits currently reserved
 ```
 
 `reason` is one of `MONTHLY_GRANT`, `EMAIL_REVEAL`, `COMPANY_VIEW`, `CSV_EXPORT`,
-`SEQUENCE_ENROLLMENT`, `TOPUP`, `ADJUSTMENT`. `amountCents` is only ever set on `TOPUP` rows (a real
+`SEQUENCE_ENROLLMENT`, `TOPUP`, `ADJUSTMENT`, `ONBOARDING_REWARD` (getting-started checklist
+payouts — kept separate from `ADJUSTMENT` so the ledger reads "Onboarding reward" and the total a
+workspace has earned is one SUM). `amountCents` is only ever set on `TOPUP` rows (a real
 Stripe purchase) — it's null even for `ADJUSTMENT` (an admin-granted credit isn't revenue). This is
 the only place a dollar amount is recorded anywhere in the schema; everywhere else deals purely in
 credit counts. See `docs/07-credits-state.mermaid` and `docs/03-data-enrichment-flow.mermaid` for the
@@ -202,7 +217,7 @@ credit config elsewhere.
 | `Role` | `OWNER`, `ADMIN`, `MEMBER` |
 | `ImportBatchStatus` | `PROCESSING`, `PENDING_APPROVAL`, `APPROVED`, `FAILED` |
 | `ListType` | `CONTACTS`, `COMPANIES` |
-| `CreditReason` | `MONTHLY_GRANT`, `EMAIL_REVEAL`, `COMPANY_VIEW`, `CSV_EXPORT`, `SEQUENCE_ENROLLMENT`, `TOPUP`, `ADJUSTMENT` |
+| `CreditReason` | `MONTHLY_GRANT`, `EMAIL_REVEAL`, `COMPANY_VIEW`, `CSV_EXPORT`, `SEQUENCE_ENROLLMENT`, `TOPUP`, `ADJUSTMENT`, `ONBOARDING_REWARD` |
 | `SequenceStatus` | `DRAFT`, `ACTIVE`, `PAUSED`, `ARCHIVED` |
 | `StepType` | `EMAIL`, `WAIT` |
 | `EnrollmentStatus` | `ACTIVE`, `PAUSED`, `COMPLETED`, `UNENROLLED` |

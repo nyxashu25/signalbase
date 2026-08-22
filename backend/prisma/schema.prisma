@@ -73,6 +73,7 @@ model Workspace {
   suppressions       SuppressionEntry[]
   tickets            Ticket[]
   savedSearches      SavedSearch[]
+  onboardingTasks    OnboardingTaskCompletion[]
 
   @@index([orgId])
 }
@@ -376,6 +377,31 @@ enum CreditReason {
   SEQUENCE_ENROLLMENT
   TOPUP
   ADJUSTMENT
+  // Getting-started checklist rewards (see onboardingService.js) — kept
+  // distinct from ADJUSTMENT so the ledger reads "Onboarding reward", not
+  // "Adjustment", and so the total a workspace has earned is one SUM away.
+  ONBOARDING_REWARD
+}
+
+// One row per (workspace, checklist key) once that task — or, for
+// `group:*` keys, that whole group — is done. The checklist itself (which
+// keys exist, labels, rewards) lives in config/onboardingConfig.js; this
+// table only records completion and whether the reward has been paid out,
+// so a task can never be rewarded twice even under concurrent requests
+// (rewardedAt is flipped with a guarded updateMany). Append-only in
+// practice: nothing un-completes a task.
+model OnboardingTaskCompletion {
+  id            String    @id @default(uuid())
+  workspaceId   String
+  key           String
+  completedAt   DateTime  @default(now())
+  rewardCredits Int       @default(0)
+  rewardedAt    DateTime?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, key])
+  @@index([workspaceId])
 }
 
 // Append-only — never UPDATE or DELETE a row. Balance is always
