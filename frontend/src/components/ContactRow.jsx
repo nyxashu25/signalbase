@@ -1,12 +1,45 @@
 import { useState } from 'react';
+import { Mail, Copy, Check, BadgeCheck } from 'lucide-react';
 import { AddToListButton } from './AddToListButton.jsx';
 import { LinkedInIcon } from './LinkedInIcon.jsx';
 import { useGetCreditCostsQuery } from '../api/billingApi.js';
+import { Button } from './ui/Button.jsx';
+import { LetterAvatar } from './ui/LetterAvatar.jsx';
+import { Tooltip } from './ui/Tooltip.jsx';
+import { tdClass, tdMutedClass, trClass } from './ui/Card.jsx';
 
-export function ContactRow({ contact, onReveal }) {
+export const CONTACT_COLUMNS = [
+  { key: 'name', label: 'Name', locked: true },
+  { key: 'title', label: 'Job title' },
+  { key: 'linkedin', label: 'LinkedIn' },
+  { key: 'company', label: 'Company' },
+  { key: 'department', label: 'Department' },
+  { key: 'email', label: 'Email', locked: true },
+];
+const ALL_COLUMNS = CONTACT_COLUMNS.map((c) => c.key);
+
+/**
+ * One people-search result. The reveal is a real, iconed button with its
+ * credit cost on it (docs/UX-ROADMAP.md §2.4) — the monetized action should
+ * look like one. `selectable`/`selected`/`onSelectChange` add the bulk-select
+ * checkbox used by the search table; the CompanyDetail contacts table
+ * leaves them off. `columns` (keys from CONTACT_COLUMNS) drives the column
+ * picker — the header in the page must render the same set.
+ */
+export function ContactRow({
+  contact,
+  onReveal,
+  selectable = false,
+  selected = false,
+  onSelectChange,
+  columns = ALL_COLUMNS,
+}) {
+  const show = (key) => columns.includes(key);
   const [status, setStatus] = useState('idle'); // idle | revealing | error
   const [error, setError] = useState(null);
+  const [copied, setCopied] = useState(false);
   const { data: costs } = useGetCreditCostsQuery();
+  const fullName = `${contact.firstName} ${contact.lastName}`;
 
   async function handleReveal() {
     setStatus('revealing');
@@ -20,53 +53,132 @@ export function ContactRow({ contact, onReveal }) {
     }
   }
 
+  async function copyEmail() {
+    try {
+      await navigator.clipboard.writeText(contact.email);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // clipboard unavailable — nothing to do, the address is visible anyway
+    }
+  }
+
   return (
-    <tr className="border-b border-border hover:bg-surface">
-      <td className="px-4 py-3 text-sm font-medium text-text">
-        {contact.firstName} {contact.lastName}
+    <tr className={`${trClass} ${selected ? 'bg-primary/5' : ''}`}>
+      {selectable && (
+        <td className="w-10 px-3 py-3">
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={(e) => onSelectChange?.(contact.id, e.target.checked)}
+            aria-label={`Select ${fullName}`}
+            className="h-4 w-4 rounded-sm border-border text-primary focus:ring-focus"
+          />
+        </td>
+      )}
+      <td className={`${tdClass} py-2.5`}>
+        <span className="flex items-center gap-2.5 whitespace-nowrap">
+          <LetterAvatar name={fullName} size="md" />
+          <span className="block max-w-[200px] truncate font-semibold" title={fullName}>
+            {fullName}
+          </span>
+        </span>
       </td>
-      <td className="px-4 py-3 text-sm text-text-muted">{contact.title ?? '—'}</td>
-      <td className="px-4 py-3">
-        {contact.linkedinUrl ? (
-          <a
-            href={contact.linkedinUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`Open ${contact.firstName} ${contact.lastName}'s LinkedIn profile`}
-            className="inline-flex transition-opacity hover:opacity-80"
-          >
-            <LinkedInIcon className="h-5 w-5" />
-          </a>
-        ) : (
-          <span className="text-sm text-ink-300">—</span>
-        )}
-      </td>
-      <td className="px-4 py-3 text-sm text-text-muted">{contact.company?.name ?? '—'}</td>
-      <td className="px-4 py-3 text-sm text-text-muted">{contact.department ?? '—'}</td>
-      <td className="px-4 py-3 text-sm">
+      {show('title') && (
+        <td className={`${tdMutedClass} whitespace-nowrap`}>
+          <span className="block max-w-[220px] truncate" title={contact.title ?? undefined}>
+            {contact.title ?? '—'}
+          </span>
+        </td>
+      )}
+      {show('linkedin') && (
+        <td className="px-3 py-3">
+          {contact.linkedinUrl ? (
+            <a
+              href={contact.linkedinUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Open ${fullName}'s LinkedIn profile`}
+              className="inline-flex transition-opacity hover:opacity-80"
+            >
+              <LinkedInIcon className="h-5 w-5" />
+            </a>
+          ) : (
+            <span className="text-sm text-text-muted/50">—</span>
+          )}
+        </td>
+      )}
+      {show('company') && (
+        <td className={`${tdMutedClass} whitespace-nowrap`}>
+          {contact.company?.name ? (
+            <span className="flex items-center gap-2">
+              <LetterAvatar name={contact.company.name} size="sm" square />
+              <span className="block max-w-[180px] truncate" title={contact.company.name}>
+                {contact.company.name}
+              </span>
+            </span>
+          ) : (
+            '—'
+          )}
+        </td>
+      )}
+      {show('department') && (
+        <td className={`${tdMutedClass} whitespace-nowrap`}>{contact.department ?? '—'}</td>
+      )}
+      <td className="whitespace-nowrap px-4 py-3 text-sm">
         {contact.revealed ? (
-          <span className="text-text">{contact.email}</span>
+          <span className="flex items-center gap-1.5">
+            <span className="text-text">{contact.email}</span>
+            {contact.emailVerified && (
+              <Tooltip content="Verified deliverable">
+                <BadgeCheck className="h-4 w-4 shrink-0 text-emerald-500" aria-label="Verified" />
+              </Tooltip>
+            )}
+            <Tooltip content={copied ? 'Copied' : 'Copy email'}>
+              <button
+                type="button"
+                onClick={copyEmail}
+                aria-label="Copy email"
+                className="rounded-sm p-0.5 text-text-muted hover:text-text"
+              >
+                {copied ? (
+                  <Check className="h-3.5 w-3.5 text-emerald-500" aria-hidden="true" />
+                ) : (
+                  <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                )}
+              </button>
+            </Tooltip>
+          </span>
         ) : contact.email ? (
-          <span className="font-mono text-text-muted">{contact.email}</span>
+          <span className="font-mono text-xs text-text-muted">{contact.email}</span>
         ) : (
-          <span className="text-ink-300">Not found yet</span>
+          <span className="text-text-muted/70">Not found yet</span>
         )}
         {status === 'error' && <div className="mt-1 text-xs text-red-600">{error}</div>}
       </td>
-      <td className="px-4 py-3">
+      <td className="whitespace-nowrap px-4 py-2">
         <div className="flex items-center justify-end gap-2">
           {!contact.revealed && (
-            <button
-              type="button"
-              onClick={handleReveal}
-              disabled={status === 'revealing'}
-              title={`Spends ${costs?.REVEAL ?? '…'} credits — finds and unlocks this contact's email`}
-              className="rounded-md border border-border px-2 py-1 text-xs text-text-muted hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+            <Tooltip
+              content={`Spends ${costs?.REVEAL ?? '…'} credits — finds and unlocks this contact's email`}
             >
-              {status === 'revealing' ? 'Revealing…' : 'Reveal'}
-            </button>
+              <Button
+                variant="primary"
+                size="sm"
+                icon={Mail}
+                onClick={handleReveal}
+                loading={status === 'revealing'}
+              >
+                {status === 'revealing' ? 'Revealing…' : 'Access email'}
+                {costs?.REVEAL !== undefined && status !== 'revealing' && (
+                  <span className="ml-0.5 rounded-sm bg-white/20 px-1 text-[10px] font-bold tabular-nums">
+                    {costs.REVEAL} cr
+                  </span>
+                )}
+              </Button>
+            </Tooltip>
           )}
-          <AddToListButton type="CONTACTS" contactId={contact.id} />
+          <AddToListButton type="CONTACTS" contactId={contact.id} label="List" />
         </div>
       </td>
     </tr>

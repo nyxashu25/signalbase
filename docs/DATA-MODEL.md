@@ -97,6 +97,16 @@ to guard.
 `listService.js`, not declaratively (Prisma has no XOR constraint). `@@unique([listId, contactId])`
 and `@@unique([listId, companyId])` prevent adding the same record twice.
 
+### Saved searches
+
+`SavedSearch` (`type`: `PEOPLE` | `COMPANIES`, `name`, `filters Json`) is a workspace-shared
+shortcut back to a People/Companies search — shared like lists, not a private bookmark. `filters` is
+the frontend's filter state stored **verbatim** (`{ title, seniority: [...], emailStatus: [...],
+sort, q … }`) and replayed client-side by `pages/People.jsx` / `pages/Companies.jsx`, which only
+pick the keys they understand. The backend validates size (≤4KB) and shape but never interprets the
+keys, so adding a filter to the search screens needs no migration here. Capped at 50 per type per
+workspace (`savedSearchService.js`); deleting another workspace's row 404s rather than 403s.
+
 ### Credits & the append-only ledger
 
 `CreditLedgerEntry` is **append-only** — the app never `UPDATE`s or `DELETE`s a row. A workspace's
@@ -202,6 +212,7 @@ credit config elsewhere.
 | `TicketStatus` | `UNANSWERED`, `ANSWERED`, `CLOSED` |
 | `TicketAuthorType` | `USER`, `ADMIN` |
 | `AdminAuditAction` | `SUSPEND_USER`, `UNSUSPEND_USER`, `UPDATE_PLAN`, `ADD_CREDITS` |
+| `SavedSearchType` | `PEOPLE`, `COMPANIES` |
 
 ---
 

@@ -1,26 +1,42 @@
 import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
+import { UserCircle, CreditCard, LifeBuoy, LogOut, ChevronDown } from 'lucide-react';
 import { useLogoutMutation } from '../api/authApi.js';
 import { clearSession } from '../store/authSlice.js';
-import { RabbitAvatar } from './RabbitAvatar.jsx';
+import { LetterAvatar } from './ui/LetterAvatar.jsx';
+
+const ITEMS = [
+  { to: '/app/profile', label: 'Profile', icon: UserCircle },
+  { to: '/app/billing', label: 'Billing & plan', icon: CreditCard },
+  { to: '/app/tickets', label: 'Support', icon: LifeBuoy },
+];
 
 export function ProfileMenu() {
   const [open, setOpen] = useState(false);
   const rootRef = useRef(null);
   const user = useSelector((s) => s.auth.user);
   const workspace = useSelector((s) => s.auth.workspace);
+  const role = useSelector((s) => s.auth.role);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [logout] = useLogoutMutation();
 
   useEffect(() => {
+    if (!open) return undefined;
     function onClickOutside(e) {
       if (rootRef.current && !rootRef.current.contains(e.target)) setOpen(false);
     }
+    function onKey(e) {
+      if (e.key === 'Escape') setOpen(false);
+    }
     document.addEventListener('mousedown', onClickOutside);
-    return () => document.removeEventListener('mousedown', onClickOutside);
-  }, []);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onClickOutside);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
 
   async function handleLogout() {
     try {
@@ -39,31 +55,42 @@ export function ProfileMenu() {
         aria-label={`Account menu for ${user?.name ?? 'your account'}`}
         aria-haspopup="true"
         aria-expanded={open}
-        className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-action text-white transition-transform duration-150 ease-brand hover:-translate-y-px"
+        className={`flex h-9 items-center gap-1.5 rounded-md pl-1 pr-1.5 transition-colors hover:bg-surface-hover ${open ? 'bg-surface-hover' : ''}`}
       >
-        <RabbitAvatar className="h-5 w-5" />
+        <LetterAvatar name={user?.name ?? '?'} size="md" />
+        <ChevronDown className="h-3.5 w-3.5 text-text-muted" aria-hidden="true" />
       </button>
 
       {open && (
-        <div className="absolute right-0 top-11 w-56 rounded-lg border border-border bg-surface-elevated p-1.5 shadow-dp-md">
-          <div className="px-3 py-2">
+        <div className="dp-pop-in absolute right-0 top-11 z-30 w-60 rounded-lg border border-border bg-surface-elevated p-1.5 shadow-dp-md">
+          <div className="px-2.5 py-2">
             <p className="truncate text-sm font-bold text-text">{user?.name}</p>
-            <p className="truncate text-xs text-text-muted">{workspace?.name}</p>
+            <p className="truncate text-xs text-text-muted">{user?.email}</p>
+            <p className="mt-1.5 truncate text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+              {workspace?.name}
+              {role && <span className="font-medium normal-case tracking-normal"> · {role}</span>}
+            </p>
           </div>
           <div className="my-1 h-px bg-border" />
-          <Link
-            to="/app/profile"
-            onClick={() => setOpen(false)}
-            className="block rounded-md px-3 py-2 text-sm font-medium text-text hover:bg-surface"
-          >
-            Profile
-          </Link>
+          {ITEMS.map((item) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 rounded-sm px-2.5 py-2 text-sm font-medium text-text hover:bg-surface-hover"
+            >
+              <item.icon className="h-4 w-4 text-text-muted" aria-hidden="true" />
+              {item.label}
+            </Link>
+          ))}
+          <div className="my-1 h-px bg-border" />
           <button
             type="button"
             onClick={handleLogout}
-            className="block w-full rounded-md px-3 py-2 text-left text-sm font-medium text-red-600 hover:bg-surface"
+            className="flex w-full items-center gap-2.5 rounded-sm px-2.5 py-2 text-left text-sm font-medium text-red-600 hover:bg-red-500/10 dark:text-red-400"
           >
-            Logout
+            <LogOut className="h-4 w-4" aria-hidden="true" />
+            Log out
           </button>
         </div>
       )}

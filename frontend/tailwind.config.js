@@ -39,28 +39,35 @@ export default {
           100: '#eee9f1',
           50: '#faf7fb',
         },
-        bg: 'var(--dp-bg)',
-        surface: 'var(--dp-surface)',
-        'surface-elevated': 'var(--dp-surface-elevated)',
-        text: 'var(--dp-text)',
-        'text-muted': 'var(--dp-text-muted)',
-        border: 'var(--dp-border)',
+        // Semantic tokens come from index.css as RGB triplets so Tailwind's
+        // opacity modifiers (bg-primary/10, ring-focus/25) work — a bare
+        // var(--hex) color can't take one and the class is silently dropped.
+        bg: 'rgb(var(--dp-bg-rgb) / <alpha-value>)',
+        surface: 'rgb(var(--dp-surface-rgb) / <alpha-value>)',
+        'surface-elevated': 'rgb(var(--dp-surface-elevated-rgb) / <alpha-value>)',
+        'surface-hover': 'rgb(var(--dp-surface-hover-rgb) / <alpha-value>)',
+        'surface-sunken': 'rgb(var(--dp-surface-sunken-rgb) / <alpha-value>)',
+        text: 'rgb(var(--dp-text-rgb) / <alpha-value>)',
+        'text-muted': 'rgb(var(--dp-text-muted-rgb) / <alpha-value>)',
+        border: 'rgb(var(--dp-border-rgb) / <alpha-value>)',
         primary: {
-          DEFAULT: 'var(--dp-primary)',
-          hover: 'var(--dp-primary-hover)',
+          DEFAULT: 'rgb(var(--dp-primary-rgb) / <alpha-value>)',
+          hover: 'rgb(var(--dp-primary-hover-rgb) / <alpha-value>)',
         },
-        accent: 'var(--dp-accent)',
-        focus: 'var(--dp-focus)',
+        accent: 'rgb(var(--dp-accent-rgb) / <alpha-value>)',
+        focus: 'rgb(var(--dp-focus-rgb) / <alpha-value>)',
       },
       backgroundImage: {
         'gradient-action': 'var(--dp-gradient-action)',
         'gradient-brand': 'var(--dp-gradient-brand)',
       },
+      // Token-driven (see index.css) so the in-app shell can run tighter
+      // corners than the marketing site via a scoped CSS-variable override.
       borderRadius: {
-        sm: '8px',
-        md: '12px',
-        lg: '16px',
-        xl: '24px',
+        sm: 'var(--dp-radius-sm)',
+        md: 'var(--dp-radius-md)',
+        lg: 'var(--dp-radius-lg)',
+        xl: 'var(--dp-radius-xl)',
       },
       boxShadow: {
         dp: '0 4px 14px rgba(68, 0, 102, 0.10)',

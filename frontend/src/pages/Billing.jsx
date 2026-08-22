@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Coins, Check } from 'lucide-react';
 import {
   useGetBillingSummaryQuery,
   useListBillingTransactionsQuery,
@@ -7,6 +8,15 @@ import {
 } from '../api/billingApi.js';
 import { Pagination } from '../components/Pagination.jsx';
 import { PLANS, findPlan, BILLING_INTERVALS, planPriceForInterval } from '../data/plans.js';
+import { PageHeader } from '../components/ui/PageHeader.jsx';
+import { Button } from '../components/ui/Button.jsx';
+import { Banner } from '../components/ui/Banner.jsx';
+import { Card, TableFrame, thClass, tdMutedClass, trClass } from '../components/ui/Card.jsx';
+import { StatusPill } from '../components/ui/StatusPill.jsx';
+import { SegmentedControl } from '../components/ui/SegmentedControl.jsx';
+import { InfoHint } from '../components/ui/Tooltip.jsx';
+import { EmptyState } from '../components/ui/EmptyState.jsx';
+import { SkeletonRows } from '../components/ui/Skeleton.jsx';
 
 const PAGE_SIZE = 25;
 
@@ -20,17 +30,14 @@ const REASON_LABELS = {
   ADJUSTMENT: 'Adjustment',
 };
 
-const REASON_STYLES = {
-  MONTHLY_GRANT: 'bg-primary/15 text-primary',
-  EMAIL_REVEAL: 'bg-surface text-text-muted',
-  COMPANY_VIEW: 'bg-surface text-text-muted',
-  CSV_EXPORT: 'bg-surface text-text-muted',
-  SEQUENCE_ENROLLMENT: 'bg-surface text-text-muted',
-  TOPUP: 'bg-emerald-500/15 text-emerald-600',
-  ADJUSTMENT: 'bg-amber-500/15 text-amber-600',
+const REASON_TONE = {
+  MONTHLY_GRANT: 'accent',
+  TOPUP: 'success',
+  ADJUSTMENT: 'warning',
 };
 
 const PLAN_ORDER = ['FREE', 'BASIC', 'PROFESSIONAL', 'ORGANIZATION'];
+const CADENCE = { MONTH: 'month', QUARTER: 'quarter', YEAR: 'year' };
 
 function formatCents(cents) {
   if (cents == null) return '—';
@@ -93,122 +100,110 @@ export function Billing() {
     }
   }
 
+  const usedPct =
+    summary && summary.monthlyCreditGrant > 0
+      ? Math.min(100, Math.round((summary.creditsUsed / summary.monthlyCreditGrant) * 100))
+      : 0;
+
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-text">Billing</h1>
-        <Link
-          to="/app/billing/add-credits"
-          className="rounded-md bg-gradient-action px-4 py-2 text-sm font-bold text-white shadow-[0_10px_24px_rgba(148,0,222,0.24)]"
-        >
-          Add credits
-        </Link>
-      </div>
+      <PageHeader
+        title="Billing"
+        description="Your plan, credit balance, and every credit movement on one ledger."
+        actions={
+          <Button variant="hero" icon={Coins} to="/app/billing/add-credits">
+            Add credits
+          </Button>
+        }
+      />
 
-      <div className="mt-6 rounded-lg border border-border bg-surface-elevated p-5">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-text-muted">
-              Current plan
-            </p>
-            <p className="mt-1 text-2xl font-extrabold text-text">
-              {currentPlan?.name ?? '—'}
-              {currentPlan && currentPlan.price > 0 && currentInterval && (
-                <span className="ml-2 text-sm font-medium text-text-muted">
-                  {formatUsd(planPriceForInterval(currentPlan.key, currentInterval.key))}/seat/
-                  {{ MONTH: 'month', QUARTER: 'quarter', YEAR: 'year' }[currentInterval.key]}
-                </span>
-              )}
-            </p>
-          </div>
-          <div className="flex gap-8">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wide text-text-muted">Balance</p>
-              <p className="mt-1 text-2xl font-extrabold tabular-nums text-text">
-                {summary?.balance ?? '—'}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wide text-text-muted">
-                Monthly grant
-              </p>
-              <p className="mt-1 text-2xl font-extrabold tabular-nums text-text">
-                {summary?.monthlyCreditGrant ?? '—'}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wide text-text-muted">
-                Used this cycle
-              </p>
-              <p className="mt-1 text-2xl font-extrabold tabular-nums text-text">
-                {summary?.creditsUsed ?? '—'}
-              </p>
-            </div>
-          </div>
+      {/* Plan overview */}
+      <Card className="p-5">
+        <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
+          <Metric label="Current plan" hint="Change plans below — upgrades apply immediately.">
+            <span className="text-2xl font-extrabold text-text">{currentPlan?.name ?? '—'}</span>
+            {currentPlan && currentPlan.price > 0 && currentInterval && (
+              <span className="ml-2 text-xs font-medium text-text-muted">
+                {formatUsd(planPriceForInterval(currentPlan.key, currentInterval.key))}/seat/
+                {CADENCE[currentInterval.key]}
+              </span>
+            )}
+          </Metric>
+          <Metric label="Balance" hint="Credits available right now, including any top-ups.">
+            <span className="text-2xl font-extrabold tabular-nums text-text">
+              {summary?.balance ?? '—'}
+            </span>
+          </Metric>
+          <Metric label="Monthly grant" hint="Credits added at the start of every billing cycle on your plan.">
+            <span className="text-2xl font-extrabold tabular-nums text-text">
+              {summary?.monthlyCreditGrant ?? '—'}
+            </span>
+          </Metric>
+          <Metric label="Used this cycle" hint="Credits spent since your last grant.">
+            <span className="text-2xl font-extrabold tabular-nums text-text">
+              {summary?.creditsUsed ?? '—'}
+            </span>
+          </Metric>
         </div>
-      </div>
+        {summary && summary.monthlyCreditGrant > 0 && (
+          <div className="mt-5">
+            <div className="flex items-center justify-between text-xs text-text-muted">
+              <span>Monthly usage</span>
+              <span className="tabular-nums">{usedPct}%</span>
+            </div>
+            <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-sunken">
+              <div
+                className="h-full rounded-full bg-primary transition-[width] duration-300"
+                style={{ width: `${usedPct}%` }}
+              />
+            </div>
+          </div>
+        )}
+      </Card>
 
-      <div className="mt-10 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-sm font-bold uppercase tracking-wide text-text-muted">
-          {summary?.plan === 'ORGANIZATION' ? 'Your plan' : 'Upgrade your plan'}
+      {/* Plans */}
+      <div className="mb-3 mt-8 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-sm font-bold text-text">
+          {summary?.plan === 'ORGANIZATION' ? 'Your plan' : 'Plans'}
         </h2>
-        <div className="inline-flex rounded-md border border-border p-0.5">
-          {BILLING_INTERVALS.map((i) => (
-            <button
-              key={i.key}
-              type="button"
-              onClick={() => setBillingIntervalChoice(i.key)}
-              className={`rounded px-3 py-1 text-xs font-bold ${
-                billingIntervalChoice === i.key ? 'bg-gradient-action text-white' : 'text-text-muted'
-              }`}
-            >
-              {i.label}
-              {i.discount > 0 && (
-                <span className="ml-1 text-[10px] font-medium opacity-80">
-                  −{Math.round(i.discount * 100)}%
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          ariaLabel="Billing interval"
+          value={billingIntervalChoice}
+          onChange={setBillingIntervalChoice}
+          options={BILLING_INTERVALS.map((i) => ({
+            value: i.key,
+            label: i.label,
+            hint: i.discount > 0 ? `−${Math.round(i.discount * 100)}%` : undefined,
+          }))}
+        />
       </div>
-      {subscribeError && <p className="mt-2 text-sm text-red-600">{subscribeError}</p>}
-      <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {subscribeError && (
+        <Banner tone="danger" className="mb-3">
+          {subscribeError}
+        </Banner>
+      )}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {PLANS.map((plan) => {
           const isCurrent = summary?.plan === plan.key;
           const isDowngrade =
             summary && PLAN_ORDER.indexOf(plan.key) < PLAN_ORDER.indexOf(summary.plan);
           const displayPrice =
             plan.key === 'FREE' ? 0 : planPriceForInterval(plan.key, billingIntervalChoice);
-          const cadence = { MONTH: 'month', QUARTER: 'quarter', YEAR: 'year' }[
-            billingIntervalChoice
-          ];
+          const cadence = CADENCE[billingIntervalChoice];
           const cadenceUnit =
             plan.key === 'ORGANIZATION' ? `seat/${cadence}, min 3 seats` : `seat/${cadence}`;
 
           return (
-            <div
+            <Card
               key={plan.key}
-              className={`flex flex-col rounded-lg border p-5 ${
-                isCurrent
-                  ? 'border-primary/40 ring-2 ring-primary'
-                  : plan.popular
-                    ? 'border-primary/30'
-                    : 'border-border'
-              } bg-surface-elevated`}
+              className={`flex flex-col p-5 ${
+                isCurrent ? 'border-primary ring-1 ring-primary' : plan.popular ? 'border-primary/40' : ''
+              }`}
             >
               <div className="flex items-center justify-between">
-                <p className="text-base font-bold text-text">{plan.name}</p>
-                {isCurrent && (
-                  <span className="rounded-full bg-primary/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
-                    Current
-                  </span>
-                )}
-                {!isCurrent && plan.popular && (
-                  <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
-                    Popular
-                  </span>
-                )}
+                <p className="text-sm font-bold text-text">{plan.name}</p>
+                {isCurrent && <StatusPill tone="accent">Current</StatusPill>}
+                {!isCurrent && plan.popular && <StatusPill tone="accent">Popular</StatusPill>}
               </div>
               <p className="mt-2 text-2xl font-extrabold text-text">
                 {formatUsd(displayPrice)}
@@ -218,98 +213,98 @@ export function Billing() {
               </p>
               <p className="mt-1 text-xs text-text-muted">{plan.credits}</p>
 
-              {plan.key === 'FREE' ? (
-                <div className="mt-4 rounded-md border border-border px-3 py-2 text-center text-xs font-bold text-text-muted">
-                  No purchase needed
-                </div>
-              ) : plan.key === 'ORGANIZATION' && !isCurrent ? (
-                <Link
-                  to="/contact"
-                  className="mt-4 rounded-md border border-border px-3 py-2 text-center text-xs font-bold text-text hover:border-primary/40"
-                >
-                  Talk to sales
-                </Link>
-              ) : (
-                <button
-                  type="button"
-                  disabled={isCurrent || subscribing || (isDowngrade && isLocked)}
-                  onClick={() => handleSubscribe(plan.key)}
-                  title={
-                    isDowngrade && isLocked
-                      ? `Your ${currentPlan?.name} plan is locked in until ${lockedUntil.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} under the 3-month minimum commitment.`
-                      : undefined
-                  }
-                  className={`mt-4 rounded-md px-3 py-2 text-xs font-bold transition-transform duration-150 ease-brand disabled:cursor-not-allowed disabled:opacity-50 ${
-                    isCurrent
-                      ? 'border border-border text-text-muted'
-                      : 'bg-gradient-action text-white hover:-translate-y-px'
-                  }`}
-                >
-                  {isCurrent
-                    ? 'Current plan'
-                    : subscribingKey === plan.key && subscribing
-                      ? 'Starting checkout…'
-                      : isDowngrade && isLocked
-                        ? `Locked until ${lockedUntil.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
-                        : isDowngrade
-                          ? 'Downgrade'
-                          : 'Upgrade'}
-                </button>
-              )}
+              <div className="mt-4">
+                {plan.key === 'FREE' ? (
+                  <div className="rounded-md border border-border px-3 py-2 text-center text-xs font-semibold text-text-muted">
+                    No purchase needed
+                  </div>
+                ) : plan.key === 'ORGANIZATION' && !isCurrent ? (
+                  <Button variant="secondary" size="sm" to="/contact" className="w-full">
+                    Talk to sales
+                  </Button>
+                ) : (
+                  <Button
+                    variant={isCurrent ? 'secondary' : isDowngrade ? 'secondary' : 'primary'}
+                    size="sm"
+                    className="w-full"
+                    disabled={isCurrent || (isDowngrade && isLocked)}
+                    loading={subscribingKey === plan.key && subscribing}
+                    onClick={() => handleSubscribe(plan.key)}
+                    title={
+                      isDowngrade && isLocked
+                        ? `Your ${currentPlan?.name} plan is locked in until ${lockedUntil.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} under the 3-month minimum commitment.`
+                        : undefined
+                    }
+                  >
+                    {isCurrent
+                      ? 'Current plan'
+                      : subscribingKey === plan.key && subscribing
+                        ? 'Starting checkout…'
+                        : isDowngrade && isLocked
+                          ? `Locked until ${lockedUntil.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                          : isDowngrade
+                            ? 'Downgrade'
+                            : 'Upgrade'}
+                  </Button>
+                )}
+              </div>
 
-              <ul className="mt-4 flex flex-1 flex-col gap-2 text-xs text-text-muted">
+              <ul className="mt-4 flex flex-1 flex-col gap-1.5 text-xs text-text-muted">
                 {plan.features.map((f) => (
-                  <li key={f}>{f}</li>
+                  <li key={f} className="flex items-start gap-1.5">
+                    <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" aria-hidden="true" />
+                    {f}
+                  </li>
                 ))}
               </ul>
-            </div>
+            </Card>
           );
         })}
       </div>
 
-      <h2 className="mt-10 text-sm font-bold uppercase tracking-wide text-text-muted">
-        Transaction history
-      </h2>
-      <div className="mt-3 overflow-x-auto rounded-lg border border-border bg-surface-elevated">
+      {/* Ledger */}
+      <h2 className="mb-3 mt-8 text-sm font-bold text-text">Transaction history</h2>
+      <TableFrame>
         <table className="w-full">
           <thead>
-            <tr className="border-b border-border text-left text-xs font-medium uppercase tracking-wide text-text-muted">
-              <th className="px-4 py-3">Type</th>
-              <th className="px-4 py-3">Credits</th>
-              <th className="px-4 py-3">Amount</th>
-              <th className="px-4 py-3">Contact</th>
-              <th className="px-4 py-3">Date</th>
+            <tr>
+              <th className={thClass}>Type</th>
+              <th className={thClass}>Credits</th>
+              <th className={thClass}>Amount</th>
+              <th className={thClass}>Contact</th>
+              <th className={thClass}>Date</th>
             </tr>
           </thead>
           <tbody>
+            {isFetching && !transactions && <SkeletonRows rows={5} columns={5} />}
             {transactions?.results.map((t) => (
-              <tr key={t.id} className="border-b border-border hover:bg-surface">
-                <td className="px-4 py-3 text-sm">
-                  <span
-                    className={`rounded-full px-2.5 py-1 text-xs font-bold ${REASON_STYLES[t.reason]}`}
-                  >
+              <tr key={t.id} className={trClass}>
+                <td className="px-4 py-3">
+                  <StatusPill tone={REASON_TONE[t.reason] ?? 'neutral'}>
                     {REASON_LABELS[t.reason]}
-                  </span>
+                  </StatusPill>
                 </td>
-                <td className="px-4 py-3 text-sm tabular-nums text-text-muted">
+                <td className={`${tdMutedClass} tabular-nums`}>
                   {t.delta > 0 ? '+' : ''}
                   {t.delta}
                 </td>
-                <td className="px-4 py-3 text-sm tabular-nums text-text-muted">
-                  {formatCents(t.amountCents)}
-                </td>
-                <td className="px-4 py-3 text-sm text-text-muted">
+                <td className={`${tdMutedClass} tabular-nums`}>{formatCents(t.amountCents)}</td>
+                <td className={tdMutedClass}>
                   {t.contact ? `${t.contact.firstName} ${t.contact.lastName}` : '—'}
                 </td>
-                <td className="px-4 py-3 text-sm text-text-muted">
-                  {new Date(t.createdAt).toLocaleString()}
-                </td>
+                <td className={tdMutedClass}>{new Date(t.createdAt).toLocaleString()}</td>
               </tr>
             ))}
             {transactions && transactions.results.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-sm text-text-muted">
-                  {isFetching ? 'Loading…' : 'No transactions yet'}
+                <td colSpan={5}>
+                  <EmptyState compact icon={Coins} title="No transactions yet">
+                    Reveals, exports, grants, and purchases all show up here as they happen.{' '}
+                    <Link to="/app/people" className="font-semibold text-primary hover:underline">
+                      Find your first contact
+                    </Link>
+                    .
+                  </EmptyState>
                 </td>
               </tr>
             )}
@@ -323,7 +318,19 @@ export function Billing() {
             onPageChange={setPage}
           />
         )}
-      </div>
+      </TableFrame>
+    </div>
+  );
+}
+
+function Metric({ label, hint, children }) {
+  return (
+    <div>
+      <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-text-muted">
+        {label}
+        {hint && <InfoHint content={hint} />}
+      </p>
+      <p className="mt-1.5">{children}</p>
     </div>
   );
 }

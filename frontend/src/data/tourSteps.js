@@ -10,7 +10,7 @@ export const TOUR_STEPS = [
   {
     id: 'nav-dashboard',
     target: '[data-tour="nav-dashboard"]',
-    title: 'Dashboard',
+    title: 'Home',
     body: 'Your credit balance, active sequences, and recent activity at a glance — this is home base.',
   },
   {

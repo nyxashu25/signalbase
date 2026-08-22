@@ -38,7 +38,7 @@ describe('ContactRow', () => {
       email: 'a****@acme.com',
     });
     expect(screen.getByText('a****@acme.com')).toBeInTheDocument();
-    expect(await screen.findByRole('button', { name: /Reveal/ })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /Access email/ })).toBeInTheDocument();
   });
 
   it('shows the full email and no Reveal button once revealed', () => {
@@ -50,7 +50,7 @@ describe('ContactRow', () => {
       email: 'ada@acme.com',
     });
     expect(screen.getByText('ada@acme.com')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Reveal/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Access email/ })).not.toBeInTheDocument();
   });
 
   it('shows a placeholder when no email is known at all', () => {
@@ -72,7 +72,7 @@ describe('ContactRow', () => {
       onReveal,
     );
 
-    await user.click(await screen.findByRole('button', { name: /Reveal/ }));
+    await user.click(await screen.findByRole('button', { name: /Access email/ }));
     expect(onReveal).toHaveBeenCalledWith('c1');
   });
 
@@ -90,7 +90,7 @@ describe('ContactRow', () => {
       onReveal,
     );
 
-    await user.click(await screen.findByRole('button', { name: /Reveal/ }));
+    await user.click(await screen.findByRole('button', { name: /Access email/ }));
     await waitFor(() => expect(screen.getByText('Not enough credits')).toBeInTheDocument());
   });
 

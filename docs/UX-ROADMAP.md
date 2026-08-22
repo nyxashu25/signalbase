@@ -93,62 +93,70 @@ Title (+ optional `0 records` sub-line) · **underline sub-tabs** with count pil
 Phase 1 is the biggest perceived-quality jump per hour and unblocks everything
 after it (the shell components get reused by every later phase).
 
-### Phase 1 — App shell & design system foundation
+> **Status (2026-08-22):** Phase 1 and Phase 2 shipped and are live on
+> titans7.com. Notes on what deviated from the spec below: 1.4's onboarding-hub
+> card is deferred to Phase 3 (it needs the checklist data); 1.4's Settings
+> link waits on Phase 5 (there's no settings page yet); 2.1's "Saved" count in
+> the rail was dropped (no cheap endpoint — revisit with Phase 3's stats);
+> 2.3's column sorting is a toolbar Sort control rather than clickable
+> headers. Everything else below in Phases 1–2 is done as written.
 
-- [ ] **1.1 Pick the in-app visual direction** (decision, not code — see Open
+### Phase 1 — App shell & design system foundation ✅
+
+- [x] **1.1 Pick the in-app visual direction** (decision, not code — see Open
       questions): neutral-dark + single accent vs. today's purple-ink dark;
       flat single-color primary vs. today's gradient. Encode the answer as
       tokens in `index.css`/`tailwind.config.js` *for the `/app` tree only*
       (marketing keeps its editorial look).
-- [ ] **1.2 Icon set** — adopt `lucide-react` (tree-shakeable, one family),
+- [x] **1.2 Icon set** — adopt `lucide-react` (tree-shakeable, one family),
       replace the hand-rolled SVGs in `AppLayout`/`AdminLayout`/`FacetPanel`.
-- [ ] **1.3 Grouped, collapsible sidebar** — groups: *Prospect* (People,
+- [x] **1.3 Grouped, collapsible sidebar** — groups: *Prospect* (People,
       Companies, Lists), *Engage* (Sequences), *Account* (Billing, Profile),
       *Support* (Tickets, with the answered-count badge we just built).
       Every item gets an icon; groups remember collapsed state
       (localStorage); collapse-to-rail toggle (icons only, tooltip on hover);
       `New` pill support for future items.
-- [ ] **1.4 Sidebar bottom stack** — **Upgrade** card (FREE/BASIC plans only,
+- [x] **1.4 Sidebar bottom stack** (Upgrade card shipped; onboarding card → Phase 3, Settings link → Phase 5) — **Upgrade** card (FREE/BASIC plans only,
       reads plan from billing summary, links to `/app/billing`), **Onboarding
       hub** progress card (% from Phase 3's checklist; hidden once 100%),
       **Settings** link.
-- [ ] **1.5 Top bar** — left: sidebar toggle + breadcrumb/page title; center:
+- [x] **1.5 Top bar** — left: sidebar toggle + breadcrumb/page title; center:
       **⌘K command palette** (people/companies/lists/sequences/tickets search
       + "go to" navigation + quick actions like "New list", "New sequence";
       `cmdk`-style, fully keyboard-driven); right: **credits pill** (reuse
       CreditBadge, restyled), **notification bell** (dropdown fed by the
       answered-tickets query + billing events; red dot when unread), avatar
       menu (existing ProfileMenu).
-- [ ] **1.6 Feedback primitives** — `<Banner variant="info|warning|success">`
+- [x] **1.6 Feedback primitives** — `<Banner variant="info|warning|success">`
       (dismissible, optional right-aligned action link, persisted dismissal
       by key), `<Toast>` system (top-right stack, auto-dismiss, action link)
       wired through a tiny store so any mutation can fire one, `<Tooltip>`
       (Radix or Floating UI) for ⓘ metric hints and icon-only buttons.
       Replace every inline `text-red-600` error with the banner/toast as
       appropriate.
-- [ ] **1.7 `<PageHeader>`** — title · optional sub-line (`196 records`) ·
+- [x] **1.7 `<PageHeader>`** — title · optional sub-line (`196 records`) ·
       underline **sub-tabs** with count pills · primary + tertiary action
       slots · optional description; and **`<Toolbar>`** — filter toggle with
       count, search, sort, view options, right-side action slot. Migrate
       every `/app` page onto these two.
-- [ ] **1.8 Density/type pass** — 13–14px body inside `/app`, 6–8px radii on
+- [x] **1.8 Density/type pass** — 13–14px body inside `/app`, 6–8px radii on
       in-app surfaces, 48–52px table rows, consistent 12px label caps
       (`text-[11px] uppercase tracking-wide`).
 
-### Phase 2 — Search screens (People / Companies)
+### Phase 2 — Search screens (People / Companies) ✅
 
-- [ ] **2.1 Filter rail redesign** — accordion `<FilterGroup>` (icon · label ·
+- [x] **2.1 Filter rail redesign** — accordion `<FilterGroup>` (icon · label ·
       active-count pill with ×-to-clear · chevron · active dot), applied
       values as removable chips, sticky footer **Clear all N**, top segmented
       **Total / Saved** counts (Saved = contacts this workspace has revealed
       — `EmailReveal` — or added to a list).
-- [ ] **2.2 More filters** — *frontend-only:* job-title text contains,
+- [x] **2.2 More filters** — *frontend-only:* job-title text contains,
       company-name text contains, location; *needs backend/ES:* # employees
       range (Company has headcount? verify in `searchService`), email status
       (verified / unverified / not found — from `Contact.email` +
       `emailVerified`), tech-stack keywords (`Company.techStack` exists).
       Add each as an ES filter + facet in `searchService.js`.
-- [ ] **2.3 Results table upgrade** — **bulk-select checkbox** column + a
+- [x] **2.3 Results table upgrade** — **bulk-select checkbox** column + a
       floating **bulk action bar** (Add N to list · Export N · Reveal N —
       reveal shows total credit cost and confirms); **company logo** cell
       (letter-avatar fallback; optional favicon by domain — see Open
@@ -156,19 +164,19 @@ after it (the shell components get reused by every later phase).
       headers**; sticky `<thead>`; horizontal scroll container; "+ Add
       column" popover to toggle optional columns (Department, Seniority,
       Location, LinkedIn, Revealed-on).
-- [ ] **2.4 Reveal as a real button** — `✉ Access email · 2 cr` primary-ish
+- [x] **2.4 Reveal as a real button** — `✉ Access email · 2 cr` primary-ish
       icon button; after reveal, email cell shows the address + a ✓ verified
       pill and a copy-to-clipboard icon; error → toast.
-- [ ] **2.5 Pagination** — `‹ [page ▾] ›  1–25 of 196` + page-size selector
+- [x] **2.5 Pagination** — `‹ [page ▾] ›  1–25 of 196` + page-size selector
       (25/50/100), replacing Previous/Next.
-- [ ] **2.6 Saved searches** — `Save as new search` → name it, appears in a
+- [x] **2.6 Saved searches** — `Save as new search` → name it, appears in a
       "Saved searches" dropdown in the toolbar and under the filter rail.
       *Needs backend:* `SavedSearch { id, workspaceId, type, name, filters
       Json }` + CRUD route.
-- [ ] **2.7 Companies parity** — same rail/table/bulk treatment; LINKS cell
+- [x] **2.7 Companies parity** — same rail/table/bulk treatment; LINKS cell
       (website · LinkedIn) with icons; EMPLOYEES pill; INDUSTRY chip;
       `+ Save` → add to company list.
-- [ ] **2.8 Empty/loading** — skeleton rows while fetching (not
+- [x] **2.8 Empty/loading** — skeleton rows while fetching (not
       "Searching…"); designed empty state ("0 people match" + *Reset
       filters*).
 

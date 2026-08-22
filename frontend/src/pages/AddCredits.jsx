@@ -1,10 +1,15 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 import {
   useListBillingPackagesQuery,
   useGetCustomCreditsPriceQuery,
   useCreateCheckoutSessionMutation,
 } from '../api/billingApi.js';
+import { PageHeader } from '../components/ui/PageHeader.jsx';
+import { Button } from '../components/ui/Button.jsx';
+import { Banner } from '../components/ui/Banner.jsx';
+import { SegmentedControl } from '../components/ui/SegmentedControl.jsx';
+import { StatusPill } from '../components/ui/StatusPill.jsx';
 
 function formatPrice(priced, currency) {
   return currency === 'INR'
@@ -55,50 +60,47 @@ export function AddCredits() {
     }
   }
 
+  const optionBase =
+    'relative rounded-lg border bg-surface-elevated p-5 text-left transition-colors duration-150 ease-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus';
+  const optionActive = 'border-primary ring-1 ring-primary';
+  const optionIdle = 'border-border hover:border-text-muted/40';
+
   return (
     <div className="max-w-2xl">
-      <Link to="/app/billing" className="text-sm font-medium text-primary hover:underline">
-        &larr; Back to billing
-      </Link>
-      <h1 className="mt-3 text-xl font-semibold text-text">Add credits</h1>
-      <p className="mt-1 text-sm text-text-muted">
-        Pick a credit package or enter a custom amount. You'll be sent to a secure payment page to
-        complete the purchase.
-      </p>
+      <PageHeader
+        backTo="/app/billing"
+        backLabel="Billing"
+        title="Add credits"
+        description="Pick a credit package or enter a custom amount. You'll be sent to a secure payment page to complete the purchase."
+        actions={
+          <SegmentedControl
+            ariaLabel="Currency"
+            value={currency}
+            onChange={setCurrency}
+            options={[
+              { value: 'USD', label: 'USD' },
+              { value: 'INR', label: 'INR' },
+            ]}
+          />
+        }
+      />
 
-      <div className="mt-4 inline-flex rounded-md border border-border p-0.5">
-        {['USD', 'INR'].map((c) => (
-          <button
-            key={c}
-            type="button"
-            onClick={() => setCurrency(c)}
-            className={`rounded px-3 py-1 text-xs font-bold ${
-              currency === c ? 'bg-gradient-action text-white' : 'text-text-muted'
-            }`}
-          >
-            {c}
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {(packages ?? []).map((pkg) => (
           <button
             key={pkg.credits}
             type="button"
             onClick={() => setSelected(pkg.credits)}
-            className={`relative rounded-lg border p-5 text-left transition-colors duration-150 ease-brand ${
-              activeCredits === pkg.credits
-                ? 'border-primary bg-surface-elevated ring-2 ring-primary'
-                : 'border-border bg-surface-elevated hover:border-primary/40'
-            }`}
+            className={`${optionBase} ${activeCredits === pkg.credits ? optionActive : optionIdle}`}
           >
             {pkg.badge && (
-              <span className="absolute -top-2.5 left-4 rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+              <StatusPill tone="accent" className="absolute -top-2.5 left-4">
                 {pkg.badge}
-              </span>
+              </StatusPill>
             )}
-            <p className="text-2xl font-extrabold text-text">{pkg.credits.toLocaleString()}</p>
+            <p className="text-2xl font-extrabold tabular-nums text-text">
+              {pkg.credits.toLocaleString()}
+            </p>
             <p className="text-xs font-medium text-text-muted">credits</p>
             <p className="mt-3 text-lg font-bold text-primary">{formatPrice(pkg, currency)}</p>
           </button>
@@ -108,11 +110,7 @@ export function AddCredits() {
       <button
         type="button"
         onClick={() => setSelected('custom')}
-        className={`mt-4 w-full rounded-lg border p-5 text-left transition-colors duration-150 ease-brand ${
-          isCustom
-            ? 'border-primary bg-surface-elevated ring-2 ring-primary'
-            : 'border-border bg-surface-elevated hover:border-primary/40'
-        }`}
+        className={`${optionBase} mt-3 w-full ${isCustom ? optionActive : optionIdle}`}
       >
         <p className="text-sm font-bold text-text">Custom amount</p>
         <p className="text-xs text-text-muted">
@@ -134,7 +132,7 @@ export function AddCredits() {
               value={customAmount}
               onChange={(e) => setCustomAmount(e.target.value)}
               placeholder={`e.g. ${customRange ? customRange.min * 2 : 500}`}
-              className="w-40 rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:border-focus focus:outline-none"
+              className="h-9 w-40 rounded-md border border-border bg-surface-elevated px-3 text-sm text-text focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus/25"
             />
             <span className="text-sm text-text-muted">credits</span>
             {customAmount && !customValid && customRange && (
@@ -152,16 +150,24 @@ export function AddCredits() {
         )}
       </button>
 
-      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+      {error && (
+        <Banner tone="danger" className="mt-4">
+          {error}
+        </Banner>
+      )}
 
-      <button
-        type="button"
-        onClick={handleContinue}
-        disabled={startingCheckout || !canContinue}
-        className="mt-6 rounded-md bg-gradient-action px-5 py-2.5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(148,0,222,0.24)] transition-transform duration-150 ease-brand hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {startingCheckout ? 'Starting checkout…' : 'Continue to payment'}
-      </button>
+      <div className="mt-6">
+        <Button
+          variant="hero"
+          size="lg"
+          iconRight={ArrowRight}
+          onClick={handleContinue}
+          loading={startingCheckout}
+          disabled={!canContinue}
+        >
+          Continue to payment
+        </Button>
+      </div>
     </div>
   );
 }

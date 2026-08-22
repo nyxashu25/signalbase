@@ -21,7 +21,7 @@ describe('AddToListButton', () => {
     const user = userEvent.setup();
     setup([{ url: /\/lists$/, respond: { body: { lists: existingLists } } }]);
 
-    await user.click(screen.getByRole('button', { name: '+ List' }));
+    await user.click(screen.getByRole('button', { name: 'Add to list' }));
     expect(await screen.findByText('Q1 targets')).toBeInTheDocument();
     expect(screen.queryByText('Enterprise accounts')).not.toBeInTheDocument();
   });
@@ -30,7 +30,7 @@ describe('AddToListButton', () => {
     const user = userEvent.setup();
     setup([{ url: /\/lists$/, respond: { body: { lists: [] } } }]);
 
-    await user.click(screen.getByRole('button', { name: '+ List' }));
+    await user.click(screen.getByRole('button', { name: 'Add to list' }));
     expect(await screen.findByText('No lists yet')).toBeInTheDocument();
   });
 
@@ -41,7 +41,7 @@ describe('AddToListButton', () => {
       { url: '/lists/l1/items', method: 'POST', respond: { body: { ok: true } } },
     ]);
 
-    await user.click(screen.getByRole('button', { name: '+ List' }));
+    await user.click(screen.getByRole('button', { name: 'Add to list' }));
     await user.click(await screen.findByText('Q1 targets'));
     await waitFor(() => expect(screen.getByText('Added')).toBeInTheDocument());
   });
@@ -58,7 +58,7 @@ describe('AddToListButton', () => {
       { url: '/lists/l3/items', method: 'POST', respond: { body: { ok: true } } },
     ]);
 
-    await user.click(screen.getByRole('button', { name: '+ List' }));
+    await user.click(screen.getByRole('button', { name: 'Add to list' }));
     await user.type(await screen.findByPlaceholderText('New list name'), 'New list');
     await user.click(screen.getByRole('button', { name: 'Add' }));
     await waitFor(() => expect(screen.getByPlaceholderText('New list name')).toHaveValue(''));

@@ -1,21 +1,24 @@
+import { Download } from 'lucide-react';
 import { useCsvDownload } from '../hooks/useCsvDownload.js';
 import { useGetCreditCostsQuery } from '../api/billingApi.js';
+import { Button } from './ui/Button.jsx';
 
-export function ExportCsvButton({ path, label = 'Export CSV' }) {
+export function ExportCsvButton({ path, label = 'Export CSV', size = 'md', variant = 'secondary' }) {
   const { download, isDownloading, error } = useCsvDownload();
   const { data: costs } = useGetCreditCostsQuery();
 
   return (
     <div className="flex items-center gap-2">
-      <button
-        type="button"
+      <Button
+        variant={variant}
+        size={size}
+        icon={Download}
         onClick={() => download(path)}
-        disabled={isDownloading}
+        loading={isDownloading}
         title={costs ? `Spends ${costs.CSV_EXPORT} credits` : undefined}
-        className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-text-muted hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isDownloading ? 'Exporting…' : label}
-      </button>
+      </Button>
       {error && <span className="text-xs text-red-600">{error}</span>}
     </div>
   );

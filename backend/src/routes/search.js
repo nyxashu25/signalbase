@@ -1,12 +1,14 @@
 import { Router } from 'express';
 import * as searchController from '../controllers/searchController.js';
 import { requireAuth } from '../middleware/auth.js';
-import { validateQuery } from '../middleware/validate.js';
+import { validateBody, validateQuery } from '../middleware/validate.js';
 import {
   searchCompaniesQuerySchema,
   searchPeopleQuerySchema,
   exportCompaniesQuerySchema,
   exportPeopleQuerySchema,
+  listSavedSearchesQuerySchema,
+  createSavedSearchSchema,
 } from '../validators/searchValidators.js';
 import { rateLimit, byWorkspace } from '../middleware/rateLimit.js';
 import { reserveCredits, releaseOnError } from '../middleware/reserveCredits.js';
@@ -26,6 +28,28 @@ const exportLimiter = rateLimit({
   prefix: 'export',
   keyFn: byWorkspace,
 });
+
+const savedSearchLimiter = rateLimit({
+  limit: 30,
+  windowSeconds: 60 * 60,
+  prefix: 'saved-search-create',
+  keyFn: byWorkspace,
+});
+
+// Saved searches — declared before /companies/:id and friends so "saved"
+// is never captured as an id.
+searchRouter.get(
+  '/saved',
+  validateQuery(listSavedSearchesQuerySchema),
+  asyncHandler(searchController.listSavedSearches),
+);
+searchRouter.post(
+  '/saved',
+  savedSearchLimiter,
+  validateBody(createSavedSearchSchema),
+  asyncHandler(searchController.createSavedSearch),
+);
+searchRouter.delete('/saved/:id', asyncHandler(searchController.deleteSavedSearch));
 
 searchRouter.get(
   '/companies',

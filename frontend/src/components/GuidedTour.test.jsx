@@ -75,7 +75,7 @@ describe('GuidedTour', () => {
     );
 
     await user.click(screen.getByRole('button', { name: 'Next' }));
-    expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Home' })).toBeInTheDocument();
     expect(screen.getByText('Step 2 of 10')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Back' }));

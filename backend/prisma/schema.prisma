@@ -72,6 +72,7 @@ model Workspace {
   enrollments        SequenceEnrollment[]
   suppressions       SuppressionEntry[]
   tickets            Ticket[]
+  savedSearches      SavedSearch[]
 
   @@index([orgId])
 }
@@ -118,6 +119,7 @@ model User {
   emailReveals       EmailReveal[]
   companyDetailViews CompanyDetailView[]
   createdLists       List[]              @relation("ListCreatedBy")
+  createdSavedSearches SavedSearch[]     @relation("SavedSearchCreatedBy")
   createdSequences   Sequence[]          @relation("SequenceCreatedBy")
   createdTickets     Ticket[]
   ticketMessages     TicketMessage[]
@@ -320,6 +322,31 @@ model List {
   items     ListItem[]
 
   @@index([workspaceId])
+}
+
+enum SavedSearchType {
+  PEOPLE
+  COMPANIES
+}
+
+// A named, workspace-shared shortcut back to a People/Companies search.
+// `filters` is the frontend's filter state stored verbatim and replayed
+// client-side (see pages/People.jsx) — the backend validates its size and
+// shape but never interprets the keys, so adding a filter to the search
+// screens doesn't require a migration here.
+model SavedSearch {
+  id          String          @id @default(uuid())
+  workspaceId String
+  createdById String
+  type        SavedSearchType
+  name        String
+  filters     Json
+  createdAt   DateTime        @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("SavedSearchCreatedBy", fields: [createdById], references: [id])
+
+  @@index([workspaceId, type])
 }
 
 model ListItem {

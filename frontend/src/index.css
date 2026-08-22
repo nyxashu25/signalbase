@@ -4,7 +4,14 @@
 
 /* DataPit design tokens — see DataPit_Design_Language/DESIGN_LANGUAGE.md.
    Light is the default surface; [data-theme='dark'] overrides for the
-   dark-mode expression described in section 14. */
+   dark-mode expression described in section 14.
+
+   Every semantic color is defined twice: as a hex (`--dp-primary`) for
+   plain CSS, and as a space-separated RGB triplet (`--dp-primary-rgb`) that
+   tailwind.config.js wraps in rgb(... / <alpha-value>) — that second form
+   is what lets `bg-primary/10`, `ring-focus/25` etc. actually work. A
+   bare `var(--hex)` color can't take a Tailwind opacity modifier; the class
+   is silently dropped. Keep both in sync when you touch a theme. */
 :root {
   --dp-indigo: #440066;
   --dp-indigo-2: #610091;
@@ -29,15 +36,29 @@
   --dp-ink-50: #faf7fb;
 
   --dp-bg: #ffffff;
+  --dp-bg-rgb: 255 255 255;
   --dp-surface: #faf7fb;
+  --dp-surface-rgb: 250 247 251;
   --dp-surface-elevated: #ffffff;
+  --dp-surface-elevated-rgb: 255 255 255;
+  --dp-surface-hover: #f3eef6;
+  --dp-surface-hover-rgb: 243 238 246;
+  --dp-surface-sunken: #f5f2f7;
+  --dp-surface-sunken-rgb: 245 242 247;
   --dp-text: #180022;
+  --dp-text-rgb: 24 0 34;
   --dp-text-muted: #5b4963;
+  --dp-text-muted-rgb: 91 73 99;
   --dp-border: #e6ddeb;
+  --dp-border-rgb: 230 221 235;
   --dp-primary: #7c00ba;
+  --dp-primary-rgb: 124 0 186;
   --dp-primary-hover: #610091;
+  --dp-primary-hover-rgb: 97 0 145;
   --dp-accent: #aa00ff;
+  --dp-accent-rgb: 170 0 255;
   --dp-focus: #c552ff;
+  --dp-focus-rgb: 197 82 255;
 
   --dp-gradient-action: linear-gradient(
     135deg,
@@ -53,6 +74,14 @@
     var(--dp-hyper-magenta) 76%,
     var(--dp-mauve-magic) 100%
   );
+
+  /* Radii are tokens too (tailwind.config.js reads these) so the dense
+     in-app shell can run tighter corners than the editorial marketing site
+     without touching a single component class. */
+  --dp-radius-sm: 8px;
+  --dp-radius-md: 12px;
+  --dp-radius-lg: 16px;
+  --dp-radius-xl: 24px;
 }
 
 /* Auto: follows the OS/browser preference when the user hasn't picked an
@@ -61,36 +90,169 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     --dp-bg: #0a0011;
+    --dp-bg-rgb: 10 0 17;
     --dp-surface: #14001d;
+    --dp-surface-rgb: 20 0 29;
     --dp-surface-elevated: #1d002a;
+    --dp-surface-elevated-rgb: 29 0 42;
+    --dp-surface-hover: #26063a;
+    --dp-surface-hover-rgb: 38 6 58;
+    --dp-surface-sunken: #0f0018;
+    --dp-surface-sunken-rgb: 15 0 24;
     --dp-text: #ffffff;
+    --dp-text-rgb: 255 255 255;
     --dp-text-muted: #baafc0;
+    --dp-text-muted-rgb: 186 175 192;
     --dp-border: #3c1551;
+    --dp-border-rgb: 60 21 81;
     --dp-primary: #aa00ff;
+    --dp-primary-rgb: 170 0 255;
     --dp-primary-hover: #be3dff;
+    --dp-primary-hover-rgb: 190 61 255;
     --dp-accent: #cf70ff;
+    --dp-accent-rgb: 207 112 255;
     --dp-focus: #c552ff;
+    --dp-focus-rgb: 197 82 255;
   }
 }
 
 /* Explicit override, either direction, always wins over the OS preference. */
 [data-theme='dark'] {
   --dp-bg: #0a0011;
+  --dp-bg-rgb: 10 0 17;
   --dp-surface: #14001d;
+  --dp-surface-rgb: 20 0 29;
   --dp-surface-elevated: #1d002a;
+  --dp-surface-elevated-rgb: 29 0 42;
+  --dp-surface-hover: #26063a;
+  --dp-surface-hover-rgb: 38 6 58;
+  --dp-surface-sunken: #0f0018;
+  --dp-surface-sunken-rgb: 15 0 24;
   --dp-text: #ffffff;
+  --dp-text-rgb: 255 255 255;
   --dp-text-muted: #baafc0;
+  --dp-text-muted-rgb: 186 175 192;
   --dp-border: #3c1551;
+  --dp-border-rgb: 60 21 81;
   --dp-primary: #aa00ff;
+  --dp-primary-rgb: 170 0 255;
   --dp-primary-hover: #be3dff;
+  --dp-primary-hover-rgb: 190 61 255;
   --dp-accent: #cf70ff;
+  --dp-accent-rgb: 207 112 255;
   --dp-focus: #c552ff;
+  --dp-focus-rgb: 197 82 255;
+}
+
+/* -------------------------------------------------------------------------
+   App shell (everything under /app) — a neutral, near-monochrome surface
+   palette with purple kept strictly as the accent, per docs/UX-ROADMAP.md.
+   Scoped as a class override rather than a second theme so the marketing
+   site, Login, and the admin panel keep their purple-ink look untouched;
+   the same three-block light / OS-dark / explicit-dark structure as the
+   root tokens above.
+   ------------------------------------------------------------------------- */
+.app-shell {
+  --dp-bg: #f6f6f7;
+  --dp-bg-rgb: 246 246 247;
+  --dp-surface: #f6f6f7;
+  --dp-surface-rgb: 246 246 247;
+  --dp-surface-elevated: #ffffff;
+  --dp-surface-elevated-rgb: 255 255 255;
+  --dp-surface-hover: #efeff1;
+  --dp-surface-hover-rgb: 239 239 241;
+  --dp-surface-sunken: #ededf0;
+  --dp-surface-sunken-rgb: 237 237 240;
+  --dp-text: #141417;
+  --dp-text-rgb: 20 20 23;
+  --dp-text-muted: #6b6b75;
+  --dp-text-muted-rgb: 107 107 117;
+  --dp-border: #e4e4e8;
+  --dp-border-rgb: 228 228 232;
+  --dp-primary: #7c00ba;
+  --dp-primary-rgb: 124 0 186;
+  --dp-primary-hover: #610091;
+  --dp-primary-hover-rgb: 97 0 145;
+  --dp-accent: #9400de;
+  --dp-accent-rgb: 148 0 222;
+  --dp-focus: #aa00ff;
+  --dp-focus-rgb: 170 0 255;
+
+  --dp-radius-sm: 6px;
+  --dp-radius-md: 8px;
+  --dp-radius-lg: 12px;
+  --dp-radius-xl: 16px;
+
+  font-size: 14px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .app-shell {
+    --dp-bg: #0b0b0d;
+    --dp-bg-rgb: 11 11 13;
+    --dp-surface: #0b0b0d;
+    --dp-surface-rgb: 11 11 13;
+    --dp-surface-elevated: #151518;
+    --dp-surface-elevated-rgb: 21 21 24;
+    --dp-surface-hover: #1c1c20;
+    --dp-surface-hover-rgb: 28 28 32;
+    --dp-surface-sunken: #101013;
+    --dp-surface-sunken-rgb: 16 16 19;
+    --dp-text: #f4f4f6;
+    --dp-text-rgb: 244 244 246;
+    --dp-text-muted: #9b9ba6;
+    --dp-text-muted-rgb: 155 155 166;
+    --dp-border: #26262b;
+    --dp-border-rgb: 38 38 43;
+    --dp-primary: #b44dff;
+    --dp-primary-rgb: 180 77 255;
+    --dp-primary-hover: #c77aff;
+    --dp-primary-hover-rgb: 199 122 255;
+    --dp-accent: #cf70ff;
+    --dp-accent-rgb: 207 112 255;
+    --dp-focus: #c552ff;
+    --dp-focus-rgb: 197 82 255;
+  }
+}
+
+[data-theme='dark'] .app-shell {
+  --dp-bg: #0b0b0d;
+  --dp-bg-rgb: 11 11 13;
+  --dp-surface: #0b0b0d;
+  --dp-surface-rgb: 11 11 13;
+  --dp-surface-elevated: #151518;
+  --dp-surface-elevated-rgb: 21 21 24;
+  --dp-surface-hover: #1c1c20;
+  --dp-surface-hover-rgb: 28 28 32;
+  --dp-surface-sunken: #101013;
+  --dp-surface-sunken-rgb: 16 16 19;
+  --dp-text: #f4f4f6;
+  --dp-text-rgb: 244 244 246;
+  --dp-text-muted: #9b9ba6;
+  --dp-text-muted-rgb: 155 155 166;
+  --dp-border: #26262b;
+  --dp-border-rgb: 38 38 43;
+  --dp-primary: #b44dff;
+  --dp-primary-rgb: 180 77 255;
+  --dp-primary-hover: #c77aff;
+  --dp-primary-hover-rgb: 199 122 255;
+  --dp-accent: #cf70ff;
+  --dp-accent-rgb: 207 112 255;
+  --dp-focus: #c552ff;
+  --dp-focus-rgb: 197 82 255;
 }
 
 body {
   font-family: 'Montserrat', 'Avenir Next', Arial, sans-serif;
   background: var(--dp-bg);
   color: var(--dp-text);
+}
+
+/* Native checkboxes inside the app shell pick up the accent instead of the
+   browser default blue — the one place accent-color beats a custom control. */
+.app-shell input[type='checkbox'],
+.app-shell input[type='radio'] {
+  accent-color: var(--dp-primary);
 }
 
 /* Logo theme swap — see components/Logo.jsx. Same three-block structure as
@@ -170,6 +332,41 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .marquee-track {
     animation: none !important;
+  }
+}
+
+/* In-app micro-entrances (tooltips, toasts, popovers). Deliberately short and
+   subtle — tool chrome should feel instant, not animated. */
+@keyframes dp-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes dp-slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.dp-pop-in {
+  animation: dp-pop-in 0.14s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.dp-slide-in-right {
+  animation: dp-slide-in-right 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .dp-pop-in,
+  .dp-slide-in-right {
+    animation: none;
   }
 }
 

@@ -43,11 +43,14 @@ All routes require auth.
 
 | Method | Path | Credits | Rate limit | Notes |
 |---|---|---|---|---|
-| GET | `/companies` | — | — | Faceted Elasticsearch query; hydrated from Postgres. |
-| GET | `/companies/export` | 20 (`CSV_EXPORT`) | 10/min/workspace | Unpaginated, capped at 5000 rows. Must be declared before `/companies/:id`. |
+| GET | `/saved` | — | — | Workspace's saved searches; `?type=PEOPLE|COMPANIES` to filter. |
+| POST | `/saved` | — | 30/hour/workspace | `{ type, name, filters }` — `filters` is the frontend's filter state stored verbatim (≤4KB), replayed client-side. Max 50 per type. |
+| DELETE | `/saved/:id` | — | — | 404 (not 403) for another workspace's row. |
+| GET | `/companies` | — | — | Faceted Elasticsearch query; hydrated from Postgres. Params: `q`, `industry[]`, `location[]`, `techStack[]`, `headcount[]` (bucket keys `1-10 … 5001+`, matched on `headcountMin`), `sort` (`relevance|name_asc|name_desc|headcount_desc|newest`), `page`, `pageSize`. Facets: `industry`, `location`, `techStack`, `headcount` (range agg, declared bucket order). |
+| GET | `/companies/export` | 20 (`CSV_EXPORT`) | 10/min/workspace | Unpaginated, capped at 5000 rows. Same filters as `/companies` minus paging. Must be declared before `/companies/:id`. |
 | GET | `/companies/:id` | 20 (`COMPANY_DETAIL_VIEW`), skipped if already viewed | — | `reserveCompanyViewCredits` checks `CompanyDetailView` first — a repeat view by the same workspace is free. |
-| GET | `/people` | — | — | Contact search; results run through `attachRevealStatus` (masked unless revealed). |
-| GET | `/people/export` | 20 (`CSV_EXPORT`) | 10/min/workspace | Same 5000-row cap as company export. |
+| GET | `/people` | — | — | Contact search; results run through `attachRevealStatus` (masked unless revealed). Params: `q`, `title` / `company` (prefix-phrase "contains"), `seniority[]`, `department[]`, `industry[]`, `location[]`, `emailStatus[]` (`verified|unverified|not_found`, derived from the indexed `hasEmail`/`emailVerified` booleans), `sort` (`relevance|name_asc|name_desc|newest`), `page`, `pageSize`. Facets: the four term facets + `emailStatus` (filters agg). |
+| GET | `/people/export` | 20 (`CSV_EXPORT`) | 10/min/workspace | Same 5000-row cap and filters as `/people`. |
 
 ## Contacts (reveal) — `/api/v1/contacts` (`routes/contacts.js`)
 

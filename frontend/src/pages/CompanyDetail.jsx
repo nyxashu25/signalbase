@@ -1,10 +1,19 @@
-import { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { Globe, MapPin, Users, Briefcase } from 'lucide-react';
+import { LinkedInIcon } from '../components/LinkedInIcon.jsx';
 import { searchApi, useGetCompanyDetailQuery } from '../api/searchApi.js';
 import { useRevealContactMutation } from '../api/contactsApi.js';
-import { useGetCreditCostsQuery } from '../api/billingApi.js';
 import { AddToListButton } from '../components/AddToListButton.jsx';
+import { ContactRow } from '../components/ContactRow.jsx';
+import { PageHeader } from '../components/ui/PageHeader.jsx';
+import { Button } from '../components/ui/Button.jsx';
+import { Banner } from '../components/ui/Banner.jsx';
+import { Card, TableFrame, thClass } from '../components/ui/Card.jsx';
+import { EmptyState } from '../components/ui/EmptyState.jsx';
+import { Skeleton, SkeletonRows } from '../components/ui/Skeleton.jsx';
+import { LetterAvatar } from '../components/ui/LetterAvatar.jsx';
+import { StatusPill } from '../components/ui/StatusPill.jsx';
 
 function headcountLabel(min, max) {
   if (!min && !max) return null;
@@ -17,7 +26,6 @@ export function CompanyDetail() {
   const dispatch = useDispatch();
   const { data: company, isLoading, isError, error } = useGetCompanyDetailQuery(id);
   const [revealContact] = useRevealContactMutation();
-  const { data: costs } = useGetCreditCostsQuery();
 
   async function handleReveal(contactId) {
     const result = await revealContact({ contactId, idempotencyKey: crypto.randomUUID() }).unwrap();
@@ -35,163 +43,162 @@ export function CompanyDetail() {
   }
 
   if (isError) {
-    if (error?.status === 402) {
-      return (
-        <p className="text-sm text-red-600">
-          Not enough credits to view this company —{' '}
-          <Link to="/app/billing/add-credits" className="underline">
-            add more credits
-          </Link>{' '}
-          to continue.
-        </p>
-      );
-    }
-    return <p className="text-sm text-red-600">Company not found.</p>;
+    return (
+      <div className="max-w-3xl">
+        <PageHeader backTo="/app/companies" backLabel="Companies" title="Company" />
+        {error?.status === 402 ? (
+          <Banner tone="warning" title="Not enough credits to view this company" action="Add credits" actionTo="/app/billing/add-credits">
+            Viewing a company profile for the first time costs credits; repeat views are free.
+          </Banner>
+        ) : (
+          <Banner tone="danger" title="Company not found">
+            It may have been removed, or the link is out of date.
+          </Banner>
+        )}
+      </div>
+    );
   }
+
   if (isLoading || !company) {
-    return <p className="text-sm text-text-muted">Loading…</p>;
+    return (
+      <div className="max-w-5xl">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="mt-3 h-7 w-72" />
+        <Card className="mt-5 p-5">
+          <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="mt-2 h-4 w-1/3" />
+        </Card>
+        <TableFrame className="mt-6">
+          <table className="w-full">
+            <tbody>
+              <SkeletonRows rows={5} columns={5} />
+            </tbody>
+          </table>
+        </TableFrame>
+      </div>
+    );
   }
 
   const headcount = headcountLabel(company.headcountMin, company.headcountMax);
 
   return (
-    <div className="max-w-4xl">
-      <Link to="/app/companies" className="text-sm font-medium text-primary hover:underline">
-        &larr; Back to companies
-      </Link>
+    <div className="max-w-5xl">
+      <PageHeader
+        backTo="/app/companies"
+        backLabel="Companies"
+        title={
+          <span className="flex items-center gap-3">
+            <LetterAvatar name={company.name} size="lg" square />
+            {company.name}
+          </span>
+        }
+        actions={<AddToListButton type="COMPANIES" companyId={company.id} />}
+      />
 
       {company.viewCost > 0 && (
-        <p className="mt-2 text-xs text-text-muted">
+        <Banner tone="info" className="mb-4" dismissible>
           Viewing this profile used {company.viewCost} credits — revisiting it later is free.
-        </p>
+        </Banner>
       )}
 
-      <div className="mt-3 flex items-start justify-between gap-4 rounded-lg border border-border bg-surface-elevated p-5">
-        <div>
-          <h1 className="text-xl font-semibold text-text">{company.name}</h1>
+      <Card className="p-5">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-text-muted">
           <a
             href={`https://${company.domain}`}
             target="_blank"
             rel="noreferrer"
-            className="mt-0.5 block text-sm text-primary hover:underline"
+            className="inline-flex items-center gap-1.5 font-medium text-primary hover:underline"
           >
+            <Globe className="h-4 w-4" aria-hidden="true" />
             {company.domain}
           </a>
-
-          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-text-muted">
-            {company.industry && <span>{company.industry}</span>}
-            {company.location && <span>{company.location}</span>}
-            {headcount && <span>{headcount}</span>}
-            {company.linkedinUrl && (
-              <a href={company.linkedinUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline">
-                LinkedIn
-              </a>
-            )}
-          </div>
-
-          {company.techStack?.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {company.techStack.map((tech) => (
-                <span
-                  key={tech}
-                  className="rounded-full bg-surface px-2.5 py-1 text-xs font-medium text-text-muted"
-                >
-                  {tech}
-                </span>
-              ))}
-            </div>
+          {company.linkedinUrl && (
+            <a
+              href={company.linkedinUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 font-medium text-primary hover:underline"
+            >
+              <LinkedInIcon className="h-4 w-4" />
+              LinkedIn
+            </a>
+          )}
+          {company.industry && (
+            <span className="inline-flex items-center gap-1.5">
+              <Briefcase className="h-4 w-4" aria-hidden="true" />
+              {company.industry}
+            </span>
+          )}
+          {company.location && (
+            <span className="inline-flex items-center gap-1.5">
+              <MapPin className="h-4 w-4" aria-hidden="true" />
+              {company.location}
+            </span>
+          )}
+          {headcount && (
+            <span className="inline-flex items-center gap-1.5">
+              <Users className="h-4 w-4" aria-hidden="true" />
+              {headcount}
+            </span>
           )}
         </div>
 
-        <AddToListButton type="COMPANIES" companyId={company.id} />
-      </div>
+        {company.techStack?.length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-1.5">
+            {company.techStack.map((tech) => (
+              <StatusPill key={tech}>{tech}</StatusPill>
+            ))}
+          </div>
+        )}
+      </Card>
 
-      <h2 className="mt-8 text-sm font-bold uppercase tracking-wide text-text-muted">
-        Contacts &middot; {company.contacts.length}
-      </h2>
-      <div className="mt-3 overflow-x-auto rounded-lg border border-border bg-surface-elevated">
+      <div className="mb-3 mt-8 flex items-center justify-between">
+        <h2 className="text-sm font-bold text-text">
+          Contacts <span className="font-medium text-text-muted">· {company.contacts.length}</span>
+        </h2>
+      </div>
+      <TableFrame>
         <table className="w-full">
           <thead>
-            <tr className="border-b border-border text-left text-xs font-medium uppercase tracking-wide text-text-muted">
-              <th className="px-4 py-3">Name</th>
-              <th className="px-4 py-3">Title</th>
-              <th className="px-4 py-3">Department</th>
-              <th className="px-4 py-3">Email</th>
-              <th className="px-4 py-3"></th>
+            <tr>
+              <th className={thClass}>Name</th>
+              <th className={thClass}>Title</th>
+              <th className={thClass}>
+                <span className="sr-only">LinkedIn</span>
+              </th>
+              <th className={thClass}>Company</th>
+              <th className={thClass}>Department</th>
+              <th className={thClass}>Email</th>
+              <th className={thClass}>
+                <span className="sr-only">Actions</span>
+              </th>
             </tr>
           </thead>
           <tbody>
             {company.contacts.map((contact) => (
-              <ContactDetailRow
+              <ContactRow
                 key={contact.id}
-                contact={contact}
+                contact={{ ...contact, company: { id: company.id, name: company.name } }}
                 onReveal={handleReveal}
-                revealCost={costs?.REVEAL}
               />
             ))}
             {company.contacts.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-sm text-text-muted">
-                  No contacts on file for this company yet.
+                <td colSpan={7}>
+                  <EmptyState compact icon={Users} title="No contacts on file yet">
+                    We don&rsquo;t have people for this company in the database yet.
+                  </EmptyState>
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+      </TableFrame>
+      <div className="mt-3">
+        <Button variant="ghost" size="sm" to="/app/companies">
+          Back to companies
+        </Button>
       </div>
     </div>
-  );
-}
-
-function ContactDetailRow({ contact, onReveal, revealCost }) {
-  const [status, setStatus] = useState('idle');
-  const [error, setError] = useState(null);
-
-  async function handleReveal() {
-    setStatus('revealing');
-    setError(null);
-    try {
-      await onReveal(contact.id);
-      setStatus('idle');
-    } catch (err) {
-      setStatus('error');
-      setError(err.message || 'Reveal failed');
-    }
-  }
-
-  return (
-    <tr className="border-b border-border hover:bg-surface">
-      <td className="px-4 py-3 text-sm font-medium text-text">
-        {contact.firstName} {contact.lastName}
-      </td>
-      <td className="px-4 py-3 text-sm text-text-muted">{contact.title ?? '—'}</td>
-      <td className="px-4 py-3 text-sm text-text-muted">{contact.department ?? '—'}</td>
-      <td className="px-4 py-3 text-sm">
-        {contact.revealed ? (
-          <span className="text-text">{contact.email}</span>
-        ) : contact.email ? (
-          <span className="font-mono text-text-muted">{contact.email}</span>
-        ) : (
-          <span className="text-ink-300">Not found yet</span>
-        )}
-        {status === 'error' && <div className="mt-1 text-xs text-red-600">{error}</div>}
-      </td>
-      <td className="px-4 py-3">
-        <div className="flex items-center justify-end gap-2">
-          {!contact.revealed && (
-            <button
-              type="button"
-              onClick={handleReveal}
-              disabled={status === 'revealing'}
-              title={`Spends ${revealCost ?? '…'} credits — finds and unlocks this contact's email`}
-              className="rounded-md border border-border px-2 py-1 text-xs text-text-muted hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {status === 'revealing' ? 'Revealing…' : 'Reveal'}
-            </button>
-          )}
-          <AddToListButton type="CONTACTS" contactId={contact.id} />
-        </div>
-      </td>
-    </tr>
   );
 }

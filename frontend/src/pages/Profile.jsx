@@ -1,8 +1,14 @@
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { Coins, LogOut } from 'lucide-react';
 import { useGetBillingSummaryQuery } from '../api/billingApi.js';
 import { useLogoutMutation } from '../api/authApi.js';
 import { clearSession } from '../store/authSlice.js';
+import { PageHeader } from '../components/ui/PageHeader.jsx';
+import { Button } from '../components/ui/Button.jsx';
+import { Card } from '../components/ui/Card.jsx';
+import { LetterAvatar } from '../components/ui/LetterAvatar.jsx';
+import { StatusPill } from '../components/ui/StatusPill.jsx';
 
 export function Profile() {
   const user = useSelector((s) => s.auth.user);
@@ -23,65 +29,48 @@ export function Profile() {
   }
 
   return (
-    <div className="max-w-xl">
-      <h1 className="text-xl font-semibold text-text">Profile</h1>
+    <div className="max-w-2xl">
+      <PageHeader title="Profile" description="Your account and workspace details." />
 
-      <div className="mt-6 rounded-lg border border-border bg-surface-elevated p-6 shadow-dp">
+      <Card className="p-6">
         <div className="flex items-center gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-action text-lg font-bold text-white">
-            {user?.name?.[0]?.toUpperCase() ?? '?'}
+          <LetterAvatar name={user?.name ?? '?'} size="xl" />
+          <div className="min-w-0">
+            <p className="truncate text-base font-bold text-text">{user?.name}</p>
+            <p className="truncate text-sm text-text-muted">{user?.email}</p>
           </div>
-          <div>
-            <p className="text-base font-bold text-text">{user?.name}</p>
-            <p className="text-sm text-text-muted">{user?.email}</p>
-          </div>
+          {role && (
+            <StatusPill tone="accent" className="ml-auto">
+              {role}
+            </StatusPill>
+          )}
         </div>
 
-        <dl className="mt-6 grid grid-cols-2 gap-4 border-t border-border pt-6">
-          <div>
-            <dt className="text-xs font-bold uppercase tracking-wide text-text-muted">
-              Organization
-            </dt>
-            <dd className="mt-1 text-sm font-semibold text-text">{workspace?.name}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-bold uppercase tracking-wide text-text-muted">Role</dt>
-            <dd className="mt-1 text-sm font-semibold text-text">{role}</dd>
-          </div>
-          <div>
-            <dt className="text-xs font-bold uppercase tracking-wide text-text-muted">
-              Credits used
-            </dt>
-            <dd className="mt-1 text-sm font-semibold text-text">
-              {isLoading ? '—' : summary?.creditsUsed}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-xs font-bold uppercase tracking-wide text-text-muted">
-              Credits remaining
-            </dt>
-            <dd className="mt-1 text-sm font-semibold text-text">
-              {isLoading ? '—' : summary?.balance}
-            </dd>
-          </div>
+        <dl className="mt-6 grid grid-cols-2 gap-4 border-t border-border pt-6 sm:grid-cols-4">
+          <Field label="Workspace" value={workspace?.name} />
+          <Field label="Plan" value={summary?.plan} />
+          <Field label="Credits used" value={isLoading ? '—' : summary?.creditsUsed} />
+          <Field label="Credits remaining" value={isLoading ? '—' : summary?.balance} />
         </dl>
 
-        <div className="mt-6 flex items-center gap-3 border-t border-border pt-6">
-          <Link
-            to="/app/billing/add-credits"
-            className="rounded-md bg-gradient-action px-4 py-2 text-sm font-bold text-white shadow-[0_10px_24px_rgba(148,0,222,0.24)] transition-transform duration-150 ease-brand hover:-translate-y-px"
-          >
+        <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-border pt-6">
+          <Button variant="primary" icon={Coins} to="/app/billing/add-credits">
             Add credits
-          </Link>
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="rounded-md border border-border px-4 py-2 text-sm font-bold text-red-600 hover:bg-surface"
-          >
-            Logout
-          </button>
+          </Button>
+          <Button variant="danger" icon={LogOut} onClick={handleLogout}>
+            Log out
+          </Button>
         </div>
-      </div>
+      </Card>
+    </div>
+  );
+}
+
+function Field({ label, value }) {
+  return (
+    <div>
+      <dt className="text-[11px] font-bold uppercase tracking-wide text-text-muted">{label}</dt>
+      <dd className="mt-1 truncate text-sm font-semibold text-text">{value ?? '—'}</dd>
     </div>
   );
 }

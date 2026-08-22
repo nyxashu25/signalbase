@@ -1,4 +1,5 @@
 import * as searchService from '../services/searchService.js';
+import * as savedSearchService from '../services/savedSearchService.js';
 import { toCsv } from '../utils/csv.js';
 import { resolveReservationForCommit } from '../services/creditService.js';
 import { prisma } from '../config/db.js';
@@ -77,6 +78,28 @@ export async function exportPeopleCsv(req, res) {
   });
   await chargeCsvExport(req);
   sendCsv(res, 'datapit-people.csv', toCsv(results, CONTACT_COLUMNS));
+}
+
+export async function listSavedSearches(req, res) {
+  const results = await savedSearchService.listSavedSearches(
+    req.auth.workspaceId,
+    req.validatedQuery,
+  );
+  res.json({ savedSearches: results });
+}
+
+export async function createSavedSearch(req, res) {
+  const savedSearch = await savedSearchService.createSavedSearch(
+    req.auth.workspaceId,
+    req.auth.userId,
+    req.body,
+  );
+  res.status(201).json({ savedSearch });
+}
+
+export async function deleteSavedSearch(req, res) {
+  await savedSearchService.deleteSavedSearch(req.auth.workspaceId, req.params.id);
+  res.status(204).end();
 }
 
 export { sendCsv, COMPANY_COLUMNS, CONTACT_COLUMNS };

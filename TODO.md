@@ -28,10 +28,11 @@ picked up or completed — don't let it drift from reality.
 
 ## In progress — in-app UX overhaul (see `docs/UX-ROADMAP.md`)
 
-Benchmarked against Apollo.io's authenticated app. Phase 1 (app shell +
+Benchmarked against Apollo.io's authenticated app. **Phase 1 (app shell +
 design-system primitives) and Phase 2 (People/Companies search screens) are
-approved and underway; Phases 3–5 (getting-started hub, empty states,
-settings area) are specced in the roadmap and wait on a review of 1+2 live.
+shipped and live.** Phases 3–5 (getting-started hub with credit rewards,
+designed empty states everywhere, settings area) are specced in the roadmap
+and wait on a review of 1+2 live before starting.
 
 ## P1 — real gaps, not urgent
 
@@ -55,14 +56,14 @@ settings area) are specced in the roadmap and wait on a review of 1+2 live.
       `backend/src/utils/createSuperAdmin.js` — appears deliberate).
 - [ ] Frontend test coverage is thin on the oldest core screens: Login,
       Dashboard, People, Companies, Sequences, marketing pages.
-- [ ] **Code-split the marketing site from the authenticated app.** Adding
-      framer-motion (for the marketing-page animations) pushed the single JS
-      bundle to ~170KB gzipped, past Vite's 500KB (minified) chunk warning.
-      Everyone pays that weight on first load, including users who only ever
-      hit `/app`. Splitting the marketing routes (`pages/marketing/*`) from
-      the authenticated app routes via `React.lazy`/dynamic `import()` in
-      `App.jsx` would let each side load only what it needs. Not urgent today
-      — worth doing before the bundle grows further.
+- [ ] **Code-split the marketing site from the authenticated app.** The
+      single JS bundle is now ~280KB gzipped (900KB minified) after
+      framer-motion/GSAP/Lenis for marketing and lucide/cmdk/Radix for the
+      app shell. Everyone pays that weight on first load, including users
+      who only ever hit `/app` (and vice versa). Splitting the marketing
+      routes (`pages/marketing/*`) from the authenticated app routes via
+      `React.lazy`/dynamic `import()` in `App.jsx` would let each side load
+      only what it needs. **Promote to P1 before Phase 3 adds more.**
 
 ## Done
 

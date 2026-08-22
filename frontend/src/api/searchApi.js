@@ -38,7 +38,28 @@ export const searchApi = baseApi.injectEndpoints({
         }
       },
     }),
+    listSavedSearches: builder.query({
+      query: (type) => `/search/saved${type ? `?type=${type}` : ''}`,
+      transformResponse: (res) => res.savedSearches,
+      providesTags: ['SavedSearches'],
+    }),
+    createSavedSearch: builder.mutation({
+      query: (body) => ({ url: '/search/saved', method: 'POST', body }),
+      transformResponse: (res) => res.savedSearch,
+      invalidatesTags: ['SavedSearches'],
+    }),
+    deleteSavedSearch: builder.mutation({
+      query: (id) => ({ url: `/search/saved/${id}`, method: 'DELETE' }),
+      invalidatesTags: ['SavedSearches'],
+    }),
   }),
 });
 
-export const { useSearchCompaniesQuery, useSearchPeopleQuery, useGetCompanyDetailQuery } = searchApi;
+export const {
+  useSearchCompaniesQuery,
+  useSearchPeopleQuery,
+  useGetCompanyDetailQuery,
+  useListSavedSearchesQuery,
+  useCreateSavedSearchMutation,
+  useDeleteSavedSearchMutation,
+} = searchApi;
