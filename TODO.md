@@ -17,27 +17,51 @@ picked up or completed — don't let it drift from reality.
       (OWNER/ADMIN/MEMBER) + `Membership` already exist in the schema, but
       there is no invite flow — every `/auth/register` call creates a brand
       new workspace. No way today for a paying customer to actually use more
-      than 1 seat.
-- [ ] **Password reset / forgot password.** No route, no token model, no UI.
-      A locked-out user has zero self-service recovery path.
+      than 1 seat. The landing spot is built: Settings → *Users & teams*
+      lists seats (`GET /workspace/members`) and has a disabled "Invite
+      teammate" button waiting for this; `routes/workspace.js` is where the
+      invite routes go.
+- [ ] **Password reset / forgot password.** No route, no token model, no UI
+      for the *unauthenticated* flow — a locked-out user has zero
+      self-service recovery. (Authenticated change-password, and first-set
+      for Google-only accounts, shipped in Settings → Security; the Resend +
+      purpose-scoped JWT pattern from email verification is the obvious
+      building block.)
 - [ ] **Sign in with Microsoft.** Needs an app registration (Client ID/
       Secret) in Microsoft Entra ID (Azure AD) from the user first.
 - [ ] **GDPR opt-out has no UI.** `POST /api/v1/privacy/opt-out` is real and
       rate-limited, but the Privacy marketing page just says "contact us" —
       nothing calls the endpoint.
 
-## In progress — in-app UX overhaul (see `docs/UX-ROADMAP.md`)
+### Waiting on the user (not code)
+
+- Verify the sending domain in Resend (P0 above) and say which domain, so
+  `RESEND_FROM_EMAIL` can be switched on the server.
+- Confirm the Google OAuth authorized origins/redirects for titans7.com in
+  the Google Cloud console (the client ID is configured; sign-in only works
+  once the origin is allow-listed there).
+- Microsoft Entra app registration (P0 above).
+
+## In-app UX overhaul — complete (see `docs/UX-ROADMAP.md`)
 
 Benchmarked against Apollo.io's authenticated app. **All five phases are
 shipped and live** (shell + primitives, search screens, getting-started
 hub, designed empty states / detail pages / sequence analytics, settings
 area). Two settings sections are deliberately partial until their P0s land:
 *Users & teams* lists seats but can't invite, and *Security* can change a
-password but there's still no forgot-password flow.
+password but there's still no forgot-password flow. Nothing further is
+planned under the roadmap; new UX work gets its own item here.
 
 ## P1 — real gaps, not urgent
 
-- (none open — the two previous P1s are in Done below)
+- [ ] **Backfill phone numbers on already-imported production contacts.**
+      Until 2026-08-22 the RPF importer discarded `TelephoneNo` /
+      `Alternative No.`, so every contact imported before then has
+      `phone = null` even if the CSV had one. New imports are fine. Fix is
+      operational: re-upload the original RPF CSV(s) through Extend Database
+      (companies/contacts are matched by domain/name and upserted) or run a
+      one-off backfill script against the CSV — no code change needed, but
+      nothing has been re-imported yet.
 
 ## P2 — known-deferred, not surprises
 
@@ -46,7 +70,22 @@ password but there's still no forgot-password flow.
 - [ ] No UI to create/manage additional super admins (CLI script only,
       `backend/src/utils/createSuperAdmin.js` — appears deliberate).
 - [ ] Frontend test coverage is thin on the oldest core screens: Login,
-      Dashboard, People, Companies, Sequences, marketing pages.
+      People, Companies, marketing pages. (Dashboard, Sequences, Tickets,
+      Settings and ListDetail's ContactRow gained tests in the UX phases.)
+- [ ] **Isolate the backend test suite from local dev state.** Tests use a
+      separate Postgres DB (`datapit_test`) but the *same* Redis and the
+      *same* Elasticsearch indices as `npm run dev` — `resetRedis()` wipes
+      every `credits:*` balance and `refresh:active:*` session, and
+      `search.test.js` recreates the `contacts`/`companies` indices. Running
+      `npm test` while developing therefore zeroes your demo credits, logs
+      you out and empties search until you reindex (happened three times on
+      2026-08-22). A Redis DB index / key prefix and an ES index prefix
+      driven by `NODE_ENV=test` would fix it.
+- [ ] **Seed is upsert-with-no-update.** `seed.js` upserts with `update: {}`,
+      so a field added to seed data later (phones, today) never reaches rows
+      that already exist — re-running the seed doesn't refresh them. Either
+      update the seed-owned fields on re-run or document `reset` as the way
+      to pick up seed changes.
 
 ## Done
 
