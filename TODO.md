@@ -28,7 +28,17 @@ picked up or completed — don't let it drift from reality.
 
 ## P1 — real gaps, not urgent
 
-Nothing open right now — see Done below for what was just closed out.
+- [ ] **Admin audit log only covers 4 actions.** `AdminAuditLog` records
+      suspend/unsuspend/plan-change/add-credits (what was originally asked
+      for), but not other sensitive super-admin actions: saving Stripe
+      credentials (`/control/settings`), approving a database-import batch,
+      or sending a promotional broadcast. None of those write an audit row
+      today.
+- [ ] **No unread indicator in the admin panel for a tenant's reply.** The
+      reverse direction exists (a nav badge in `/app` for a new admin
+      reply, plus the existing live-poll badge in `/control` for brand-new
+      tickets) — there's no equivalent nudge in `/control` when a user
+      replies back to an already-`ANSWERED` thread.
 
 ## P2 — known-deferred, not surprises
 
