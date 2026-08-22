@@ -6,6 +6,7 @@ import { ThemeToggle } from '../components/ThemeToggle.jsx';
 import { Logo } from '../components/Logo.jsx';
 import { GuidedTour } from '../components/GuidedTour.jsx';
 import { CreditBadge } from '../components/CreditBadge.jsx';
+import { useAnsweredTicketsBadge } from '../hooks/useAnsweredTicketsBadge.js';
 
 const NAV_ITEMS = [
   { to: '/app', label: 'Dashboard', end: true, tourId: 'nav-dashboard' },
@@ -19,6 +20,7 @@ const NAV_ITEMS = [
 export function AppLayout() {
   const workspace = useSelector((s) => s.auth.workspace);
   const [navOpen, setNavOpen] = useState(false);
+  const answeredTicketCount = useAnsweredTicketsBadge();
 
   return (
     <div className="flex h-screen bg-surface text-text">
@@ -74,6 +76,11 @@ export function AppLayout() {
           >
             <TicketIcon />
             Tickets
+            {answeredTicketCount > 0 && (
+              <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-bold leading-none text-white">
+                {answeredTicketCount > 9 ? '9+' : answeredTicketCount}
+              </span>
+            )}
           </NavLink>
         </nav>
       </aside>

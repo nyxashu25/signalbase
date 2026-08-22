@@ -1,0 +1,60 @@
+flowchart TB
+    Internet(["Internet"]) --> DNS["titans7.com DNS"]
+    DNS --> Nginx
+
+    subgraph vps["Hostinger VPS -- single host, no orchestrator"]
+        direction TB
+        Nginx["nginx<br/>/etc/nginx/sites-available/titans7.com"]
+
+        Nginx -->|"/ (static files)"| StaticBuild["frontend build output<br/>(npm run build -> dist/)<br/>served directly by nginx, no Node process"]
+        Nginx -->|"/api/v1/*"| ApiProc
+        Nginx -->|"/health, /health/ready"| ApiProc
+        Nginx -->|"/metrics -- allow 127.0.0.1; deny all;"| ApiProc
+
+        subgraph pm2["pm2 process manager"]
+            ApiProc["titans7-api<br/>node backend/src/app.js<br/>(Express, port 4000 internal)"]
+            WorkerProc["titans7-worker<br/>node backend/src/jobs/worker.js<br/>(BullMQ consumer, no HTTP port)"]
+        end
+
+        PgLocal[("PostgreSQL<br/>same VPS")]
+        RedisLocal[("Redis<br/>same VPS")]
+        EsLocal[("Elasticsearch<br/>same VPS")]
+
+        ApiProc --> PgLocal
+        ApiProc --> RedisLocal
+        ApiProc --> EsLocal
+        WorkerProc --> PgLocal
+        WorkerProc --> RedisLocal
+        WorkerProc --> EsLocal
+        WorkerProc -.->|BullMQ jobs enqueued by API| RedisLocal
+
+        Cron["cron<br/>scripts/backup-postgres.sh<br/>(nightly pg_dump, local-disk retention<br/>-- S3_BUCKET optional, unused here)"] --> PgLocal
+    end
+
+    ApiProc -->|outbound HTTPS| Stripe["Stripe"]
+    ApiProc -->|outbound HTTPS| Resend["Resend"]
+    WorkerProc -->|outbound HTTPS| SendGrid["SendGrid"]
+    ApiProc -->|outbound HTTPS| Hunter["Hunter.io"]
+    ApiProc -->|outbound HTTPS| GoogleAPI["Google Identity Services"]
+    Stripe -.->|webhook| Nginx
+    SendGrid -.->|webhook| Nginx
+
+    subgraph localdev["Local development only (docker-compose.yml) -- NOT how production runs"]
+        direction TB
+        DCPostgres[("postgres:16-alpine container")]
+        DCRedis[("redis:7-alpine container")]
+        DCEs[("elasticsearch:8.15.0 container")]
+        DCApi["api container<br/>npm run dev"]
+        DCWorker["worker container<br/>npm run worker"]
+        DCWeb["web container<br/>vite dev server :5173"]
+        DCApi --> DCPostgres
+        DCApi --> DCRedis
+        DCApi --> DCEs
+        DCWorker --> DCPostgres
+        DCWorker --> DCRedis
+        DCWorker --> DCEs
+        DCWeb -.->|proxies /api| DCApi
+    end
+
+    classDef localdev fill:transparent,stroke-dasharray: 4 3;
+    class DCPostgres,DCRedis,DCEs,DCApi,DCWorker,DCWeb localdev;

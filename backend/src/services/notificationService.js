@@ -7,6 +7,18 @@ import { signUnsubscribeToken, verifyUnsubscribeToken } from './tokenService.js'
 
 const BRAND_COLOR = '#9400de';
 
+const HTML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+/**
+ * Every value interpolated into an email template that ultimately traces
+ * back to user input (a name, a workspace name someone chose at signup, a
+ * ticket subject, a contact-form message) must go through this — none of
+ * these fields are otherwise restricted from containing `<`/`>`, and the
+ * contact form in particular is unauthenticated.
+ */
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (c) => HTML_ESCAPES[c]);
+}
+
 /**
  * One shared wrapper so every notification email looks like it came from
  * the same product, without a templating dependency — these are simple
@@ -40,7 +52,7 @@ export async function sendEmailVerification(user, token) {
     'Confirm your DataPit account',
     baseTemplate({
       heading: 'Confirm your email',
-      bodyHtml: `<p>Hi ${user.name},</p><p>Click below to confirm your email and activate your DataPit account. This link expires in 24 hours.</p>`,
+      bodyHtml: `<p>Hi ${escapeHtml(user.name)},</p><p>Click below to confirm your email and activate your DataPit account. This link expires in 24 hours.</p>`,
       ctaLabel: 'Confirm email',
       ctaUrl: url,
     }),
@@ -58,8 +70,8 @@ export async function notifyAccountVerified(user, workspace) {
     user.email,
     'Welcome to DataPit',
     baseTemplate({
-      heading: `Welcome, ${user.name}`,
-      bodyHtml: `<p>Your workspace <strong>${workspace.name}</strong> is ready. You've got free credits to start finding and reveal­ing verified contacts right away.</p>`,
+      heading: `Welcome, ${escapeHtml(user.name)}`,
+      bodyHtml: `<p>Your workspace <strong>${escapeHtml(workspace.name)}</strong> is ready. You've got free credits to start finding and reveal­ing verified contacts right away.</p>`,
       ctaLabel: 'Go to your dashboard',
       ctaUrl: `${env.CORS_ORIGIN}/app`,
     }),
@@ -70,7 +82,7 @@ export async function notifyAccountVerified(user, workspace) {
 
   const adminHtml = baseTemplate({
     heading: 'New account created',
-    bodyHtml: `<p><strong>${user.name}</strong> (${user.email}) just created workspace <strong>${workspace.name}</strong>.</p>`,
+    bodyHtml: `<p><strong>${escapeHtml(user.name)}</strong> (${escapeHtml(user.email)}) just created workspace <strong>${escapeHtml(workspace.name)}</strong>.</p>`,
     footerHtml: '&mdash; DataPit system notification',
   });
   await Promise.allSettled(admins.map((a) => send(a.email, 'New DataPit signup', adminHtml)));
@@ -82,7 +94,7 @@ export async function sendTicketCreatedConfirmation(user, ticket) {
     `We've received your ticket: ${ticket.subject}`,
     baseTemplate({
       heading: 'Ticket received',
-      bodyHtml: `<p>Hi ${user.name},</p><p>We've received your ticket <strong>${ticket.subject}</strong> and will get back to you shortly.</p>`,
+      bodyHtml: `<p>Hi ${escapeHtml(user.name)},</p><p>We've received your ticket <strong>${escapeHtml(ticket.subject)}</strong> and will get back to you shortly.</p>`,
       ctaLabel: 'View ticket',
       ctaUrl: `${env.CORS_ORIGIN}/app/tickets/${ticket.id}`,
     }),
@@ -95,7 +107,7 @@ export async function sendTicketReplyNotification(user, ticket) {
     `Support replied: ${ticket.subject}`,
     baseTemplate({
       heading: 'Support replied to your ticket',
-      bodyHtml: `<p>Hi ${user.name},</p><p>There's a new reply on your ticket <strong>${ticket.subject}</strong>.</p>`,
+      bodyHtml: `<p>Hi ${escapeHtml(user.name)},</p><p>There's a new reply on your ticket <strong>${escapeHtml(ticket.subject)}</strong>.</p>`,
       ctaLabel: 'View reply',
       ctaUrl: `${env.CORS_ORIGIN}/app/tickets/${ticket.id}`,
     }),
@@ -108,7 +120,7 @@ export async function sendTicketClosedNotification(user, ticket) {
     `Ticket closed: ${ticket.subject}`,
     baseTemplate({
       heading: 'Your ticket was closed',
-      bodyHtml: `<p>Hi ${user.name},</p><p>Your ticket <strong>${ticket.subject}</strong> has been marked closed. Reply on it any time to reopen.</p>`,
+      bodyHtml: `<p>Hi ${escapeHtml(user.name)},</p><p>Your ticket <strong>${escapeHtml(ticket.subject)}</strong> has been marked closed. Reply on it any time to reopen.</p>`,
       ctaLabel: 'View ticket',
       ctaUrl: `${env.CORS_ORIGIN}/app/tickets/${ticket.id}`,
     }),
@@ -122,7 +134,7 @@ export async function sendCreditPurchaseReceipt(user, amount, amountCents) {
     `Receipt: ${amount} DataPit credits`,
     baseTemplate({
       heading: 'Credits added',
-      bodyHtml: `<p>Hi ${user.name},</p><p>Your purchase of <strong>${amount} credits</strong>${priceLabel ? ` (${priceLabel})` : ''} is complete and available in your workspace now.</p>`,
+      bodyHtml: `<p>Hi ${escapeHtml(user.name)},</p><p>Your purchase of <strong>${amount} credits</strong>${priceLabel ? ` (${priceLabel})` : ''} is complete and available in your workspace now.</p>`,
       ctaLabel: 'View billing',
       ctaUrl: `${env.CORS_ORIGIN}/app/billing`,
     }),
@@ -135,7 +147,7 @@ export async function sendPlanActivated(user, plan, interval) {
     `Your plan is now ${plan}`,
     baseTemplate({
       heading: 'Plan activated',
-      bodyHtml: `<p>Hi ${user.name},</p><p>Your workspace is now on the <strong>${plan}</strong> plan${interval ? ` (billed ${interval.toLowerCase()})` : ''}.</p>`,
+      bodyHtml: `<p>Hi ${escapeHtml(user.name)},</p><p>Your workspace is now on the <strong>${plan}</strong> plan${interval ? ` (billed ${interval.toLowerCase()})` : ''}.</p>`,
       ctaLabel: 'View billing',
       ctaUrl: `${env.CORS_ORIGIN}/app/billing`,
     }),
@@ -148,7 +160,7 @@ export async function sendAdminCreditsAdded(user, amount) {
     `${amount} credits added to your workspace`,
     baseTemplate({
       heading: 'Credits added by support',
-      bodyHtml: `<p>Hi ${user.name},</p><p>Our support team added <strong>${amount} credits</strong> to your workspace.</p>`,
+      bodyHtml: `<p>Hi ${escapeHtml(user.name)},</p><p>Our support team added <strong>${amount} credits</strong> to your workspace.</p>`,
       ctaLabel: 'View billing',
       ctaUrl: `${env.CORS_ORIGIN}/app/billing`,
     }),
@@ -161,7 +173,7 @@ export async function sendAdminPlanChanged(user, plan) {
     `Your plan was changed to ${plan}`,
     baseTemplate({
       heading: 'Plan updated by support',
-      bodyHtml: `<p>Hi ${user.name},</p><p>Our support team changed your workspace's plan to <strong>${plan}</strong>.</p>`,
+      bodyHtml: `<p>Hi ${escapeHtml(user.name)},</p><p>Our support team changed your workspace's plan to <strong>${plan}</strong>.</p>`,
       ctaLabel: 'View billing',
       ctaUrl: `${env.CORS_ORIGIN}/app/billing`,
     }),
@@ -174,7 +186,7 @@ export async function sendMonthlyCreditsRenewed(user, amount) {
     `${amount} credits renewed`,
     baseTemplate({
       heading: 'Your monthly credits are in',
-      bodyHtml: `<p>Hi ${user.name},</p><p>Your plan's monthly grant of <strong>${amount} credits</strong> just landed in your workspace.</p>`,
+      bodyHtml: `<p>Hi ${escapeHtml(user.name)},</p><p>Your plan's monthly grant of <strong>${amount} credits</strong> just landed in your workspace.</p>`,
       ctaLabel: 'View billing',
       ctaUrl: `${env.CORS_ORIGIN}/app/billing`,
     }),
@@ -209,6 +221,30 @@ export async function sendPromotionalBroadcast(users, subject, bodyHtml) {
     logger.error({ failed, total: users.length }, 'Some promotional broadcast sends failed');
   }
   return { attempted: users.length, failed };
+}
+
+/**
+ * Forwards a marketing Contact-page / in-app support-chat submission to
+ * every super admin — the closest thing this app has to a sales inbox,
+ * since there's no CRM integration (see TODO.md, explicitly deferred).
+ */
+export async function sendContactFormLead({ name, email, company, message, category }) {
+  const admins = await prisma.superAdmin.findMany({ select: { email: true } });
+  if (admins.length === 0) return;
+
+  const categoryLabel = { general: 'General inquiry', support: 'Support', enterprise: 'Enterprise' }[
+    category
+  ] ?? category;
+
+  const html = baseTemplate({
+    heading: `New contact form lead — ${categoryLabel}`,
+    bodyHtml: `
+      <p><strong>${escapeHtml(name)}</strong> (${escapeHtml(email)})${company ? ` at <strong>${escapeHtml(company)}</strong>` : ''}</p>
+      <p style="white-space: pre-wrap;">${escapeHtml(message)}</p>
+    `,
+    footerHtml: '&mdash; DataPit system notification',
+  });
+  await Promise.allSettled(admins.map((a) => send(a.email, `New lead: ${categoryLabel}`, html)));
 }
 
 /** The click-target for every promotional email's unsubscribe link (see routes/notifications.js). */

@@ -1,0 +1,30 @@
+flowchart TD
+    A["User sets filters in People / Companies UI<br/>(seniority, department, industry, location, tech stack, text query)"] --> B["GET /api/v1/search/people<br/>or /api/v1/search/companies"]
+    B --> C["requireAuth -- read workspaceId from JWT"]
+    C --> D["Build ES bool query:<br/>must = multi_match text query<br/>filter = terms filters per facet"]
+    D --> E[("Elasticsearch query<br/>+ facet aggregations<br/>(counts reflect current filter selection)")]
+    E --> F["Result: ordered doc ids + facet buckets"]
+    F --> G[("Postgres: findMany WHERE id IN (ids)")]
+    G --> H["Reorder Postgres rows to match ES's id order<br/>(SQL IN does not preserve order)"]
+    H --> I{"Is this a people search?"}
+    I -- yes --> J["attachRevealStatus(workspaceId, contacts)<br/>-- per-contact EmailReveal lookup"]
+    J --> K{"Workspace has revealed<br/>this contact before?"}
+    K -- yes --> L["Return real email, revealed:true"]
+    K -- no --> M["maskEmail() -- e.g. j***@a***.com<br/>revealed:false"]
+    I -- no --> N["Companies: no masking needed<br/>(firmographic fields only)"]
+    L --> O["Response: { results, total, page, pageSize, facets }"]
+    M --> O
+    N --> O
+    O --> P["Frontend renders FacetPanel + result rows<br/>with masked emails + facet counts"]
+
+    subgraph export["CSV export variant"]
+        Q["GET /search/people/export or /companies/export"] --> R["Same query, unpaginated,<br/>capped at 5000 rows"]
+        R --> S["reserveCredits(20, CSV_EXPORT)<br/>before running the query"]
+        S --> T["Stream CSV response"]
+    end
+
+    subgraph detail["Company detail view variant"]
+        U["GET /search/companies/:id"] --> V["reserveCompanyViewCredits(20)<br/>-- free if CompanyDetailView already exists for this workspace"]
+        V --> W["Load company + non-redacted contacts,<br/>attachRevealStatus on the contact list"]
+        W --> X["Commit CompanyDetailView + CreditLedgerEntry<br/>(only if this is the first view)"]
+    end

@@ -141,6 +141,35 @@ model SuperAdmin {
   uploadedImportBatches DatabaseImportBatch[] @relation("UploadedBy")
   approvedImportBatches DatabaseImportBatch[] @relation("ApprovedBy")
   ticketMessages        TicketMessage[]
+  auditLogEntries       AdminAuditLog[]
+}
+
+enum AdminAuditAction {
+  SUSPEND_USER
+  UNSUSPEND_USER
+  UPDATE_PLAN
+  ADD_CREDITS
+}
+
+// Compliance trail for support-desk overrides — who (which super admin) did
+// what to whom. targetUserId is deliberately a plain field, not a relation
+// (same "soft reference" pattern as CreditLedgerEntry.contactId), so the log
+// entry survives even if the target User row is later gone; look it up
+// manually where needed rather than via `include`.
+model AdminAuditLog {
+  id           String           @id @default(uuid())
+  superAdminId String
+  action       AdminAuditAction
+  targetUserId String?
+  // Action-specific context — e.g. { amount } for ADD_CREDITS, { from, to }
+  // for UPDATE_PLAN. Nothing here substitutes for the action enum itself.
+  metadata     Json?
+  createdAt    DateTime         @default(now())
+
+  superAdmin SuperAdmin @relation(fields: [superAdminId], references: [id])
+
+  @@index([targetUserId, createdAt])
+  @@index([createdAt])
 }
 
 enum ImportBatchStatus {

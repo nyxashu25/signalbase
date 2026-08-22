@@ -309,4 +309,69 @@ describe('admin data routes', () => {
       expect(res.status).toBe(400);
     });
   });
+
+  describe('GET /audit-log', () => {
+    it('records who did what to whom for suspend/unsuspend/plan-change/add-credits', async () => {
+      const token = await loginAsAdmin();
+      const { user } = await createTenantUser();
+
+      await request(app)
+        .post(`/api/v1/admin/users/${user.id}/suspend`)
+        .set('Authorization', `Bearer ${token}`);
+      await request(app)
+        .post(`/api/v1/admin/users/${user.id}/unsuspend`)
+        .set('Authorization', `Bearer ${token}`);
+      await request(app)
+        .put(`/api/v1/admin/users/${user.id}/plan`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ plan: 'BASIC' });
+      await request(app)
+        .post(`/api/v1/admin/users/${user.id}/credits`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ amount: 500 });
+
+      const res = await request(app)
+        .get('/api/v1/admin/audit-log')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.total).toBe(4);
+      const actions = res.body.results.map((e) => e.action);
+      expect(actions).toEqual(['ADD_CREDITS', 'UPDATE_PLAN', 'UNSUSPEND_USER', 'SUSPEND_USER']); // newest first
+
+      const planEntry = res.body.results.find((e) => e.action === 'UPDATE_PLAN');
+      expect(planEntry.metadata).toEqual({ from: 'FREE', to: 'BASIC' });
+      expect(planEntry.targetUser.id).toBe(user.id);
+      expect(planEntry.superAdmin.email).toBe(adminCreds.email);
+
+      const creditsEntry = res.body.results.find((e) => e.action === 'ADD_CREDITS');
+      expect(creditsEntry.metadata).toEqual({ amount: 500 });
+    });
+
+    it('filters by target user', async () => {
+      const token = await loginAsAdmin();
+      const { user: userA } = await createTenantUser();
+      const { user: userB } = await createTenantUser();
+
+      await request(app)
+        .post(`/api/v1/admin/users/${userA.id}/suspend`)
+        .set('Authorization', `Bearer ${token}`);
+      await request(app)
+        .post(`/api/v1/admin/users/${userB.id}/suspend`)
+        .set('Authorization', `Bearer ${token}`);
+
+      const res = await request(app)
+        .get(`/api/v1/admin/audit-log?userId=${userA.id}`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.total).toBe(1);
+      expect(res.body.results[0].targetUser.id).toBe(userA.id);
+    });
+
+    it('rejects an unauthenticated request', async () => {
+      const res = await request(app).get('/api/v1/admin/audit-log');
+      expect(res.status).toBe(401);
+    });
+  });
 });

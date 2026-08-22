@@ -39,6 +39,7 @@ import { AdminUserDetail } from './pages/admin/AdminUserDetail.jsx';
 import { AdminBilling } from './pages/admin/AdminBilling.jsx';
 import { AdminSettings } from './pages/admin/AdminSettings.jsx';
 import { AdminExtendDatabase } from './pages/admin/AdminExtendDatabase.jsx';
+import { AdminAuditLog } from './pages/admin/AdminAuditLog.jsx';
 import { AdminTickets } from './pages/admin/AdminTickets.jsx';
 import { AdminTicketDetail } from './pages/admin/AdminTicketDetail.jsx';
 import { authApi } from './api/authApi.js';
@@ -115,6 +116,7 @@ export function App() {
             <Route path="users/:userId" element={<AdminUserDetail />} />
             <Route path="billing" element={<AdminBilling />} />
             <Route path="extend-database" element={<AdminExtendDatabase />} />
+            <Route path="audit-log" element={<AdminAuditLog />} />
             <Route path="tickets" element={<AdminTickets />} />
             <Route path="tickets/:ticketId" element={<AdminTicketDetail />} />
             <Route path="settings" element={<AdminSettings />} />

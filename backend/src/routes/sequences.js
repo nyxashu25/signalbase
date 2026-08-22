@@ -5,6 +5,7 @@ import { validateBody } from '../middleware/validate.js';
 import { createSequenceSchema, enrollSchema } from '../validators/sequenceValidators.js';
 import { reserveCredits, releaseOnError } from '../middleware/reserveCredits.js';
 import { requireSequencesPlan } from '../middleware/requireSequencesPlan.js';
+import { rateLimit, byWorkspace } from '../middleware/rateLimit.js';
 import { CREDIT_COSTS } from '../config/creditPricing.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
@@ -12,12 +13,20 @@ export const sequencesRouter = Router();
 
 sequencesRouter.use(requireAuth);
 
+const createLimiter = rateLimit({
+  limit: 20,
+  windowSeconds: 60 * 60,
+  prefix: 'sequence-create',
+  keyFn: byWorkspace,
+});
+
 sequencesRouter.get('/', asyncHandler(sequenceController.index));
 sequencesRouter.get('/:id', asyncHandler(sequenceController.show));
 sequencesRouter.get('/:id/analytics', asyncHandler(sequenceController.analytics));
 sequencesRouter.post(
   '/',
   requireSequencesPlan,
+  createLimiter,
   validateBody(createSequenceSchema),
   asyncHandler(sequenceController.create),
 );

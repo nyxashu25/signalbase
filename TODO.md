@@ -28,19 +28,7 @@ picked up or completed — don't let it drift from reality.
 
 ## P1 — real gaps, not urgent
 
-- [ ] **No unread badge on the Tickets nav link** for a new admin reply —
-      the email notification now exists (see Done below), but there's still
-      no in-app indicator.
-- [ ] **Marketing Contact form leads go nowhere** — logged only, not
-      forwarded to sales/CRM.
-- [ ] **No admin action audit log.** Suspend/unsuspend/plan-change/
-      add-credits don't record which super admin performed them.
-- [ ] **`docs/` is empty** despite README.md and ARCHITECTURE.md linking to
-      files inside it (DATA-MODEL.md, API-SPEC.md, FEATURES.md, mermaid
-      diagrams).
-- [ ] **No rate limiting** on ticket creation/reply, sequence creation, list
-      creation, or billing checkout/subscribe (auth-gated, so lower risk,
-      but unprotected against a buggy retry loop or compromised account).
+Nothing open right now — see Done below for what was just closed out.
 
 ## P2 — known-deferred, not surprises
 
@@ -61,6 +49,27 @@ picked up or completed — don't let it drift from reality.
 
 ## Done
 
+- [x] **Closed out the five P1 gaps in one pass:**
+      **Unread ticket badge** — `AppLayout`'s Tickets nav link shows a count
+      of this workspace's `ANSWERED` tickets (support replied, your turn),
+      polled every 30s (`useAnsweredTicketsBadge.js`).
+      **Contact-form lead forwarding** — `POST /contact` now emails every
+      super admin via `notificationService.sendContactFormLead` instead of
+      only logging (no CRM to push to — still deferred, see P2).
+      **Admin action audit log** — new `AdminAuditLog` model records every
+      suspend/unsuspend/plan-change/add-credits with the acting super admin,
+      the target user, and before/after metadata; surfaced at
+      `/control/audit-log` (`adminService.recordAuditLog`/`listAuditLog`).
+      **`docs/` populated** — `DATA-MODEL.md`, `API-SPEC.md`, `FEATURES.md`,
+      and 8 `.mermaid` diagrams, all reflecting the real system (not the
+      aspirational one `ARCHITECTURE.md` sketches — `FEATURES.md` explicitly
+      separates built vs. not-built vs. interface-stub). README.md/
+      ARCHITECTURE.md got a short pointer to `docs/FEATURES.md` since both
+      overstate what's built (technographics, intent scoring, CRM sync,
+      Chrome extension, a microservices split — none of which exist).
+      **Rate limiting** — per-workspace limiters on ticket create (10/hr) and
+      reply (30/hr), sequence create (20/hr), list create (30/hr), and
+      billing checkout-session/subscribe (10/hr, shared bucket).
 - [x] **Email notifications (Resend) + mandatory email verification.**
       Password signup now creates an unverified account, emails a confirm
       link, and only logs the user in once they click it (`GET

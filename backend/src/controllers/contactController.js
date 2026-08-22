@@ -1,11 +1,10 @@
 import { prisma } from '../config/db.js';
 import { logger } from '../config/logger.js';
 import { ApiError } from '../middleware/errorHandler.js';
+import * as notificationService from '../services/notificationService.js';
 
-// No real mail/CRM provider wired up yet — same stub philosophy as
-// espService/emailVerifierService: logged, not delivered, so the form is
-// fully exercisable without a third-party account. TODO once one exists:
-// forward to sales inbox / CRM lead capture.
+// No CRM integration (explicitly deferred — see TODO.md); forwarding the
+// lead by email to every super admin is the stand-in "sales inbox".
 export async function submitContactRequest(req, res) {
   const { category, email } = req.body;
 
@@ -23,5 +22,6 @@ export async function submitContactRequest(req, res) {
   }
 
   logger.info({ ...req.body }, 'Contact form submission received');
+  await notificationService.sendContactFormLead(req.body);
   res.status(204).end();
 }

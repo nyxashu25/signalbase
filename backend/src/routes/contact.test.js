@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeEach, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterAll, vi } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../app.js';
 import { resetDb, resetRedis } from '../test/dbHelpers.js';
 import { registerAndVerify } from '../test/authHelpers.js';
 import { prisma } from '../config/db.js';
+import * as notificationService from '../services/notificationService.js';
 
 const app = createApp();
 
@@ -73,5 +74,24 @@ describe('POST /contact', () => {
     });
 
     expect(res.status).toBe(204);
+  });
+
+  it('forwards the lead to notificationService (the sales-inbox stand-in)', async () => {
+    const spy = vi.spyOn(notificationService, 'sendContactFormLead').mockResolvedValue();
+
+    const res = await request(app).post('/api/v1/contact').send({
+      name: 'Prospect',
+      email: 'prospect@example.com',
+      company: 'Acme Co',
+      message: 'Tell me about pricing.',
+      category: 'general',
+    });
+
+    expect(res.status).toBe(204);
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Prospect', email: 'prospect@example.com', company: 'Acme Co' }),
+    );
+
+    spy.mockRestore();
   });
 });

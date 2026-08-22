@@ -285,4 +285,45 @@ describe('tickets', () => {
     expect(afterSecond.body.tickets[0].subject).toBe('Request a demo');
     expect(afterSecond.body.unansweredCount).toBe(2);
   });
+
+  it('rate-limits ticket creation per workspace (limit 10/hour)', async () => {
+    const org = await registerOrg('Rate Limited Co', 'owner@rate-limit.test');
+
+    for (let i = 0; i < 10; i++) {
+      const res = await request(app)
+        .post('/api/v1/tickets')
+        .set('Authorization', `Bearer ${org.accessToken}`)
+        .send({ type: 'SUPPORT', subject: 'Bug report', body: `Ticket ${i}` });
+      expect(res.status).toBe(201);
+    }
+
+    const eleventh = await request(app)
+      .post('/api/v1/tickets')
+      .set('Authorization', `Bearer ${org.accessToken}`)
+      .send({ type: 'SUPPORT', subject: 'Bug report', body: 'One too many' });
+    expect(eleventh.status).toBe(429);
+  });
+
+  it('rate-limits ticket replies per workspace (limit 30/hour), independently of creation', async () => {
+    const org = await registerOrg('Rate Limited Replies', 'owner@rate-limit-2.test');
+    const createRes = await request(app)
+      .post('/api/v1/tickets')
+      .set('Authorization', `Bearer ${org.accessToken}`)
+      .send({ type: 'SUPPORT', subject: 'Bug report', body: 'Original' });
+    const ticketId = createRes.body.id;
+
+    for (let i = 0; i < 30; i++) {
+      const res = await request(app)
+        .post(`/api/v1/tickets/${ticketId}/messages`)
+        .set('Authorization', `Bearer ${org.accessToken}`)
+        .send({ body: `Reply ${i}` });
+      expect(res.status).toBe(200);
+    }
+
+    const overLimit = await request(app)
+      .post(`/api/v1/tickets/${ticketId}/messages`)
+      .set('Authorization', `Bearer ${org.accessToken}`)
+      .send({ body: 'One too many' });
+    expect(overLimit.status).toBe(429);
+  });
 });

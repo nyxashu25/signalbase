@@ -1,0 +1,39 @@
+stateDiagram-v2
+    [*] --> Available: monthlyCreditGrant granted at signup<br/>(initializeBalance, Redis SETNX)
+
+    Available --> Reserved: reserveCredits middleware<br/>Lua script: atomic check-and-decrement<br/>(balance -= amount, ZADD to pending zset, TTL 7min)
+
+    Reserved --> Available: insufficient balance<br/>[reserveCreditScript returns -1]<br/>402 Insufficient credits -- no state change happens
+
+    state Reserved {
+        [*] --> AwaitingOutcome
+        AwaitingOutcome --> Committing: handler succeeds<br/>(email found+usable / company loaded / sequence found)
+        AwaitingOutcome --> Releasing: handler fails explicitly<br/>(404 / 410 / 422 / opted-out / not-found)
+        AwaitingOutcome --> Reaped: process crashes or hangs --<br/>reservation's logical TTL (5min) expires<br/>before commit or release
+    }
+
+    Committing --> Committed: resolveReservationForCommit<br/>clears Redis reservation key + pending-zset entry<br/>(balance stays decremented -- already spent at reserve time)
+    Committed --> Ledgered: Postgres TRANSACTION:<br/>CreditLedgerEntry(delta: -amount, reason)<br/>+ the domain row (EmailReveal / CompanyDetailView / SequenceEnrollment)
+
+    Ledgered --> [*]: charge final
+    Ledgered --> Refunded: unique-constraint race (P2002) --<br/>a concurrent identical request already committed --<br/>refundAmount() direct balance credit (no double charge)
+
+    Releasing --> Available: releaseReservation --<br/>clears reservation + INCRBY balance back<br/>(idempotent -- safe even if already resolved)
+
+    Reaped --> Available: credit-reaper worker (60s sweep)<br/>ZRANGEBYSCORE pending zset for expired entries --<br/>refunds + logs a warning<br/>(logged as reconciliationService's backstop trigger)
+
+    Refunded --> [*]
+
+    note right of Committed
+        RUNBOOK.md: a deploy restarting the worker
+        between here and the Postgres transaction
+        committing is the other drift scenario the
+        credit-reconciliation job (every 15min) watches for.
+    end note
+
+    note right of Available
+        Balance invariant, always true:
+        workspace.monthlyCreditGrant + SUM(ledger.delta)
+          == Redis available balance + sum of active reservations
+        (checked, never auto-corrected, by reconciliationService)
+    end note

@@ -18,23 +18,35 @@ export async function getUserDetail(req, res) {
 }
 
 export async function suspendUser(req, res) {
-  await adminService.suspendUser(req.params.userId);
+  await adminService.suspendUser(req.params.userId, req.superAdmin.adminId);
   res.status(204).end();
 }
 
 export async function unsuspendUser(req, res) {
-  await adminService.unsuspendUser(req.params.userId);
+  await adminService.unsuspendUser(req.params.userId, req.superAdmin.adminId);
   res.status(204).end();
 }
 
 export async function addCredits(req, res) {
-  const result = await adminService.addCredits(req.params.userId, req.body.amount);
+  const result = await adminService.addCredits(
+    req.params.userId,
+    req.body.amount,
+    req.superAdmin.adminId,
+  );
   res.json(result);
 }
 
 export async function updateUserPlan(req, res) {
-  const result = await adminService.updateUserPlan(req.params.userId, req.body.plan);
+  const result = await adminService.updateUserPlan(
+    req.params.userId,
+    req.body.plan,
+    req.superAdmin.adminId,
+  );
   res.json(result);
+}
+
+export async function listAuditLog(req, res) {
+  res.json(await adminService.listAuditLog(req.validatedQuery));
 }
 
 export async function getBillingOverview(req, res) {

@@ -1,0 +1,38 @@
+flowchart TD
+    A["Visit marketing site (/)"] --> B["Click 'Start free' -> /login?mode=register"]
+    B --> C["Fill signup form:<br/>name, email, password, org name"]
+    C --> D["POST /auth/register"]
+    D --> E["Org + FREE Workspace + User(emailVerified:false)<br/>+ OWNER Membership created<br/>Redis credit balance initialized (100 credits)"]
+    E --> F["Confirm-link email sent via Resend<br/>(NOT logged in yet)"]
+    F --> G{"User clicks confirm link"}
+    G -- "expired/invalid token" --> H["Error screen -> can request<br/>POST /auth/resend-verification"]
+    G -- valid --> I["POST /auth/verify-email"]
+    I --> J["User.emailVerified = true<br/>Welcome email to user + alert email to all super admins"]
+    J --> K["Session issued: access token + refresh cookie<br/>Redirect to /app (Dashboard)"]
+
+    K --> L["Guided first-login tour<br/>(shown once, tutorialCompletedAt)"]
+    L --> M["Search: /app/people or /app/companies<br/>Faceted Elasticsearch search, emails masked"]
+    M --> N["Click 'Reveal email' on a contact"]
+    N --> O["Credit reserved -> pattern-guess + optional Hunter.io verify<br/>-> commit charge (2 credits) or refund on failure"]
+    O --> P["Email now shown in clear for this workspace<br/>(every teammate sees it too)"]
+
+    P --> Q["Save contact(s) to a List"]
+    Q --> R["POST /lists/:id/items"]
+
+    R --> S{"Workspace plan >= BASIC?"}
+    S -- "no (FREE plan)" --> S1["Sequences locked -- upsell to Billing/Pricing"]
+    S -- yes --> T["Build a Sequence: EMAIL + WAIT steps"]
+    T --> U["Activate sequence (DRAFT -> ACTIVE)"]
+    U --> V["Enroll list contacts<br/>(250 credits per enrollment, credit-gated)"]
+    V --> W["60s BullMQ tick advances each enrollment<br/>through its steps -- see 06-sequence-engine.mermaid"]
+
+    P --> X["Run low on credits"]
+    X --> Y{"Top up or subscribe?"}
+    Y -- "one-off top-up" --> Z1["/app/billing/add-credits -> Stripe Checkout (payment mode)"]
+    Y -- "upgrade plan" --> Z2["/app/billing -> Stripe Checkout (subscription mode)"]
+    Z1 --> AA["Stripe webhook -> credits added, receipt emailed"]
+    Z2 --> AB["Stripe webhook -> plan activated, confirmation emailed"]
+
+    P --> AC["Hit a problem -> /app/tickets/new"]
+    AC --> AD["Ticket created, confirmation emailed"]
+    AD --> AE["Super admin replies via /control/tickets<br/>-> reply emailed to user -> status ANSWERED"]

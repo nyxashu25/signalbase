@@ -785,3 +785,48 @@ describe('GET /billing/custom-credits-price', () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe('billing checkout rate limit', () => {
+  beforeEach(async () => {
+    await resetDb();
+    await resetRedis();
+  });
+
+  afterAll(async () => {
+    await prisma.$disconnect();
+  });
+
+  // checkout-session and subscribe deliberately share one bucket (both call
+  // out to Stripe) — mixing the two here confirms that, not just that each
+  // route is limited in isolation.
+  it('shares one per-workspace bucket (limit 10/hour) across checkout-session and subscribe', async () => {
+    const register = await registerAndVerify(app, {
+      email: 'owner@checkout-rate-limit.test',
+      password: 'correct-horse-battery',
+      name: 'Owner',
+      orgName: 'Checkout Rate Limit Co',
+    });
+    const accessToken = register.body.accessToken;
+
+    for (let i = 0; i < 5; i++) {
+      const res = await request(app)
+        .post('/api/v1/billing/checkout-session')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ credits: 250 });
+      expect(res.status).toBe(201);
+    }
+    for (let i = 0; i < 5; i++) {
+      const res = await request(app)
+        .post('/api/v1/billing/subscribe')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ plan: 'BASIC' });
+      expect(res.status).toBe(201);
+    }
+
+    const overLimit = await request(app)
+      .post('/api/v1/billing/checkout-session')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ credits: 250 });
+    expect(overLimit.status).toBe(429);
+  });
+});

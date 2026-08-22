@@ -59,6 +59,9 @@ export const adminDataApi = adminBaseApi.injectEndpoints({
     sendAdminPromotion: builder.mutation({
       query: (body) => ({ url: '/promotions', method: 'POST', body }),
     }),
+    listAdminAuditLog: builder.query({
+      query: (params) => ({ url: '/audit-log', params }),
+    }),
     listDatabaseImports: builder.query({
       query: () => '/database-imports',
       providesTags: ['DatabaseImports'],
@@ -114,6 +117,7 @@ export const {
   useGetAdminStripeSettingsQuery,
   useSaveAdminStripeSettingsMutation,
   useSendAdminPromotionMutation,
+  useListAdminAuditLogQuery,
   useListDatabaseImportsQuery,
   useUploadDatabaseImportMutation,
   useApproveDatabaseImportMutation,

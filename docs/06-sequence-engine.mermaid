@@ -1,0 +1,34 @@
+flowchart TD
+    A["User activates Sequence<br/>POST /sequences/:id/activate<br/>(requires BASIC+ plan)"] --> B["Sequence.status: DRAFT -> ACTIVE"]
+    B --> C["User enrolls a Contact<br/>POST /sequences/:id/enrollments"]
+    C --> D["reserveCredits(250, SEQUENCE_ENROLLMENT)"]
+    D --> E["SequenceEnrollment created:<br/>status ACTIVE, currentStepIndex 0,<br/>nextStepDueAt = now()"]
+
+    subgraph tick["Worker: sequence-tick (BullMQ repeatable, every 60s)"]
+        F["processDueEnrollments()"] --> G[("Postgres query:<br/>WHERE status='ACTIVE' AND nextStepDueAt <= now()<br/>(indexed on nextStepDueAt)")]
+        G --> H{"For each due enrollment:<br/>step = steps[currentStepIndex]"}
+        H -- "no step left" --> I["status -> COMPLETED<br/>nextStepDueAt = null"]
+        H -- "step.type == WAIT" --> J["currentStepIndex++<br/>nextStepDueAt = now() + waitDays"]
+        H -- "step.type == EMAIL" --> K{"contact has email<br/>AND not suppressed?"}
+        K -- no --> L["status -> UNENROLLED<br/>reason: 'no_email_on_file' or 'suppressed'"]
+        K -- yes --> M["sendEmail() via SendGrid (espService)<br/>-- simulated if ESP_API_KEY unset"]
+        M --> N["TRANSACTION:<br/>SequenceStepEvent(SENT, providerEventId)<br/>+ currentStepIndex++, nextStepDueAt = now()<br/>(next tick advances again immediately)"]
+    end
+
+    E -.->|"picked up by next tick"| F
+
+    subgraph webhook["ESP webhook: POST /webhooks/esp"]
+        O["SendGrid delivery event<br/>(OPENED / CLICKED / BOUNCED / REPLIED / UNSUBSCRIBED)"] --> P["Correlate to the original SENT event<br/>by providerEventId (messageId)"]
+        P --> Q["Insert SequenceStepEvent<br/>(providerEventId unique -> dedupes at-least-once redelivery)"]
+        Q --> R{"event type?"}
+        R -- BOUNCED --> S["Add SuppressionEntry(BOUNCED)"]
+        R -- UNSUBSCRIBED --> T["Add SuppressionEntry(UNSUBSCRIBED)"]
+        R -- REPLIED --> U["unenroll(enrollment, 'replied')<br/>-- no-op if already resolved"]
+        R -- "OPENED / CLICKED" --> V["Recorded for analytics only"]
+    end
+
+    subgraph manual["Manual controls (any time)"]
+        W["POST /enrollments/:id/pause"] --> W1["status -> PAUSED<br/>nextStepDueAt = null (tick skips it)"]
+        X["POST /enrollments/:id/resume"] --> X1["status -> ACTIVE<br/>nextStepDueAt = now() (picked up next tick)"]
+        Y["POST /enrollments/:id/unenroll"] --> Y1["status -> UNENROLLED<br/>unenrolledAt + unenrolledReason set"]
+    end

@@ -3,11 +3,15 @@
 A B2B sales-intelligence & engagement platform (an Apollo.io / Slintel / 6sense–style product)
 built on **Node.js (Express)** + **React (Vite)**.
 
-This document is the master reference. Companion docs:
+This document is the master reference, but it sketches a product *direction* — several pillars below
+(technographics, intent/buying-signal scoring, CRM sync, the Chrome extension, the multi-service split
+in §2/§4) are not built; the real system is one Express monolith + one worker process. Companion docs:
 - `docs/DATA-MODEL.md` — entities, relationships, schema rationale
 - `docs/API-SPEC.md` — REST endpoints
-- `docs/FEATURES.md` — feature-by-feature breakdown
-- `docs/*.mermaid` — all flow charts / diagrams (render on GitHub or any Mermaid viewer)
+- `docs/FEATURES.md` — feature-by-feature breakdown, **explicitly split into what's actually built vs.
+  what this document describes but doesn't exist yet** — read this one first if you need ground truth
+- `docs/*.mermaid` — all flow charts / diagrams (render on GitHub or any Mermaid viewer); `01-*` and
+  `08-*` in particular show the real (not aspirational) architecture and deployment shape
 
 ---
 

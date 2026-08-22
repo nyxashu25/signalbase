@@ -1,0 +1,52 @@
+flowchart TB
+    subgraph clients["Clients"]
+        SPA["React + Vite SPA<br/>(RTK Query)"]
+        AdminUI["Admin panel SPA<br/>(/control)"]
+    end
+
+    subgraph vps["Single Hostinger VPS (titans7.com)"]
+        Nginx["nginx<br/>serves built frontend static files<br/>reverse-proxies /api, /metrics(127.0.0.1 only)"]
+
+        subgraph pm2["pm2-managed Node processes"]
+            API["Express API monolith<br/>(titans7-api)<br/>backend/src/app.js<br/>mounted at /api/v1"]
+            Worker["BullMQ worker process<br/>(titans7-worker)<br/>backend/src/jobs/worker.js"]
+        end
+
+        Postgres[("PostgreSQL<br/>system of record")]
+        Redis[("Redis<br/>sessions, refresh tokens,<br/>rate limits, credit reservations,<br/>BullMQ queues")]
+        ES[("Elasticsearch<br/>search projection<br/>(companies, contacts)")]
+    end
+
+    subgraph external["External services"]
+        Stripe["Stripe<br/>checkout + subscriptions<br/>(key configured via /control/settings)"]
+        Resend["Resend<br/>DataPit's own transactional mail"]
+        SendGrid["SendGrid (ESP)<br/>sequence/outreach sends"]
+        Hunter["Hunter.io<br/>email verification"]
+        Google["Google Identity Services<br/>OAuth ID-token verification"]
+    end
+
+    SPA -->|HTTPS| Nginx
+    AdminUI -->|HTTPS| Nginx
+    Nginx -->|/api/v1/*| API
+    Nginx -->|static build output| SPA
+
+    API --> Postgres
+    API --> Redis
+    API --> ES
+    API -->|enqueue jobs| Redis
+
+    Worker -->|BullMQ consume| Redis
+    Worker --> Postgres
+    Worker --> ES
+
+    API -->|checkout/subscribe/webhook| Stripe
+    API -->|verification, tickets, billing mail| Resend
+    Worker -->|sequence step sends| SendGrid
+    API -->|pattern-guessed email check| Hunter
+    API -->|verify ID token| Google
+
+    Stripe -.->|webhook| API
+    SendGrid -.->|delivery/open/click/bounce webhook| API
+
+    classDef external fill:transparent,stroke-dasharray: 4 3;
+    class Stripe,Resend,SendGrid,Hunter,Google external;

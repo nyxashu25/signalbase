@@ -5,9 +5,12 @@ on the backend and **React + Vite** on the frontend. It demonstrates the full ar
 modern go-to-market data product: a searchable contact & company database, **credit-gated email
 reveal / enrichment**, **buying-intent scoring**, **lists**, and **automated outreach sequences**.
 
-> This is a reference implementation / scaffold. Email verification (Hunter.io) and outbound send
-> (SendGrid) call real provider APIs once a key is configured, and simulate otherwise; Stripe and
-> CRM sync are still interface stubs — so the whole thing runs locally with seed data either way.
+> This is a reference implementation / scaffold. Email verification (Hunter.io), outbound send
+> (SendGrid), transactional mail (Resend), and Stripe checkout all call real provider APIs once
+> configured, and simulate otherwise — so the whole thing runs locally with seed data either way.
+> Technographics, intent/buying-signal scoring, CRM sync, and the Chrome extension mentioned below
+> and in `ARCHITECTURE.md` are product-direction sketches, not built — see
+> [`docs/FEATURES.md`](./docs/FEATURES.md) for the file-by-file built-vs-not-built accounting.
 
 ---
 

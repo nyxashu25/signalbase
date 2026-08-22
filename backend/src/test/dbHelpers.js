@@ -29,6 +29,7 @@ export async function resetDb() {
   await prisma.org.deleteMany();
   await prisma.dataSubjectOptOut.deleteMany();
   await prisma.databaseImportBatch.deleteMany();
+  await prisma.adminAuditLog.deleteMany();
   await prisma.superAdmin.deleteMany();
   await prisma.paymentGatewaySettings.deleteMany();
 }

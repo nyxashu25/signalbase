@@ -1,0 +1,252 @@
+erDiagram
+    %% --- Tenancy ---
+    ORG ||--o{ WORKSPACE : "has"
+    WORKSPACE ||--o{ MEMBERSHIP : "has"
+    USER ||--o{ MEMBERSHIP : "has"
+
+    %% --- Super admin / data import ---
+    SUPER_ADMIN ||--o{ DATABASE_IMPORT_BATCH : "uploads"
+    SUPER_ADMIN ||--o{ DATABASE_IMPORT_BATCH : "approves"
+    DATABASE_IMPORT_BATCH ||--o{ COMPANY : "stages"
+    DATABASE_IMPORT_BATCH ||--o{ CONTACT : "stages"
+
+    %% --- Shared data graph ---
+    COMPANY ||--o{ CONTACT : "employs"
+
+    %% --- Lists ---
+    WORKSPACE ||--o{ LIST : "owns"
+    USER ||--o{ LIST : "creates"
+    LIST ||--o{ LIST_ITEM : "contains"
+    CONTACT ||--o{ LIST_ITEM : "referenced by"
+    COMPANY ||--o{ LIST_ITEM : "referenced by"
+
+    %% --- Credits / reveals ---
+    WORKSPACE ||--o{ CREDIT_LEDGER_ENTRY : "spends/earns"
+    WORKSPACE ||--o{ EMAIL_REVEAL : "reveals"
+    CONTACT ||--o{ EMAIL_REVEAL : "revealed"
+    USER ||--o{ EMAIL_REVEAL : "performed by"
+    WORKSPACE ||--o{ COMPANY_DETAIL_VIEW : "views"
+    COMPANY ||--o{ COMPANY_DETAIL_VIEW : "viewed"
+    USER ||--o{ COMPANY_DETAIL_VIEW : "viewed by"
+
+    %% --- Sequences ---
+    WORKSPACE ||--o{ SEQUENCE : "owns"
+    USER ||--o{ SEQUENCE : "creates"
+    SEQUENCE ||--o{ SEQUENCE_STEP : "has"
+    SEQUENCE ||--o{ SEQUENCE_ENROLLMENT : "has"
+    CONTACT ||--o{ SEQUENCE_ENROLLMENT : "enrolled"
+    SEQUENCE_ENROLLMENT ||--o{ SEQUENCE_STEP_EVENT : "logs"
+    WORKSPACE ||--o{ SUPPRESSION_ENTRY : "suppresses"
+
+    %% --- Tickets ---
+    WORKSPACE ||--o{ TICKET : "raises"
+    USER ||--o{ TICKET : "creates"
+    TICKET ||--o{ TICKET_MESSAGE : "has"
+    USER ||--o{ TICKET_MESSAGE : "authors (USER)"
+    SUPER_ADMIN ||--o{ TICKET_MESSAGE : "authors (ADMIN)"
+
+    %% --- Admin audit log (targetUserId is a soft reference, not a real FK) ---
+    SUPER_ADMIN ||--o{ ADMIN_AUDIT_LOG : "performs"
+
+    ORG {
+        string id PK
+        string name
+        string slug UK
+    }
+
+    WORKSPACE {
+        string id PK
+        string orgId FK
+        string name
+        enum plan "FREE|BASIC|PROFESSIONAL|ORGANIZATION"
+        int monthlyCreditGrant
+        string stripeCustomerId UK "nullable"
+        string stripeSubscriptionId UK "nullable"
+        datetime planActivatedAt "nullable"
+        enum billingInterval "MONTH|QUARTER|YEAR"
+    }
+
+    USER {
+        string id PK
+        string email UK
+        string passwordHash "nullable - Google-only accounts"
+        string googleId UK "nullable"
+        boolean suspendedAt "nullable timestamp"
+        boolean emailVerified
+        boolean marketingOptOut
+        datetime tutorialCompletedAt "nullable"
+    }
+
+    SUPER_ADMIN {
+        string id PK
+        string email UK
+        string passwordHash
+        string name
+    }
+
+    MEMBERSHIP {
+        string id PK
+        string userId FK
+        string workspaceId FK
+        enum role "OWNER|ADMIN|MEMBER"
+    }
+
+    DATABASE_IMPORT_BATCH {
+        string id PK
+        string filename
+        enum status "PROCESSING|PENDING_APPROVAL|APPROVED|FAILED"
+        int totalRows
+        int insertedContacts
+        int insertedCompanies
+        int errorCount
+        json errors "capped at 100"
+        string uploadedById FK
+        string approvedById FK "nullable"
+    }
+
+    COMPANY {
+        string id PK
+        string name
+        string domain UK
+        string industry "nullable"
+        int headcountMin "nullable"
+        int headcountMax "nullable"
+        string location "nullable"
+        string_array techStack
+        string importBatchId FK "nullable - staging flag"
+    }
+
+    CONTACT {
+        string id PK
+        string companyId FK
+        string firstName
+        string lastName
+        string title "nullable"
+        string seniority "nullable"
+        string department "nullable"
+        string email "nullable - masked unless revealed"
+        boolean emailVerified
+        datetime redactedAt "nullable - GDPR erasure"
+        string importBatchId FK "nullable - staging flag"
+    }
+
+    LIST {
+        string id PK
+        string workspaceId FK
+        string name
+        enum type "CONTACTS|COMPANIES"
+        string createdById FK
+    }
+
+    LIST_ITEM {
+        string id PK
+        string listId FK
+        string contactId FK "nullable - XOR with companyId"
+        string companyId FK "nullable - XOR with contactId"
+    }
+
+    CREDIT_LEDGER_ENTRY {
+        string id PK
+        string workspaceId FK
+        int delta "append-only, never updated"
+        enum reason "MONTHLY_GRANT|EMAIL_REVEAL|COMPANY_VIEW|CSV_EXPORT|SEQUENCE_ENROLLMENT|TOPUP|ADJUSTMENT"
+        string contactId "plain string, not a relation"
+        int amountCents "nullable - only set on TOPUP"
+    }
+
+    EMAIL_REVEAL {
+        string id PK
+        string workspaceId FK
+        string contactId FK
+        string revealedById FK
+    }
+
+    COMPANY_DETAIL_VIEW {
+        string id PK
+        string workspaceId FK
+        string companyId FK
+        string viewedById FK
+    }
+
+    SEQUENCE {
+        string id PK
+        string workspaceId FK
+        string name
+        enum status "DRAFT|ACTIVE|PAUSED|ARCHIVED"
+        string createdById FK
+    }
+
+    SEQUENCE_STEP {
+        string id PK
+        string sequenceId FK
+        int order
+        enum type "EMAIL|WAIT"
+        int waitDays "nullable - WAIT only"
+        string subject "nullable - EMAIL only"
+        string body "nullable - EMAIL only"
+    }
+
+    SEQUENCE_ENROLLMENT {
+        string id PK
+        string sequenceId FK
+        string workspaceId FK "denormalized"
+        string contactId FK
+        enum status "ACTIVE|PAUSED|COMPLETED|UNENROLLED"
+        int currentStepIndex
+        datetime nextStepDueAt "nullable, indexed"
+        string unenrolledReason "nullable"
+    }
+
+    SEQUENCE_STEP_EVENT {
+        string id PK
+        string enrollmentId FK
+        int stepIndex
+        enum type "SENT|OPENED|CLICKED|BOUNCED|REPLIED|UNSUBSCRIBED"
+        string providerEventId UK "nullable - webhook dedup"
+    }
+
+    SUPPRESSION_ENTRY {
+        string id PK
+        string workspaceId FK
+        string email
+        enum reason "UNSUBSCRIBED|BOUNCED|MANUAL"
+    }
+
+    DATA_SUBJECT_OPT_OUT {
+        string id PK
+        string email UK
+        string reason "nullable"
+    }
+
+    PAYMENT_GATEWAY_SETTINGS {
+        string id PK "fixed literal 'stripe'"
+        string keySecretEncrypted "nullable - AES-256-GCM"
+        string webhookSecretEncrypted "nullable - AES-256-GCM"
+    }
+
+    TICKET {
+        string id PK
+        string workspaceId FK
+        string createdById FK
+        enum type "SUPPORT|SALES"
+        string subject
+        enum status "UNANSWERED|ANSWERED|CLOSED"
+        datetime closedAt "nullable"
+    }
+
+    TICKET_MESSAGE {
+        string id PK
+        string ticketId FK
+        enum authorType "USER|ADMIN"
+        string authorUserId FK "nullable - XOR with authorAdminId"
+        string authorAdminId FK "nullable - XOR with authorUserId"
+        string body
+    }
+
+    ADMIN_AUDIT_LOG {
+        string id PK
+        string superAdminId FK
+        enum action "SUSPEND_USER|UNSUSPEND_USER|UPDATE_PLAN|ADD_CREDITS"
+        string targetUserId "nullable, soft reference - not a real FK"
+        json metadata "nullable - e.g. before/after plan, credit amount"
+    }

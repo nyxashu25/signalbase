@@ -14,6 +14,7 @@ import {
   addCreditsSchema,
   updateUserPlanSchema,
   sendPromotionSchema,
+  auditLogQuerySchema,
 } from '../validators/adminValidators.js';
 import { saveStripeSettingsSchema } from '../validators/billingValidators.js';
 import {
@@ -84,6 +85,12 @@ adminRouter.post(
   '/promotions',
   validateBody(sendPromotionSchema),
   asyncHandler(adminController.sendPromotion),
+);
+
+adminRouter.get(
+  '/audit-log',
+  validateQuery(auditLogQuerySchema),
+  asyncHandler(adminController.listAuditLog),
 );
 
 // Uploads are inherently rarer and heavier than the rest of the admin API —

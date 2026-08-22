@@ -1,0 +1,63 @@
+sequenceDiagram
+    autonumber
+    participant Client as Frontend
+    participant API as Express API
+    participant Redis
+    participant Postgres
+    participant Hunter as Hunter.io
+    participant ES as Elasticsearch
+
+    Client->>API: POST /api/v1/contacts/:id/reveal<br/>(Idempotency-Key header)
+    API->>Redis: idempotency cache lookup
+    alt key already seen (within 24h)
+        Redis-->>API: cached response
+        API-->>Client: replay cached result (no charge)
+    else first time
+        API->>Postgres: already revealed by this workspace?
+        alt already revealed
+            Postgres-->>API: existing EmailReveal
+            API-->>Client: return existing email (no charge)
+        else not yet revealed
+            API->>Redis: reserveCredit(workspaceId, 2)
+            alt balance insufficient
+                Redis-->>API: -1
+                API-->>Client: 402 Insufficient credits
+            else reserved
+                Redis-->>API: reservationId
+                API->>Postgres: load contact + company
+
+                alt contact.redactedAt set (GDPR erasure)
+                    API->>Redis: releaseReservation (refund)
+                    API-->>Client: 410 Gone
+                else contact has no email on file yet
+                    API->>API: findEmail() -- deterministic first.last@domain guess
+                    API->>Postgres: isOptedOut(guessed email)?
+                    alt opted out
+                        API->>Redis: releaseReservation (refund)
+                        API-->>Client: 422 on opt-out registry
+                    else not opted out
+                        API->>Hunter: verifyEmail(guessed email)
+                        alt EMAIL_VERIFIER_API_KEY unset
+                            Hunter-->>API: (skipped) checked:false
+                        else key set
+                            Hunter-->>API: { verified, checked }
+                        end
+                        alt actively confirmed bad (checked && !verified)
+                            API->>Redis: releaseReservation (refund)
+                            API-->>Client: 422 No valid email found
+                        else usable (verified or unchecked)
+                            API->>Redis: resolveReservationForCommit -- clears reservation, returns amount
+                            API->>Postgres: TRANSACTION: update Contact.email/emailVerified + CreditLedgerEntry(EMAIL_REVEAL, -2) + EmailReveal row
+                            alt unique-constraint race (P2002)
+                                API->>Redis: refundAmount (direct balance credit)
+                                API-->>Client: return winner's email (no double charge)
+                            else committed
+                                API->>ES: enqueueIndex('contact', id) -- BullMQ, async
+                                API-->>Client: 200 { email, emailVerified }
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end

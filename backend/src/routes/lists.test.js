@@ -392,3 +392,32 @@ describe('list export', () => {
     expect(res.status).toBe(402);
   });
 });
+
+describe('list creation rate limit', () => {
+  beforeEach(async () => {
+    await resetDb();
+    await resetRedis();
+  });
+
+  afterAll(async () => {
+    await prisma.$disconnect();
+  });
+
+  it('rate-limits list creation per workspace (limit 30/hour)', async () => {
+    const owner = await registerOrg('Rate Limited Lists', 'owner@list-rate-limit.test');
+
+    for (let i = 0; i < 30; i++) {
+      const res = await request(app)
+        .post('/api/v1/lists')
+        .set('Authorization', `Bearer ${owner.accessToken}`)
+        .send({ name: `List ${i}`, type: 'CONTACTS' });
+      expect(res.status).toBe(201);
+    }
+
+    const overLimit = await request(app)
+      .post('/api/v1/lists')
+      .set('Authorization', `Bearer ${owner.accessToken}`)
+      .send({ name: 'One too many', type: 'CONTACTS' });
+    expect(overLimit.status).toBe(429);
+  });
+});

@@ -450,4 +450,22 @@ describe('sequences routes', () => {
       expect(enrollment).toBeNull();
     });
   });
+
+  it('rate-limits sequence creation per workspace (limit 20/hour)', async () => {
+    const owner = await registerOrg('Rate Limited Sequences', 'owner@seq-rate-limit.test');
+
+    for (let i = 0; i < 20; i++) {
+      const res = await request(app)
+        .post('/api/v1/sequences')
+        .set('Authorization', `Bearer ${owner.accessToken}`)
+        .send({ ...twoStepSequence, name: `${twoStepSequence.name} ${i}` });
+      expect(res.status).toBe(201);
+    }
+
+    const overLimit = await request(app)
+      .post('/api/v1/sequences')
+      .set('Authorization', `Bearer ${owner.accessToken}`)
+      .send({ ...twoStepSequence, name: 'One too many' });
+    expect(overLimit.status).toBe(429);
+  });
 });

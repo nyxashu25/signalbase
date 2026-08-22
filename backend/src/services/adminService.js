@@ -35,6 +35,60 @@ export async function getUsage() {
   return { totalReveals, totalSequenceSends };
 }
 
+/**
+ * Compliance trail for support-desk overrides (see AdminAuditLog in
+ * schema.prisma). Fire-and-record, not fire-and-forget — unlike the email
+ * notifications elsewhere in this file, a failed audit write should fail
+ * the request, since a support action that can't be logged shouldn't
+ * silently succeed unlogged.
+ */
+async function recordAuditLog({ superAdminId, action, targetUserId, metadata }) {
+  await prisma.adminAuditLog.create({
+    data: { superAdminId, action, targetUserId, metadata },
+  });
+}
+
+export async function listAuditLog({ page, pageSize, userId }) {
+  const where = userId ? { targetUserId: userId } : {};
+
+  const [total, entries] = await Promise.all([
+    prisma.adminAuditLog.count({ where }),
+    prisma.adminAuditLog.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      include: { superAdmin: { select: { name: true, email: true } } },
+    }),
+  ]);
+
+  // targetUserId is a soft reference (see the model comment) — batch-look-up
+  // the still-existing users' names/emails for display rather than an
+  // include, so a since-deleted target doesn't break the whole page.
+  const targetIds = [...new Set(entries.map((e) => e.targetUserId).filter(Boolean))];
+  const targetUsers = targetIds.length
+    ? await prisma.user.findMany({
+        where: { id: { in: targetIds } },
+        select: { id: true, name: true, email: true },
+      })
+    : [];
+  const targetById = new Map(targetUsers.map((u) => [u.id, u]));
+
+  return {
+    results: entries.map((e) => ({
+      id: e.id,
+      action: e.action,
+      metadata: e.metadata,
+      createdAt: e.createdAt,
+      superAdmin: e.superAdmin,
+      targetUser: e.targetUserId ? (targetById.get(e.targetUserId) ?? { id: e.targetUserId }) : null,
+    })),
+    total,
+    page,
+    pageSize,
+  };
+}
+
 function primaryMembership(user) {
   // Same convention as authService.login's default-workspace pick — a user
   // created through normal signup has exactly one, so this is unambiguous
@@ -133,32 +187,41 @@ export async function getUserDetail(userId) {
  * support tool used sparingly, not something to build real dunning logic
  * around yet.
  */
-export async function updateUserPlan(userId, plan) {
+export async function updateUserPlan(userId, plan, actorAdminId) {
   const { user, membership } = await loadUserWithPrimaryWorkspace(userId);
   const workspaceId = membership.workspace.id;
+  const previousPlan = membership.workspace.plan;
 
   const workspace = await prisma.workspace.update({
     where: { id: workspaceId },
     data: { plan, monthlyCreditGrant: PLAN_MONTHLY_CREDITS[plan] },
+  });
+  await recordAuditLog({
+    superAdminId: actorAdminId,
+    action: 'UPDATE_PLAN',
+    targetUserId: userId,
+    metadata: { from: previousPlan, to: plan },
   });
   await notificationService.sendAdminPlanChanged(user, plan);
 
   return { workspaceId, plan: workspace.plan, monthlyCreditGrant: workspace.monthlyCreditGrant };
 }
 
-export async function suspendUser(userId) {
+export async function suspendUser(userId, actorAdminId) {
   const user = await prisma.user.update({
     where: { id: userId },
     data: { suspendedAt: new Date() },
   });
+  await recordAuditLog({ superAdminId: actorAdminId, action: 'SUSPEND_USER', targetUserId: userId });
   return user;
 }
 
-export async function unsuspendUser(userId) {
+export async function unsuspendUser(userId, actorAdminId) {
   const user = await prisma.user.update({
     where: { id: userId },
     data: { suspendedAt: null },
   });
+  await recordAuditLog({ superAdminId: actorAdminId, action: 'UNSUSPEND_USER', targetUserId: userId });
   return user;
 }
 
@@ -221,7 +284,7 @@ export async function listTransactions({ page, pageSize }) {
  * reason: ADJUSTMENT instead of TOPUP so it's distinguishable in the
  * transaction history from an actual payment.
  */
-export async function addCredits(userId, amount) {
+export async function addCredits(userId, amount, actorAdminId) {
   const { user, membership } = await loadUserWithPrimaryWorkspace(userId);
   const workspaceId = membership.workspace.id;
 
@@ -229,6 +292,12 @@ export async function addCredits(userId, amount) {
     data: { workspaceId, delta: amount, reason: 'ADJUSTMENT' },
   });
   await redis.incrby(`credits:balance:${workspaceId}`, amount);
+  await recordAuditLog({
+    superAdminId: actorAdminId,
+    action: 'ADD_CREDITS',
+    targetUserId: userId,
+    metadata: { amount },
+  });
   await notificationService.sendAdminCreditsAdded(user, amount);
 
   return { workspaceId, balance: await getBalance(workspaceId) };
