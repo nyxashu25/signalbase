@@ -11,6 +11,12 @@ export const authApi = baseApi.injectEndpoints({
     googleLogin: builder.mutation({
       query: (body) => ({ url: '/auth/google', method: 'POST', body }),
     }),
+    verifyEmail: builder.mutation({
+      query: (body) => ({ url: '/auth/verify-email', method: 'POST', body }),
+    }),
+    resendVerification: builder.mutation({
+      query: (body) => ({ url: '/auth/resend-verification', method: 'POST', body }),
+    }),
     refresh: builder.mutation({
       query: () => ({ url: '/auth/refresh', method: 'POST' }),
     }),
@@ -30,6 +36,8 @@ export const {
   useLoginMutation,
   useRegisterMutation,
   useGoogleLoginMutation,
+  useVerifyEmailMutation,
+  useResendVerificationMutation,
   useRefreshMutation,
   useLogoutMutation,
   useMeQuery,

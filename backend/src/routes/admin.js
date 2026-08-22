@@ -13,6 +13,7 @@ import {
   paginationQuerySchema,
   addCreditsSchema,
   updateUserPlanSchema,
+  sendPromotionSchema,
 } from '../validators/adminValidators.js';
 import { saveStripeSettingsSchema } from '../validators/billingValidators.js';
 import {
@@ -77,6 +78,12 @@ adminRouter.put(
   '/settings/stripe',
   validateBody(saveStripeSettingsSchema),
   asyncHandler(adminController.saveStripeSettings),
+);
+
+adminRouter.post(
+  '/promotions',
+  validateBody(sendPromotionSchema),
+  asyncHandler(adminController.sendPromotion),
 );
 
 // Uploads are inherently rarer and heavier than the rest of the admin API —

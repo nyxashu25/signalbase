@@ -6,6 +6,8 @@ import { ChatWidget } from './components/ChatWidget.jsx';
 import { RequireAuth } from './components/RequireAuth.jsx';
 import { Dashboard } from './pages/Dashboard.jsx';
 import { Login } from './pages/Login.jsx';
+import { VerifyEmail } from './pages/VerifyEmail.jsx';
+import { Unsubscribe } from './pages/Unsubscribe.jsx';
 import { People } from './pages/People.jsx';
 import { Companies } from './pages/Companies.jsx';
 import { CompanyDetail } from './pages/CompanyDetail.jsx';
@@ -82,6 +84,8 @@ export function App() {
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/unsubscribe" element={<Unsubscribe />} />
 
         <Route path="/app" element={<RequireAuth />}>
           <Route element={<AppLayout />}>

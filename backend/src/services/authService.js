@@ -8,8 +8,11 @@ import {
   issueRefreshToken,
   rotateRefreshToken,
   revokeRefreshToken,
+  signEmailVerificationToken,
+  verifyEmailVerificationToken,
   ReplayDetectedError,
 } from './tokenService.js';
+import * as notificationService from './notificationService.js';
 import { ApiError } from '../middleware/errorHandler.js';
 import { env } from '../config/env.js';
 
@@ -31,7 +34,7 @@ function slugify(name) {
  * sign-in with no matching existing account) — passwordHash is null for
  * the latter, googleId is null for the former.
  */
-async function createAccount({ email, name, passwordHash, googleId, orgName }) {
+async function createAccount({ email, name, passwordHash, googleId, orgName, emailVerified }) {
   const { user, workspace, membership, org } = await prisma.$transaction(async (tx) => {
     const org = await tx.org.create({ data: { name: orgName, slug: slugify(orgName) } });
     const workspace = await tx.workspace.create({
@@ -42,7 +45,9 @@ async function createAccount({ email, name, passwordHash, googleId, orgName }) {
         monthlyCreditGrant: PLAN_MONTHLY_CREDITS.FREE,
       },
     });
-    const user = await tx.user.create({ data: { email, passwordHash, googleId, name } });
+    const user = await tx.user.create({
+      data: { email, passwordHash, googleId, name, emailVerified },
+    });
     const membership = await tx.membership.create({
       data: { userId: user.id, workspaceId: workspace.id, role: 'OWNER' },
     });
@@ -58,6 +63,11 @@ async function createAccount({ email, name, passwordHash, googleId, orgName }) {
   return { user, workspace, membership, org };
 }
 
+/**
+ * Creates the account in an unverified state and emails a confirm link —
+ * does NOT log the user in. Login only starts once verifyEmail below runs,
+ * whether that's from the confirm link or (idempotently) a repeat click.
+ */
 export async function register({ email, password, name, orgName }) {
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
@@ -65,22 +75,68 @@ export async function register({ email, password, name, orgName }) {
   }
 
   const passwordHash = await hashPassword(password);
-  const { user, workspace, membership, org } = await createAccount({
+  const { user } = await createAccount({
     email,
     name,
     passwordHash,
     googleId: null,
     orgName,
+    emailVerified: false,
   });
+
+  const token = signEmailVerificationToken(user.id);
+  await notificationService.sendEmailVerification(user, token);
+
+  return { pendingVerification: true, email: user.email };
+}
+
+/**
+ * Verifies the confirm-link token, flips emailVerified, fires the
+ * welcome/admin-alert emails (once — no-ops if the account was already
+ * verified, e.g. a double-click), then logs the user in exactly like
+ * register() used to.
+ */
+export async function verifyEmail(token) {
+  let payload;
+  try {
+    payload = verifyEmailVerificationToken(token);
+  } catch {
+    throw new ApiError(400, 'Invalid or expired verification link');
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: payload.sub },
+    include: { memberships: { include: { workspace: true }, orderBy: { createdAt: 'asc' } } },
+  });
+  if (!user) throw new ApiError(400, 'Invalid or expired verification link');
+
+  const membership = user.memberships[0];
+  if (!membership) throw new ApiError(409, 'This account has no workspace membership');
+  const workspace = membership.workspace;
+
+  if (!user.emailVerified) {
+    await prisma.user.update({ where: { id: user.id }, data: { emailVerified: true } });
+    await notificationService.notifyAccountVerified(user, workspace);
+  }
 
   return issueSession({
     userId: user.id,
     workspaceId: workspace.id,
-    orgId: org.id,
+    orgId: workspace.orgId,
     role: membership.role,
     user,
     workspace,
   });
+}
+
+/** Silently no-ops for an unknown or already-verified email — never reveals which. */
+export async function resendVerificationEmail(email) {
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (user && !user.emailVerified) {
+    const token = signEmailVerificationToken(user.id);
+    await notificationService.sendEmailVerification(user, token);
+  }
+  return { sent: true };
 }
 
 export async function login({ email, password, workspaceId }) {
@@ -94,10 +150,13 @@ export async function login({ email, password, workspaceId }) {
   const invalid = () => new ApiError(401, 'Invalid email or password');
   if (!user) throw invalid();
   if (!(await verifyPassword(user.passwordHash, password))) throw invalid();
-  // Checked after password verification (not before) so a suspended
-  // account's error message never doubles as a way to test whether a
-  // guessed password was actually correct.
+  // Checked after password verification (not before) so a suspended/
+  // unverified account's error message never doubles as a way to test
+  // whether a guessed password was actually correct.
   if (user.suspendedAt) throw new ApiError(403, 'This account has been suspended');
+  if (!user.emailVerified) {
+    throw new ApiError(403, 'Please verify your email address before signing in');
+  }
 
   const membership = workspaceId
     ? user.memberships.find((m) => m.workspaceId === workspaceId)
@@ -163,7 +222,16 @@ export async function loginWithGoogle(credential, verify = verifyGoogleIdToken) 
   if (!user) {
     const existing = await prisma.user.findUnique({ where: { email }, include });
     if (existing) {
-      user = await prisma.user.update({ where: { id: existing.id }, data: { googleId }, include });
+      // The Google credential itself just proved ownership of this email
+      // (payload.email_verified was already checked above) — linking it
+      // onto a still-unverified password account satisfies the same bar
+      // register()'s confirm-link exists to enforce, so mark it verified
+      // too rather than leaving password sign-in permanently blocked.
+      user = await prisma.user.update({
+        where: { id: existing.id },
+        data: { googleId, emailVerified: true },
+        include,
+      });
     }
   }
 
@@ -181,11 +249,14 @@ export async function loginWithGoogle(credential, verify = verifyGoogleIdToken) 
       passwordHash: null,
       googleId,
       orgName: `${name}'s Workspace`,
+      // Google already verified this email — no confirm-link step needed.
+      emailVerified: true,
     });
     user = created.user;
     workspace = created.workspace;
     membership = created.membership;
     orgId = created.org.id;
+    await notificationService.notifyAccountVerified(user, workspace);
   }
 
   return issueSession({

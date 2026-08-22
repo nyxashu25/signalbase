@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import request from 'supertest';
 import { createApp } from '../app.js';
 import { resetDb, resetRedis } from '../test/dbHelpers.js';
+import { registerAndVerify } from '../test/authHelpers.js';
 import { prisma } from '../config/db.js';
 import { getBalance, initializeBalance } from '../services/creditService.js';
 import { saveStripeSettings } from '../services/paymentSettingsService.js';
@@ -307,7 +308,7 @@ describe('POST /billing/subscribe', () => {
   });
 
   async function registerOwner() {
-    const res = await request(app).post('/api/v1/auth/register').send({
+    const res = await registerAndVerify(app, {
       email: 'owner@subscribe.test',
       password: 'correct-horse-battery',
       name: 'Owner',
@@ -545,7 +546,7 @@ describe('POST /billing/checkout-session', () => {
   });
 
   async function registerOwner() {
-    const res = await request(app).post('/api/v1/auth/register').send({
+    const res = await registerAndVerify(app, {
       email: 'owner@billing.test',
       password: 'correct-horse-battery',
       name: 'Owner',
@@ -646,7 +647,7 @@ describe('GET /billing/transactions', () => {
   });
 
   it("lists this workspace's ledger, newest first, with contact info joined onto reveal rows", async () => {
-    const registerRes = await request(app).post('/api/v1/auth/register').send({
+    const registerRes = await registerAndVerify(app, {
       email: 'owner@billing.test',
       password: 'correct-horse-battery',
       name: 'Owner',
@@ -708,13 +709,13 @@ describe('GET /billing/transactions', () => {
   });
 
   it("never shows another workspace's ledger", async () => {
-    const orgA = await request(app).post('/api/v1/auth/register').send({
+    const orgA = await registerAndVerify(app, {
       email: 'owner@org-a.test',
       password: 'correct-horse-battery',
       name: 'Owner',
       orgName: 'Org A',
     });
-    const orgB = await request(app).post('/api/v1/auth/register').send({
+    const orgB = await registerAndVerify(app, {
       email: 'owner@org-b.test',
       password: 'correct-horse-battery',
       name: 'Owner',

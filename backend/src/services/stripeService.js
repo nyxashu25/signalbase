@@ -6,6 +6,7 @@ import { ApiError } from '../middleware/errorHandler.js';
 import { logger } from '../config/logger.js';
 import { findPackage, priceCustomCredits } from '../config/creditPackages.js';
 import { getDecryptedStripeCredentials } from './paymentSettingsService.js';
+import * as notificationService from './notificationService.js';
 import {
   PLAN_MONTHLY_CREDITS,
   PLAN_PRICE_USD_CENTS,
@@ -57,6 +58,17 @@ async function claimEvent(eventId) {
   return claimed === 'OK';
 }
 
+// Shared by the three webhook handlers below — all three grant credits/
+// activate a plan at the workspace level, but the recipient of the email is
+// a person, so this resolves the workspace's OWNER membership to a User.
+async function getWorkspaceOwnerEmail(workspaceId) {
+  const membership = await prisma.membership.findFirst({
+    where: { workspaceId, role: 'OWNER' },
+    include: { user: true },
+  });
+  return membership?.user;
+}
+
 async function topUpCredits(session) {
   const { workspaceId, credits, amountCents } = session.metadata ?? {};
   if (!workspaceId || !credits) {
@@ -80,6 +92,9 @@ async function topUpCredits(session) {
   await redis.incrby(`credits:balance:${workspaceId}`, amount);
 
   logger.info({ workspaceId, amount, amountCents }, 'Credits topped up from Stripe payment');
+
+  const owner = await getWorkspaceOwnerEmail(workspaceId);
+  if (owner) await notificationService.sendCreditPurchaseReceipt(owner, amount, amountCents);
 }
 
 async function updateSubscriptionState(subscription) {
@@ -125,6 +140,9 @@ async function activatePlanSubscription(session) {
     { workspaceId, plan, interval },
     'Workspace plan activated via Stripe subscription checkout',
   );
+
+  const owner = await getWorkspaceOwnerEmail(workspaceId);
+  if (owner) await notificationService.sendPlanActivated(owner, plan, interval || 'MONTH');
 }
 
 // Fires for every paid subscription invoice, including the very first one —
@@ -168,6 +186,9 @@ async function grantMonthlyCredits(invoice) {
   await redis.incrby(`credits:balance:${workspace.id}`, amount);
 
   logger.info({ workspaceId: workspace.id, amount }, 'Monthly plan credits granted');
+
+  const owner = await getWorkspaceOwnerEmail(workspace.id);
+  if (owner) await notificationService.sendMonthlyCreditsRenewed(owner, amount);
 }
 
 export async function handleEvent(event) {

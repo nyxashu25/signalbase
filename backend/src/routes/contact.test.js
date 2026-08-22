@@ -2,14 +2,13 @@ import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../app.js';
 import { resetDb, resetRedis } from '../test/dbHelpers.js';
+import { registerAndVerify } from '../test/authHelpers.js';
 import { prisma } from '../config/db.js';
 
 const app = createApp();
 
 async function registerOrg(orgName, email) {
-  return request(app)
-    .post('/api/v1/auth/register')
-    .send({ email, password: 'correct-horse-battery', name: 'Owner', orgName });
+  return registerAndVerify(app, { email, password: 'correct-horse-battery', name: 'Owner', orgName });
 }
 
 describe('POST /contact', () => {

@@ -28,3 +28,8 @@ export const addCreditsSchema = z.object({
 export const updateUserPlanSchema = z.object({
   plan: z.enum(['FREE', 'BASIC', 'PROFESSIONAL', 'ORGANIZATION']),
 });
+
+export const sendPromotionSchema = z.object({
+  subject: z.string().trim().min(1).max(200),
+  body: z.string().trim().min(1).max(20_000),
+});

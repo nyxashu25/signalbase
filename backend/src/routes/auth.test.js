@@ -2,8 +2,10 @@ import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../app.js';
 import { resetDb, resetRedis } from '../test/dbHelpers.js';
+import { registerAndVerify } from '../test/authHelpers.js';
 import { prisma } from '../config/db.js';
 import { loginWithGoogle } from '../services/authService.js';
+import { signEmailVerificationToken } from '../services/tokenService.js';
 import { hashPassword } from '../utils/password.js';
 
 const app = createApp();
@@ -30,13 +32,17 @@ describe('auth flow', () => {
     await prisma.$disconnect();
   });
 
-  it('registers a new org/workspace/user and returns an access token + refresh cookie', async () => {
+  it('registers a new account in a pending-verification state, with no session yet', async () => {
     const res = await request(app).post('/api/v1/auth/register').send(validRegistration);
 
-    expect(res.status).toBe(201);
-    expect(res.body.accessToken).toBeTruthy();
-    expect(res.body.role).toBe('OWNER');
-    expect(parseCookie(res)).toMatch(/^refreshToken=/);
+    expect(res.status).toBe(202);
+    expect(res.body.pendingVerification).toBe(true);
+    expect(res.body.email).toBe(validRegistration.email);
+    expect(res.body.accessToken).toBeUndefined();
+    expect(parseCookie(res)).toBeUndefined();
+
+    const user = await prisma.user.findUnique({ where: { email: validRegistration.email } });
+    expect(user.emailVerified).toBe(false);
   });
 
   it('rejects registering the same email twice', async () => {
@@ -44,6 +50,62 @@ describe('auth flow', () => {
     const res = await request(app).post('/api/v1/auth/register').send(validRegistration);
 
     expect(res.status).toBe(409);
+  });
+
+  it('rejects login before the email is confirmed', async () => {
+    await request(app).post('/api/v1/auth/register').send(validRegistration);
+
+    const res = await request(app).post('/api/v1/auth/login').send({
+      email: validRegistration.email,
+      password: validRegistration.password,
+    });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error.message).toMatch(/verify your email/i);
+  });
+
+  it('confirming the verify-email link logs the user in, same shape register used to return', async () => {
+    await request(app).post('/api/v1/auth/register').send(validRegistration);
+    const user = await prisma.user.findUnique({ where: { email: validRegistration.email } });
+    const token = signEmailVerificationToken(user.id);
+
+    const res = await request(app).post('/api/v1/auth/verify-email').send({ token });
+
+    expect(res.status).toBe(200);
+    expect(res.body.accessToken).toBeTruthy();
+    expect(res.body.role).toBe('OWNER');
+    expect(parseCookie(res)).toMatch(/^refreshToken=/);
+
+    const verified = await prisma.user.findUnique({ where: { email: validRegistration.email } });
+    expect(verified.emailVerified).toBe(true);
+
+    // Login now works, having been blocked before confirmation.
+    const login = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ email: validRegistration.email, password: validRegistration.password });
+    expect(login.status).toBe(200);
+  });
+
+  it('rejects an invalid or expired verify-email token', async () => {
+    const res = await request(app).post('/api/v1/auth/verify-email').send({ token: 'not-a-real-token' });
+    expect(res.status).toBe(400);
+  });
+
+  it('resend-verification never reveals whether the account exists or is already verified', async () => {
+    const forUnknown = await request(app)
+      .post('/api/v1/auth/resend-verification')
+      .send({ email: 'nobody@acme.test' });
+    expect(forUnknown.status).toBe(200);
+    expect(forUnknown.body.sent).toBe(true);
+
+    const registered = await registerAndVerify(app, validRegistration);
+    expect(registered.status).toBe(200); // sanity: this account is fully verified
+
+    const forVerified = await request(app)
+      .post('/api/v1/auth/resend-verification')
+      .send({ email: validRegistration.email });
+    expect(forVerified.status).toBe(200);
+    expect(forVerified.body.sent).toBe(true);
   });
 
   it('rejects login with the wrong password using the same error as an unknown email', async () => {
@@ -65,7 +127,7 @@ describe('auth flow', () => {
     const noAuth = await request(app).get('/api/v1/auth/me');
     expect(noAuth.status).toBe(401);
 
-    const register = await request(app).post('/api/v1/auth/register').send(validRegistration);
+    const register = await registerAndVerify(app, validRegistration);
     const me = await request(app)
       .get('/api/v1/auth/me')
       .set('Authorization', `Bearer ${register.body.accessToken}`);
@@ -76,7 +138,7 @@ describe('auth flow', () => {
   });
 
   it('rotates the refresh token on use and rejects reuse of the old one (replay detection)', async () => {
-    const register = await request(app).post('/api/v1/auth/register').send(validRegistration);
+    const register = await registerAndVerify(app, validRegistration);
     const firstCookie = parseCookie(register);
 
     const firstRefresh = await request(app).post('/api/v1/auth/refresh').set('Cookie', firstCookie);
@@ -95,7 +157,7 @@ describe('auth flow', () => {
   });
 
   it('logout revokes the refresh token', async () => {
-    const register = await request(app).post('/api/v1/auth/register').send(validRegistration);
+    const register = await registerAndVerify(app, validRegistration);
     const cookie = parseCookie(register);
 
     const logoutRes = await request(app).post('/api/v1/auth/logout').set('Cookie', cookie);
@@ -107,7 +169,7 @@ describe('auth flow', () => {
 
   describe('first-login tutorial', () => {
     it('is null until the tutorial is completed, for a fresh registration', async () => {
-      const register = await request(app).post('/api/v1/auth/register').send(validRegistration);
+      const register = await registerAndVerify(app, validRegistration);
       expect(register.body.user.tutorialCompletedAt).toBeNull();
 
       const me = await request(app)
@@ -117,7 +179,7 @@ describe('auth flow', () => {
     });
 
     it('POST /tutorial-complete sets it once and persists across logins', async () => {
-      const register = await request(app).post('/api/v1/auth/register').send(validRegistration);
+      const register = await registerAndVerify(app, validRegistration);
       const token = register.body.accessToken;
 
       const complete = await request(app)

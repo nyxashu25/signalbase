@@ -17,13 +17,24 @@ function setRefreshCookie(res, value) {
 
 export async function register(req, res) {
   const result = await authService.register(req.body);
+  // No cookie/session here — registration now only creates the account and
+  // emails a confirm link; verifyEmail below is what actually logs them in.
+  res.status(202).json({ pendingVerification: true, email: result.email });
+}
+
+export async function verifyEmail(req, res) {
+  const result = await authService.verifyEmail(req.body.token);
   setRefreshCookie(res, result.refreshCookieValue);
-  res.status(201).json({
+  res.json({
     accessToken: result.accessToken,
     user: result.user,
     workspace: result.workspace,
     role: result.role,
   });
+}
+
+export async function resendVerification(req, res) {
+  res.json(await authService.resendVerificationEmail(req.body.email));
 }
 
 export async function login(req, res) {

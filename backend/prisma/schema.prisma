@@ -96,6 +96,17 @@ model User {
   // matching this app's stateless-access-token design (see docs on
   // ACCESS_TOKEN_TTL_SECONDS). Null means never suspended.
   suspendedAt         DateTime?
+  // Password signups start false and can't log in until they click the
+  // confirm link emailed to them (see authService.verifyEmail); Google
+  // signups start true since Google already verified the email. Grandfathered
+  // to true for every account that existed before this field was added — see
+  // the add_email_verification migration.
+  emailVerified       Boolean   @default(false)
+  // Opts a user out of the admin promotional broadcast (see
+  // adminService.sendPromotionalBroadcast) without touching their ability to
+  // receive transactional mail (verification, tickets, billing). Set via the
+  // unsubscribe link every promotional email includes.
+  marketingOptOut     Boolean   @default(false)
   // Null until the guided first-login tour is finished or skipped — checked
   // once per session by the frontend to decide whether to show it. Set once
   // and never cleared, so it truly shows only the first time, across

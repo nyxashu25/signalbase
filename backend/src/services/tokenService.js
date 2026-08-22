@@ -85,3 +85,37 @@ export class ReplayDetectedError extends Error {
     super('Refresh token reuse detected');
   }
 }
+
+const EMAIL_VERIFY_PURPOSE = 'verify-email';
+const EMAIL_VERIFY_TTL_SECONDS = 24 * 60 * 60;
+const UNSUBSCRIBE_PURPOSE = 'unsubscribe';
+
+/**
+ * Stateless (no Redis/DB row) tokens for the two public, unauthenticated
+ * links this app emails out — the `purpose` claim keeps one from being
+ * replayed as the other, and neither can be replayed as a real access token
+ * since signAccessToken never sets `purpose`.
+ */
+export function signEmailVerificationToken(userId) {
+  return jwt.sign({ sub: userId, purpose: EMAIL_VERIFY_PURPOSE }, env.JWT_ACCESS_SECRET, {
+    expiresIn: EMAIL_VERIFY_TTL_SECONDS,
+  });
+}
+
+export function verifyEmailVerificationToken(token) {
+  const payload = jwt.verify(token, env.JWT_ACCESS_SECRET);
+  if (payload.purpose !== EMAIL_VERIFY_PURPOSE) throw new Error('Wrong token purpose');
+  return payload;
+}
+
+// No expiry — an unsubscribe link that stops working is worse than one that
+// works forever; the only thing it can do is flip one user's marketingOptOut.
+export function signUnsubscribeToken(userId) {
+  return jwt.sign({ sub: userId, purpose: UNSUBSCRIBE_PURPOSE }, env.JWT_ACCESS_SECRET);
+}
+
+export function verifyUnsubscribeToken(token) {
+  const payload = jwt.verify(token, env.JWT_ACCESS_SECRET);
+  if (payload.purpose !== UNSUBSCRIBE_PURPOSE) throw new Error('Wrong token purpose');
+  return payload;
+}

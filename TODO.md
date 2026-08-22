@@ -5,6 +5,14 @@ picked up or completed — don't let it drift from reality.
 
 ## P0 — blocks a real user/customer
 
+- [ ] **Verify a sending domain in Resend.** Signup now requires clicking an
+      emailed confirm link (see Done below), but sends still go from
+      Resend's shared sandbox sender (`onboarding@resend.dev`), which only
+      delivers to Resend's own test domains — confirmed `@resend.dev`
+      delivers, `@example.com` and real customer domains are rejected. Until
+      titans7.com (or similar) is verified in Resend and `RESEND_FROM_EMAIL`
+      is pointed at it, **real users cannot receive their confirm link and
+      cannot complete signup.**
 - [ ] **Team/seat invites.** Plans are priced per seat and `Role`
       (OWNER/ADMIN/MEMBER) + `Membership` already exist in the schema, but
       there is no invite flow — every `/auth/register` call creates a brand
@@ -20,9 +28,9 @@ picked up or completed — don't let it drift from reality.
 
 ## P1 — real gaps, not urgent
 
-- [ ] **Ticket replies don't notify the user.** Admin gets a browser
-      notification when a ticket is raised; the user gets nothing when the
-      admin replies (no email, no unread badge on the Tickets nav link).
+- [ ] **No unread badge on the Tickets nav link** for a new admin reply —
+      the email notification now exists (see Done below), but there's still
+      no in-app indicator.
 - [ ] **Marketing Contact form leads go nowhere** — logged only, not
       forwarded to sales/CRM.
 - [ ] **No admin action audit log.** Suspend/unsuspend/plan-change/
@@ -53,6 +61,24 @@ picked up or completed — don't let it drift from reality.
 
 ## Done
 
+- [x] **Email notifications (Resend) + mandatory email verification.**
+      Password signup now creates an unverified account, emails a confirm
+      link, and only logs the user in once they click it (`GET
+      /auth/verify-email`); login rejects an unverified account with a
+      resend-verification option. Google sign-up skips this — Google already
+      verified the email. On verification: welcome email to the user, alert
+      email to every super admin. Ticket create/admin-reply/close all email
+      the ticket's creator. Billing: Stripe credit top-up, Stripe plan
+      activation, monthly credit renewal, and admin-granted
+      credits/plan-override all send a confirmation email. New admin Control
+      Panel card (`Settings`) sends a one-off promotional broadcast to every
+      non-suspended, non-opted-out user, with a per-user unsubscribe link.
+      `resendService.js`/`notificationService.js` are new; gated behind
+      `RESEND_API_KEY` (unset = simulated/logged send, same posture as the
+      existing `ESP_API_KEY`). Configured with a real key locally and on
+      titans7.com, but sends still go from Resend's shared sandbox sender
+      (`onboarding@resend.dev`) — real end-user delivery needs a verified
+      domain in Resend, tracked as a P0 item above.
 - [x] Fixed "Start free" CTAs across the marketing site — they were landing
       on the Sign In form instead of the Create Workspace form. Now link to
       `/login?mode=register`, which `Login.jsx` reads to open directly in

@@ -65,6 +65,17 @@ const schema = z.object({
   // signatures even while sends themselves are simulated.
   ESP_WEBHOOK_SECRET: z.string().min(16),
 
+  // Resend — DataPit's own transactional/notification mail (verification,
+  // tickets, billing, promotional broadcasts). A separate provider/concern
+  // from ESP_API_KEY above (that one is the sequence engine sending to
+  // prospects on a workspace's behalf). Same gated posture: unset means
+  // simulated sends — see resendService.js.
+  RESEND_API_KEY: z.string().optional(),
+  // Defaults to Resend's shared sandbox sender, which only delivers to the
+  // Resend account's own address until a real domain is verified in Resend —
+  // swap once titans7.com (or similar) is verified there.
+  RESEND_FROM_EMAIL: z.string().email().default('onboarding@resend.dev'),
+
   // AES-256-GCM key (32 bytes, hex-encoded = 64 chars) for encrypting secrets
   // stored in the database — currently the Stripe secret key and webhook
   // secret an admin pastes into /control/settings (see

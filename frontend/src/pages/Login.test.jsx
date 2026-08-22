@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { Routes, Route } from 'react-router-dom';
 import { Login } from './Login.jsx';
 import { renderWithProviders, mockFetchRoutes } from '../test/testUtils.jsx';
@@ -72,5 +73,57 @@ describe('Login', () => {
     window.__gisCallback({ credential: 'fake-id-token' });
 
     await waitFor(() => expect(screen.getByText('App home')).toBeInTheDocument());
+  });
+
+  it('registering shows a check-your-email panel instead of logging in', async () => {
+    const user = userEvent.setup();
+    mockFetchRoutes([
+      {
+        url: '/auth/register',
+        method: 'POST',
+        respond: { status: 202, body: { pendingVerification: true, email: 'new@acme.test' } },
+      },
+    ]);
+
+    renderWithProviders(<Login />, { route: '/login?mode=register' });
+
+    await user.type(screen.getByLabelText('Your name'), 'New User');
+    await user.type(screen.getByLabelText('Workspace / org name'), 'Acme');
+    await user.type(screen.getByLabelText('Email'), 'new@acme.test');
+    await user.type(screen.getByLabelText('Password'), 'correct-horse-battery');
+    await user.click(screen.getByRole('button', { name: 'Create workspace' }));
+
+    expect(await screen.findByText('Check your email to confirm your account')).toBeInTheDocument();
+    expect(screen.getByText('new@acme.test')).toBeInTheDocument();
+  });
+
+  it('shows a resend-verification action when login is blocked on confirmation', async () => {
+    const user = userEvent.setup();
+    mockFetchRoutes([
+      {
+        url: '/auth/login',
+        method: 'POST',
+        respond: {
+          status: 403,
+          body: { error: { message: 'Please verify your email address before signing in' } },
+        },
+      },
+      {
+        url: '/auth/resend-verification',
+        method: 'POST',
+        respond: { body: { sent: true } },
+      },
+    ]);
+
+    renderWithProviders(<Login />, { route: '/login' });
+
+    await user.type(screen.getByLabelText('Email'), 'unverified@acme.test');
+    await user.type(screen.getByLabelText('Password'), 'correct-horse-battery');
+    await user.click(screen.getByRole('button', { name: 'Sign in' }));
+
+    const resendButton = await screen.findByRole('button', { name: 'Resend verification email' });
+    await user.click(resendButton);
+
+    expect(await screen.findByText('Sent — check your inbox')).toBeInTheDocument();
   });
 });

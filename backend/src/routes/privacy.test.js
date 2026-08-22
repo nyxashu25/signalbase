@@ -3,14 +3,18 @@ import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { createApp } from '../app.js';
 import { resetDb, resetRedis } from '../test/dbHelpers.js';
+import { registerAndVerify } from '../test/authHelpers.js';
 import { prisma } from '../config/db.js';
 
 const app = createApp();
 
 async function registerOrg(orgName, email) {
-  const res = await request(app)
-    .post('/api/v1/auth/register')
-    .send({ email, password: 'correct-horse-battery', name: 'Owner', orgName });
+  const res = await registerAndVerify(app, {
+    email,
+    password: 'correct-horse-battery',
+    name: 'Owner',
+    orgName,
+  });
   return { accessToken: res.body.accessToken, workspaceId: res.body.workspace.id };
 }
 

@@ -45,7 +45,7 @@ describe('rate limiting', () => {
           name: 'U',
           orgName: 'Org',
         });
-      expect(res.status).toBe(201);
+      expect(res.status).toBe(202);
     }
 
     const sixth = await request(app).post('/api/v1/auth/register').send({

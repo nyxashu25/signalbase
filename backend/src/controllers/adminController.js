@@ -53,3 +53,7 @@ export async function saveStripeSettings(req, res) {
   const result = await paymentSettingsService.saveStripeSettings(req.body, req.superAdmin.adminId);
   res.json(result);
 }
+
+export async function sendPromotion(req, res) {
+  res.json(await adminService.sendPromotionalBroadcast(req.body));
+}

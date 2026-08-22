@@ -28,6 +28,7 @@ async function createTenantUser({ suspended = false } = {}) {
       email: `user-${Date.now()}@acme.test`,
       passwordHash,
       name: 'Acme User',
+      emailVerified: true,
       suspendedAt: suspended ? new Date() : null,
     },
   });
@@ -263,6 +264,49 @@ describe('admin data routes', () => {
     it('rejects an unauthenticated request', async () => {
       const res = await request(app).get('/api/v1/admin/settings/stripe');
       expect(res.status).toBe(401);
+    });
+  });
+
+  describe('POST /promotions', () => {
+    it('sends to every non-suspended, non-opted-out user and reports the recipient count', async () => {
+      const token = await loginAsAdmin();
+      const { user: normal } = await createTenantUser();
+      const { user: suspended } = await createTenantUser({ suspended: true });
+      const { user: optedOut } = await createTenantUser();
+      await prisma.user.update({ where: { id: optedOut.id }, data: { marketingOptOut: true } });
+
+      const res = await request(app)
+        .post('/api/v1/admin/promotions')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ subject: 'A new feature just shipped', body: '<p>Check it out.</p>' });
+
+      expect(res.status).toBe(200);
+      // Exactly the eligible user counted — not the suspended or opted-out ones.
+      expect(res.body.recipientCount).toBeGreaterThanOrEqual(1);
+
+      const allEligible = await prisma.user.findMany({
+        where: { suspendedAt: null, marketingOptOut: false },
+      });
+      expect(res.body.recipientCount).toBe(allEligible.length);
+      expect(allEligible.map((u) => u.id)).toContain(normal.id);
+      expect(allEligible.map((u) => u.id)).not.toContain(suspended.id);
+      expect(allEligible.map((u) => u.id)).not.toContain(optedOut.id);
+    });
+
+    it('rejects an unauthenticated request', async () => {
+      const res = await request(app)
+        .post('/api/v1/admin/promotions')
+        .send({ subject: 'Hi', body: 'Hi' });
+      expect(res.status).toBe(401);
+    });
+
+    it('rejects an empty subject or body', async () => {
+      const token = await loginAsAdmin();
+      const res = await request(app)
+        .post('/api/v1/admin/promotions')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ subject: '', body: '' });
+      expect(res.status).toBe(400);
     });
   });
 });

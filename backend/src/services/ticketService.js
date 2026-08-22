@@ -1,5 +1,6 @@
 import { prisma } from '../config/db.js';
 import { ApiError } from '../middleware/errorHandler.js';
+import * as notificationService from './notificationService.js';
 
 function serializeTicket(t) {
   return {
@@ -47,7 +48,9 @@ export async function createTicket({ workspaceId, userId, type, subject, body })
       status: 'UNANSWERED',
       messages: { create: { authorType: 'USER', authorUserId: userId, body } },
     },
+    include: { createdBy: true },
   });
+  await notificationService.sendTicketCreatedConfirmation(ticket.createdBy, ticket);
   return serializeTicket(ticket);
 }
 
@@ -119,7 +122,7 @@ export async function getTicketForAdmin(ticketId) {
 }
 
 export async function addAdminReply(ticketId, adminId, body) {
-  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
+  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId }, include: { createdBy: true } });
   if (!ticket) throw new ApiError(404, 'Ticket not found');
   if (ticket.status === 'CLOSED') throw new ApiError(400, 'This ticket is closed');
 
@@ -127,17 +130,19 @@ export async function addAdminReply(ticketId, adminId, body) {
     data: { ticketId, authorType: 'ADMIN', authorAdminId: adminId, body },
   });
   const updated = await prisma.ticket.update({ where: { id: ticketId }, data: { status: 'ANSWERED' } });
+  await notificationService.sendTicketReplyNotification(ticket.createdBy, updated);
   return serializeTicket(updated);
 }
 
 export async function closeTicket(ticketId) {
-  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
+  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId }, include: { createdBy: true } });
   if (!ticket) throw new ApiError(404, 'Ticket not found');
 
   const updated = await prisma.ticket.update({
     where: { id: ticketId },
     data: { status: 'CLOSED', closedAt: new Date() },
   });
+  await notificationService.sendTicketClosedNotification(ticket.createdBy, updated);
   return serializeTicket(updated);
 }
 

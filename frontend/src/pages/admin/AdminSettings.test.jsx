@@ -61,4 +61,29 @@ describe('AdminSettings', () => {
     await waitFor(() => expect(screen.getByText('Saved.')).toBeInTheDocument());
     expect(screen.getByPlaceholderText('sk_live_...')).toHaveValue('');
   });
+
+  it('sends a promotional email and shows the recipient count', async () => {
+    const user = userEvent.setup();
+    mockFetchRoutes([
+      {
+        url: '/settings/stripe',
+        method: 'GET',
+        respond: { body: { configured: false, keySecretLast4: null, hasWebhookSecret: false } },
+      },
+      {
+        url: '/promotions',
+        method: 'POST',
+        respond: { body: { recipientCount: 42 } },
+      },
+    ]);
+    renderWithProviders(<AdminSettings />, { preloadedState: authenticatedAdminState });
+
+    await screen.findByText('Not connected');
+    await user.type(screen.getByLabelText('Subject'), 'A new feature just shipped');
+    await user.type(screen.getByLabelText('Message'), 'Check it out.');
+    await user.click(screen.getByRole('button', { name: 'Send to all users' }));
+
+    await waitFor(() => expect(screen.getByText('Sent to 42 users.')).toBeInTheDocument());
+    expect(screen.getByLabelText('Subject')).toHaveValue('');
+  });
 });

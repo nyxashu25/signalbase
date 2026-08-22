@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   useGetAdminStripeSettingsQuery,
   useSaveAdminStripeSettingsMutation,
+  useSendAdminPromotionMutation,
 } from '../../api/adminDataApi.js';
 
 export function AdminSettings() {
@@ -11,6 +12,27 @@ export function AdminSettings() {
   const [secretKey, setSecretKey] = useState('');
   const [webhookSecret, setWebhookSecret] = useState('');
   const [feedback, setFeedback] = useState(null);
+
+  const [sendPromotion, { isLoading: sending, error: promotionError }] =
+    useSendAdminPromotionMutation();
+  const [promoSubject, setPromoSubject] = useState('');
+  const [promoBody, setPromoBody] = useState('');
+  const [promoFeedback, setPromoFeedback] = useState(null);
+
+  async function handleSendPromotion(e) {
+    e.preventDefault();
+    setPromoFeedback(null);
+    try {
+      const result = await sendPromotion({ subject: promoSubject, body: promoBody }).unwrap();
+      setPromoSubject('');
+      setPromoBody('');
+      setPromoFeedback(
+        `Sent to ${result.recipientCount} user${result.recipientCount === 1 ? '' : 's'}.`,
+      );
+    } catch {
+      // Surfaced via promotionError below — nothing further to do here.
+    }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -112,6 +134,52 @@ export function AdminSettings() {
             className="mt-2 w-fit rounded-md bg-gradient-action px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50"
           >
             {saving ? 'Saving…' : 'Save'}
+          </button>
+        </form>
+      </div>
+
+      <div className="mt-6 rounded-lg border border-white/10 bg-ink-900 p-6">
+        <p className="text-base font-bold text-white">Promotional email</p>
+        <p className="mt-1 text-xs text-ink-300">
+          Sends to every user who isn&rsquo;t suspended and hasn&rsquo;t unsubscribed. Every email
+          includes an unsubscribe link.
+        </p>
+
+        <form onSubmit={handleSendPromotion} className="mt-4 flex flex-col gap-3">
+          <label className="flex flex-col gap-1 text-xs font-bold uppercase tracking-wide text-ink-300">
+            Subject
+            <input
+              type="text"
+              value={promoSubject}
+              onChange={(e) => setPromoSubject(e.target.value)}
+              required
+              className="h-10 rounded-md border border-white/15 bg-white/5 px-3 text-sm font-normal normal-case text-white outline-none focus:border-neon-violet"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-xs font-bold uppercase tracking-wide text-ink-300">
+            Message
+            <textarea
+              value={promoBody}
+              onChange={(e) => setPromoBody(e.target.value)}
+              required
+              rows={5}
+              className="rounded-md border border-white/15 bg-white/5 px-3 py-2 text-sm font-normal normal-case leading-relaxed text-white outline-none focus:border-neon-violet"
+            />
+          </label>
+
+          {promotionError && (
+            <p className="text-xs text-red-400">
+              {promotionError.data?.error?.message || 'Could not send.'}
+            </p>
+          )}
+          {promoFeedback && <p className="text-xs text-emerald-400">{promoFeedback}</p>}
+
+          <button
+            type="submit"
+            disabled={sending}
+            className="mt-2 w-fit rounded-md bg-gradient-action px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+          >
+            {sending ? 'Sending…' : 'Send to all users'}
           </button>
         </form>
       </div>

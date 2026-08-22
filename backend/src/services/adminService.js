@@ -4,6 +4,7 @@ import { getBalance } from './creditService.js';
 import { ApiError } from '../middleware/errorHandler.js';
 import { getStripeSettings } from './paymentSettingsService.js';
 import { PLAN_MONTHLY_CREDITS } from '../config/planConfig.js';
+import * as notificationService from './notificationService.js';
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -133,13 +134,14 @@ export async function getUserDetail(userId) {
  * around yet.
  */
 export async function updateUserPlan(userId, plan) {
-  const { membership } = await loadUserWithPrimaryWorkspace(userId);
+  const { user, membership } = await loadUserWithPrimaryWorkspace(userId);
   const workspaceId = membership.workspace.id;
 
   const workspace = await prisma.workspace.update({
     where: { id: workspaceId },
     data: { plan, monthlyCreditGrant: PLAN_MONTHLY_CREDITS[plan] },
   });
+  await notificationService.sendAdminPlanChanged(user, plan);
 
   return { workspaceId, plan: workspace.plan, monthlyCreditGrant: workspace.monthlyCreditGrant };
 }
@@ -220,13 +222,28 @@ export async function listTransactions({ page, pageSize }) {
  * transaction history from an actual payment.
  */
 export async function addCredits(userId, amount) {
-  const { membership } = await loadUserWithPrimaryWorkspace(userId);
+  const { user, membership } = await loadUserWithPrimaryWorkspace(userId);
   const workspaceId = membership.workspace.id;
 
   await prisma.creditLedgerEntry.create({
     data: { workspaceId, delta: amount, reason: 'ADJUSTMENT' },
   });
   await redis.incrby(`credits:balance:${workspaceId}`, amount);
+  await notificationService.sendAdminCreditsAdded(user, amount);
 
   return { workspaceId, balance: await getBalance(workspaceId) };
+}
+
+/**
+ * Admin-composed broadcast (see routes/admin.js POST /promotions) to every
+ * user who hasn't unsubscribed and isn't suspended — a suspended account
+ * shouldn't hear about product offers it can't act on.
+ */
+export async function sendPromotionalBroadcast({ subject, body }) {
+  const users = await prisma.user.findMany({
+    where: { suspendedAt: null, marketingOptOut: false },
+    select: { id: true, email: true, name: true },
+  });
+  await notificationService.sendPromotionalBroadcast(users, subject, body);
+  return { recipientCount: users.length };
 }

@@ -1,7 +1,12 @@
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useLoginMutation, useRegisterMutation, useGoogleLoginMutation } from '../api/authApi.js';
+import {
+  useLoginMutation,
+  useRegisterMutation,
+  useGoogleLoginMutation,
+  useResendVerificationMutation,
+} from '../api/authApi.js';
 import { setSession } from '../store/authSlice.js';
 import { Logo } from '../components/Logo.jsx';
 import { GoogleSignInButton } from '../components/GoogleSignInButton.jsx';
@@ -18,16 +23,25 @@ export function Login() {
   const [mode, setMode] = useState(initialMode);
   const [form, setForm] = useState({ email: '', password: '', name: '', orgName: '' });
   const [googleScriptError, setGoogleScriptError] = useState(null);
+  // Set once register() responds with pendingVerification — swaps the form
+  // for a "check your email" panel instead of navigating anywhere, since
+  // there's no session to log into yet (see authService.register).
+  const [pendingEmail, setPendingEmail] = useState(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const [login, loginState] = useLoginMutation();
   const [register, registerState] = useRegisterMutation();
   const [googleLogin, googleLoginState] = useGoogleLoginMutation();
+  const [resendVerification, resendState] = useResendVerificationMutation();
   const { isLoading } = mode === 'login' ? loginState : registerState;
   const error =
     (loginState.error ?? registerState.error ?? googleLoginState.error)?.data?.error?.message ??
     googleScriptError;
+  // authService.login throws this exact message for an unconfirmed account —
+  // matched here (not a status-code check alone) so a resend option only
+  // shows up for the specific case it's useful for, not every 403.
+  const needsVerification = /verify your email/i.test(error ?? '');
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -38,6 +52,10 @@ export function Login() {
         : { email: form.email, password: form.password, name: form.name, orgName: form.orgName };
 
     const result = await action(body);
+    if (result.data?.pendingVerification) {
+      setPendingEmail(result.data.email);
+      return;
+    }
     if (result.data) {
       dispatch(setSession(result.data));
       navigate('/app', { replace: true });
@@ -62,71 +80,110 @@ export function Login() {
       <div className="flex flex-1 items-center justify-center px-6 py-16">
         <div className="w-full max-w-sm rounded-xl border border-border bg-surface-elevated p-7 shadow-dp">
           <Logo className="h-9" />
-        <p className="mt-3 text-sm text-text-muted">
-          {mode === 'login' ? 'Sign in to your workspace' : 'Create a new workspace'}
-        </p>
 
-        <form className="mt-5 flex flex-col gap-3" onSubmit={handleSubmit}>
-          {mode === 'register' && (
+          {pendingEmail ? (
             <>
-              <Field label="Your name" value={form.name} onChange={update('name')} required />
-              <Field
-                label="Workspace / org name"
-                value={form.orgName}
-                onChange={update('orgName')}
-                required
-              />
+              <p className="mt-3 text-sm text-text-muted">Check your email to confirm your account</p>
+              <p className="mt-4 text-sm leading-relaxed text-text-muted">
+                We sent a confirm link to <strong className="text-text">{pendingEmail}</strong>.
+                Click it to activate your workspace and sign in.
+              </p>
+              <button
+                type="button"
+                disabled={resendState.isLoading}
+                className="mt-5 text-sm font-medium text-primary hover:underline disabled:opacity-50"
+                onClick={() => resendVerification({ email: pendingEmail })}
+              >
+                {resendState.isSuccess
+                  ? "Sent — check your inbox"
+                  : resendState.isLoading
+                    ? 'Sending…'
+                    : "Didn't get it? Resend the email"}
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="mt-3 text-sm text-text-muted">
+                {mode === 'login' ? 'Sign in to your workspace' : 'Create a new workspace'}
+              </p>
+
+              <form className="mt-5 flex flex-col gap-3" onSubmit={handleSubmit}>
+                {mode === 'register' && (
+                  <>
+                    <Field label="Your name" value={form.name} onChange={update('name')} required />
+                    <Field
+                      label="Workspace / org name"
+                      value={form.orgName}
+                      onChange={update('orgName')}
+                      required
+                    />
+                  </>
+                )}
+                <Field
+                  label="Email"
+                  type="email"
+                  value={form.email}
+                  onChange={update('email')}
+                  required
+                />
+                <Field
+                  label="Password"
+                  type="password"
+                  value={form.password}
+                  onChange={update('password')}
+                  required
+                />
+
+                {error && <p className="text-sm text-red-600">{error}</p>}
+                {needsVerification && (
+                  <button
+                    type="button"
+                    disabled={resendState.isLoading}
+                    className="-mt-1 self-start text-sm font-medium text-primary hover:underline disabled:opacity-50"
+                    onClick={() => resendVerification({ email: form.email })}
+                  >
+                    {resendState.isSuccess
+                      ? "Sent — check your inbox"
+                      : resendState.isLoading
+                        ? 'Sending…'
+                        : 'Resend verification email'}
+                  </button>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="mt-2 rounded-md bg-gradient-action px-4 py-2.5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(148,0,222,0.24)] transition-transform duration-150 ease-brand hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isLoading ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create workspace'}
+                </button>
+              </form>
+
+              <div className="mt-5 flex items-center gap-3 text-xs font-medium uppercase tracking-wide text-text-muted">
+                <span className="h-px flex-1 bg-border" />
+                or
+                <span className="h-px flex-1 bg-border" />
+              </div>
+
+              <div className="mt-4">
+                <GoogleSignInButton
+                  mode={mode}
+                  onCredential={handleGoogleCredential}
+                  onError={setGoogleScriptError}
+                />
+              </div>
+
+              <button
+                type="button"
+                className="mt-4 text-sm font-medium text-primary hover:underline"
+                onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
+              >
+                {mode === 'login'
+                  ? "Don't have a workspace? Create one"
+                  : 'Already have an account? Sign in'}
+              </button>
             </>
           )}
-          <Field
-            label="Email"
-            type="email"
-            value={form.email}
-            onChange={update('email')}
-            required
-          />
-          <Field
-            label="Password"
-            type="password"
-            value={form.password}
-            onChange={update('password')}
-            required
-          />
-
-          {error && <p className="text-sm text-red-600">{error}</p>}
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="mt-2 rounded-md bg-gradient-action px-4 py-2.5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(148,0,222,0.24)] transition-transform duration-150 ease-brand hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isLoading ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create workspace'}
-          </button>
-        </form>
-
-        <div className="mt-5 flex items-center gap-3 text-xs font-medium uppercase tracking-wide text-text-muted">
-          <span className="h-px flex-1 bg-border" />
-          or
-          <span className="h-px flex-1 bg-border" />
-        </div>
-
-        <div className="mt-4">
-          <GoogleSignInButton
-            mode={mode}
-            onCredential={handleGoogleCredential}
-            onError={setGoogleScriptError}
-          />
-        </div>
-
-        <button
-          type="button"
-          className="mt-4 text-sm font-medium text-primary hover:underline"
-          onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
-        >
-          {mode === 'login'
-            ? "Don't have a workspace? Create one"
-            : 'Already have an account? Sign in'}
-          </button>
         </div>
       </div>
       <MarketingFooter />
