@@ -1,10 +1,10 @@
 flowchart TB
-    Internet(["Internet"]) --> DNS["titans7.com DNS"]
+    Internet(["Internet"]) --> DNS["datapit.io DNS"]
     DNS --> Nginx
 
     subgraph vps["Hostinger VPS -- single host, no orchestrator"]
         direction TB
-        Nginx["nginx<br/>/etc/nginx/sites-available/titans7.com"]
+        Nginx["nginx<br/>/etc/nginx/sites-available/datapit.io"]
 
         Nginx -->|"/ (static files)"| StaticBuild["frontend build output<br/>(npm run build -> dist/)<br/>served directly by nginx, no Node process"]
         Nginx -->|"/api/v1/*"| ApiProc
@@ -12,8 +12,8 @@ flowchart TB
         Nginx -->|"/metrics -- allow 127.0.0.1; deny all;"| ApiProc
 
         subgraph pm2["pm2 process manager"]
-            ApiProc["titans7-api<br/>node backend/src/app.js<br/>(Express, port 4000 internal)"]
-            WorkerProc["titans7-worker<br/>node backend/src/jobs/worker.js<br/>(BullMQ consumer, no HTTP port)"]
+            ApiProc["datapit-api<br/>node backend/src/app.js<br/>(Express, port 4000 internal)"]
+            WorkerProc["datapit-worker<br/>node backend/src/jobs/worker.js<br/>(BullMQ consumer, no HTTP port)"]
         end
 
         PgLocal[("PostgreSQL<br/>same VPS")]

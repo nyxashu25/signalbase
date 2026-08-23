@@ -4,12 +4,12 @@ flowchart TB
         AdminUI["Admin panel SPA<br/>(/control)"]
     end
 
-    subgraph vps["Single Hostinger VPS (titans7.com)"]
+    subgraph vps["Single Hostinger VPS (datapit.io)"]
         Nginx["nginx<br/>serves built frontend static files<br/>reverse-proxies /api, /metrics(127.0.0.1 only)"]
 
         subgraph pm2["pm2-managed Node processes"]
-            API["Express API monolith<br/>(titans7-api)<br/>backend/src/app.js<br/>mounted at /api/v1"]
-            Worker["BullMQ worker process<br/>(titans7-worker)<br/>backend/src/jobs/worker.js"]
+            API["Express API monolith<br/>(datapit-api)<br/>backend/src/app.js<br/>mounted at /api/v1"]
+            Worker["BullMQ worker process<br/>(datapit-worker)<br/>backend/src/jobs/worker.js"]
         end
 
         Postgres[("PostgreSQL<br/>system of record")]

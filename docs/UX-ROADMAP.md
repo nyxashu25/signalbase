@@ -94,7 +94,7 @@ Phase 1 is the biggest perceived-quality jump per hour and unblocks everything
 after it (the shell components get reused by every later phase).
 
 > **Status (2026-08-22):** All five phases shipped and are live on
-> titans7.com. Notes on what deviated from the spec below: 1.4's Settings
+> datapit.io. Notes on what deviated from the spec below: 1.4's Settings
 > link waits on Phase 5 (there's no settings page yet); 2.1's "Saved" count in
 > the rail was dropped (no cheap endpoint — `/dashboard/stats` now returns
 > `savedContacts` if it's wanted later); 2.3's column sorting is a toolbar

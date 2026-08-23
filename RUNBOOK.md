@@ -11,9 +11,9 @@ update this file when those change, not the other way around.
 - **`GET /metrics`** — Prometheus text format (`backend/src/config/metrics.js`).
   Request duration/count by route template, active credit reservations
   (`credit_reservations_pending`), and per-queue BullMQ backlog
-  (`bullmq_queue_waiting_jobs`). No app-level auth — on titans7.com, nginx
+  (`bullmq_queue_waiting_jobs`). No app-level auth — on datapit.io, nginx
   restricts `/metrics` to `127.0.0.1` (`allow 127.0.0.1; deny all;` in
-  `/etc/nginx/sites-available/titans7.com`), so it's reachable from the box
+  `/etc/nginx/sites-available/datapit.io`), so it's reachable from the box
   itself (e.g. a local Prometheus) but returns 403 from the public internet.
 - **`GET /health`** / **`GET /health/ready`** — liveness/readiness
   (`backend/src/routes/health.js`), publicly reachable through nginx.

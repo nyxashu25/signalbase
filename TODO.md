@@ -10,7 +10,7 @@ picked up or completed — don't let it drift from reality.
       Resend's shared sandbox sender (`onboarding@resend.dev`), which only
       delivers to Resend's own test domains — confirmed `@resend.dev`
       delivers, `@example.com` and real customer domains are rejected. Until
-      titans7.com (or similar) is verified in Resend and `RESEND_FROM_EMAIL`
+      datapit.io is verified in Resend and `RESEND_FROM_EMAIL`
       is pointed at it, **real users cannot receive their confirm link and
       cannot complete signup.**
 - [ ] **Team/seat invites.** Plans are priced per seat and `Role`
@@ -35,11 +35,13 @@ picked up or completed — don't let it drift from reality.
 
 ### Waiting on the user (not code)
 
-- Verify the sending domain in Resend (P0 above) and say which domain, so
-  `RESEND_FROM_EMAIL` can be switched on the server.
-- Confirm the Google OAuth authorized origins/redirects for titans7.com in
-  the Google Cloud console (the client ID is configured; sign-in only works
-  once the origin is allow-listed there).
+- Verify **datapit.io** as a sending domain in Resend (P0 above), then
+  `RESEND_FROM_EMAIL` can be switched on the server (e.g.
+  `no-reply@datapit.io`).
+- Add **https://datapit.io** (and https://www.datapit.io) to the Google OAuth
+  client's authorized JavaScript origins in the Google Cloud console — the
+  client ID is configured, but Google sign-in only works from an allow-listed
+  origin, and the site now lives on datapit.io, not titans7.com.
 - Microsoft Entra app registration (P0 above).
 
 ## In-app UX overhaul — complete (see `docs/UX-ROADMAP.md`)
@@ -88,6 +90,18 @@ planned under the roadmap; new UX work gets its own item here.
       to pick up seed changes.
 
 ## Done
+
+- [x] **Moved production from titans7.com to datapit.io (2026-08-23).** App
+      dir is `/var/www/datapit.io/app`; nginx site
+      `/etc/nginx/sites-available/datapit.io` (upstream `datapit_io`, Let's
+      Encrypt cert for datapit.io + www via certbot --nginx, HTTP→HTTPS,
+      immutable caching on `/assets/`, `no-cache` on index.html); pm2 apps
+      are now `datapit-api` / `datapit-worker` (saved); backend
+      `CORS_ORIGIN=https://datapit.io` (also the base for every emailed
+      link). `titans7.com` / `www.titans7.com` 301 to `https://datapit.io`
+      on both 80 and 443 (its old cert stays in place for the https hop).
+      Nothing in the app bundle referenced the domain, so no code change —
+      docs/runbook/diagrams updated.
 
 - [x] **Phone numbers on reveal.** `Contact.phone` (seeded, and now mapped
       from the RPF `TelephoneNo`/`Alternative No.` columns on import — it was
@@ -167,7 +181,7 @@ planned under the roadmap; new UX work gets its own item here.
       `resendService.js`/`notificationService.js` are new; gated behind
       `RESEND_API_KEY` (unset = simulated/logged send, same posture as the
       existing `ESP_API_KEY`). Configured with a real key locally and on
-      titans7.com, but sends still go from Resend's shared sandbox sender
+      datapit.io, but sends still go from Resend's shared sandbox sender
       (`onboarding@resend.dev`) — real end-user delivery needs a verified
       domain in Resend, tracked as a P0 item above.
 - [x] Fixed "Start free" CTAs across the marketing site — they were landing
@@ -180,7 +194,7 @@ planned under the roadmap; new UX work gets its own item here.
       verified email. `User.passwordHash` is now optional and
       `User.googleId` was added. Configured via `GOOGLE_CLIENT_ID`
       (backend/.env) and `VITE_GOOGLE_CLIENT_ID` (frontend/.env) — both set
-      locally and on titans7.com.
+      locally and on datapit.io.
 - [x] **Polished the marketing site with Framer Motion.** Staggered entrance
       animations and scroll-triggered reveals on Home, Pricing, Product,
       Solutions, About, Contact, and the footer; a price crossfade on

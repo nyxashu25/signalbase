@@ -65,7 +65,7 @@ These appear in `ARCHITECTURE.md`'s product-pillar table and/or `README.md`'s fe
 | **Password reset / forgot password** | Not built — no route, no token model, no UI. Open P0 item in `TODO.md`. |
 | **Sign in with Microsoft** | Not built — needs an Entra ID app registration first. Open P0 item in `TODO.md`. |
 | **GDPR opt-out UI** | Backend endpoint is real and rate-limited (`POST /privacy/opt-out`); the Privacy marketing page has no form wired to it, just "contact us." Open P0 item in `TODO.md`. |
-| **Domain-verified transactional email delivery** | `resendService.js` is real and configured with a live key on titans7.com, but sends still go from Resend's shared sandbox sender — real end users cannot yet receive a signup confirm link until a domain is verified in Resend. Open P0 item in `TODO.md`. |
+| **Domain-verified transactional email delivery** | `resendService.js` is real and configured with a live key on datapit.io, but sends still go from Resend's shared sandbox sender — real end users cannot yet receive a signup confirm link until a domain is verified in Resend. Open P0 item in `TODO.md`. |
 
 ## Interface stubs (real code path, simulated until configured)
 
