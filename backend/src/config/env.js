@@ -18,6 +18,11 @@ const schema = z.object({
   DATABASE_URL: z.string().url(),
   REDIS_URL: z.string().url(),
   ELASTICSEARCH_URL: z.string().url(),
+  // Prepended to every Elasticsearch index name. Empty in dev/prod; set to
+  // "test-" in .env.test so the test suite creates/wipes its own indices
+  // instead of the ones `npm run dev` searches (same isolation the test
+  // Postgres DB and Redis DB index provide).
+  ES_INDEX_PREFIX: z.string().default(''),
 
   JWT_ACCESS_SECRET: z.string().min(32, 'JWT_ACCESS_SECRET must be at least 32 characters'),
   JWT_REFRESH_SECRET: z.string().min(32, 'JWT_REFRESH_SECRET must be at least 32 characters'),

@@ -13,10 +13,10 @@ picked up or completed — don't let it drift from reality.
       datapit.io is verified in Resend and `RESEND_FROM_EMAIL`
       is pointed at it, **real users cannot receive their confirm link and
       cannot complete signup.**
-- (none open on the code side — invites, password reset and the GDPR
-  opt-out UI shipped 2026-08-24, see Done; Microsoft sign-in was dropped
-  from the plan. The Resend domain item below is the remaining blocker and
-  it's in your court.)
+- (Nothing else open on the code side — invites, password reset and the
+  GDPR opt-out UI shipped 2026-08-24, see Done; Microsoft sign-in was
+  dropped from the plan. The Resend domain item above is the one remaining
+  blocker, and it's in your court.)
 
 ### Waiting on the user (not code)
 
@@ -33,10 +33,10 @@ picked up or completed — don't let it drift from reality.
 Benchmarked against Apollo.io's authenticated app. **All five phases are
 shipped and live** (shell + primitives, search screens, getting-started
 hub, designed empty states / detail pages / sequence analytics, settings
-area). Two settings sections are deliberately partial until their P0s land:
-*Users & teams* lists seats but can't invite, and *Security* can change a
-password but there's still no forgot-password flow. Nothing further is
-planned under the roadmap; new UX work gets its own item here.
+area), and the two sections that were waiting on P0s are now complete too:
+*Users & teams* invites seats and *Security* pairs with the forgot-password
+flow. Nothing further is planned under the roadmap; new UX work gets its
+own item here.
 
 ## P1 — real gaps, not urgent
 
@@ -64,22 +64,29 @@ planned under the roadmap; new UX work gets its own item here.
 - [ ] Frontend test coverage is thin on the oldest core screens: Login,
       People, Companies, marketing pages. (Dashboard, Sequences, Tickets,
       Settings and ListDetail's ContactRow gained tests in the UX phases.)
-- [ ] **Isolate the backend test suite from local dev state.** Tests use a
-      separate Postgres DB (`datapit_test`) but the *same* Redis and the
-      *same* Elasticsearch indices as `npm run dev` — `resetRedis()` wipes
-      every `credits:*` balance and `refresh:active:*` session, and
-      `search.test.js` recreates the `contacts`/`companies` indices. Running
-      `npm test` while developing therefore zeroes your demo credits, logs
-      you out and empties search until you reindex (happened three times on
-      2026-08-22). A Redis DB index / key prefix and an ES index prefix
-      driven by `NODE_ENV=test` would fix it.
-- [ ] **Seed is upsert-with-no-update.** `seed.js` upserts with `update: {}`,
-      so a field added to seed data later (phones, today) never reaches rows
-      that already exist — re-running the seed doesn't refresh them. Either
-      update the seed-owned fields on re-run or document `reset` as the way
-      to pick up seed changes.
 
 ## Done
+
+- [x] **Full regression pass (2026-08-24).** Backend 272/272 (run twice:
+      shared env, then isolated env), frontend 138/138 + lint + build; a
+      browser sweep of all 18 authenticated routes and the 7 admin routes
+      with zero page errors; and a new self-cleaning production E2E
+      (`backend/scripts/prod-e2e.mjs`, see RUNBOOK) that exercised the real
+      datapit.io API end to end — signup→verify→login, search+masking,
+      reveal (email+phone, 2 credits), lists, saved searches, onboarding
+      rewards, plan gating, tickets, invite→accept→members, forgot→reset
+      (single-use both ways), privacy opt-out — 33/33 checks, all probe
+      data deleted afterward.
+- [x] **Backend test suite isolated from local dev state.** `.env.test` now
+      points Redis at logical DB 1 and prefixes ES indices with `test-`
+      (new `ES_INDEX_PREFIX` env, default empty, `config/esIndices.js`), so
+      `npm test` can no longer wipe dev credit balances, sessions, or the
+      search index. Proven with a sentinel key + index counts surviving a
+      full suite run.
+- [x] **Seed refreshes on re-run.** `seed.js` upserts now update the
+      seed-owned fields (titles, phones, tech stacks, …) on existing rows —
+      everything except `email`/`emailVerified`, which the billed reveal
+      flow owns.
 
 - [x] **P0 trio shipped (2026-08-24): seat invites, password reset, GDPR
       opt-out UI.**

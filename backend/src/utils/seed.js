@@ -194,16 +194,22 @@ async function seedDemoTenant() {
 async function seedCompaniesAndContacts(count = 40) {
   for (let i = 0; i < count; i++) {
     const companyData = buildCompany(i);
+    // Re-running the seed refreshes the fields the seed owns, so additions
+    // to seed data (phones, tech stacks, …) reach existing rows too.
+    const { id: _companyId, ...companyRefresh } = companyData;
     const company = await prisma.company.upsert({
       where: { domain: companyData.domain },
-      update: {},
+      update: companyRefresh,
       create: companyData,
     });
 
     for (const contact of buildContacts(company, i)) {
+      // Refresh everything except email/emailVerified — those are written by
+      // the (billed) reveal flow and must survive a re-seed.
+      const { id: _contactId, email: _e, emailVerified: _v, ...contactRefresh } = contact;
       await prisma.contact.upsert({
         where: { id: contact.id },
-        update: {},
+        update: contactRefresh,
         create: contact,
       });
     }

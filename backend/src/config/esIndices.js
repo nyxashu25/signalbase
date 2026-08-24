@@ -1,7 +1,10 @@
+import { env } from './env.js';
+
 // Plain index names for now — a blue/green alias-swap strategy for
 // zero-downtime remapping is a Phase 06 scaling concern, not needed yet.
-export const COMPANIES_INDEX = 'companies';
-export const CONTACTS_INDEX = 'contacts';
+// The prefix is '' everywhere except tests (see env.js ES_INDEX_PREFIX).
+export const COMPANIES_INDEX = `${env.ES_INDEX_PREFIX}companies`;
+export const CONTACTS_INDEX = `${env.ES_INDEX_PREFIX}contacts`;
 
 const keywordAndText = {
   type: 'text',
