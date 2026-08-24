@@ -41,7 +41,7 @@ Conventions used in the tables below:
 | POST | `/forgot-password` | — | 5/hour/IP (shares the register limiter) | `{ email }` — enumeration-safe `{sent:true}` either way. Emails a reset link whose token embeds a fingerprint of the *current* password hash, so it's single-use and dies if the password changes any other way. 1h TTL. |
 | POST | `/reset-password` | — | 10/min/IP | `{ token, newPassword }`. Also flips `emailVerified` (the link proves the inbox). Does not log in — the user signs in with the new password. |
 | GET | `/invite` | — | 10/min/IP | `?token=` — what the accept page shows: workspace/inviter names, invited email, role, `accountExists`. 400 for revoked/expired/accepted/forged tokens. |
-| POST | `/accept-invite` | — | 5/hour/IP | `{ token, name?, password? }`. New email → creates the User (`emailVerified: true`) + Membership — never a new org/workspace; existing account → adds the Membership (idempotent). Single-use (`acceptedAt`). Issues a session scoped to the inviting workspace and emails the inviter. |
+| POST | `/accept-invite` | — | 5/hour/IP | `{ token, name?, password? }`. New email → creates the User (`emailVerified: true`) + Membership — never a new org/workspace; existing account → adds the Membership (idempotent). **Seat re-checked at accept** (422 if the seat vanished since the invite). Single-use (`acceptedAt`). Issues a session scoped to the inviting workspace and emails the inviter. |
 | GET | `/workspaces` | User | — | Every workspace the user has a seat in (`role`, `current`) — drives the account-menu switcher. |
 | POST | `/switch-workspace` | User | — | `{ workspaceId }` — re-issues the session (token + refresh cookie) scoped to another workspace the user belongs to; 403 without a membership. |
 | POST | `/tutorial-complete` | User | — | Marks the first-login tour finished (once, permanently). |
@@ -52,9 +52,9 @@ The signed-in user's *current* workspace (from the token) — no `:id` by design
 
 | Method | Path | Auth | Notes |
 |---|---|---|---|
-| GET | `/members` | User | Everyone with a seat: `{ id, role, joinedAt, user: { id, name, email } }`, owner first. |
+| GET | `/members` | User | `{ members, seats }` — everyone with a seat (owner first) plus `seats: { total, used, members, pendingInvites, plan }` for the UI's gate. |
 | GET | `/invites` | User, `ADMIN`+ | Pending (unaccepted, unexpired) invites, each with a fresh `inviteUrl` — the same link the email carries, surfaced so an admin can hand it over directly. |
-| POST | `/invites` | User, `ADMIN`+ | 20/hour/workspace. `{ email, role: ADMIN\|MEMBER }` (OWNER is not invitable). 409 if already a member; re-inviting the same email refreshes the row (new role/expiry/single-use state) instead of erroring; ≤20 pending per workspace. Sends the invite email. |
+| POST | `/invites` | User, `ADMIN`+ | 20/hour/workspace. `{ email, role: ADMIN\|MEMBER }` (OWNER is not invitable). **Seat-gated**: 422 when members + pending invites ≥ `Workspace.seats` (a pending invite reserves a seat; re-inviting an already-invited address doesn't consume another). 409 if already a member; re-inviting refreshes the row; ≤20 pending per workspace. Sends the invite email. |
 | DELETE | `/invites/:id` | User, `ADMIN`+ | Revoke — deletes the row, which kills the emailed link. 404 for another workspace's id. |
 | PATCH | `/` | User, `ADMIN`+ | `{ name }` — rename the workspace. |
 
@@ -122,7 +122,7 @@ All routes require auth. `requireSequencesPlan` gates create/activate/enroll to 
 | GET | `/summary` | User | — | Current plan, balance, renewal info. |
 | GET | `/transactions` | User | — | Paginated ledger history for the workspace. |
 | POST | `/checkout-session` | User | 10/hour/workspace | One-off credit top-up. Simulated (returns a fake `billing.simulated.local` URL) unless a Stripe secret key is configured via `/control/settings`. |
-| POST | `/subscribe` | User | 10/hour/workspace | Recurring plan subscription checkout. Blocks a downgrade while the current paid interval's minimum commitment hasn't elapsed. Same simulate-until-configured behavior as checkout-session. |
+| POST | `/subscribe` | User | 10/hour/workspace | Recurring plan subscription checkout — `{ plan, interval?, seats? }` (seats 1–50, Organization min 3; becomes the Stripe line-item `quantity`, and the monthly credit grant scales per seat on activation). Blocks a downgrade while the current paid interval's minimum commitment hasn't elapsed. Same simulate-until-configured behavior as checkout-session. |
 
 > `GET /sequences/analytics` (declared before `/:id`) — workspace-wide roll-up for the Sequences → Analytics tab: `totals` (SENT/OPENED/CLICKED/REPLIED/BOUNCED/UNSUBSCRIBED), `rates`, `enrollments { total, active }`, and one row per sequence with its own counts.
 

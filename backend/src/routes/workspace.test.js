@@ -9,13 +9,16 @@ import { hashPassword } from '../utils/password.js';
 const app = createApp();
 const auth = (token) => ({ Authorization: `Bearer ${token}` });
 
-async function registerOrg(orgName, email) {
+async function registerOrg(orgName, email, seats = 5) {
   const res = await registerAndVerify(app, {
     email,
     password: 'correct-horse-battery',
     name: 'Owner',
     orgName,
   });
+  // Fresh signups are FREE (1 seat) — most invite tests need headroom, so
+  // grant a few; the seat-gate tests below set their own counts.
+  await prisma.workspace.update({ where: { id: res.body.workspace.id }, data: { seats } });
   return { accessToken: res.body.accessToken, workspaceId: res.body.workspace.id, userId: res.body.user.id };
 }
 
@@ -270,5 +273,69 @@ describe('workspace invites', () => {
       .delete(`/api/v1/workspace/invites/${created.body.invite.id}`)
       .set(auth(globex.accessToken));
     expect(revoke.status).toBe(404);
+  });
+});
+
+describe('seat-count enforcement', () => {
+  beforeEach(async () => {
+    await resetDb();
+    await resetRedis();
+  });
+
+  async function invite(org, email, role = 'MEMBER') {
+    return request(app)
+      .post('/api/v1/workspace/invites')
+      .set(auth(org.accessToken))
+      .send({ email, role });
+  }
+
+  it('a FREE workspace (1 seat) cannot invite at all, with a plan-aware message', async () => {
+    const org = await registerOrg('Acme', 'owner@acme.test', 1);
+    const res = await invite(org, 'new@hire.test');
+    expect(res.status).toBe(422);
+    expect(res.body.error.message).toMatch(/Free plan includes 1 seat/);
+    // Seat info comes back with the members list for the UI.
+    const members = await request(app).get('/api/v1/workspace/members').set(auth(org.accessToken));
+    expect(members.body.seats).toMatchObject({ total: 1, members: 1, pendingInvites: 0, used: 1 });
+  });
+
+  it('pending invites reserve seats; the invite over the count is blocked; revoking frees it', async () => {
+    const org = await registerOrg('Acme', 'owner@acme.test', 2);
+    const first = await invite(org, 'one@hire.test');
+    expect(first.status).toBe(201);
+
+    const over = await invite(org, 'two@hire.test');
+    expect(over.status).toBe(422);
+    expect(over.body.error.message).toMatch(/All 2 seats are in use/);
+
+    // Re-inviting the already-invited address is not a new seat.
+    const reinvite = await invite(org, 'one@hire.test', 'ADMIN');
+    expect(reinvite.status).toBe(201);
+
+    await request(app)
+      .delete(`/api/v1/workspace/invites/${first.body.invite.id}`)
+      .set(auth(org.accessToken));
+    const after = await invite(org, 'two@hire.test');
+    expect(after.status).toBe(201);
+  });
+
+  it('accepting is blocked when the seats were taken after the invite went out', async () => {
+    const org = await registerOrg('Acme', 'owner@acme.test', 2);
+    const created = await invite(org, 'new@hire.test');
+    const token = new URL(created.body.invite.inviteUrl).searchParams.get('token');
+    // Seat disappears before they accept.
+    await prisma.workspace.update({ where: { id: org.workspaceId }, data: { seats: 1 } });
+
+    const accept = await request(app)
+      .post('/api/v1/auth/accept-invite')
+      .send({ token, name: 'New Hire', password: 'a-solid-password-1' });
+    expect(accept.status).toBe(422);
+    expect(accept.body.error.message).toMatch(/No seats left/);
+
+    await prisma.workspace.update({ where: { id: org.workspaceId }, data: { seats: 2 } });
+    const retry = await request(app)
+      .post('/api/v1/auth/accept-invite')
+      .send({ token, name: 'New Hire', password: 'a-solid-password-1' });
+    expect(retry.status).toBe(200);
   });
 });

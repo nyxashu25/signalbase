@@ -187,24 +187,33 @@ export async function getUserDetail(userId) {
  * support tool used sparingly, not something to build real dunning logic
  * around yet.
  */
-export async function updateUserPlan(userId, plan, actorAdminId) {
+export async function updateUserPlan(userId, plan, actorAdminId, seats) {
   const { user, membership } = await loadUserWithPrimaryWorkspace(userId);
   const workspaceId = membership.workspace.id;
   const previousPlan = membership.workspace.plan;
+  const previousSeats = membership.workspace.seats;
+  // Seats only change when explicitly provided — a plain plan override keeps
+  // the seat count the buyer paid for. Grant is per seat per month.
+  const nextSeats = seats ?? previousSeats;
 
   const workspace = await prisma.workspace.update({
     where: { id: workspaceId },
-    data: { plan, monthlyCreditGrant: PLAN_MONTHLY_CREDITS[plan] },
+    data: { plan, seats: nextSeats, monthlyCreditGrant: PLAN_MONTHLY_CREDITS[plan] * nextSeats },
   });
   await recordAuditLog({
     superAdminId: actorAdminId,
     action: 'UPDATE_PLAN',
     targetUserId: userId,
-    metadata: { from: previousPlan, to: plan },
+    metadata: { from: previousPlan, to: plan, fromSeats: previousSeats, toSeats: nextSeats },
   });
   await notificationService.sendAdminPlanChanged(user, plan);
 
-  return { workspaceId, plan: workspace.plan, monthlyCreditGrant: workspace.monthlyCreditGrant };
+  return {
+    workspaceId,
+    plan: workspace.plan,
+    seats: workspace.seats,
+    monthlyCreditGrant: workspace.monthlyCreditGrant,
+  };
 }
 
 export async function suspendUser(userId, actorAdminId) {

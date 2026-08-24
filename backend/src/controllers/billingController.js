@@ -40,6 +40,7 @@ export async function getSummary(req, res) {
         monthlyCreditGrant: true,
         planActivatedAt: true,
         billingInterval: true,
+        seats: true,
       },
     }),
     prisma.creditLedgerEntry.aggregate({
@@ -51,6 +52,7 @@ export async function getSummary(req, res) {
   res.json({
     balance,
     plan: workspace.plan,
+    seats: workspace.seats,
     monthlyCreditGrant: workspace.monthlyCreditGrant,
     creditsUsed: Math.abs(usedAgg._sum.delta ?? 0),
     planActivatedAt: workspace.planActivatedAt,
@@ -114,12 +116,13 @@ export async function createCheckoutSession(req, res) {
 
 export async function createPlanSubscriptionSession(req, res) {
   const { workspaceId } = req.auth;
-  const { plan, interval } = req.body;
+  const { plan, interval, seats } = req.body;
 
   const session = await stripeService.createPlanSubscriptionSession({
     workspaceId,
     plan,
     interval,
+    seats,
   });
   res.status(201).json({ provider: 'stripe', ...session });
 }

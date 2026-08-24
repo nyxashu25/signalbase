@@ -32,7 +32,14 @@ export function SettingsMembers() {
   const role = useSelector((s) => s.auth.role);
   const canInvite = CAN_INVITE.has(role);
   const toast = useToast();
-  const { data: members, isLoading } = useListWorkspaceMembersQuery();
+  const { data, isLoading } = useListWorkspaceMembersQuery();
+  const members = data?.members;
+  const seatInfo = data?.seats;
+  const seatsFull = Boolean(seatInfo && seatInfo.used >= seatInfo.total);
+  const fullHint =
+    seatInfo?.plan === 'FREE'
+      ? 'The Free plan includes 1 seat — upgrade to invite teammates'
+      : 'All seats are in use — revoke a pending invite or add seats from Billing';
   const { data: invites } = useListInvitesQuery(undefined, { skip: !canInvite });
   const [createInvite, { isLoading: inviting }] = useCreateInviteMutation();
   const [revokeInvite] = useRevokeInviteMutation();
@@ -75,12 +82,25 @@ export function SettingsMembers() {
     <div className="flex flex-col gap-4">
       <SettingsSection
         title="Users & teams"
-        description={members ? `${members.length} ${members.length === 1 ? 'seat' : 'seats'} in use.` : undefined}
+        description={
+          seatInfo
+            ? `${seatInfo.members} of ${seatInfo.total} ${seatInfo.total === 1 ? 'seat' : 'seats'} filled` +
+              (seatInfo.pendingInvites > 0 ? ` · ${seatInfo.pendingInvites} pending` : '')
+            : undefined
+        }
         footer={
-          canInvite ? (
+          canInvite && !seatsFull ? (
             <Button variant="primary" icon={UserPlus} onClick={() => setShowForm((v) => !v)}>
               Invite teammate
             </Button>
+          ) : canInvite ? (
+            <Tooltip content={fullHint}>
+              <span className="inline-flex">
+                <Button variant="primary" icon={UserPlus} disabled aria-disabled="true">
+                  Invite teammate
+                </Button>
+              </span>
+            </Tooltip>
           ) : (
             <Tooltip content="Only workspace owners and admins can invite">
               <span className="inline-flex">
@@ -228,10 +248,11 @@ export function SettingsMembers() {
         </SettingsSection>
       )}
 
-      {canInvite && (
-        <Banner tone="info" dismissible dismissKey="invite-email-delivery">
-          Until a sending domain is verified in Resend, invite <em>emails</em> only deliver to test
-          addresses — use <strong>Copy invite link</strong> on a pending invite and share it directly.
+      {canInvite && seatsFull && (
+        <Banner tone="info" title={seatInfo?.plan === 'FREE' ? 'Invites need a paid plan' : 'All seats are in use'} action="Open Billing" actionTo="/app/billing">
+          {seatInfo?.plan === 'FREE'
+            ? 'The Free plan includes a single seat. Pick a plan and choose how many seats to buy — each seat adds its monthly credits too.'
+            : 'Revoke a pending invite to free a seat, or add seats by re-subscribing with a higher seat count from Billing.'}
         </Banner>
       )}
     </div>

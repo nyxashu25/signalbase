@@ -411,6 +411,21 @@ export async function acceptInvite(token, { name, password } = {}) {
   let user = await prisma.user.findUnique({ where: { email: invite.email } });
   if (user?.suspendedAt) throw new ApiError(403, 'This account has been suspended');
 
+  // Seat re-check at accept time: the seat that was free when the invite
+  // went out may be gone (another invite accepted first, or seats reduced).
+  // Skipped when the user already holds a membership — that's idempotent.
+  const alreadyMember = user
+    ? await prisma.membership.findUnique({
+        where: { userId_workspaceId: { userId: user.id, workspaceId: workspace.id } },
+      })
+    : null;
+  if (!alreadyMember) {
+    const memberCount = await prisma.membership.count({ where: { workspaceId: workspace.id } });
+    if (memberCount >= workspace.seats) {
+      throw new ApiError(422, 'No seats left in this workspace — ask an admin to add seats');
+    }
+  }
+
   if (!user) {
     if (!name || !password) {
       throw new ApiError(400, 'Name and password are required to create your account');

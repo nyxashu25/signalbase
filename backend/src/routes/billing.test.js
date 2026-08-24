@@ -390,6 +390,7 @@ describe('stripeService.createPlanSubscriptionSession (unit, injected client)', 
         workspaceId: workspace.id,
         plan: 'PROFESSIONAL',
         interval: 'MONTH',
+        seats: '1',
       });
       return { id: 'cs_test_sub', url: 'https://checkout.stripe.com/pay/cs_test_sub' };
     };
@@ -828,5 +829,53 @@ describe('billing checkout rate limit', () => {
       .set('Authorization', `Bearer ${accessToken}`)
       .send({ credits: 250 });
     expect(overLimit.status).toBe(429);
+  });
+});
+
+describe('POST /billing/subscribe seat quantity', () => {
+  beforeEach(async () => {
+    await resetDb();
+    await resetRedis();
+  });
+
+  async function registerOwner() {
+    const res = await registerAndVerify(app, {
+      email: 'owner@seats.test',
+      password: 'correct-horse-battery',
+      name: 'Owner',
+      orgName: 'Seats Co',
+    });
+    return { accessToken: res.body.accessToken, workspaceId: res.body.workspace.id };
+  }
+
+  it('accepts a seat count and rejects Organization below its 3-seat minimum', async () => {
+    const { accessToken } = await registerOwner();
+    const ok = await request(app)
+      .post('/api/v1/billing/subscribe')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ plan: 'BASIC', seats: 4 });
+    expect(ok.status).toBe(201);
+
+    const tooFew = await request(app)
+      .post('/api/v1/billing/subscribe')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ plan: 'ORGANIZATION', seats: 2 });
+    expect(tooFew.status).toBe(400);
+    expect(tooFew.body.error.message).toMatch(/starts at 3 seats/);
+
+    const bad = await request(app)
+      .post('/api/v1/billing/subscribe')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ plan: 'BASIC', seats: 0 });
+    expect(bad.status).toBe(400);
+  });
+
+  it('summary reports the workspace seat count', async () => {
+    const { accessToken, workspaceId } = await registerOwner();
+    await prisma.workspace.update({ where: { id: workspaceId }, data: { seats: 7 } });
+    const res = await request(app)
+      .get('/api/v1/billing/summary')
+      .set('Authorization', `Bearer ${accessToken}`);
+    expect(res.body.seats).toBe(7);
   });
 });

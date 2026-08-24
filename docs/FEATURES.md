@@ -16,7 +16,7 @@ matching page under `frontend/src/pages/**/*.jsx` and an RTK Query slice under `
 |---|---|---|
 | **Auth: password + email verification** | Signup creates an unverified account and emails a confirm link; login rejects an unverified or suspended account. | `authService.js`, `resendService.js`, `pages/Login.jsx`, `pages/VerifyEmail.jsx` |
 | **Auth: password reset** | "Forgot password?" on the sign-in page → enumeration-safe emailed link (1h TTL, single-use via a fingerprint of the current password hash) → choose a new password. Google-only accounts can use it to set a first password. | `authService.requestPasswordReset/resetPassword`, `pages/ForgotPassword.jsx`, `pages/ResetPassword.jsx` |
-| **Team/seat invites** | Settings → Users & teams: ADMIN+ invites by email with a role (ADMIN/MEMBER); pending invites list with copyable link + revoke; accept page creates an account (new email) or adds the workspace to an existing one; multi-seat users switch workspaces from the account menu. | `WorkspaceInvite` model, `workspaceService.js`, `authService.acceptInvite/switchWorkspace`, `pages/AcceptInvite.jsx`, `pages/settings/SettingsMembers.jsx` |
+| **Team/seat invites (seat-count enforced)** | Settings → Users & teams: ADMIN+ invites by email with a role (ADMIN/MEMBER); pending invites list with copyable link + revoke; accept page creates an account (new email) or adds the workspace to an existing one; multi-seat users switch workspaces from the account menu. Invites are **blocked over the paid seat count** (`Workspace.seats`; pending invites reserve seats, re-checked at accept) — seats are bought as the subscription quantity (Organization min 3) and each seat scales the monthly credit grant; admins can override seats from `/control`. | `WorkspaceInvite` model, `workspaceService.js`, `authService.acceptInvite/switchWorkspace`, `pages/AcceptInvite.jsx`, `pages/settings/SettingsMembers.jsx` |
 | **Auth: Google Sign-In** | Google Identity Services ID-token flow; links to an existing account by verified email or creates a new one. | `authService.loginWithGoogle`, `GoogleSignInButton.jsx` |
 | **JWT access/refresh** | Short-lived access token (in-memory), httpOnly refresh cookie, rotation with replay detection. | `tokenService.js` |
 | **Org → Workspace → User + RBAC** | `OWNER`/`ADMIN`/`MEMBER` roles scoped per workspace; `requireRole` middleware. | `middleware/rbac.js`, `schema.prisma` |
@@ -64,8 +64,6 @@ These appear in `ARCHITECTURE.md`'s product-pillar table and/or `README.md`'s fe
 | **Microservices split** (separate API Service / Search Service / Engagement Service / Worker Pool deployables) | Not built. It's one Express monolith (`backend/src/app.js`) plus one BullMQ worker process (`backend/src/jobs/worker.js`) — see `docs/01-system-architecture.mermaid` for the real shape. |
 | **A/B testing on sequence steps** | Not built. `SequenceStep` has no variant concept. |
 | **Sign in with Microsoft** | Not built — dropped from the plan (2026-08-24); Google + email/password are the supported sign-in methods. |
-| **Seat-count enforcement** | Plans are *priced* per seat but nothing limits how many seats a workspace fills — invites are capped (20 pending) yet accepted members aren't counted against a paid quantity. |
-| **Domain-verified transactional email delivery** | `resendService.js` is real and configured with a live key on datapit.io, but sends still go from Resend's shared sandbox sender — real end users cannot yet receive a signup confirm link until a domain is verified in Resend. Open P0 item in `TODO.md`. |
 
 ## Interface stubs (real code path, simulated until configured)
 
@@ -77,7 +75,7 @@ external accounts):
 |---|---|---|
 | Email verification (Hunter.io) | `EMAIL_VERIFIER_API_KEY` set | Unset — reveal proceeds `checked: false`, never hard-blocked except on an active negative confirmation. |
 | Sequence send (SendGrid, `espService.js`) | `ESP_API_KEY` + `ESP_FROM_EMAIL` set | Unset — logs a fake `simulated-<uuid>` message id. |
-| DataPit's own notification mail (Resend) | `RESEND_API_KEY` set | Unset — logs instead of sending; never throws either way. |
+| DataPit's own notification mail (Resend) | `RESEND_API_KEY` set — **live in production since 2026-08-24 from `no-reply@datapit.io` (verified domain)** | Unset — logs instead of sending; never throws either way. |
 | Stripe checkout/subscriptions/webhooks | A secret key + webhook secret saved via `/control/settings` | Unconfigured — checkout returns a fake `billing.simulated.local` URL; webhook route 400s without a configured webhook secret. |
 | Google Sign-In | `GOOGLE_CLIENT_ID` (backend) + `VITE_GOOGLE_CLIENT_ID` (frontend) set | Unset — `POST /auth/google` responds 503. |
 

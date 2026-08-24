@@ -32,6 +32,17 @@ export function planIncludesSequences(plan) {
   return PLAN_HAS_SEQUENCES[plan] ?? false;
 }
 
+// Seat bounds per plan — the Pricing page's "min 3 seats" on Organization,
+// and a sanity ceiling for self-serve checkout (larger teams go through
+// sales/admin override).
+export const PLAN_MIN_SEATS = {
+  FREE: 1,
+  BASIC: 1,
+  PROFESSIONAL: 1,
+  ORGANIZATION: 3,
+};
+export const MAX_SEATS = 50;
+
 // Low to high — index comparison is how a "downgrade" is detected.
 export const PLAN_ORDER = ['FREE', 'BASIC', 'PROFESSIONAL', 'ORGANIZATION'];
 

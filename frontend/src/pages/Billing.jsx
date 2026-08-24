@@ -70,6 +70,7 @@ function addMonths(date, months) {
 export function Billing() {
   const [page, setPage] = useState(1);
   const [billingIntervalChoice, setBillingIntervalChoice] = useState('MONTH');
+  const [seatChoice, setSeatChoice] = useState(1);
   const { data: summary } = useGetBillingSummaryQuery();
   const { data: transactions, isFetching } = useListBillingTransactionsQuery({
     page,
@@ -99,6 +100,8 @@ export function Billing() {
       const session = await subscribeToPlan({
         plan: planKey,
         interval: billingIntervalChoice,
+        // Organization starts at 3 seats (mirrors the server-side check).
+        seats: Math.max(seatChoice, planKey === 'ORGANIZATION' ? 3 : 1),
       }).unwrap();
       window.location.href = session.url;
     } catch (err) {
@@ -127,8 +130,13 @@ export function Billing() {
       {/* Plan overview */}
       <Card className="p-5">
         <div className="grid grid-cols-2 gap-6 md:grid-cols-5">
-          <Metric label="Current plan" hint="Change plans below — upgrades apply immediately.">
+          <Metric label="Current plan" hint="Change plans below — upgrades apply immediately. Prices are per seat; credits scale with seats.">
             <span className="text-2xl font-extrabold text-text">{currentPlan?.name ?? '—'}</span>
+            {summary?.seats > 0 && (
+              <span className="ml-2 text-xs font-medium text-text-muted">
+                {summary.seats} {summary.seats === 1 ? 'seat' : 'seats'}
+              </span>
+            )}
             {currentPlan && currentPlan.price > 0 && currentInterval && (
               <span className="ml-2 text-xs font-medium text-text-muted">
                 {formatUsd(planPriceForInterval(currentPlan.key, currentInterval.key))}/seat/
@@ -187,16 +195,30 @@ export function Billing() {
         <h2 className="text-sm font-bold text-text">
           {summary?.plan === 'ORGANIZATION' ? 'Your plan' : 'Plans'}
         </h2>
-        <SegmentedControl
-          ariaLabel="Billing interval"
-          value={billingIntervalChoice}
-          onChange={setBillingIntervalChoice}
-          options={BILLING_INTERVALS.map((i) => ({
-            value: i.key,
-            label: i.label,
-            hint: i.discount > 0 ? `−${Math.round(i.discount * 100)}%` : undefined,
-          }))}
-        />
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="flex items-center gap-2 text-xs font-semibold text-text-muted">
+            Seats
+            <input
+              type="number"
+              min={1}
+              max={50}
+              value={seatChoice}
+              onChange={(e) => setSeatChoice(Math.max(1, Math.min(50, Number(e.target.value) || 1)))}
+              aria-label="Seats"
+              className="h-8 w-16 rounded-md border border-border bg-surface-elevated px-2 text-sm tabular-nums text-text outline-none focus:border-focus focus:ring-2 focus:ring-focus/25"
+            />
+          </label>
+          <SegmentedControl
+            ariaLabel="Billing interval"
+            value={billingIntervalChoice}
+            onChange={setBillingIntervalChoice}
+            options={BILLING_INTERVALS.map((i) => ({
+              value: i.key,
+              label: i.label,
+              hint: i.discount > 0 ? `−${Math.round(i.discount * 100)}%` : undefined,
+            }))}
+          />
+        </div>
       </div>
       {subscribeError && (
         <Banner tone="danger" className="mb-3">

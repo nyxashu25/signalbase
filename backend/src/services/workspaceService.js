@@ -39,6 +39,23 @@ export async function listInvites(workspaceId) {
 }
 
 export async function createInvite(workspaceId, invitedById, { email, role }) {
+  // Seat gate first ("block invites over the paid count"): a pending invite
+  // reserves a seat, so members + pending is what's compared. Re-inviting an
+  // already-invited address doesn't consume another seat and stays allowed.
+  const usage = await seatUsage(workspaceId);
+  const alreadyInvited = await prisma.workspaceInvite.findUnique({
+    where: { workspaceId_email: { workspaceId, email } },
+  });
+  const reInviting = Boolean(alreadyInvited && !alreadyInvited.acceptedAt);
+  if (!reInviting && usage.used >= usage.total) {
+    throw new ApiError(
+      422,
+      usage.plan === 'FREE' && usage.total === 1
+        ? 'The Free plan includes 1 seat — upgrade from Billing to invite teammates'
+        : `All ${usage.total} seats are in use — revoke a pending invite or add seats from Billing`,
+    );
+  }
+
   const existingUser = await prisma.user.findUnique({
     where: { email },
     include: { memberships: { where: { workspaceId } } },
@@ -95,6 +112,24 @@ export async function revokeInvite(workspaceId, inviteId) {
     where: { id: inviteId, workspaceId },
   });
   if (count === 0) throw new ApiError(404, 'Invite not found');
+}
+
+/** members + pending invites vs. the paid seat count — the invite gate's arithmetic. */
+export async function seatUsage(workspaceId) {
+  const [workspace, members, pendingInvites] = await Promise.all([
+    prisma.workspace.findUnique({ where: { id: workspaceId }, select: { seats: true, plan: true } }),
+    prisma.membership.count({ where: { workspaceId } }),
+    prisma.workspaceInvite.count({
+      where: { workspaceId, acceptedAt: null, expiresAt: { gt: new Date() } },
+    }),
+  ]);
+  return {
+    total: workspace.seats,
+    plan: workspace.plan,
+    members,
+    pendingInvites,
+    used: members + pendingInvites,
+  };
 }
 
 /** Everyone with a seat in this workspace, owner first, then by join date. */

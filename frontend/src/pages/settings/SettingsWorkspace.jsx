@@ -76,13 +76,14 @@ export function SettingsWorkspace() {
           </Button>
         }
       >
-        <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <dl className="grid grid-cols-2 gap-4 sm:grid-cols-5">
           <Stat label="Plan">
             <span className="flex items-center gap-2">
               {plan?.name ?? summary?.plan ?? '—'}
               {summary?.plan === 'FREE' && <StatusPill tone="neutral">Free</StatusPill>}
             </span>
           </Stat>
+          <Stat label="Seats">{summary?.seats ?? '—'}</Stat>
           <Stat label="Monthly grant">{summary?.monthlyCreditGrant ?? '—'}</Stat>
           <Stat label="Balance">{summary?.balance ?? '—'}</Stat>
           <Stat label="Billing interval">{summary?.billingInterval ? summary.billingInterval.toLowerCase() : '—'}</Stat>

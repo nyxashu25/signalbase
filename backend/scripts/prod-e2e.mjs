@@ -196,9 +196,12 @@ try {
   const tickets = await api('GET', '/tickets?status=ACTIVE', { token: owner });
   check('ticket list + counts', tickets.status === 200 && tickets.body.counts.ACTIVE === 1);
 
-  // --- invites ---
+  // --- invites (seat gate first: FREE = 1 seat) ---
+  const blocked = await api('POST', '/workspace/invites', { token: owner, body: { email: INVITEE_EMAIL, role: 'MEMBER' } });
+  check('invite blocked on FREE single seat (422)', blocked.status === 422, String(blocked.status));
+  await prisma.workspace.update({ where: { id: workspaceId }, data: { seats: 3 } });
   const invite = await api('POST', '/workspace/invites', { token: owner, body: { email: INVITEE_EMAIL, role: 'MEMBER' } });
-  check('create invite', invite.status === 201 && invite.body.invite.inviteUrl.includes('token='));
+  check('create invite once seats allow', invite.status === 201 && invite.body.invite.inviteUrl.includes('token='));
   const inviteToken = new URL(invite.body.invite.inviteUrl).searchParams.get('token');
   const info = await api('GET', `/auth/invite?token=${encodeURIComponent(inviteToken)}`);
   check('invite info (public)', info.status === 200 && info.body.accountExists === false && info.body.workspaceName.includes('E2E'));

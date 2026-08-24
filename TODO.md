@@ -5,24 +5,13 @@ picked up or completed — don't let it drift from reality.
 
 ## P0 — blocks a real user/customer
 
-- [ ] **Verify a sending domain in Resend.** Signup now requires clicking an
-      emailed confirm link (see Done below), but sends still go from
-      Resend's shared sandbox sender (`onboarding@resend.dev`), which only
-      delivers to Resend's own test domains — confirmed `@resend.dev`
-      delivers, `@example.com` and real customer domains are rejected. Until
-      datapit.io is verified in Resend and `RESEND_FROM_EMAIL`
-      is pointed at it, **real users cannot receive their confirm link and
-      cannot complete signup.**
-- (Nothing else open on the code side — invites, password reset and the
-  GDPR opt-out UI shipped 2026-08-24, see Done; Microsoft sign-in was
-  dropped from the plan. The Resend domain item above is the one remaining
-  blocker, and it's in your court.)
+- (No open P0s. Email delivery went live 2026-08-24 — datapit.io verified
+  in Resend, sends from `no-reply@datapit.io` — so signup, invites, and
+  password resets all reach real inboxes now. Invites, password reset and
+  the GDPR opt-out UI shipped the same day; Microsoft sign-in was dropped.)
 
 ### Waiting on the user (not code)
 
-- Verify **datapit.io** as a sending domain in Resend (P0 above), then
-  `RESEND_FROM_EMAIL` can be switched on the server (e.g.
-  `no-reply@datapit.io`).
 - Add **https://datapit.io** (and https://www.datapit.io) to the Google OAuth
   client's authorized JavaScript origins in the Google Cloud console — the
   client ID is configured, but Google sign-in only works from an allow-listed
@@ -39,12 +28,6 @@ flow. Nothing further is planned under the roadmap; new UX work gets its
 own item here.
 
 ## P1 — real gaps, not urgent
-
-- [ ] **Seat-count enforcement.** Plans are priced per seat, and invites now
-      make multi-seat workspaces real — but nothing compares filled seats to
-      a paid seat quantity (there is no such field yet). Needs a product
-      decision (block invites over the paid count? bill per accepted seat?)
-      before it's code.
 
 - [ ] **Backfill phone numbers on already-imported production contacts.**
       Until 2026-08-22 the RPF importer discarded `TelephoneNo` /
@@ -66,6 +49,24 @@ own item here.
       Settings and ListDetail's ContactRow gained tests in the UX phases.)
 
 ## Done
+
+- [x] **Email delivery is live (2026-08-24).** datapit.io verified in
+      Resend (user action); `RESEND_FROM_EMAIL=no-reply@datapit.io` on the
+      server and locally; real delivery confirmed (messageId
+      `6bfb5015-ae86-…` to a Gmail inbox). Signup confirm links, invites,
+      password resets, ticket/billing mail and broadcasts now reach real
+      addresses. Settings' "copy invite link" stays as a convenience.
+- [x] **Seat-count enforcement (2026-08-24, decision: block over the paid
+      count).** New `Workspace.seats` (default 1 — the Free plan's single
+      seat); bought as the Stripe checkout quantity (Billing gained a Seats
+      field; Organization min 3) with the monthly credit grant scaling per
+      seat; super admins can override seats (audited fromSeats→toSeats).
+      Invites are blocked once members + pending invites reach the count
+      (pending invites reserve a seat; re-inviting doesn't double-count) and
+      the seat is re-checked at accept. Users & teams shows "x of N seats
+      filled", disables inviting when full and points at Billing; Free
+      workspaces get an upgrade prompt instead. Backend 278 tests, frontend
+      139.
 
 - [x] **Full regression pass (2026-08-24).** Backend 272/272 (run twice:
       shared env, then isolated env), frontend 138/138 + lint + build; a

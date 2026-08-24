@@ -36,6 +36,18 @@ export function AdminUserDetail() {
     setFeedback(`New balance: ${result.balance} credits`);
   }
 
+  const [seatsDraft, setSeatsDraft] = useState('');
+
+  async function handleSeatsApply() {
+    const seats = Number(seatsDraft);
+    if (!Number.isInteger(seats) || seats < 1) return;
+    const result = await updatePlan({ userId, plan: user.workspace.plan, seats }).unwrap();
+    setSeatsDraft('');
+    setPlanFeedback(
+      `Now ${result.seats} ${result.seats === 1 ? 'seat' : 'seats'} on ${PLAN_LABELS[result.plan]} — ${result.monthlyCreditGrant} credits/month`,
+    );
+  }
+
   async function handlePlanChange(e) {
     const plan = e.target.value;
     if (plan === user.workspace.plan) return;
@@ -149,6 +161,25 @@ export function AdminUserDetail() {
               </option>
             ))}
           </select>
+          <div className="mt-3 flex items-center gap-2">
+            <input
+              type="number"
+              min={1}
+              value={seatsDraft}
+              onChange={(e) => setSeatsDraft(e.target.value)}
+              placeholder={`Seats (now ${user.workspace.seats ?? 1})`}
+              aria-label="Seats"
+              className="w-40 rounded-md border border-white/15 bg-ink-950 px-3 py-2 text-sm text-white placeholder:text-ink-300 focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={handleSeatsApply}
+              disabled={updatingPlan || !seatsDraft}
+              className="rounded-md border border-white/15 px-3 py-2 text-xs font-bold text-white hover:bg-white/5 disabled:opacity-40"
+            >
+              Set seats
+            </button>
+          </div>
           {planFeedback && <p className="mt-2 text-xs text-emerald-400">{planFeedback}</p>}
         </div>
 

@@ -195,8 +195,7 @@ saved searches, the onboarding checklist + rewards, plan gating, tickets,
 the full invite → accept → members flow, forgot → reset password, and the
 privacy opt-out, printing one ok/FAIL line per check and exiting non-zero
 on any failure. Every account/row it creates (all under `@dp-e2e.test` /
-`dp-e2e-*.example`) is deleted in a cleanup pass at the end. Expect Resend
-403 lines in the API log while it runs — the sandbox sender can't deliver
-to the probe addresses, which is itself expected until the sending domain
-is verified.
+`dp-e2e-*.example`) is deleted in a cleanup pass at the end. Sends to the
+probe addresses will bounce (the `.test` TLD isn't routable) — harmless;
+notification failures are non-fatal by design.
 

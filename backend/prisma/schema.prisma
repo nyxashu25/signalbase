@@ -60,6 +60,13 @@ model Workspace {
   // (1/3/12 months for MONTH/QUARTER/YEAR — the interval IS the commitment).
   planActivatedAt      DateTime?
   billingInterval      BillingInterval @default(MONTH)
+  // Paid seat count — how many people may hold a Membership or pending
+  // invite here. 1 on FREE (per the pricing page); set by the subscription
+  // checkout quantity or a super-admin override. Enforced when an invite is
+  // created AND when it's accepted (workspaceService/authService), never
+  // retroactively — reducing seats below the current member count only
+  // blocks further joins.
+  seats                Int             @default(1)
   createdAt            DateTime        @default(now())
 
   org                Org                  @relation(fields: [orgId], references: [id], onDelete: Cascade)

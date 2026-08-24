@@ -9,6 +9,7 @@ import { getDecryptedStripeCredentials } from './paymentSettingsService.js';
 import * as notificationService from './notificationService.js';
 import {
   PLAN_MONTHLY_CREDITS,
+  PLAN_MIN_SEATS,
   PLAN_PRICE_USD_CENTS,
   PLAN_ORDER,
   INTERVAL_MONTHS,
@@ -113,6 +114,7 @@ async function updateSubscriptionState(subscription) {
 // places would double-credit the first cycle.
 async function activatePlanSubscription(session) {
   const { workspaceId, plan, interval } = session.metadata ?? {};
+  const seats = Math.max(1, Number(session.metadata?.seats) || 1);
   if (!workspaceId || !plan) {
     logger.error(
       { sessionId: session.id },
@@ -125,7 +127,9 @@ async function activatePlanSubscription(session) {
     where: { id: workspaceId },
     data: {
       plan,
-      monthlyCreditGrant: PLAN_MONTHLY_CREDITS[plan],
+      seats,
+      // Credits are per seat per month (see the Pricing page copy).
+      monthlyCreditGrant: PLAN_MONTHLY_CREDITS[plan] * seats,
       stripeCustomerId: session.customer,
       stripeSubscriptionId: session.subscription,
       billingInterval: interval || 'MONTH',
@@ -137,7 +141,7 @@ async function activatePlanSubscription(session) {
   });
 
   logger.info(
-    { workspaceId, plan, interval },
+    { workspaceId, plan, interval, seats },
     'Workspace plan activated via Stripe subscription checkout',
   );
 
@@ -294,7 +298,7 @@ const STRIPE_RECURRING = {
 const INTERVAL_LABEL = { MONTH: 'monthly', QUARTER: 'quarterly', YEAR: 'annual' };
 
 export async function createPlanSubscriptionSession(
-  { workspaceId, plan, interval = 'MONTH' },
+  { workspaceId, plan, interval = 'MONTH', seats = 1 },
   makeClient = (key) => new Stripe(key),
 ) {
   if (PLAN_PRICE_USD_CENTS[plan] === undefined) {
@@ -302,6 +306,9 @@ export async function createPlanSubscriptionSession(
   }
   if (!STRIPE_RECURRING[interval]) {
     throw new ApiError(400, 'Unknown billing interval');
+  }
+  if (seats < (PLAN_MIN_SEATS[plan] ?? 1)) {
+    throw new ApiError(400, `The ${plan} plan starts at ${PLAN_MIN_SEATS[plan]} seats`);
   }
   const amountMinor = planPriceForInterval(plan, interval);
 
@@ -327,7 +334,7 @@ export async function createPlanSubscriptionSession(
   if (!credentials?.secretKey) {
     const sessionId = `cs_simulated_plan_${workspaceId}_${Date.now()}`;
     logger.info(
-      { workspaceId, plan, interval, amountMinor, sessionId },
+      { workspaceId, plan, interval, seats, amountMinor, sessionId },
       'Stripe plan subscription checkout simulated (no key configured in admin settings)',
     );
     return { sessionId, url: `https://billing.simulated.local/checkout/${sessionId}` };
@@ -345,12 +352,13 @@ export async function createPlanSubscriptionSession(
           unit_amount: amountMinor,
           recurring: STRIPE_RECURRING[interval],
         },
-        quantity: 1,
+        // Per-seat pricing: the checkout charges unit price x seats.
+        quantity: seats,
       },
     ],
     success_url: `${env.CORS_ORIGIN}/app/billing?checkout=success`,
     cancel_url: `${env.CORS_ORIGIN}/app/billing?checkout=cancelled`,
-    metadata: { workspaceId, plan, interval },
+    metadata: { workspaceId, plan, interval, seats: String(seats) },
   });
 
   return { sessionId: session.id, url: session.url };

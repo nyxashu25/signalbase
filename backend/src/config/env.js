@@ -78,7 +78,7 @@ const schema = z.object({
   RESEND_API_KEY: z.string().optional(),
   // Defaults to Resend's shared sandbox sender, which only delivers to the
   // Resend account's own address until a real domain is verified in Resend —
-  // swap once datapit.io is verified there.
+  // production uses no-reply@datapit.io (domain verified 2026-08-24).
   RESEND_FROM_EMAIL: z.string().email().default('onboarding@resend.dev'),
 
   // AES-256-GCM key (32 bytes, hex-encoded = 64 chars) for encrypting secrets

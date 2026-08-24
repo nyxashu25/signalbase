@@ -153,6 +153,7 @@ describe('admin data routes', () => {
     expect(res.body).toEqual({
       workspaceId: workspace.id,
       plan: 'PROFESSIONAL',
+      seats: 1,
       monthlyCreditGrant: 1200,
     });
 
@@ -340,7 +341,7 @@ describe('admin data routes', () => {
       expect(actions).toEqual(['ADD_CREDITS', 'UPDATE_PLAN', 'UNSUSPEND_USER', 'SUSPEND_USER']); // newest first
 
       const planEntry = res.body.results.find((e) => e.action === 'UPDATE_PLAN');
-      expect(planEntry.metadata).toEqual({ from: 'FREE', to: 'BASIC' });
+      expect(planEntry.metadata).toMatchObject({ from: 'FREE', to: 'BASIC' });
       expect(planEntry.targetUser.id).toBe(user.id);
       expect(planEntry.superAdmin.email).toBe(adminCreds.email);
 
@@ -410,5 +411,35 @@ describe('audit log coverage for settings, imports and promotions', () => {
     const entry = log.body.results.find((e) => e.action === 'SAVE_STRIPE_SETTINGS');
     expect(entry.metadata).toEqual({ fields: ['secretKey', 'webhookSecret'] });
     expect(JSON.stringify(entry)).not.toContain('sk_test_abc123');
+  });
+});
+
+describe('admin seats override', () => {
+  beforeEach(async () => {
+    await resetDb();
+    await resetRedis();
+  });
+
+  it('setting seats scales the monthly grant and lands in the audit log', async () => {
+    const token = await loginAsAdmin();
+    const { user, workspace } = await createTenantUser();
+
+    const res = await request(app)
+      .put(`/api/v1/admin/users/${user.id}/plan`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ plan: 'BASIC', seats: 4 });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      workspaceId: workspace.id,
+      plan: 'BASIC',
+      seats: 4,
+      monthlyCreditGrant: 2000, // 500/seat x 4
+    });
+
+    const log = await request(app)
+      .get('/api/v1/admin/audit-log')
+      .set('Authorization', `Bearer ${token}`);
+    const entry = log.body.results.find((e) => e.action === 'UPDATE_PLAN');
+    expect(entry.metadata).toMatchObject({ to: 'BASIC', fromSeats: 1, toSeats: 4 });
   });
 });

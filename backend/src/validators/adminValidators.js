@@ -27,6 +27,7 @@ export const addCreditsSchema = z.object({
 
 export const updateUserPlanSchema = z.object({
   plan: z.enum(['FREE', 'BASIC', 'PROFESSIONAL', 'ORGANIZATION']),
+  seats: z.number().int().min(1).max(500).optional(),
 });
 
 export const sendPromotionSchema = z.object({

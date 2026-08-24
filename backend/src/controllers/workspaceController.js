@@ -1,7 +1,11 @@
 import * as workspaceService from '../services/workspaceService.js';
 
 export async function members(req, res) {
-  res.json({ members: await workspaceService.listMembers(req.auth.workspaceId) });
+  const [members, seats] = await Promise.all([
+    workspaceService.listMembers(req.auth.workspaceId),
+    workspaceService.seatUsage(req.auth.workspaceId),
+  ]);
+  res.json({ members, seats });
 }
 
 export async function listInvites(req, res) {

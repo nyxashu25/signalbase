@@ -124,6 +124,7 @@ describe('Settings', () => {
               { id: 'm1', role: 'OWNER', joinedAt: '2026-08-01T00:00:00.000Z', user: { id: 'u1', name: 'Demo User', email: 'demo@datapit.io' } },
               { id: 'm2', role: 'MEMBER', joinedAt: '2026-08-10T00:00:00.000Z', user: { id: 'u2', name: 'Grace Hopper', email: 'grace@datapit.io' } },
             ],
+            seats: { total: 5, plan: 'BASIC', members: 2, pendingInvites: 0, used: 2 },
           },
         },
       },
@@ -153,7 +154,7 @@ describe('Settings', () => {
 
     expect(await screen.findByText('Grace Hopper')).toBeInTheDocument();
     expect(screen.getByText('(you)')).toBeInTheDocument();
-    expect(screen.getByText('2 seats in use.')).toBeInTheDocument();
+    expect(screen.getByText('2 of 5 seats filled')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Invite teammate' }));
     await user.type(screen.getByLabelText('Email'), 'new@hire.test');
@@ -171,12 +172,49 @@ describe('Settings', () => {
     mockFetchRoutes([
       {
         url: '/workspace/members',
-        respond: { body: { members: [{ id: 'm1', role: 'MEMBER', joinedAt: '2026-08-01T00:00:00.000Z', user: { id: 'u1', name: 'Demo User', email: 'demo@datapit.io' } }] } },
+        respond: {
+          body: {
+            members: [{ id: 'm1', role: 'MEMBER', joinedAt: '2026-08-01T00:00:00.000Z', user: { id: 'u1', name: 'Demo User', email: 'demo@datapit.io' } }],
+            seats: { total: 5, plan: 'BASIC', members: 1, pendingInvites: 0, used: 1 },
+          },
+        },
       },
     ]);
     renderWithProviders(<SettingsMembers />, {
       preloadedState: { auth: { ...state.auth, role: 'MEMBER' } },
     });
     expect(await screen.findByRole('button', { name: 'Invite teammate' })).toBeDisabled();
+  });
+});
+
+describe('SettingsMembers seat gate', () => {
+  const fullState = {
+    auth: {
+      status: 'authenticated',
+      accessToken: 'test-token',
+      user: { id: 'u1', email: 'demo@datapit.io', name: 'Demo User' },
+      workspace: { id: 'w1', name: 'Demo Workspace' },
+      role: 'OWNER',
+    },
+  };
+
+  it('disables inviting when every seat is filled and points at Billing', async () => {
+    mockFetchRoutes([
+      {
+        url: '/workspace/members',
+        respond: {
+          body: {
+            members: [{ id: 'm1', role: 'OWNER', joinedAt: '2026-08-01T00:00:00.000Z', user: { id: 'u1', name: 'Demo User', email: 'demo@datapit.io' } }],
+            seats: { total: 1, plan: 'FREE', members: 1, pendingInvites: 0, used: 1 },
+          },
+        },
+      },
+      { url: '/workspace/invites', method: 'GET', respond: { body: { invites: [] } } },
+    ]);
+    renderWithProviders(<SettingsMembers />, { preloadedState: fullState });
+    expect(await screen.findByText('1 of 1 seat filled')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Invite teammate' })).toBeDisabled();
+    expect(screen.getByText('Invites need a paid plan')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Open Billing' })).toHaveAttribute('href', '/app/billing');
   });
 });

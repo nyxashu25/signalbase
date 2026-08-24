@@ -4,7 +4,7 @@ export const workspaceApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     listWorkspaceMembers: builder.query({
       query: () => '/workspace/members',
-      transformResponse: (res) => res.members,
+      // { members, seats: { total, used, members, pendingInvites, plan } }
       providesTags: ['Workspace'],
     }),
     listInvites: builder.query({
