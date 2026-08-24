@@ -94,6 +94,35 @@ export const adminDataApi = adminBaseApi.injectEndpoints({
       query: (id) => ({ url: `/tickets/${id}/close`, method: 'POST' }),
       invalidatesTags: (result, error, id) => ['AdminTickets', { type: 'AdminTicket', id }],
     }),
+    // Extension-sourcing queues ("Pending peoples" / "Childs found").
+    getSourcingCounts: builder.query({
+      query: () => '/sourcing/counts',
+      providesTags: ['Sourcing'],
+    }),
+    listMissingPersons: builder.query({
+      query: (params) => ({ url: '/sourcing/missing-persons', params }),
+      providesTags: ['Sourcing'],
+    }),
+    resolveMissingPerson: builder.mutation({
+      query: ({ id, resolution }) => ({
+        url: `/sourcing/missing-persons/${id}/resolve`,
+        method: 'POST',
+        body: { resolution },
+      }),
+      invalidatesTags: ['Sourcing'],
+    }),
+    listLostChildren: builder.query({
+      query: (params) => ({ url: '/sourcing/lost-children', params }),
+      providesTags: ['Sourcing'],
+    }),
+    resolveLostChild: builder.mutation({
+      query: ({ id, resolution }) => ({
+        url: `/sourcing/lost-children/${id}/resolve`,
+        method: 'POST',
+        body: { resolution },
+      }),
+      invalidatesTags: ['Sourcing'],
+    }),
     // Polled from AdminLayout to drive the browser Notification popup — not
     // tagged/invalidated like the rest, it's meant to be read fresh every
     // poll rather than cached against other ticket mutations.
@@ -126,4 +155,9 @@ export const {
   useReplyToAdminTicketMutation,
   useCloseAdminTicketMutation,
   useGetAdminTicketNotificationsQuery,
+  useGetSourcingCountsQuery,
+  useListMissingPersonsQuery,
+  useResolveMissingPersonMutation,
+  useListLostChildrenQuery,
+  useResolveLostChildMutation,
 } = adminDataApi;

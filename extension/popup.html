@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    body {
+      width: 300px; margin: 0; padding: 16px;
+      background: #16121f; color: #f4f2f8;
+      font: 13px/1.5 -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    h1 {
+      margin: 0 0 2px; font-size: 13px; letter-spacing: .05em; text-transform: uppercase;
+      background: linear-gradient(90deg,#a78bfa,#f472b6);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .muted { color: #a49fb3; font-size: 12px; }
+    .row { margin-top: 12px; }
+    input {
+      width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px;
+      border: 1px solid rgba(255,255,255,.15); background: rgba(255,255,255,.06);
+      color: #fff; font: 12px ui-monospace, Consolas, monospace;
+    }
+    input:focus { outline: 2px solid #7c3aed; border-color: transparent; }
+    button {
+      margin-top: 10px; width: 100%; cursor: pointer; border: 0; border-radius: 8px;
+      padding: 9px 12px; font-weight: 700; font-size: 12px;
+      background: linear-gradient(90deg,#7c3aed,#db2777); color: #fff;
+    }
+    button.ghost { background: rgba(255,255,255,.09); }
+    button:disabled { opacity: .55; cursor: default; }
+    .status { margin-top: 12px; padding: 10px 12px; border-radius: 8px; background: rgba(255,255,255,.06); }
+    .status b { color: #fff; }
+    .balance { font-size: 20px; font-weight: 800; color: #fff; }
+    .error { margin-top: 10px; color: #fca5a5; font-size: 12px; }
+    .ok { color: #34d399; }
+    a { color: #c4b5fd; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <h1>DataPit</h1>
+  <div class="muted">LinkedIn lookup &amp; reveal</div>
+
+  <div id="connect" class="hidden">
+    <div class="row muted">
+      Paste an API key from <b>Settings → API &amp; Extension</b> in DataPit.
+    </div>
+    <div class="row">
+      <input id="key" type="password" placeholder="dpk_…" autocomplete="off" spellcheck="false" />
+    </div>
+    <button id="save">Connect</button>
+    <div id="connect-error" class="error hidden"></div>
+  </div>
+
+  <div id="connected" class="hidden">
+    <div class="status">
+      <div><b id="who"></b></div>
+      <div class="muted" id="workspace"></div>
+      <div class="row">
+        <span class="balance" id="balance"></span>
+        <span class="muted"> credits</span>
+      </div>
+      <div class="muted" id="cost"></div>
+    </div>
+    <div class="row muted">Open any <b>linkedin.com/in/…</b> profile — the DataPit card appears automatically.</div>
+    <button id="disconnect" class="ghost">Disconnect</button>
+  </div>
+
+  <div id="loading" class="muted row">Checking connection…</div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

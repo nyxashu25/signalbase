@@ -19,6 +19,7 @@ export const adminBaseApi = createApi({
     'DatabaseImports',
     'AdminTickets',
     'AdminTicket',
+    'Sourcing',
   ],
   endpoints: () => ({}),
 });

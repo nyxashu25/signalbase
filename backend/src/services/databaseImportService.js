@@ -5,6 +5,7 @@ import { ApiError } from '../middleware/errorHandler.js';
 import { enqueueIndex } from './indexerService.js';
 import { databaseImportQueue } from '../jobs/queues.js';
 import { RPF_REQUIRED_HEADERS, parseEmpSize } from '../config/rpfFormat.js';
+import { linkedinSlugFromUrl } from '../utils/linkedin.js';
 
 // Capped like recalc.py caps its error_summary — a batch with thousands of
 // bad rows shouldn't bloat the DB row or the admin UI with every one of them.
@@ -95,7 +96,9 @@ function requireContactNames(row) {
 
 async function insertContact(row, firstName, lastName, companyId, batchId) {
   const email = row['Email ID']?.trim() || null;
-  return prisma.contact.create({
+  const linkedinUrl = row['Prospect Linkedin profile Link']?.trim() || null;
+  const linkedinSlug = linkedinSlugFromUrl(linkedinUrl);
+  const contact = await prisma.contact.create({
     data: {
       companyId,
       firstName,
@@ -107,10 +110,21 @@ async function insertContact(row, firstName, lastName, companyId, batchId) {
       emailVerified: false,
       // Both RPF phone columns feed one field — the primary number wins.
       phone: row['TelephoneNo']?.trim() || row['Alternative No.']?.trim() || null,
-      linkedinUrl: row['Prospect Linkedin profile Link']?.trim() || null,
+      linkedinUrl,
+      linkedinSlug,
       importBatchId: batchId,
     },
   });
+
+  // Close the extension-sourcing loop: if this profile was sitting in the
+  // "Pending peoples" queue, the import just fulfilled it.
+  if (linkedinSlug) {
+    await prisma.missingPerson.updateMany({
+      where: { linkedinSlug, status: 'PENDING' },
+      data: { status: 'ADDED' },
+    });
+  }
+  return contact;
 }
 
 /** Runs in the worker (see jobs/processors/databaseImportProcessor.js). */

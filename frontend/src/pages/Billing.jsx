@@ -24,6 +24,7 @@ const PAGE_SIZE = 25;
 const REASON_LABELS = {
   MONTHLY_GRANT: 'Monthly grant',
   EMAIL_REVEAL: 'Reveal',
+  EXTENSION_REVEAL: 'Extension reveal',
   COMPANY_VIEW: 'Company view',
   CSV_EXPORT: 'CSV export',
   SEQUENCE_ENROLLMENT: 'Sequence enrollment',

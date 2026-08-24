@@ -79,6 +79,30 @@ All routes require auth.
 |---|---|---|---|---|---|
 | POST | `/:id/reveal` | User | 2 (`REVEAL`) | 30/min/workspace | Requires `Idempotency-Key` header (cached replay for 24h). `skipIfAlreadyRevealed` short-circuits if the workspace already revealed this contact. Runs pattern-find + optional Hunter.io verify; a confirmed-bad result refunds instead of charging. Response `{ email, emailVerified, phone, alreadyRevealed }` — one reveal unlocks the phone number too (from the dataset; there is no phone finder). |
 
+## API keys — `/api/v1/api-keys` (`routes/apiKeys.js`)
+
+Session-authenticated (never API-key-authenticated — a leaked key must not
+mint or revoke keys). Keys are personal (`ApiKey.userId`), max 10 active per
+user, and authenticate against the user's primary (first-joined) workspace.
+
+| Method | Path | Auth | Rate limit | Notes |
+|---|---|---|---|---|
+| GET | `/` | User | — | `{ keys: [{ id, name, prefix, createdAt, lastUsedAt }] }` — never the secret. |
+| POST | `/` | User | 20/hour/workspace | `{ name }` → 201 with `key` (`dpk_` + 40 hex) — the only response ever containing the full secret. Stored argon2-hashed; `prefix` (first 12 chars) is the lookup handle. |
+| DELETE | `/:id` | User | — | Soft revoke (`revokedAt`); scoped to the owner — someone else's key 404s. |
+
+## Extension — `/api/v1/extension` (`routes/extension.js`)
+
+**API-key auth** (`Authorization: Bearer dpk_…`, `middleware/apiKeyAuth.js`)
+— resolves to the same `req.auth` shape as a session, so masking, credits
+and rate limiting behave identically. Session JWTs are rejected here.
+
+| Method | Path | Credits | Rate limit | Notes |
+|---|---|---|---|---|
+| GET | `/me` | — | — | Popup status: `{ user, workspace, balance, revealCost }`. |
+| POST | `/observe` | — | 60/hour/workspace | `{ linkedinUrl, name?, jobTitle?, location?, companyName?, domText? }`. Classifies the profile: **found** → `{ status:'found', contact (masked via attachRevealStatus), cost (4, or 0 if already revealed), titleChangeReported }`; **found + title differs** (case-insensitive, both non-empty) → same, plus a `LostChild` upsert; **not found** → `{ status:'not_found', queued:true }` + a `MissingPerson` upsert (repeat sightings bump `reportCount`, never resurrect resolved rows). Non-profile URLs 422. `domText` clipped to 200KB. |
+| POST | `/contacts/:id/reveal` | 4 (`EXTENSION_REVEAL`) | 30/min/workspace | Same pipeline as the in-app reveal (`Idempotency-Key` required, already-revealed short-circuits free, phone included) — only the price and ledger reason differ. |
+
 ## Lists — `/api/v1/lists` (`routes/lists.js`)
 
 All routes require auth.
@@ -208,6 +232,11 @@ Frontend surfaces this at `/control`. Every route except login requires `require
 | GET | `/database-imports/:batchId` | Batch detail incl. per-row errors (capped at 100 stored). |
 | POST | `/database-imports` | 10/hour/IP. Multipart CSV upload (`uploadCsv` middleware); enqueues async processing. |
 | POST | `/database-imports/:batchId/approve` | Publishes a `PENDING_APPROVAL` batch — clears staging flag, enqueues ES indexing. |
+| GET | `/sourcing/counts` | PENDING counts for the two extension-sourcing queues — polled for the nav badges. |
+| GET | `/sourcing/missing-persons` | "Pending peoples": paginated `MissingPerson` rows, `?status=` PENDING (default) / ADDED / DISMISSED. |
+| POST | `/sourcing/missing-persons/:id/resolve` | `{ resolution: 'ADDED'\|'DISMISSED' }` — PENDING-guarded (409 if already resolved); audited (`RESOLVE_MISSING_PERSON`). Imports auto-mark matching slugs `ADDED`. |
+| GET | `/sourcing/lost-children` | "Childs found": paginated `LostChild` rows with their contact + company. |
+| POST | `/sourcing/lost-children/:id/resolve` | `{ resolution: 'APPLIED'\|'DISMISSED' }` — APPLIED updates the shared `Contact.title` + reindexes; audited (`RESOLVE_LOST_CHILD`). |
 | GET | `/tickets/notifications` | Polled for the live unread-ticket indicator in the admin panel. |
 | GET | `/tickets` | Paginated, filterable by status/type, across all workspaces. |
 | GET | `/tickets/:id` | Full thread. |
@@ -218,7 +247,8 @@ Frontend surfaces this at `/control`. Every route except login requires `require
 
 ## What's *not* here
 
-No CRM-sync endpoints (Salesforce/HubSpot push), no Chrome-extension-specific endpoints, no
-technographics/intent-signal/funding-event endpoints, no password-reset route, no team/seat-invite
-route, no Microsoft OAuth route. All explicitly out of scope or open gaps per `TODO.md` — see
-`docs/FEATURES.md` for the full built-vs-not-built breakdown.
+No CRM-sync endpoints (Salesforce/HubSpot push), no
+technographics/intent-signal/funding-event endpoints, no Microsoft OAuth route. All explicitly out
+of scope or open gaps per `TODO.md` — see `docs/FEATURES.md` for the full built-vs-not-built
+breakdown. (Password reset, workspace invites, and the Chrome-extension endpoints shipped
+2026-08-24 and are documented above.)

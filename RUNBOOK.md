@@ -192,7 +192,10 @@ cd /var/www/datapit.io/app/backend && node scripts/prod-e2e.mjs
 It exercises signup → email-verify → login, search + masking, a reveal
 (against its own throwaway contact — shared data is never mutated), lists,
 saved searches, the onboarding checklist + rewards, plan gating, tickets,
-the full invite → accept → members flow, forgot → reset password, and the
+the full invite → accept → members flow, the Chrome-extension surface
+(API-key mint → observe found/title-change/not-found → 4-credit reveal →
+key revoke, with its LostChild/MissingPerson queue rows verified and
+cleaned), forgot → reset password, and the
 privacy opt-out, printing one ok/FAIL line per check and exiting non-zero
 on any failure. Every account/row it creates (all under `@dp-e2e.test` /
 `dp-e2e-*.example`) is deleted in a cleanup pass at the end. Sends to the

@@ -3,6 +3,7 @@ import * as adminAuthController from '../controllers/adminAuthController.js';
 import * as adminController from '../controllers/adminController.js';
 import * as databaseImportController from '../controllers/databaseImportController.js';
 import * as adminTicketController from '../controllers/adminTicketController.js';
+import * as adminSourcingController from '../controllers/adminSourcingController.js';
 import { requireSuperAdmin } from '../middleware/adminAuth.js';
 import { validateBody, validateQuery } from '../middleware/validate.js';
 import { uploadCsv } from '../middleware/uploadCsv.js';
@@ -15,6 +16,10 @@ import {
   updateUserPlanSchema,
   sendPromotionSchema,
   auditLogQuerySchema,
+  missingPersonsQuerySchema,
+  resolveMissingPersonSchema,
+  lostChildrenQuerySchema,
+  resolveLostChildSchema,
 } from '../validators/adminValidators.js';
 import { saveStripeSettingsSchema } from '../validators/billingValidators.js';
 import {
@@ -113,6 +118,31 @@ adminRouter.post(
 adminRouter.post(
   '/database-imports/:batchId/approve',
   asyncHandler(databaseImportController.approve),
+);
+
+// Extension-sourcing queues: "Pending peoples" (MissingPerson) and "Childs
+// found" (LostChild) — see sourcingService.js. Counts is the nav-badge
+// endpoint, polled like ticket notifications.
+adminRouter.get('/sourcing/counts', asyncHandler(adminSourcingController.counts));
+adminRouter.get(
+  '/sourcing/missing-persons',
+  validateQuery(missingPersonsQuerySchema),
+  asyncHandler(adminSourcingController.listMissingPersons),
+);
+adminRouter.post(
+  '/sourcing/missing-persons/:id/resolve',
+  validateBody(resolveMissingPersonSchema),
+  asyncHandler(adminSourcingController.resolveMissingPerson),
+);
+adminRouter.get(
+  '/sourcing/lost-children',
+  validateQuery(lostChildrenQuerySchema),
+  asyncHandler(adminSourcingController.listLostChildren),
+);
+adminRouter.post(
+  '/sourcing/lost-children/:id/resolve',
+  validateBody(resolveLostChildSchema),
+  asyncHandler(adminSourcingController.resolveLostChild),
 );
 
 // Notifications is polled far more frequently than the list itself (see

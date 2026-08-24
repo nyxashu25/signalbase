@@ -6,7 +6,10 @@ import { resolveReservationForCommit, releaseReservation, refundAmount } from '.
 import { isOptedOut } from './privacyService.js';
 import { enqueueIndex } from './indexerService.js';
 
-export async function revealContactEmail({ workspaceId, userId, contactId, reservationId }) {
+// `reason` distinguishes where the spend came from in the ledger — the
+// in-app route charges EMAIL_REVEAL, the Chrome extension EXTENSION_REVEAL.
+// Everything else (reveal-state, masking, workspace-wide unlock) is shared.
+export async function revealContactEmail({ workspaceId, userId, contactId, reservationId, reason = 'EMAIL_REVEAL' }) {
   const contact = await prisma.contact.findUnique({
     where: { id: contactId },
     include: { company: true },
@@ -71,7 +74,7 @@ export async function revealContactEmail({ workspaceId, userId, contactId, reser
     await prisma.$transaction([
       prisma.contact.update({ where: { id: contactId }, data: { email, emailVerified } }),
       prisma.creditLedgerEntry.create({
-        data: { workspaceId, delta: -amount, reason: 'EMAIL_REVEAL', contactId },
+        data: { workspaceId, delta: -amount, reason, contactId },
       }),
       prisma.emailReveal.create({ data: { workspaceId, contactId, revealedById: userId } }),
     ]);

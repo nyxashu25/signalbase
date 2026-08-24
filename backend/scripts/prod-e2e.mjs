@@ -90,6 +90,9 @@ async function cleanup() {
   for (const orgId of orgIds) await prisma.org.delete({ where: { id: orgId } }).catch(() => {});
   for (const u of users) await prisma.user.delete({ where: { id: u.id } }).catch(() => {});
   await prisma.dataSubjectOptOut.deleteMany({ where: { email: OPTOUT_EMAIL } });
+  // Extension leg: the MissingPerson row is global and not covered by any
+  // cascade (LostChild + ApiKey go with the contact/user deletes above).
+  await prisma.missingPerson.deleteMany({ where: { linkedinSlug: { startsWith: `e2e-missing-${STAMP}` } } });
 
   const testContacts = await prisma.contact.findMany({
     where: { company: { domain: TEST_DOMAIN } },
@@ -211,6 +214,57 @@ try {
   check('members list has both seats', members.body.members.length === 2);
   const replay = await api('POST', '/auth/accept-invite', { body: { token: inviteToken, name: 'X', password: 'xxxxxxxxxx' } });
   check('invite link is single-use (400)', replay.status === 400);
+
+  // --- Chrome extension surface: API key -> observe -> 4-credit reveal ---
+  const keyRes = await api('POST', '/api-keys', { token: owner, body: { name: 'E2E extension probe' } });
+  check('create API key (dpk_…, shown once)', keyRes.status === 201 && /^dpk_[0-9a-f]{40}$/.test(keyRes.body.key ?? ''));
+  const dpk = keyRes.body.key;
+
+  const extMe = await api('GET', '/extension/me', { token: dpk });
+  check('extension /me: key auth + reveal price 4', extMe.status === 200 && extMe.body.revealCost === 4, JSON.stringify(extMe.body));
+  const jwtOnExt = await api('GET', '/extension/me', { token: owner });
+  check('session JWT rejected on /extension (401)', jwtOnExt.status === 401);
+
+  const extSlug = `e2e-ext-probe-${STAMP}`;
+  const extContact = await prisma.contact.create({
+    data: {
+      companyId: company.id,
+      firstName: 'Ext',
+      lastName: 'Probe',
+      title: 'QA Engineer',
+      phone: '+1 415 555 0001',
+      linkedinUrl: `https://www.linkedin.com/in/${extSlug}`,
+      linkedinSlug: extSlug,
+    },
+  });
+
+  const obs = await api('POST', '/extension/observe', {
+    token: dpk,
+    body: { linkedinUrl: `https://www.linkedin.com/in/${extSlug}?utm_source=e2e`, jobTitle: 'Head of QA', domText: 'e2e page text' },
+  });
+  check('observe known -> found, masked, cost 4', obs.status === 200 && obs.body.status === 'found' && obs.body.cost === 4 && obs.body.contact.revealed === false, JSON.stringify({ status: obs.body?.status, cost: obs.body?.cost }));
+  check('observe reported the title change', obs.body.titleChangeReported === true);
+  const lostChildRow = await prisma.lostChild.findFirst({ where: { contactId: extContact.id, status: 'PENDING' } });
+  check('LostChild row queued (Childs found)', Boolean(lostChildRow) && lostChildRow.newTitle === 'Head of QA');
+
+  const missSlug = `e2e-missing-${STAMP}`;
+  const miss = await api('POST', '/extension/observe', {
+    token: dpk,
+    body: { linkedinUrl: `https://www.linkedin.com/in/${missSlug}`, name: 'E2E Missing', jobTitle: 'Ghost', companyName: 'Nowhere Inc' },
+  });
+  check('observe unknown -> queued (Pending peoples)', miss.status === 200 && miss.body.status === 'not_found' && miss.body.queued === true);
+
+  const balBeforeExt = (await api('GET', '/billing/summary', { token: owner })).body.balance;
+  const extReveal = await api('POST', `/extension/contacts/${extContact.id}/reveal`, { token: dpk });
+  const balAfterExt = (await api('GET', '/billing/summary', { token: owner })).body.balance;
+  check('extension reveal returns email + phone', extReveal.status === 200 && Boolean(extReveal.body.email) && extReveal.body.phone === '+1 415 555 0001', JSON.stringify(extReveal.body));
+  check('extension reveal charged 4 credits', balBeforeExt - balAfterExt === 4, `${balBeforeExt} -> ${balAfterExt}`);
+  const extLedger = await prisma.creditLedgerEntry.findFirst({ where: { workspaceId, reason: 'EXTENSION_REVEAL' } });
+  check('ledger reason EXTENSION_REVEAL', Boolean(extLedger) && extLedger.delta === -4);
+
+  const keyGone = await api('DELETE', `/api-keys/${keyRes.body.id}`, { token: owner });
+  const afterRevoke = await api('GET', '/extension/me', { token: dpk });
+  check('revoked key stops working (401)', keyGone.status === 200 && afterRevoke.status === 401);
 
   // --- forgot / reset password ---
   const forgot = await api('POST', '/auth/forgot-password', { body: { email: OWNER_EMAIL } });

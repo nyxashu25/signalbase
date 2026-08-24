@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { UserCircle, Building2, Users, ShieldCheck, Bell, Plug } from 'lucide-react';
+import { UserCircle, Building2, Users, ShieldCheck, Bell, Plug, KeyRound } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { cn } from '../../components/ui/cn.js';
 
@@ -13,6 +13,7 @@ export const SETTINGS_SECTIONS = [
   { to: '/app/settings/security', label: 'Security', icon: ShieldCheck, keywords: 'password google' },
   { to: '/app/settings/notifications', label: 'Notifications', icon: Bell, keywords: 'email marketing opt out' },
   { to: '/app/settings/integrations', label: 'Integrations', icon: Plug, keywords: 'crm export' },
+  { to: '/app/settings/api', label: 'API & Extension', icon: KeyRound, keywords: 'api key chrome extension linkedin' },
 ];
 
 export function SettingsLayout() {

@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "DataPit — LinkedIn Lookup",
+  "version": "0.1.0",
+  "description": "Look up LinkedIn profiles against DataPit as you browse: reveal emails and phone numbers, and queue missing people for sourcing.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://datapit.io/*",
+    "http://localhost:4000/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.linkedin.com/*", "https://*.linkedin.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "DataPit"
+  },
+  "options_page": "options.html",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

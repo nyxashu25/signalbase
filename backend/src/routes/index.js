@@ -14,6 +14,8 @@ import { ticketsRouter } from './tickets.js';
 import { notificationsRouter } from './notifications.js';
 import { dashboardRouter } from './dashboard.js';
 import { workspaceRouter } from './workspace.js';
+import { apiKeysRouter } from './apiKeys.js';
+import { extensionRouter } from './extension.js';
 
 export const apiRouter = Router();
 
@@ -36,10 +38,11 @@ apiRouter.use('/tickets', ticketsRouter);
 apiRouter.use('/notifications', notificationsRouter);
 apiRouter.use('/dashboard', dashboardRouter);
 apiRouter.use('/workspace', workspaceRouter);
+apiRouter.use('/api-keys', apiKeysRouter);
+apiRouter.use('/extension', extensionRouter);
 
-// CRM sync (Salesforce/HubSpot) and the Chrome extension are P2 / out of
-// scope here — CRM sync needs a real sandbox to integrate against, and the
-// extension is a separate browser-extension project, not an API route.
+// CRM sync (Salesforce/HubSpot) is P2 / out of scope here — it needs a real
+// sandbox to integrate against.
 
 // Remaining resource routers (billing...) mount here as they're built in
 // later phases.

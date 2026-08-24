@@ -41,11 +41,33 @@ own item here.
 ## P2 — known-deferred, not surprises
 
 - [ ] CRM sync (Salesforce/HubSpot) — explicitly out of scope.
-- [ ] Chrome extension — explicitly out of scope.
 - [ ] No UI to create/manage additional super admins (CLI script only,
       `backend/src/utils/createSuperAdmin.js` — appears deliberate).
+- [ ] Chrome Web Store submission for the extension (built 2026-08-24, see
+      Done below) — needs a $5 developer account + review; distributed as
+      load-unpacked until then.
 
 ## Done
+
+- [x] **Chrome extension — LinkedIn lookup, reveal & sourcing pipeline
+      (2026-08-24; plan in `docs/EXTENSION-PLAN.md`).** `extension/` is a
+      plain MV3 extension (load-unpacked, no build step): on any
+      `linkedin.com/in/…` profile it calls `POST /extension/observe` and a
+      shadow-DOM card shows one of three outcomes — **found** (masked
+      contact; *Reveal email & phone · 4 credits*, `EXTENSION_REVEAL`
+      ledger reason, free when the workspace already revealed it),
+      **not found** (queued as a `MissingPerson` → admin **"Pending
+      peoples"** page with report-count dedup, page-text expander, copy-as-
+      RPF-row, Mark added/Dismiss, and auto-ADDED when an import lands the
+      slug), or **found + title changed** (queued as a `LostChild` → admin
+      **"Childs found"** page; Apply updates the shared contact + reindexes,
+      audited). Auth is per-user API keys (`dpk_…`, argon2-hashed, shown
+      once, revocable, max 10) minted in the new Settings → **API &
+      Extension** page — this also seeds the "API access" the Professional
+      plan advertises. `Contact.linkedinSlug` (normalized, indexed,
+      backfilled 120/121) is the matching identity. Admin nav shows live
+      PENDING badges. Backend 328 tests, frontend 162, prod-e2e now 45
+      checks (extension leg added). LinkedIn-ToS risk accepted per plan.
 
 - [x] **Ops hardening (2026-08-24).** Nightly `pg_dump` backups (03:17 UTC,
       14-day retention, sanity-checked, `.env` included for the encryption

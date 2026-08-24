@@ -18,6 +18,9 @@ export async function skipIfAlreadyRevealed(req, res, next) {
     res.json({
       email: contact?.email ?? null,
       emailVerified: contact?.emailVerified ?? false,
+      // One reveal unlocks the phone too (see revealService) — the free
+      // repeat must return everything the paid first call did.
+      phone: contact?.phone ?? null,
       alreadyRevealed: true,
     });
   } catch (err) {

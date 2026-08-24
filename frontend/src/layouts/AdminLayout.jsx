@@ -3,12 +3,16 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { clearAdminSession } from '../store/adminAuthSlice.js';
 import { useTicketNotifications } from '../hooks/useTicketNotifications.js';
+import { useGetSourcingCountsQuery } from '../api/adminDataApi.js';
 
 const NAV_ITEMS = [
   { to: '/control', label: 'Overview', end: true },
   { to: '/control/users', label: 'Users' },
   { to: '/control/billing', label: 'Billing' },
   { to: '/control/extend-database', label: 'Extend database' },
+  // Extension-sourcing queues — badge = PENDING count (see below).
+  { to: '/control/pending-peoples', label: 'Pending peoples', badge: 'missingPersons' },
+  { to: '/control/childs-found', label: 'Childs found', badge: 'lostChildren' },
   { to: '/control/audit-log', label: 'Audit log' },
   { to: '/control/settings', label: 'Settings' },
 ];
@@ -19,6 +23,9 @@ export function AdminLayout() {
   const navigate = useNavigate();
   const [navOpen, setNavOpen] = useState(false);
   const { unansweredCount } = useTicketNotifications();
+  // Same live-poll cadence as ticket notifications — the queues fill from
+  // extension traffic, not admin actions, so they must refresh on their own.
+  const { data: sourcingCounts } = useGetSourcingCountsQuery(undefined, { pollingInterval: 60_000 });
   const [notifyPermission, setNotifyPermission] = useState(
     typeof Notification !== 'undefined' ? Notification.permission : 'unsupported',
   );
@@ -60,12 +67,17 @@ export function AdminLayout() {
               end={item.end}
               onClick={() => setNavOpen(false)}
               className={({ isActive }) =>
-                `rounded-md px-3 py-2 text-sm font-medium transition-colors duration-150 ease-brand ${
+                `flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors duration-150 ease-brand ${
                   isActive ? 'bg-gradient-action text-white' : 'text-ink-300 hover:bg-white/5'
                 }`
               }
             >
-              {item.label}
+              <span>{item.label}</span>
+              {item.badge && (sourcingCounts?.[item.badge] ?? 0) > 0 && (
+                <span className="rounded-full bg-mauve-magic/30 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                  {sourcingCounts[item.badge]}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>

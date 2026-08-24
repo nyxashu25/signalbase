@@ -756,6 +756,7 @@ describe('GET /billing/credit-costs', () => {
     expect(res.status).toBe(200);
     expect(res.body.costs).toEqual({
       REVEAL: 2,
+      EXTENSION_REVEAL: 4,
       COMPANY_DETAIL_VIEW: 20,
       CSV_EXPORT: 20,
       SEQUENCE_ENROLLMENT: 250,

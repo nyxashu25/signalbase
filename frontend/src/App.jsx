@@ -65,6 +65,7 @@ const SettingsIntegrations = lazyNamed(
   () => import('./pages/settings/SettingsIntegrations.jsx'),
   'SettingsIntegrations',
 );
+const SettingsApi = lazyNamed(() => import('./pages/settings/SettingsApi.jsx'), 'SettingsApi');
 
 // Admin panel
 const AdminLayout = lazyNamed(() => import('./layouts/AdminLayout.jsx'), 'AdminLayout');
@@ -74,6 +75,14 @@ const AdminUsers = lazyNamed(() => import('./pages/admin/AdminUsers.jsx'), 'Admi
 const AdminUserDetail = lazyNamed(() => import('./pages/admin/AdminUserDetail.jsx'), 'AdminUserDetail');
 const AdminBilling = lazyNamed(() => import('./pages/admin/AdminBilling.jsx'), 'AdminBilling');
 const AdminSettings = lazyNamed(() => import('./pages/admin/AdminSettings.jsx'), 'AdminSettings');
+const AdminPendingPeoples = lazyNamed(
+  () => import('./pages/admin/AdminPendingPeoples.jsx'),
+  'AdminPendingPeoples',
+);
+const AdminChildsFound = lazyNamed(
+  () => import('./pages/admin/AdminChildsFound.jsx'),
+  'AdminChildsFound',
+);
 const AdminExtendDatabase = lazyNamed(
   () => import('./pages/admin/AdminExtendDatabase.jsx'),
   'AdminExtendDatabase',
@@ -166,6 +175,7 @@ export function App() {
                 <Route path="security" element={<SettingsSecurity />} />
                 <Route path="notifications" element={<SettingsNotifications />} />
                 <Route path="integrations" element={<SettingsIntegrations />} />
+                <Route path="api" element={<SettingsApi />} />
               </Route>
               <Route path="help" element={<Help />} />
             </Route>
@@ -179,6 +189,8 @@ export function App() {
               <Route path="users/:userId" element={<AdminUserDetail />} />
               <Route path="billing" element={<AdminBilling />} />
               <Route path="extend-database" element={<AdminExtendDatabase />} />
+              <Route path="pending-peoples" element={<AdminPendingPeoples />} />
+              <Route path="childs-found" element={<AdminChildsFound />} />
               <Route path="audit-log" element={<AdminAuditLog />} />
               <Route path="tickets" element={<AdminTickets />} />
               <Route path="tickets/:ticketId" element={<AdminTicketDetail />} />

@@ -48,6 +48,12 @@ const schema = z.object({
 
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
 
+  // Extra allowed CORS origins for the Chrome extension, comma-separated —
+  // e.g. "chrome-extension://abcdefghijklmnop". Empty means none. (MV3
+  // background fetches with host_permissions usually bypass CORS anyway;
+  // this covers content-script-context calls and other browsers.)
+  EXTENSION_ORIGINS: z.string().default(''),
+
   // Google OAuth client — "Sign in with Google" verifies the ID token
   // Google Identity Services hands the frontend against this audience (see
   // authService.loginWithGoogle). Unset in an environment that hasn't

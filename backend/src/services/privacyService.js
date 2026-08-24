@@ -32,6 +32,7 @@ export async function requestErasure(email, reason) {
         email: null,
         phone: null,
         linkedinUrl: null,
+        linkedinSlug: null,
         title: null,
         seniority: null,
         department: null,

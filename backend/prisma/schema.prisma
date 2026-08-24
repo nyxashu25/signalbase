@@ -133,6 +133,31 @@ model User {
   createdTickets     Ticket[]
   ticketMessages     TicketMessage[]
   sentInvites        WorkspaceInvite[]   @relation("InvitedBy")
+  apiKeys            ApiKey[]
+}
+
+// A personal API credential (Settings → API & Extension) — how the Chrome
+// extension (and, later, any public-API client) authenticates as a user
+// without a browser session. The full key (`dpk_<hex>`) is shown exactly
+// once at creation and stored only as an argon2 hash; `prefix` (the first
+// characters of the key) is the plaintext lookup handle, so verification is
+// one indexed read + one hash check, never a table scan. Revocation is a
+// soft delete (revokedAt) so `lastUsedAt` history survives for the UI.
+// Requests authenticate against the user's primary (first-joined) workspace
+// — same resolution as login. See middleware/apiKeyAuth.js.
+model ApiKey {
+  id         String    @id @default(uuid())
+  userId     String
+  name       String
+  prefix     String    @unique
+  keyHash    String
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+  revokedAt  DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // A pending seat invite (Settings → Users & teams). The emailed link carries
@@ -187,6 +212,12 @@ enum AdminAuditAction {
   SAVE_STRIPE_SETTINGS
   APPROVE_IMPORT
   SEND_PROMOTION
+  // Extension-sourcing queues (metadata carries the resolution + row id):
+  // RESOLVE_MISSING_PERSON = Mark added / Dismiss on "Pending peoples";
+  // RESOLVE_LOST_CHILD = Apply / Dismiss on "Childs found" — Apply mutates
+  // the shared Contact row, which is exactly why it must be audited.
+  RESOLVE_MISSING_PERSON
+  RESOLVE_LOST_CHILD
 }
 
 // Compliance trail for support-desk overrides — who (which super admin) did
@@ -314,6 +345,14 @@ model Contact {
   emailVerified Boolean   @default(false)
   phone         String?
   linkedinUrl   String?
+  // Normalized LinkedIn identity — the `<slug>` of linkedin.com/in/<slug>,
+  // lowercased, query/fragment/trailing-slash stripped (utils/linkedin.js).
+  // This is what the Chrome extension matches profile visits against; a raw
+  // URL comparison would miss ?utm params, country subdomains, and casing.
+  // Indexed, deliberately NOT unique: the importer inserts rather than
+  // upserts (re-uploads are expected), so duplicates can exist — lookups
+  // take the best row (see extensionService.js).
+  linkedinSlug  String?
   // Set by a GDPR/CCPA erasure request (privacyService.js) — once set, PII
   // fields above are wiped and this contact is permanently excluded from
   // search/reveal, not just for the workspace that requested it.
@@ -328,10 +367,84 @@ model Contact {
   emailReveals EmailReveal[]
   enrollments  SequenceEnrollment[]
   importBatch  DatabaseImportBatch? @relation(fields: [importBatchId], references: [id])
+  lostChildren LostChild[]
 
   @@index([companyId])
   @@index([lastName, firstName])
   @@index([importBatchId])
+  @@index([linkedinSlug])
+}
+
+// ---------------------------------------------------------------------------
+// Chrome-extension sourcing pipeline. When the extension observes a LinkedIn
+// profile (POST /extension/observe), the visit lands in exactly one of two
+// queues below — or nowhere, when the profile matches a Contact cleanly.
+// Both are global (not workspace-scoped): they feed the shared data graph,
+// and the super admin works them, not tenants. See extensionService.js and
+// the /control "Pending peoples" / "Childs found" pages.
+// ---------------------------------------------------------------------------
+
+enum MissingPersonStatus {
+  PENDING // awaiting sourcing — shown on "Pending peoples"
+  ADDED // a contact with this slug now exists (manual mark, or auto on import)
+  DISMISSED
+}
+
+// A LinkedIn profile the extension saw that we have no Contact for — the
+// user's "missing peoples" database. One row per profile (linkedinSlug is
+// unique): repeat sightings bump reportCount/lastReportedAt instead of
+// duplicating, so the admin sees demand per profile, not noise. domText is
+// the profile page's visible text (capped in the service) so an admin can
+// hand-extract whatever the extension's parser missed.
+model MissingPerson {
+  id                String              @id @default(uuid())
+  linkedinSlug      String              @unique
+  linkedinUrl       String
+  name              String?
+  jobTitle          String?
+  location          String?
+  companyName       String?
+  domText           String?
+  status            MissingPersonStatus @default(PENDING)
+  reportCount       Int                 @default(1)
+  // Soft reference (same pattern as AdminAuditLog.targetUserId) — the queue
+  // entry must survive the reporting user's deletion.
+  firstReportedById String?
+  lastReportedAt    DateTime            @default(now())
+  createdAt         DateTime            @default(now())
+
+  @@index([status, lastReportedAt])
+}
+
+enum LostChildStatus {
+  PENDING // awaiting review — shown on "Childs found"
+  APPLIED // admin accepted the observed title onto the Contact
+  DISMISSED
+}
+
+// A contact whose LinkedIn job title no longer matches ours — the
+// "lost-child" database. One PENDING row per contact (enforced in
+// extensionService.js — Prisma has no conditional unique): re-observations
+// update newTitle/reportCount in place, and resolving (APPLIED/DISMISSED)
+// lets a future observation open a fresh row.
+model LostChild {
+  id                  String          @id @default(uuid())
+  contactId           String
+  linkedinSlug        String
+  oldTitle            String?
+  newTitle            String
+  observedCompanyName String?
+  domText             String?
+  status              LostChildStatus @default(PENDING)
+  reportCount         Int             @default(1)
+  firstReportedById   String?
+  lastReportedAt      DateTime        @default(now())
+  createdAt           DateTime        @default(now())
+
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([status, lastReportedAt])
+  @@index([contactId])
 }
 
 // ---------------------------------------------------------------------------
@@ -407,6 +520,9 @@ model ListItem {
 enum CreditReason {
   MONTHLY_GRANT
   EMAIL_REVEAL
+  // A reveal made from the Chrome extension (4 credits vs the in-app 2) —
+  // its own reason so the ledger says where the spend came from.
+  EXTENSION_REVEAL
   COMPANY_VIEW
   CSV_EXPORT
   SEQUENCE_ENROLLMENT

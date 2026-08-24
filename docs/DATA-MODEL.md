@@ -81,7 +81,15 @@ workspace has *saved* or *revealed* about that data is tracked separately (secti
 | Model | Notable fields |
 |---|---|
 | **Company** | `domain` is `@unique` — the natural key used everywhere (e.g. `databaseImportService.upsertCompany` looks up by domain before inserting). `techStack` is a plain `String[]`; there is no separate technographics model or provider integration behind it — it's whatever string values a row happens to carry (seed data or CSV import). |
-| **Contact** | `email`/`emailVerified` are populated once the pattern-finder/verifier has run (`emailFinderService.js`, `emailVerifierService.js`). **Every serializer must mask this field unless the requesting workspace has a matching `EmailReveal` row** — see `maskingService.attachRevealStatus`, which is the single choke point this is enforced through. `redactedAt` is set by a GDPR/CCPA erasure request (`privacyService.requestErasure`): once set, PII fields are wiped and the contact is permanently excluded from search/reveal, for every workspace, not just the one that requested it — the row itself survives (lists/reveals/sequence history hold foreign keys to it). |
+| **Contact** | `email`/`emailVerified` are populated once the pattern-finder/verifier has run (`emailFinderService.js`, `emailVerifierService.js`). **Every serializer must mask this field unless the requesting workspace has a matching `EmailReveal` row** — see `maskingService.attachRevealStatus`, which is the single choke point this is enforced through. `redactedAt` is set by a GDPR/CCPA erasure request (`privacyService.requestErasure`): once set, PII fields are wiped and the contact is permanently excluded from search/reveal, for every workspace, not just the one that requested it — the row itself survives (lists/reveals/sequence history hold foreign keys to it). `linkedinSlug` (indexed, not unique — the importer inserts rather than upserts) is the normalized `/in/<slug>` identity the Chrome extension matches profile visits against; kept in step with `linkedinUrl` by `utils/linkedin.js` at every write site (importer, seed, and a one-off SQL backfill). |
+
+### Extension-sourcing pipeline (global, admin-worked)
+
+| Model | Purpose |
+|---|---|
+| **ApiKey** | Personal API credential (Settings → API & Extension) for the Chrome extension / future public API. Secret shown once, stored argon2-hashed; `prefix` (unique) is the plaintext lookup handle; `revokedAt` soft-deletes. Authenticates as the user's primary workspace (`middleware/apiKeyAuth.js`). |
+| **MissingPerson** | "Pending peoples": a LinkedIn profile the extension saw with no matching Contact. One row per profile (`linkedinSlug @unique`) — repeat sightings bump `reportCount`/refresh captured fields, never resurrect a resolved row. `domText` (≤200KB visible page text) lets an admin hand-extract what the parser missed. Status PENDING → ADDED (manual, or automatic when an import lands a matching slug) / DISMISSED. |
+| **LostChild** | "Childs found": a matched contact whose observed LinkedIn title differs from ours. One PENDING row per contact (service-enforced), updated in place on re-observation. Resolving APPLIED updates the shared `Contact.title` + reindexes (audited); DISMISSED leaves it. |
 
 ---
 

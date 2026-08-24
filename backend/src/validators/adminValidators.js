@@ -35,6 +35,29 @@ export const sendPromotionSchema = z.object({
   body: z.string().trim().min(1).max(20_000),
 });
 
+// Extension-sourcing queues ("Pending peoples" / "Childs found") — the
+// status filter defaults to the actionable queue; ADDED/APPLIED/DISMISSED
+// views exist for history.
+export const missingPersonsQuerySchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  pageSize: z.coerce.number().int().positive().max(100).default(25),
+  status: z.enum(['PENDING', 'ADDED', 'DISMISSED']).default('PENDING'),
+});
+
+export const resolveMissingPersonSchema = z.object({
+  resolution: z.enum(['ADDED', 'DISMISSED']),
+});
+
+export const lostChildrenQuerySchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  pageSize: z.coerce.number().int().positive().max(100).default(25),
+  status: z.enum(['PENDING', 'APPLIED', 'DISMISSED']).default('PENDING'),
+});
+
+export const resolveLostChildSchema = z.object({
+  resolution: z.enum(['APPLIED', 'DISMISSED']),
+});
+
 export const auditLogQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   pageSize: z.coerce.number().int().positive().max(100).default(25),
