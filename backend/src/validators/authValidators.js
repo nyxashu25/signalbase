@@ -39,6 +39,29 @@ export const changePasswordSchema = z.object({
   newPassword: z.string().min(8, 'New password must be at least 8 characters').max(200),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().toLowerCase().email(),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1),
+  newPassword: z.string().min(8, 'New password must be at least 8 characters').max(200),
+});
+
+export const inviteInfoQuerySchema = z.object({
+  token: z.string().min(1),
+});
+
+export const acceptInviteSchema = z.object({
+  token: z.string().min(1),
+  name: z.string().trim().min(1).max(120).optional(),
+  password: z.string().min(8, 'Password must be at least 8 characters').max(200).optional(),
+});
+
+export const switchWorkspaceSchema = z.object({
+  workspaceId: z.string().uuid(),
+});
+
 export const resendVerificationSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
 });

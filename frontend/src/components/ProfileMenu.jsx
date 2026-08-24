@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
-import { UserCircle, Settings, CreditCard, LifeBuoy, LogOut, ChevronDown } from 'lucide-react';
-import { useLogoutMutation } from '../api/authApi.js';
-import { clearSession } from '../store/authSlice.js';
+import { UserCircle, Settings, CreditCard, LifeBuoy, LogOut, ChevronDown, Check, Building2 } from 'lucide-react';
+import { useLogoutMutation, useListMyWorkspacesQuery, useSwitchWorkspaceMutation } from '../api/authApi.js';
+import { setSession, clearSession } from '../store/authSlice.js';
 import { LetterAvatar } from './ui/LetterAvatar.jsx';
 
 const ITEMS = [
@@ -22,6 +22,23 @@ export function ProfileMenu() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [logout] = useLogoutMutation();
+  // Multi-workspace users (seat invites) get a switcher; everyone else
+  // has exactly one entry, so the section stays hidden.
+  const { data: workspaces } = useListMyWorkspacesQuery();
+  const [switchWorkspace, { isLoading: switching }] = useSwitchWorkspaceMutation();
+
+  async function handleSwitch(target) {
+    if (target.current || switching) return;
+    try {
+      const result = await switchWorkspace({ workspaceId: target.id }).unwrap();
+      dispatch(setSession(result));
+      setOpen(false);
+      navigate('/app', { replace: true });
+    } catch {
+      // Membership may have been revoked since the list loaded — the list
+      // refetches on the next open and the current session is untouched.
+    }
+  }
 
   useEffect(() => {
     if (!open) return undefined;
@@ -72,6 +89,32 @@ export function ProfileMenu() {
               {role && <span className="font-medium normal-case tracking-normal"> · {role}</span>}
             </p>
           </div>
+          {workspaces && workspaces.length > 1 && (
+            <>
+              <div className="my-1 h-px bg-border" />
+              <p className="px-2.5 pb-1 pt-1.5 text-[11px] font-bold uppercase tracking-wide text-text-muted">
+                Switch workspace
+              </p>
+              {workspaces.map((w) => (
+                <button
+                  key={w.id}
+                  type="button"
+                  disabled={switching}
+                  onClick={() => handleSwitch(w)}
+                  className="flex w-full items-center gap-2.5 rounded-sm px-2.5 py-2 text-left text-sm font-medium text-text hover:bg-surface-hover disabled:opacity-60"
+                >
+                  <Building2 className="h-4 w-4 shrink-0 text-text-muted" aria-hidden="true" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate">{w.name}</span>
+                    <span className="block text-[11px] font-medium uppercase tracking-wide text-text-muted">
+                      {w.role}
+                    </span>
+                  </span>
+                  {w.current && <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />}
+                </button>
+              ))}
+            </>
+          )}
           <div className="my-1 h-px bg-border" />
           {ITEMS.map((item) => (
             <Link

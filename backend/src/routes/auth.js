@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import * as authController from '../controllers/authController.js';
 import { requireAuth } from '../middleware/auth.js';
-import { validateBody } from '../middleware/validate.js';
+import { validateBody, validateQuery } from '../middleware/validate.js';
 import { rateLimit, byIp } from '../middleware/rateLimit.js';
 import {
   registerSchema,
@@ -12,6 +12,11 @@ import {
   updateProfileSchema,
   updatePreferencesSchema,
   changePasswordSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  inviteInfoQuerySchema,
+  acceptInviteSchema,
+  switchWorkspaceSchema,
 } from '../validators/authValidators.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
@@ -57,6 +62,41 @@ authRouter.post(
   registerLimiter,
   validateBody(resendVerificationSchema),
   asyncHandler(authController.resendVerification),
+);
+// Same budget/prefix as register — the abuse case is a bot spamming the
+// mailer with reset requests.
+authRouter.post(
+  '/forgot-password',
+  registerLimiter,
+  validateBody(forgotPasswordSchema),
+  asyncHandler(authController.forgotPassword),
+);
+authRouter.post(
+  '/reset-password',
+  loginLimiter,
+  validateBody(resetPasswordSchema),
+  asyncHandler(authController.resetPassword),
+);
+// Public: the accept page loads this before the user commits. The token is
+// the credential; rate-limited against token guessing.
+authRouter.get(
+  '/invite',
+  loginLimiter,
+  validateQuery(inviteInfoQuerySchema),
+  asyncHandler(authController.inviteInfo),
+);
+authRouter.post(
+  '/accept-invite',
+  registerLimiter,
+  validateBody(acceptInviteSchema),
+  asyncHandler(authController.acceptInvite),
+);
+authRouter.get('/workspaces', requireAuth, asyncHandler(authController.listWorkspaces));
+authRouter.post(
+  '/switch-workspace',
+  requireAuth,
+  validateBody(switchWorkspaceSchema),
+  asyncHandler(authController.switchWorkspace),
 );
 authRouter.post('/refresh', asyncHandler(authController.refresh));
 authRouter.post('/logout', asyncHandler(authController.logout));

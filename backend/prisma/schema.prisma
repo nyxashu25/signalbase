@@ -74,6 +74,7 @@ model Workspace {
   tickets            Ticket[]
   savedSearches      SavedSearch[]
   onboardingTasks    OnboardingTaskCompletion[]
+  invites            WorkspaceInvite[]
 
   @@index([orgId])
 }
@@ -124,6 +125,30 @@ model User {
   createdSequences   Sequence[]          @relation("SequenceCreatedBy")
   createdTickets     Ticket[]
   ticketMessages     TicketMessage[]
+  sentInvites        WorkspaceInvite[]   @relation("InvitedBy")
+}
+
+// A pending seat invite (Settings → Users & teams). The emailed link carries
+// a purpose-scoped JWT holding this row's id; the row is the source of truth
+// for revocation (delete), expiry and single-use (acceptedAt) — the JWT
+// alone is never enough. One live invite per (workspace, email); re-inviting
+// refreshes the row. Accepting creates a Membership with `role` and, for a
+// brand-new email, a User — never a new org/workspace.
+model WorkspaceInvite {
+  id          String    @id @default(uuid())
+  workspaceId String
+  email       String
+  role        Role      @default(MEMBER)
+  invitedById String
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  invitedBy User      @relation("InvitedBy", fields: [invitedById], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, email])
+  @@index([workspaceId])
 }
 
 // ---------------------------------------------------------------------------

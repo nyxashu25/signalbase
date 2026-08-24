@@ -3,12 +3,16 @@ import { prisma } from '../config/db.js';
 import { hashPassword, verifyPassword } from '../utils/password.js';
 import { initializeBalance } from './creditService.js';
 import { PLAN_MONTHLY_CREDITS } from '../config/planConfig.js';
+import { createHash } from 'node:crypto';
 import {
   signAccessToken,
   issueRefreshToken,
   rotateRefreshToken,
   revokeRefreshToken,
   signEmailVerificationToken,
+  signPasswordResetToken,
+  verifyPasswordResetToken,
+  verifyInviteToken,
   verifyEmailVerificationToken,
   ReplayDetectedError,
 } from './tokenService.js';
@@ -127,6 +131,50 @@ export async function verifyEmail(token) {
     user,
     workspace,
   });
+}
+
+/**
+ * Fingerprint of the current password hash, baked into every reset token —
+ * the moment the password changes, all outstanding reset links die. 'none'
+ * covers Google-only accounts, which may use this flow to set a first
+ * password (possession of the inbox is the same proof signup used).
+ */
+function passwordFingerprint(passwordHash) {
+  return createHash('sha256').update(passwordHash ?? 'none').digest('hex').slice(0, 16);
+}
+
+/** Enumeration-safe: always {sent:true}, whether or not the email exists. */
+export async function requestPasswordReset(email) {
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (user && !user.suspendedAt) {
+    const token = signPasswordResetToken(user.id, passwordFingerprint(user.passwordHash));
+    await notificationService.sendPasswordReset(user, token);
+  }
+  return { sent: true };
+}
+
+export async function resetPassword(token, newPassword) {
+  const invalid = () => new ApiError(400, 'Invalid or expired reset link — request a new one');
+  let payload;
+  try {
+    payload = verifyPasswordResetToken(token);
+  } catch {
+    throw invalid();
+  }
+  const user = await prisma.user.findUnique({ where: { id: payload.sub } });
+  if (!user || user.suspendedAt) throw invalid();
+  // Single-use: the fingerprint stops matching as soon as the password
+  // changes (including via this very endpoint).
+  if (payload.pwfp !== passwordFingerprint(user.passwordHash)) throw invalid();
+
+  const passwordHash = await hashPassword(newPassword);
+  // Proving control of the inbox is exactly what email verification proves —
+  // a reset from an unverified account also verifies it.
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { passwordHash, emailVerified: true },
+  });
+  return { reset: true };
 }
 
 /** Silently no-ops for an unknown or already-verified email — never reveals which. */
@@ -313,6 +361,121 @@ export async function refresh(cookieValue) {
 
 export async function logout(cookieValue) {
   await revokeRefreshToken(cookieValue);
+}
+
+async function loadPendingInvite(token) {
+  const invalid = () => new ApiError(400, 'Invalid or expired invite link');
+  let payload;
+  try {
+    payload = verifyInviteToken(token);
+  } catch {
+    throw invalid();
+  }
+  const invite = await prisma.workspaceInvite.findUnique({
+    where: { id: payload.sub },
+    include: { workspace: true, invitedBy: { select: { id: true, name: true, email: true } } },
+  });
+  // A deleted row is a revoked invite; acceptedAt makes the link single-use.
+  if (!invite || invite.acceptedAt || invite.expiresAt < new Date()) throw invalid();
+  return invite;
+}
+
+/** What the public accept page shows before the user commits. */
+export async function getInviteInfo(token) {
+  const invite = await loadPendingInvite(token);
+  const existing = await prisma.user.findUnique({ where: { email: invite.email } });
+  return {
+    email: invite.email,
+    role: invite.role,
+    workspaceName: invite.workspace.name,
+    inviterName: invite.invitedBy.name,
+    accountExists: Boolean(existing),
+    expiresAt: invite.expiresAt,
+  };
+}
+
+/**
+ * Accepts an invite. Possession of the emailed link proves control of the
+ * invited address (the same proof signup's confirm link relies on), so:
+ *   - no account with that email yet -> `name` + `password` are required and
+ *     a User is created (emailVerified: true) with a Membership in the
+ *     inviting workspace — never a new org/workspace.
+ *   - account exists -> a Membership is added (idempotent if already a
+ *     member) and, since the link proves the inbox, emailVerified is set.
+ * Either way the session issued is scoped to the inviting workspace.
+ */
+export async function acceptInvite(token, { name, password } = {}) {
+  const invite = await loadPendingInvite(token);
+  const workspace = invite.workspace;
+
+  let user = await prisma.user.findUnique({ where: { email: invite.email } });
+  if (user?.suspendedAt) throw new ApiError(403, 'This account has been suspended');
+
+  if (!user) {
+    if (!name || !password) {
+      throw new ApiError(400, 'Name and password are required to create your account');
+    }
+    const passwordHash = await hashPassword(password);
+    user = await prisma.user.create({
+      data: { email: invite.email, name, passwordHash, emailVerified: true },
+    });
+  } else if (!user.emailVerified) {
+    user = await prisma.user.update({ where: { id: user.id }, data: { emailVerified: true } });
+  }
+
+  const membership = await prisma.membership.upsert({
+    where: { userId_workspaceId: { userId: user.id, workspaceId: workspace.id } },
+    update: {},
+    create: { userId: user.id, workspaceId: workspace.id, role: invite.role },
+  });
+
+  await prisma.workspaceInvite.update({
+    where: { id: invite.id },
+    data: { acceptedAt: new Date() },
+  });
+  await notificationService.notifyInviteAccepted(invite.invitedBy, user, workspace);
+
+  return issueSession({
+    userId: user.id,
+    workspaceId: workspace.id,
+    orgId: workspace.orgId,
+    role: membership.role,
+    user,
+    workspace,
+  });
+}
+
+/** Every workspace this user has a seat in — drives the switcher in ProfileMenu. */
+export async function listMyWorkspaces({ userId, workspaceId }) {
+  const memberships = await prisma.membership.findMany({
+    where: { userId },
+    include: { workspace: { select: { id: true, name: true, plan: true } } },
+    orderBy: { createdAt: 'asc' },
+  });
+  return memberships.map((m) => ({
+    id: m.workspace.id,
+    name: m.workspace.name,
+    plan: m.workspace.plan,
+    role: m.role,
+    current: m.workspaceId === workspaceId,
+  }));
+}
+
+/** Re-issues the session scoped to another workspace the user belongs to. */
+export async function switchWorkspace(userId, workspaceId) {
+  const membership = await prisma.membership.findUnique({
+    where: { userId_workspaceId: { userId, workspaceId } },
+    include: { workspace: true, user: true },
+  });
+  if (!membership) throw new ApiError(403, 'This account has no access to that workspace');
+  return issueSession({
+    userId,
+    workspaceId,
+    orgId: membership.workspace.orgId,
+    role: membership.role,
+    user: membership.user,
+    workspace: membership.workspace,
+  });
 }
 
 export async function getCurrentUser({ userId, workspaceId }) {

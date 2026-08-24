@@ -112,7 +112,9 @@ describe('Settings', () => {
     expect(screen.getAllByText('Always on').length).toBeGreaterThan(0);
   });
 
-  it('Members: lists seats and keeps invites honestly disabled', async () => {
+  it('Members: lists seats, sends an invite, and shows the pending list with a copyable link', async () => {
+    const created = [];
+    const pending = [];
     mockFetchRoutes([
       {
         url: '/workspace/members',
@@ -125,11 +127,56 @@ describe('Settings', () => {
           },
         },
       },
+      {
+        url: '/workspace/invites',
+        method: 'POST',
+        respond: (url, init) => {
+          const body = JSON.parse(init.body);
+          created.push(body);
+          const invite = {
+            id: 'inv1',
+            email: body.email,
+            role: body.role,
+            invitedBy: { id: 'u1', name: 'Demo User' },
+            createdAt: '2026-08-24T00:00:00.000Z',
+            expiresAt: '2026-08-31T00:00:00.000Z',
+            inviteUrl: 'https://datapit.io/accept-invite?token=tok-1',
+          };
+          pending.push(invite);
+          return { status: 201, body: { invite } };
+        },
+      },
+      { url: '/workspace/invites', method: 'GET', respond: () => ({ body: { invites: [...pending] } }) },
     ]);
+    const user = userEvent.setup();
     renderWithProviders(<SettingsMembers />, { preloadedState: state });
+
     expect(await screen.findByText('Grace Hopper')).toBeInTheDocument();
     expect(screen.getByText('(you)')).toBeInTheDocument();
     expect(screen.getByText('2 seats in use.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Invite teammate' })).toBeDisabled();
+
+    await user.click(screen.getByRole('button', { name: 'Invite teammate' }));
+    await user.type(screen.getByLabelText('Email'), 'new@hire.test');
+    await user.click(screen.getByRole('button', { name: 'Admin' }));
+    await user.click(screen.getByRole('button', { name: 'Send invite' }));
+
+    await waitFor(() => expect(created).toEqual([{ email: 'new@hire.test', role: 'ADMIN' }]));
+    expect(await screen.findByText('Pending invites')).toBeInTheDocument();
+    expect(screen.getByText('new@hire.test')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Copy invite link for new@hire.test' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Revoke invite for new@hire.test' })).toBeInTheDocument();
+  });
+
+  it('Members: a MEMBER sees the invite button disabled', async () => {
+    mockFetchRoutes([
+      {
+        url: '/workspace/members',
+        respond: { body: { members: [{ id: 'm1', role: 'MEMBER', joinedAt: '2026-08-01T00:00:00.000Z', user: { id: 'u1', name: 'Demo User', email: 'demo@datapit.io' } }] } },
+      },
+    ]);
+    renderWithProviders(<SettingsMembers />, {
+      preloadedState: { auth: { ...state.auth, role: 'MEMBER' } },
+    });
+    expect(await screen.findByRole('button', { name: 'Invite teammate' })).toBeDisabled();
   });
 });

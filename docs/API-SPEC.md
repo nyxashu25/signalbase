@@ -38,6 +38,12 @@ Conventions used in the tables below:
 | PATCH | `/me` | User | — | `{ name }` — rename the signed-in user. |
 | PATCH | `/me/preferences` | User | — | `{ marketingOptOut }` — the Settings → Notifications toggle (same flag the promo unsubscribe link sets). |
 | POST | `/change-password` | User | 10/min/IP (shares the login limiter) | `{ currentPassword?, newPassword }` — current is required when the account has a password; a Google-only account sets its first one without it. |
+| POST | `/forgot-password` | — | 5/hour/IP (shares the register limiter) | `{ email }` — enumeration-safe `{sent:true}` either way. Emails a reset link whose token embeds a fingerprint of the *current* password hash, so it's single-use and dies if the password changes any other way. 1h TTL. |
+| POST | `/reset-password` | — | 10/min/IP | `{ token, newPassword }`. Also flips `emailVerified` (the link proves the inbox). Does not log in — the user signs in with the new password. |
+| GET | `/invite` | — | 10/min/IP | `?token=` — what the accept page shows: workspace/inviter names, invited email, role, `accountExists`. 400 for revoked/expired/accepted/forged tokens. |
+| POST | `/accept-invite` | — | 5/hour/IP | `{ token, name?, password? }`. New email → creates the User (`emailVerified: true`) + Membership — never a new org/workspace; existing account → adds the Membership (idempotent). Single-use (`acceptedAt`). Issues a session scoped to the inviting workspace and emails the inviter. |
+| GET | `/workspaces` | User | — | Every workspace the user has a seat in (`role`, `current`) — drives the account-menu switcher. |
+| POST | `/switch-workspace` | User | — | `{ workspaceId }` — re-issues the session (token + refresh cookie) scoped to another workspace the user belongs to; 403 without a membership. |
 | POST | `/tutorial-complete` | User | — | Marks the first-login tour finished (once, permanently). |
 
 ## Workspace — `/api/v1/workspace` (`routes/workspace.js`)
@@ -46,7 +52,10 @@ The signed-in user's *current* workspace (from the token) — no `:id` by design
 
 | Method | Path | Auth | Notes |
 |---|---|---|---|
-| GET | `/members` | User | Everyone with a seat: `{ id, role, joinedAt, user: { id, name, email } }`, owner first. Read-only until seat invites (TODO.md P0) land. |
+| GET | `/members` | User | Everyone with a seat: `{ id, role, joinedAt, user: { id, name, email } }`, owner first. |
+| GET | `/invites` | User, `ADMIN`+ | Pending (unaccepted, unexpired) invites, each with a fresh `inviteUrl` — the same link the email carries, surfaced so an admin can hand it over directly. |
+| POST | `/invites` | User, `ADMIN`+ | 20/hour/workspace. `{ email, role: ADMIN\|MEMBER }` (OWNER is not invitable). 409 if already a member; re-inviting the same email refreshes the row (new role/expiry/single-use state) instead of erroring; ≤20 pending per workspace. Sends the invite email. |
+| DELETE | `/invites/:id` | User, `ADMIN`+ | Revoke — deletes the row, which kills the emailed link. 404 for another workspace's id. |
 | PATCH | `/` | User, `ADMIN`+ | `{ name }` — rename the workspace. |
 
 ## Search — `/api/v1/search` (`routes/search.js`)
@@ -152,7 +161,7 @@ All routes require auth.
 
 | Method | Path | Auth | Rate limit | Notes |
 |---|---|---|---|---|
-| POST | `/opt-out` | — | 5/hour/IP | GDPR/CCPA erasure request by email. Unauthenticated by design (a data subject may not have an account). Redacts matching `Contact` rows immediately and registers the email against future guessed reveals. |
+| POST | `/opt-out` | — | 5/hour/IP | Now has a public UI: the form on the marketing Privacy page (§7 "Remove my data"). GDPR/CCPA erasure request by email. Unauthenticated by design (a data subject may not have an account). Redacts matching `Contact` rows immediately and registers the email against future guessed reveals. |
 
 ## Tools — `/api/v1/tools` (`routes/tools.js`)
 

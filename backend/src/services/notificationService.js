@@ -88,6 +88,47 @@ export async function notifyAccountVerified(user, workspace) {
   await Promise.allSettled(admins.map((a) => send(a.email, 'New DataPit signup', adminHtml)));
 }
 
+export async function sendPasswordReset(user, token) {
+  const url = `${env.CORS_ORIGIN}/reset-password?token=${token}`;
+  await send(
+    user.email,
+    'Reset your DataPit password',
+    baseTemplate({
+      heading: 'Reset your password',
+      bodyHtml: `<p>Hi ${escapeHtml(user.name)},</p><p>Click below to choose a new password. This link expires in 1 hour and can be used once. If you didn't ask for this, you can safely ignore it — your password is unchanged.</p>`,
+      ctaLabel: 'Choose a new password',
+      ctaUrl: url,
+    }),
+  );
+}
+
+export async function sendWorkspaceInvite({ email, inviterName, workspaceName, role, token }) {
+  const url = `${env.CORS_ORIGIN}/accept-invite?token=${token}`;
+  await send(
+    email,
+    `${inviterName} invited you to ${workspaceName} on DataPit`,
+    baseTemplate({
+      heading: `Join ${escapeHtml(workspaceName)}`,
+      bodyHtml: `<p><strong>${escapeHtml(inviterName)}</strong> invited you to join the workspace <strong>${escapeHtml(workspaceName)}</strong> on DataPit as ${role === 'ADMIN' ? 'an admin' : 'a member'}.</p><p>This invite expires in 7 days.</p>`,
+      ctaLabel: 'Accept invite',
+      ctaUrl: url,
+    }),
+  );
+}
+
+export async function notifyInviteAccepted(inviter, newUser, workspace) {
+  await send(
+    inviter.email,
+    `${newUser.name} joined ${workspace.name}`,
+    baseTemplate({
+      heading: 'Your invite was accepted',
+      bodyHtml: `<p><strong>${escapeHtml(newUser.name)}</strong> (${escapeHtml(newUser.email)}) accepted your invite and joined <strong>${escapeHtml(workspace.name)}</strong>.</p>`,
+      ctaLabel: 'See your team',
+      ctaUrl: `${env.CORS_ORIGIN}/app/settings/members`,
+    }),
+  );
+}
+
 export async function sendTicketCreatedConfirmation(user, ticket) {
   await send(
     user.email,

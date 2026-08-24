@@ -108,6 +108,48 @@ export function verifyEmailVerificationToken(token) {
   return payload;
 }
 
+const PASSWORD_RESET_PURPOSE = 'password-reset';
+const PASSWORD_RESET_TTL_SECONDS = 60 * 60;
+const INVITE_PURPOSE = 'workspace-invite';
+const INVITE_TTL_SECONDS = 7 * 24 * 60 * 60;
+
+/**
+ * Stateless like the verification token, but effectively single-use: `pwfp`
+ * is a fingerprint of the user's *current* passwordHash (computed by
+ * authService), so the moment the password changes — via this very reset, or
+ * any other way — every outstanding reset link stops verifying.
+ */
+export function signPasswordResetToken(userId, passwordFingerprint) {
+  return jwt.sign(
+    { sub: userId, purpose: PASSWORD_RESET_PURPOSE, pwfp: passwordFingerprint },
+    env.JWT_ACCESS_SECRET,
+    { expiresIn: PASSWORD_RESET_TTL_SECONDS },
+  );
+}
+
+export function verifyPasswordResetToken(token) {
+  const payload = jwt.verify(token, env.JWT_ACCESS_SECRET);
+  if (payload.purpose !== PASSWORD_RESET_PURPOSE) throw new Error('Wrong token purpose');
+  return payload;
+}
+
+/**
+ * Carries only the WorkspaceInvite row id — the row is the authority on
+ * revocation (deleted = dead link), expiry and single-use (acceptedAt), so
+ * re-sending an invite can mint a fresh token without invalidating state.
+ */
+export function signInviteToken(inviteId) {
+  return jwt.sign({ sub: inviteId, purpose: INVITE_PURPOSE }, env.JWT_ACCESS_SECRET, {
+    expiresIn: INVITE_TTL_SECONDS,
+  });
+}
+
+export function verifyInviteToken(token) {
+  const payload = jwt.verify(token, env.JWT_ACCESS_SECRET);
+  if (payload.purpose !== INVITE_PURPOSE) throw new Error('Wrong token purpose');
+  return payload;
+}
+
 // No expiry — an unsubscribe link that stops working is worse than one that
 // works forever; the only thing it can do is flip one user's marketingOptOut.
 export function signUnsubscribeToken(userId) {

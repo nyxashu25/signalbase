@@ -7,6 +7,9 @@ import { RequireAuth } from './components/RequireAuth.jsx';
 import { RequireSuperAdmin } from './components/RequireSuperAdmin.jsx';
 import { Login } from './pages/Login.jsx';
 import { VerifyEmail } from './pages/VerifyEmail.jsx';
+import { ForgotPassword } from './pages/ForgotPassword.jsx';
+import { ResetPassword } from './pages/ResetPassword.jsx';
+import { AcceptInvite } from './pages/AcceptInvite.jsx';
 import { Unsubscribe } from './pages/Unsubscribe.jsx';
 import { authApi } from './api/authApi.js';
 import { setSession, clearSession } from './store/authSlice.js';
@@ -132,6 +135,9 @@ export function App() {
           <Route path="/terms" element={<Terms />} />
           <Route path="/login" element={<Login />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/accept-invite" element={<AcceptInvite />} />
           <Route path="/unsubscribe" element={<Unsubscribe />} />
 
           <Route path="/app" element={<RequireAuth />}>

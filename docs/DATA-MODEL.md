@@ -18,7 +18,8 @@ Org 1──* Workspace 1──* Membership *──1 User
 |---|---|
 | **Org** | The top-level tenant. Has a unique `slug`. Created automatically on signup — there's no "create an org" flow separate from registering. |
 | **Workspace** | Where all tenant-scoped data (lists, credits, sequences, tickets...) actually lives. Carries `plan` (`FREE`/`BASIC`/`PROFESSIONAL`/`ORGANIZATION`), `monthlyCreditGrant`, and the Stripe linkage (`stripeCustomerId`, `stripeSubscriptionId`, `planActivatedAt`, `billingInterval`). |
-| **User** | A login identity. Can belong to multiple workspaces across multiple orgs via `Membership`, though today's signup flow (`authService.register` / `loginWithGoogle`) always creates exactly one org+workspace+membership per new account — there is no invite flow yet (see `TODO.md`, "Team/seat invites"). |
+| **User** | A login identity. Can belong to multiple workspaces across multiple orgs via `Membership`. Signup (`authService.register` / `loginWithGoogle`) creates one org+workspace+membership; accepting a `WorkspaceInvite` adds further memberships (and, for a new email, creates the User with no org/workspace of its own). The account menu's switcher re-scopes the session between seats (`POST /auth/switch-workspace`). |
+| **WorkspaceInvite** | A pending seat invite (`email`, `role` ADMIN/MEMBER, `invitedById`, `expiresAt`, `acceptedAt`; `@@unique([workspaceId, email])`). The emailed link carries a purpose-scoped JWT holding this row's id — the row is the authority on revocation (deleted = dead link), expiry (7 days) and single-use (`acceptedAt`). Re-inviting upserts the row. |
 | **Membership** | The join row between `User` and `Workspace`, carrying `role` (`OWNER`/`ADMIN`/`MEMBER`). One row per (user, workspace) pair — a role change updates it in place rather than creating a new row. |
 
 Plan pricing and credit grants (`PLAN_MONTHLY_CREDITS`, `PLAN_PRICE_USD_CENTS`, `PLAN_HAS_SEQUENCES` in
@@ -28,8 +29,9 @@ config edit, not a migration.
 ### `User` fields worth knowing
 
 - **`passwordHash` is nullable.** A Google-only account never sets one; `authService.login`'s
-  password check is null-safe (returns false rather than throwing), so such an account simply can't
-  log in with a password until it also sets one — there's no such flow yet.
+  password check is null-safe (returns false rather than throwing). Such an account can set a first
+  password in Settings → Security or via the forgot-password flow (both skip the "current password"
+  proof — a live session or control of the inbox stands in for it).
 - **`googleId`** is the Google "sub" claim, set either at signup (Google-only account) or
   retroactively the first time an existing password account signs in with Google using the same
   verified email.

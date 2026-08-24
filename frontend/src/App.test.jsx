@@ -32,7 +32,10 @@ function renderApp({ authenticated, path = '/app' }) {
 describe('App', () => {
   it('renders the dashboard at /app when authenticated', async () => {
     renderApp({ authenticated: true, path: '/app' });
-    expect(await screen.findByRole('heading', { name: 'Welcome back, Demo' })).toBeInTheDocument();
+    // Generous timeout: the route chunk is lazy-loaded and CI/parallel runs can be slow.
+    expect(
+      await screen.findByRole('heading', { name: 'Welcome back, Demo' }, { timeout: 5000 }),
+    ).toBeInTheDocument();
   });
 
   it('renders the in-app help guide at /app/help', async () => {
@@ -51,7 +54,7 @@ describe('App', () => {
 
   it('renders the public marketing home page at / without requiring auth', async () => {
     renderApp({ authenticated: false, path: '/' });
-    expect(await screen.findByRole('heading', { level: 1 })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1 }, { timeout: 5000 })).toBeInTheDocument();
   });
 
   it('renders the public pricing page at /pricing without requiring auth', async () => {

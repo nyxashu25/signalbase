@@ -33,6 +33,44 @@ export async function verifyEmail(req, res) {
   });
 }
 
+export async function forgotPassword(req, res) {
+  res.json(await authService.requestPasswordReset(req.body.email));
+}
+
+export async function resetPassword(req, res) {
+  res.json(await authService.resetPassword(req.body.token, req.body.newPassword));
+}
+
+export async function inviteInfo(req, res) {
+  res.json(await authService.getInviteInfo(req.validatedQuery.token));
+}
+
+export async function acceptInvite(req, res) {
+  const result = await authService.acceptInvite(req.body.token, req.body);
+  setRefreshCookie(res, result.refreshCookieValue);
+  res.json({
+    accessToken: result.accessToken,
+    user: result.user,
+    workspace: result.workspace,
+    role: result.role,
+  });
+}
+
+export async function listWorkspaces(req, res) {
+  res.json({ workspaces: await authService.listMyWorkspaces(req.auth) });
+}
+
+export async function switchWorkspace(req, res) {
+  const result = await authService.switchWorkspace(req.auth.userId, req.body.workspaceId);
+  setRefreshCookie(res, result.refreshCookieValue);
+  res.json({
+    accessToken: result.accessToken,
+    user: result.user,
+    workspace: result.workspace,
+    role: result.role,
+  });
+}
+
 export async function resendVerification(req, res) {
   res.json(await authService.resendVerificationEmail(req.body.email));
 }

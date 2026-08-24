@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   useLoginMutation,
   useRegisterMutation,
@@ -133,6 +133,14 @@ export function Login() {
                   onChange={update('password')}
                   required
                 />
+                {mode === 'login' && (
+                  <Link
+                    to="/forgot-password"
+                    className="-mt-1 self-end text-xs font-medium text-text-muted hover:text-primary hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
+                )}
 
                 {error && <p className="text-sm text-red-600">{error}</p>}
                 {needsVerification && (

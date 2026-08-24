@@ -13,25 +13,10 @@ picked up or completed — don't let it drift from reality.
       datapit.io is verified in Resend and `RESEND_FROM_EMAIL`
       is pointed at it, **real users cannot receive their confirm link and
       cannot complete signup.**
-- [ ] **Team/seat invites.** Plans are priced per seat and `Role`
-      (OWNER/ADMIN/MEMBER) + `Membership` already exist in the schema, but
-      there is no invite flow — every `/auth/register` call creates a brand
-      new workspace. No way today for a paying customer to actually use more
-      than 1 seat. The landing spot is built: Settings → *Users & teams*
-      lists seats (`GET /workspace/members`) and has a disabled "Invite
-      teammate" button waiting for this; `routes/workspace.js` is where the
-      invite routes go.
-- [ ] **Password reset / forgot password.** No route, no token model, no UI
-      for the *unauthenticated* flow — a locked-out user has zero
-      self-service recovery. (Authenticated change-password, and first-set
-      for Google-only accounts, shipped in Settings → Security; the Resend +
-      purpose-scoped JWT pattern from email verification is the obvious
-      building block.)
-- [ ] **Sign in with Microsoft.** Needs an app registration (Client ID/
-      Secret) in Microsoft Entra ID (Azure AD) from the user first.
-- [ ] **GDPR opt-out has no UI.** `POST /api/v1/privacy/opt-out` is real and
-      rate-limited, but the Privacy marketing page just says "contact us" —
-      nothing calls the endpoint.
+- (none open on the code side — invites, password reset and the GDPR
+  opt-out UI shipped 2026-08-24, see Done; Microsoft sign-in was dropped
+  from the plan. The Resend domain item below is the remaining blocker and
+  it's in your court.)
 
 ### Waiting on the user (not code)
 
@@ -42,7 +27,6 @@ picked up or completed — don't let it drift from reality.
   client's authorized JavaScript origins in the Google Cloud console — the
   client ID is configured, but Google sign-in only works from an allow-listed
   origin, and the site now lives on datapit.io, not titans7.com.
-- Microsoft Entra app registration (P0 above).
 
 ## In-app UX overhaul — complete (see `docs/UX-ROADMAP.md`)
 
@@ -55,6 +39,12 @@ password but there's still no forgot-password flow. Nothing further is
 planned under the roadmap; new UX work gets its own item here.
 
 ## P1 — real gaps, not urgent
+
+- [ ] **Seat-count enforcement.** Plans are priced per seat, and invites now
+      make multi-seat workspaces real — but nothing compares filled seats to
+      a paid seat quantity (there is no such field yet). Needs a product
+      decision (block invites over the paid count? bill per accepted seat?)
+      before it's code.
 
 - [ ] **Backfill phone numbers on already-imported production contacts.**
       Until 2026-08-22 the RPF importer discarded `TelephoneNo` /
@@ -90,6 +80,27 @@ planned under the roadmap; new UX work gets its own item here.
       to pick up seed changes.
 
 ## Done
+
+- [x] **P0 trio shipped (2026-08-24): seat invites, password reset, GDPR
+      opt-out UI.**
+      **Invites** — `WorkspaceInvite` model (unique per workspace+email,
+      7-day expiry, single-use, revocable); ADMIN+ manage them in Settings →
+      Users & teams (role picker, pending list with copyable `inviteUrl` —
+      the workaround while Resend is sandboxed — and revoke); public accept
+      page creates the account (new email, pre-verified, no new workspace)
+      or adds a membership (existing account); the account menu grew a
+      workspace switcher (`GET /auth/workspaces`, `POST
+      /auth/switch-workspace`); inviter gets an acceptance email.
+      **Password reset** — "Forgot password?" on Login → enumeration-safe
+      `POST /auth/forgot-password` → emailed 1h single-use link (token
+      carries a fingerprint of the current hash, so it dies on any password
+      change) → `/reset-password` page; also serves Google-only accounts as
+      first-password setup, and verifies the email as a side effect.
+      **GDPR opt-out** — the Privacy page's new §7 "Remove my data" form
+      wires the existing `POST /privacy/opt-out` (429-aware, permanent-
+      action copy). Backend 272 tests, frontend 138.
+- [x] **Dropped: Sign in with Microsoft** (2026-08-24, user decision) —
+      Google + email/password are the supported sign-in methods.
 
 - [x] **Moved production from titans7.com to datapit.io (2026-08-23).** App
       dir is `/var/www/datapit.io/app`; nginx site
