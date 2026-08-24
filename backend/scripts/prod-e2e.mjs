@@ -51,6 +51,11 @@ async function api(method, path, { token, body } = {}) {
     method,
     headers: {
       'Content-Type': 'application/json',
+      // A unique TEST-NET source per run: register/accept-invite/forgot-password
+      // share a 5/hour/IP limiter, so back-to-back runs from 127.0.0.1 would
+      // rate-limit each other. app.js trusts one proxy hop, so this header is
+      // honoured for a direct localhost connection exactly like nginx's.
+      'X-Forwarded-For': `203.0.113.${STAMP % 250}`,
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(method === 'POST' && path.includes('/reveal')
         ? { 'Idempotency-Key': `e2e-${STAMP}-${path}` }
