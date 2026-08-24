@@ -263,7 +263,9 @@ Start with `rate(http_requests_total[5m])`, `credit_reservations_pending`,
 **Redis durability** — the redis container now runs with `--appendonly yes`
 (AOF, everysec) on its persistent volume; before 2026-08-24 it was
 RDB-snapshot-only (up to ~1h of credit-balance drift on a hard crash). The
-compose file lives at `/var/www/titans7.com/docker-compose.yml` — the old
-path on purpose: the compose *project* name (`titans7-signalbase`) anchors
-the data volume names, so moving/renaming it would orphan the data.
+compose file is `/var/www/datapit.io/docker-compose.yml` (it moved with the
+domain migration) and pins `name: titans7-signalbase` explicitly — never
+remove that line: the project name anchors the data volume names
+(`titans7-signalbase_postgres_data` etc.), and losing it would point a
+`docker compose up` at fresh, empty volumes.
 
