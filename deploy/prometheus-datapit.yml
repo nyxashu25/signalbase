@@ -1,0 +1,16 @@
+# Scrape job for the DataPit API — appended to /etc/prometheus/prometheus.yml
+# (scrape_configs:) on the VPS. The API's /metrics is nginx-blocked from the
+# internet but open on the local port; Prometheus itself listens only on
+# 127.0.0.1:9090 (see ARGS in /etc/default/prometheus) — reach its UI with:
+#
+#   ssh -L 9090:127.0.0.1:9090 root@datapit.io   ->  http://localhost:9090
+#
+# Useful queries: rate(http_requests_total[5m]),
+# credit_reservations_pending, bullmq_queue_waiting_jobs.
+  - job_name: datapit-api
+    metrics_path: /metrics
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['127.0.0.1:4000']
+        labels:
+          app: datapit

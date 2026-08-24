@@ -47,6 +47,18 @@ own item here.
 
 ## Done
 
+- [x] **Ops hardening (2026-08-24).** Nightly `pg_dump` backups (03:17 UTC,
+      14-day retention, sanity-checked, `.env` included for the encryption
+      key) via `deploy/backup.sh` + systemd timer, with a documented,
+      test-restored recovery procedure; a 5-minute health watchdog
+      (`deploy/healthwatch.sh`) checking readiness, api/worker processes,
+      disk and backup freshness, emailing alerts through Resend
+      (edge-triggered + hourly reminders + recovery notice); Prometheus
+      installed and scraping `/metrics` every 15s (30d retention, UI on
+      localhost:9090 via SSH tunnel); Redis switched to AOF persistence.
+      Offsite backup shipping (S3/B2) deliberately left as a user decision —
+      needs credentials.
+
 - [x] **Frontend coverage for the oldest screens (2026-08-24).** 16 new
       tests, suite now 155: Login (password sign-in lands in /app,
       invalid-credentials error, forgot-password link only in sign-in

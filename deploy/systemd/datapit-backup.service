@@ -1,0 +1,7 @@
+[Unit]
+Description=Nightly Postgres + env backup for datapit.io
+Documentation=file:/var/www/datapit.io/app/RUNBOOK.md
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/datapit-backup.sh

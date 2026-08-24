@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the datapit backup nightly
+
+[Timer]
+# 03:17 UTC — clear of the certbot timer and typical low traffic.
+OnCalendar=*-*-* 03:17:00
+# If the box was off/rebooting at 03:17, run on next boot instead of skipping a day.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

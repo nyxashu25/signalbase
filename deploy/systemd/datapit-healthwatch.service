@@ -1,0 +1,7 @@
+[Unit]
+Description=DataPit health watchdog (readiness, processes, disk, backup freshness)
+Documentation=file:/var/www/datapit.io/app/RUNBOOK.md
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/datapit-healthwatch.sh

@@ -199,3 +199,71 @@ on any failure. Every account/row it creates (all under `@dp-e2e.test` /
 probe addresses will bounce (the `.test` TLD isn't routable) — harmless;
 notification failures are non-fatal by design.
 
+## Backups & restore (`deploy/backup.sh`)
+
+Nightly at **03:17 UTC** (`datapit-backup.timer`, `Persistent=true`), kept
+**14 days** in `/var/backups/datapit/` (root-only):
+
+- `pg-<db>-<stamp>.dump` — `pg_dump -Fc` of the production database, taken
+  through `docker exec` (Postgres runs in the `…-postgres-1` container; the
+  host has no pg tools). Sanity-checked with `pg_restore -l` before the run
+  reports success.
+- `env-<stamp>.bak` — a copy of `backend/.env`. **Not optional**: it holds
+  `SETTINGS_ENCRYPTION_KEY`, without which the encrypted Stripe credentials
+  inside the dump can never be decrypted again.
+
+Run one now / check status:
+
+```
+systemctl start datapit-backup.service && journalctl -u datapit-backup -n 5
+systemctl list-timers | grep datapit
+```
+
+**Restore** (to a scratch DB first — never straight over production):
+
+```
+C=$(docker ps --format '{{.Names}}' | grep -m1 postgres)
+docker exec $C createdb -U titans7 restore_test
+docker exec -i $C pg_restore -U titans7 -d restore_test --no-owner < /var/backups/datapit/pg-….dump
+docker exec $C psql -U titans7 -d restore_test -c '\dt'   # eyeball, then point a scratch env at it
+# to actually swap: stop pm2 apps, rename DBs (ALTER DATABASE … RENAME), start, reindex ES
+docker exec $C dropdb -U titans7 restore_test
+```
+
+After any restore: `npm run reindex` (ES) — Redis balances converge from the
+ledger via the reconciliation job, but a mass drift alert on the first cycle
+is expected.
+
+These backups live **on the same VPS** — they cover `DROP TABLE`, bad
+migrations and fat fingers, not the machine burning down. For that, enable
+Hostinger's VPS snapshots or ship the dumps offsite (S3/B2 + rclone) — needs
+credentials, so it's a user decision.
+
+## Monitoring (`deploy/healthwatch.sh` + Prometheus)
+
+**Watchdog** — `datapit-healthwatch.timer`, every 5 minutes: readiness probe
+(`/health/ready` = API + Postgres + Redis + ES), api/worker processes, root
+disk < 85%, newest backup < 26h. Alerts by email (Resend, to
+`help.datapit@gmail.com` — override with `ALERT_TO=`) — one email on break,
+hourly reminders while broken, one on recovery. State in
+`/var/lib/datapit/healthwatch.state`. Test the mail path:
+`datapit-healthwatch.sh --test`.
+
+**Prometheus** — the `prometheus` package scrapes the API's `/metrics` every
+15s (job `datapit-api`, see `deploy/prometheus-datapit.yml`), 30-day
+retention, UI bound to `127.0.0.1:9090` only:
+
+```
+ssh -L 9090:127.0.0.1:9090 root@datapit.io   →   http://localhost:9090
+```
+
+Start with `rate(http_requests_total[5m])`, `credit_reservations_pending`,
+`bullmq_queue_waiting_jobs`.
+
+**Redis durability** — the redis container now runs with `--appendonly yes`
+(AOF, everysec) on its persistent volume; before 2026-08-24 it was
+RDB-snapshot-only (up to ~1h of credit-balance drift on a hard crash). The
+compose file lives at `/var/www/titans7.com/docker-compose.yml` — the old
+path on purpose: the compose *project* name (`titans7-signalbase`) anchors
+the data volume names, so moving/renaming it would orphan the data.
+
