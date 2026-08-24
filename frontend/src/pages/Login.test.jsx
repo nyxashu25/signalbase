@@ -127,3 +127,86 @@ describe('Login', () => {
     expect(await screen.findByText('Sent — check your inbox')).toBeInTheDocument();
   });
 });
+
+describe('Login (password flow + recovery)', () => {
+  beforeEach(() => {
+    window.google = {
+      accounts: {
+        id: { initialize: () => {}, renderButton: () => {} },
+      },
+    };
+  });
+  afterEach(() => {
+    delete window.google;
+  });
+
+  it('signs in with email + password and lands in /app', async () => {
+    const user = userEvent.setup();
+    const calls = [];
+    mockFetchRoutes([
+      {
+        url: '/auth/login',
+        method: 'POST',
+        respond: (url, init) => {
+          calls.push(JSON.parse(init.body));
+          return {
+            body: {
+              accessToken: 'tok',
+              user: { id: 'u1', email: 'owner@acme.test', name: 'Owner' },
+              workspace: { id: 'w1', name: 'Acme' },
+              role: 'OWNER',
+            },
+          };
+        },
+      },
+    ]);
+
+    renderWithProviders(
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/app" element={<div>App home</div>} />
+      </Routes>,
+      { route: '/login' },
+    );
+
+    await user.type(screen.getByLabelText('Email'), 'owner@acme.test');
+    await user.type(screen.getByLabelText('Password'), 'correct-horse-battery');
+    await user.click(screen.getByRole('button', { name: 'Sign in' }));
+
+    expect(await screen.findByText('App home')).toBeInTheDocument();
+    expect(calls).toEqual([{ email: 'owner@acme.test', password: 'correct-horse-battery' }]);
+  });
+
+  it('surfaces the generic invalid-credentials error without a resend option', async () => {
+    const user = userEvent.setup();
+    mockFetchRoutes([
+      {
+        url: '/auth/login',
+        method: 'POST',
+        respond: { status: 401, body: { error: { message: 'Invalid email or password' } } },
+      },
+    ]);
+    renderWithProviders(<Login />, { route: '/login' });
+
+    await user.type(screen.getByLabelText('Email'), 'owner@acme.test');
+    await user.type(screen.getByLabelText('Password'), 'wrong-password-1');
+    await user.click(screen.getByRole('button', { name: 'Sign in' }));
+
+    expect(await screen.findByText('Invalid email or password')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Resend verification email' })).not.toBeInTheDocument();
+  });
+
+  it('links to the forgot-password flow from sign-in mode only', async () => {
+    const user = userEvent.setup();
+    mockFetchRoutes([]);
+    renderWithProviders(<Login />, { route: '/login' });
+
+    expect(screen.getByRole('link', { name: 'Forgot password?' })).toHaveAttribute(
+      'href',
+      '/forgot-password',
+    );
+
+    await user.click(screen.getByRole('button', { name: "Don't have a workspace? Create one" }));
+    expect(screen.queryByRole('link', { name: 'Forgot password?' })).not.toBeInTheDocument();
+  });
+});

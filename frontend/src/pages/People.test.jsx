@@ -119,3 +119,88 @@ describe('People', () => {
     await waitFor(() => expect(calls.some((u) => u.includes('sort=name_desc'))).toBe(true));
   });
 });
+
+describe('People (reveal + text filters)', () => {
+  it('revealing patches the row in place with the email, phone and verified badge', async () => {
+    const user = userEvent.setup();
+    const revealCalls = [];
+    mockFetchRoutes([
+      {
+        url: /\/search\/people\?/,
+        method: 'GET',
+        respond: {
+          body: {
+            results: [
+              {
+                id: 'c1',
+                firstName: 'Ada',
+                lastName: 'Lovelace',
+                title: 'VP of Engineering',
+                company: { id: 'co1', name: 'Analytical Engines' },
+                email: 'a****@analytical.test',
+                phone: '+1 415 *** **32',
+                hasPhone: true,
+                revealed: false,
+              },
+            ],
+            total: 1,
+            page: 1,
+            pageSize: 25,
+            facets,
+          },
+        },
+      },
+      {
+        url: /\/contacts\/c1\/reveal/,
+        method: 'POST',
+        respond: (url, init) => {
+          revealCalls.push(init.method);
+          return {
+            body: {
+              email: 'ada@analytical.test',
+              emailVerified: true,
+              phone: '+1 415 555 0132',
+              alreadyRevealed: false,
+            },
+          };
+        },
+      },
+      { url: '/billing/credit-costs', respond: { body: { costs: { REVEAL: 2 } } } },
+      { url: '/billing/summary', respond: { body: { balance: 100, plan: 'FREE', monthlyCreditGrant: 100, creditsUsed: 0 } } },
+      { url: /\/lists$/, respond: { body: { lists: [] } } },
+      { url: /\/search\/saved/, respond: { body: { savedSearches: [] } } },
+      { url: '/dashboard/onboarding', respond: { body: { groups: [], completedCount: 0, totalCount: 0, percent: 0, creditsEarned: 0, creditsAvailable: 75, nextTask: null, justRewarded: [] } } },
+    ]);
+    renderWithProviders(<People />, { preloadedState: authenticatedState });
+
+    // Masked email and phone before.
+    expect(await screen.findByText('a****@analytical.test')).toBeInTheDocument();
+    expect(screen.getByText('+1 415 *** **32')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /Access email/ }));
+
+    expect(await screen.findByText('ada@analytical.test')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '+1 415 555 0132' })).toHaveAttribute(
+      'href',
+      'tel:+14155550132',
+    );
+    expect(screen.getByLabelText('Verified')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Access email/ })).not.toBeInTheDocument();
+    expect(revealCalls).toEqual(['POST']);
+  });
+
+  it('the job-title contains filter re-queries and shows as a removable chip', async () => {
+    const user = userEvent.setup();
+    const { calls } = setup();
+    await screen.findByText('Ada Lovelace');
+
+    await user.click(screen.getByRole('button', { name: 'Expand Job title filter' }));
+    // The contains-filter commits on Enter or blur, not per keystroke.
+    await user.type(screen.getByRole('textbox', { name: 'Job title' }), 'engineer{Enter}');
+
+    await waitFor(() => expect(calls.some((u) => u.includes('title=engineer'))).toBe(true), {
+      timeout: 3000,
+    });
+    expect(await screen.findByRole('button', { name: /Remove .*engineer/ })).toBeInTheDocument();
+  });
+});

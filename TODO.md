@@ -44,11 +44,21 @@ own item here.
 - [ ] Chrome extension — explicitly out of scope.
 - [ ] No UI to create/manage additional super admins (CLI script only,
       `backend/src/utils/createSuperAdmin.js` — appears deliberate).
-- [ ] Frontend test coverage is thin on the oldest core screens: Login,
-      People, Companies, marketing pages. (Dashboard, Sequences, Tickets,
-      Settings and ListDetail's ContactRow gained tests in the UX phases.)
 
 ## Done
+
+- [x] **Frontend coverage for the oldest screens (2026-08-24).** 16 new
+      tests, suite now 155: Login (password sign-in lands in /app,
+      invalid-credentials error, forgot-password link only in sign-in
+      mode), People (reveal patches the row in place with email + tel: phone
+      + verified badge; job-title contains-filter commits on Enter and
+      chips), a new Companies suite (rows with detail link/industry/employee
+      bucket/website+LinkedIn links, headcount facet re-query + chip,
+      bulk-select without a reveal action, sort), and a marketing suite
+      (Home "Start free" → register mode; Pricing shows all four tiers and
+      recomputes quarterly/annual prices with the same math the backend
+      charges; Contact form posts the lead and confirms; Privacy §7 opt-out
+      form posts + confirms and explains the 429; Terms/About render).
 
 - [x] **Email delivery is live (2026-08-24).** datapit.io verified in
       Resend (user action); `RESEND_FROM_EMAIL=no-reply@datapit.io` on the
