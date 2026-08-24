@@ -100,6 +100,8 @@ planned under the roadmap; new UX work gets its own item here.
       `CORS_ORIGIN=https://datapit.io` (also the base for every emailed
       link). `titans7.com` / `www.titans7.com` 301 to `https://datapit.io`
       on both 80 and 443 (its old cert stays in place for the https hop).
+      Auto-renewal confirmed 2026-08-24: `certbot renew --cert-name
+      datapit.io --dry-run` succeeds and `certbot.timer` is active.
       Nothing in the app bundle referenced the domain, so no code change —
       docs/runbook/diagrams updated.
 
