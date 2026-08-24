@@ -13,6 +13,13 @@ Plain Manifest V3, no build step — this folder loads as-is.
 
 ## Install (load unpacked)
 
+Easiest path: log into DataPit and click **Install extension** on the
+Dashboard — it downloads this as a zip, walks through the same steps below
+in a modal, and detects the moment it connects (via `externally_connectable`
++ the pinned id in `manifest.json` — see `EXTENSION_ID.md`).
+
+Manually:
+
 1. In DataPit, go to **Settings → API & Extension**, create an API key and
    copy it (it's shown only once).
 2. Open `chrome://extensions`, switch on **Developer mode** (top right).

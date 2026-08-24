@@ -49,6 +49,21 @@ own item here.
 
 ## Done
 
+- [x] **Dashboard "Install extension" flow (2026-08-24).** Chrome has no
+      API for a webpage to silently install an extension, so this is the
+      closest thing to one-click without a Chrome Web Store listing: a
+      dismissible Dashboard banner opens a modal that downloads the
+      extension as a zip (`frontend/public/downloads/datapit-extension.zip`,
+      built by `scripts/build-extension-zip.py` — **re-run it after any
+      `extension/` change, before the next deploy**) and walks through
+      `chrome://extensions` → Developer mode → Load unpacked; the extension
+      now carries a pinned id (`manifest.json`'s `key`, see
+      `extension/EXTENSION_ID.md`) and an `externally_connectable` bridge so
+      the page can detect the moment it connects (polls only while the
+      modal is open) and flip straight to "Connected ✓" with a
+      "Create an API key" follow-through into Settings. Frontend 166 tests
+      (4 new).
+
 - [x] **Chrome extension — LinkedIn lookup, reveal & sourcing pipeline
       (2026-08-24; plan in `docs/EXTENSION-PLAN.md`).** `extension/` is a
       plain MV3 extension (load-unpacked, no build step): on any

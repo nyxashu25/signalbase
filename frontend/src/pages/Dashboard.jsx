@@ -18,6 +18,7 @@ import { useGetOnboardingQuery, useGetDashboardStatsQuery } from '../api/dashboa
 import { EmailVerifier } from '../components/EmailVerifier.jsx';
 import { GettingStarted } from '../components/app/GettingStarted.jsx';
 import { ResourcesStrip } from '../components/app/ResourcesStrip.jsx';
+import { InstallExtensionCard } from '../components/app/InstallExtensionCard.jsx';
 import { PageHeader } from '../components/ui/PageHeader.jsx';
 import { Button } from '../components/ui/Button.jsx';
 import { Card, TableFrame, tdClass, tdMutedClass, trClass } from '../components/ui/Card.jsx';
@@ -121,6 +122,8 @@ export function Dashboard() {
         activeTab={view}
         onTabChange={setView}
       />
+
+      <InstallExtensionCard />
 
       {view === 'getting-started' && <GettingStarted progress={progress} isLoading={loadingProgress} />}
       {view === 'overview' && <Overview />}

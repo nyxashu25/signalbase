@@ -18,6 +18,9 @@
       "run_at": "document_idle"
     }
   ],
+  "externally_connectable": {
+    "matches": ["https://datapit.io/*", "http://localhost:5173/*"]
+  },
   "action": {
     "default_popup": "popup.html",
     "default_title": "DataPit"
@@ -27,5 +30,6 @@
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
-  }
+  },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAp09RDrPD63GmLF4WTIi1SD8b+hSg9R1TB11RlFQcPEyCCncmSuh9LENmUqjTv/Onf5WQydeA3VBTEObLHgkmFXznXG3ZcdsghlmMdQSZOt+n2LcJM/l7n8jexV1nMsT47G1omk4mIHnOMXgjimwhkhtpXLygxotoKyIhSkrvXBxDmEbNK2cGkVO0T7wiCylIKQmYKPc3cgku3vw0l0q8AjckQil3nrNEbfvq73hpbQrYKg3KduggT+TlsWJdxtUrMlCiCdlxvgJpi3NmfwWFlva+EbOM316tMiD5gxswLEk9iDkB8ZbVUid8bTMAKdpfxkCUf56NF01wYsdAmvsetwIDAQAB"
 }
