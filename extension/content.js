@@ -82,29 +82,85 @@
     };
   }
 
+  function meta(selector) {
+    return document.querySelector(selector)?.getAttribute('content')?.trim() || null;
+  }
+
+  // The top-card <section> around the name — most fields live here, and
+  // scoping to it keeps the class-independent heuristics from wandering
+  // into the Experience/Activity sections lower down.
+  function topCard(h1) {
+    if (!h1) return document.querySelector('main') || document.body;
+    return h1.closest('section') || h1.parentElement?.parentElement || document.querySelector('main') || document.body;
+  }
+
+  // Locations have no digits ("San Francisco Bay Area", "London, England");
+  // connection/follower counts always do ("500+ connections"). That single
+  // heuristic is locale-independent, unlike LinkedIn's class names.
+  function looksLikeLocation(s) {
+    if (!s || s.length > 120) return false;
+    if (/\d/.test(s)) return false;
+    if (/·|@|http/i.test(s)) return false;
+    return true;
+  }
+
   function parseProfile() {
     const fromTitle = parseTitleTag();
+    const h1 = document.querySelector('main h1') || document.querySelector('h1');
+    const card = topCard(h1);
+    const name = text(h1) || fromTitle.name || meta('meta[property="profile:first_name"]') || null;
 
-    const name = text(document.querySelector('main h1, h1')) || fromTitle.name || null;
+    // --- job title (headline) ---
+    // Layered: known classes -> the div right after the name -> the first
+    // "text-body-medium"-ish block in the card -> og:title/description ->
+    // the tab title. Any one of these surviving is enough.
+    let jobTitle =
+      text(card.querySelector('.text-body-medium.break-words')) ||
+      text(card.querySelector('[data-generated-suggestion-target]')) ||
+      text(card.querySelector('[class*="text-body-medium"]'));
+    if (!jobTitle && h1) {
+      // Structurally, the headline is the FIRST text-bearing block after the
+      // name's container — take it as-is (don't filter by "looks like a
+      // location": a headline has no digits and would trip that test too).
+      let el = h1.parentElement?.nextElementSibling;
+      for (let i = 0; el && i < 4 && !jobTitle; i++, el = el.nextElementSibling) {
+        const t = text(el);
+        if (t && t.length <= 220 && t !== name) jobTitle = t;
+      }
+    }
+    jobTitle = jobTitle || fromTitle.jobTitle || null;
 
-    const jobTitle =
-      text(document.querySelector('main .text-body-medium.break-words')) ||
-      text(document.querySelector('main [data-generated-suggestion-target]')) ||
-      fromTitle.jobTitle ||
-      null;
+    // --- location ---
+    // Known class first, then the first no-digit place-like line in the card
+    // that isn't the name or the headline (works with any/no class names).
+    let location_ = text(card.querySelector('.text-body-small.inline.t-black--light.break-words'));
+    if (!location_) {
+      for (const el of card.querySelectorAll('span, div')) {
+        const t = text(el);
+        if (t && t !== name && t !== jobTitle && looksLikeLocation(t)) { location_ = t; break; }
+      }
+    }
 
-    const location_ =
-      text(document.querySelector('main .text-body-small.inline.t-black--light.break-words')) ||
-      null;
-
+    // --- current company ---
+    // aria-label (English) -> a company link in the top card -> the logo
+    // image's alt in the current-company button -> og:title/tab-title tail.
     let companyName = null;
-    const companyBtn = document.querySelector(
-      'main button[aria-label^="Current company"], main a[aria-label^="Current company"]',
+    const companyBtn = card.querySelector(
+      'button[aria-label^="Current company"], a[aria-label^="Current company"]',
     );
     if (companyBtn) {
-      const aria = companyBtn.getAttribute('aria-label') || '';
-      const m = aria.match(/^Current company:?\s*([^.]+)/i);
-      companyName = (m && m[1].trim()) || text(companyBtn) || null;
+      const m = (companyBtn.getAttribute('aria-label') || '').match(/^Current company:?\s*([^.]+)/i);
+      companyName = (m && m[1].trim()) || null;
+    }
+    if (!companyName) {
+      const companyLink = card.querySelector('a[href*="/company/"]');
+      companyName = text(companyLink) || companyLink?.querySelector('img[alt]')?.getAttribute('alt')?.trim() || null;
+    }
+    if (!companyName) {
+      const logo = card.querySelector('button img[alt], a[href*="/company/"] img[alt]');
+      const alt = logo?.getAttribute('alt')?.trim();
+      // Skip the person's own avatar ("Jane Doe" / "... profile photo").
+      if (alt && alt !== name && !/profile photo|photo de|foto de/i.test(alt)) companyName = alt;
     }
     companyName = companyName || fromTitle.companyName || null;
 
@@ -117,6 +173,10 @@
       location: location_,
       companyName,
     };
+    // console.info (not debug) so it shows in DevTools -> Console at the
+    // default level — a still-missing field can then be diagnosed against
+    // the real markup without guesswork.
+    console.info('[DataPit] parsed profile ->', JSON.stringify(payload));
     // Send only what was actually captured — a null field carries no
     // information, and older backends rejected nulls outright.
     for (const key of Object.keys(payload)) {
