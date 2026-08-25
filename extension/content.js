@@ -104,6 +104,39 @@
     return true;
   }
 
+  // Diagnostic: when a field can't be parsed, dump the labeled text
+  // structure of the region around the name so the exact markup can be read
+  // from a single console paste (no need to hand-inspect the DOM). Runs at
+  // most once per page load.
+  let dumpedOnce = false;
+  function dumpCandidates(h1) {
+    if (dumpedOnce) return;
+    dumpedOnce = true;
+    const scope = h1 ? (h1.closest('section') || h1.parentElement?.parentElement || document.querySelector('main')) : document.querySelector('main');
+    if (!scope) return;
+    const rows = [];
+    for (const el of scope.querySelectorAll('*')) {
+      // Elements with their OWN direct text (not just inherited from
+      // children) — these are the leaf labels we'd parse.
+      const direct = Array.from(el.childNodes)
+        .filter((n) => n.nodeType === 3)
+        .map((n) => n.textContent.replace(/\s+/g, ' ').trim())
+        .join(' ')
+        .trim();
+      if (!direct || direct.length > 120) continue;
+      const cls = (el.getAttribute('class') || '').split(/\s+/).slice(0, 3).join('.');
+      const aria = el.getAttribute('aria-label');
+      rows.push(`${el.tagName.toLowerCase()}${cls ? '.' + cls : ''}${aria ? ` [aria="${aria.slice(0, 40)}"]` : ''} = ${JSON.stringify(direct)}`);
+      if (rows.length >= 40) break;
+    }
+    console.info(
+      '[DataPit] Some fields did not parse. Please copy everything below this line and send it to support:\n' +
+      '----- DataPit top-card dump -----\n' +
+      rows.join('\n') +
+      '\n----- end dump -----',
+    );
+  }
+
   function parseProfile() {
     const fromTitle = parseTitleTag();
     const h1 = document.querySelector('main h1') || document.querySelector('h1');
@@ -177,6 +210,7 @@
     // default level — a still-missing field can then be diagnosed against
     // the real markup without guesswork.
     console.info('[DataPit] parsed profile ->', JSON.stringify(payload));
+    if (!jobTitle || !location_ || !companyName) dumpCandidates(h1);
     // Send only what was actually captured — a null field carries no
     // information, and older backends rejected nulls outright.
     for (const key of Object.keys(payload)) {
