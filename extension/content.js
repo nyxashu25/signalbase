@@ -2,52 +2,56 @@
 //
 // Injected on every LinkedIn page (LinkedIn is a SPA — a profile is usually
 // reached by in-page navigation, where a /in/*-only content_script match
-// would never fire), but does nothing until the URL is a profile page.
-// Watches the URL, waits for the profile header to render, parses what it
-// can, and always ships the page's visible text as a fallback so a LinkedIn
-// markup change degrades to "the data team reads the text" instead of
-// silently sending garbage.
+// would never fire). On profile pages it mounts a floating DataPit launcher
+// that is ALWAYS visible, auto-runs the lookup, and shows an explicit
+// verdict — "Found in DataPit" with a reveal button, or "Not in DataPit —
+// queued" — plus a manual "Search this profile" button so the user is never
+// staring at a page wondering whether anything happened. The parser is
+// best-effort and the page's visible text always ships as a fallback, so a
+// LinkedIn markup change degrades to "the data team reads the text", never
+// to silence.
 
 (() => {
   const DOM_TEXT_CAP = 200_000;
   const PROFILE_RE = /^https?:\/\/([^/]*\.)?linkedin\.com\/in\/([^/?#]+)/i;
 
-  let lastSlug = null;
-  let panel = null; // { host, root, body } once created
+  let lastSlug = null; // slug the card currently represents
+  let lookedUpSlug = null; // slug the last completed lookup was for
+  let ui = null; // { host, launcher, card, body, footer } once mounted
+  let collapsed = false; // user closed the card -> only the bubble shows
+  let busy = false; // a lookup is in flight
+
+  const log = (...args) => console.debug('[DataPit]', ...args);
 
   // ---------------------------------------------------------------------
-  // SPA-aware profile detection: cheap URL poll + a scan retry loop that
-  // waits for the header <h1> to exist before parsing.
+  // SPA-aware URL watching. On a profile: mount UI, auto-look-up once per
+  // slug. Off a profile: hide everything.
   // ---------------------------------------------------------------------
 
-  setInterval(() => {
+  function currentSlug() {
     const match = location.href.match(PROFILE_RE);
-    if (!match) {
-      lastSlug = null;
-      hidePanel();
-      return;
-    }
-    const slug = decodeSlug(match[2]);
-    if (slug === lastSlug) return;
-    lastSlug = slug;
-    waitForHeader(slug, 20); // ~10s of retries
-  }, 700);
-
-  function decodeSlug(raw) {
+    if (!match) return null;
     try {
-      return decodeURIComponent(raw).toLowerCase();
+      return decodeURIComponent(match[2]).toLowerCase();
     } catch {
-      return raw.toLowerCase();
+      return match[2].toLowerCase();
     }
   }
 
-  function waitForHeader(slug, retriesLeft) {
-    if (lastSlug !== slug) return; // navigated away meanwhile
-    const h1 = document.querySelector('main h1, h1');
-    if (h1 && h1.textContent.trim()) {
-      observeProfile(slug);
-    } else if (retriesLeft > 0) {
-      setTimeout(() => waitForHeader(slug, retriesLeft - 1), 500);
+  function tick() {
+    const slug = currentSlug();
+    if (!slug) {
+      lastSlug = null;
+      if (ui) ui.host.style.display = 'none';
+      return;
+    }
+    if (!ui) mountUi();
+    ui.host.style.display = '';
+    if (slug !== lastSlug) {
+      lastSlug = slug;
+      collapsed = false;
+      setCardVisible(true);
+      lookUp(slug, { auto: true });
     }
   }
 
@@ -64,21 +68,15 @@
   function parseProfile() {
     const name = text(document.querySelector('main h1, h1'));
 
-    // Headline ("job title") — the text-body-medium div right under the
-    // name in today's markup; fall back to the og:description-ish meta.
     const jobTitle =
       text(document.querySelector('main .text-body-medium.break-words')) ||
       text(document.querySelector('main [data-generated-suggestion-target]')) ||
       null;
 
-    // Location — small muted line in the top card.
-    const location =
+    const location_ =
       text(document.querySelector('main .text-body-small.inline.t-black--light.break-words')) ||
       null;
 
-    // Current company — the top-card right-rail button carries an
-    // aria-label like "Current company: Acme. Click to skip to experience
-    // card"; fall back to its visible label.
     let companyName = null;
     const companyBtn = document.querySelector(
       'main button[aria-label^="Current company"], main a[aria-label^="Current company"]',
@@ -89,20 +87,16 @@
       companyName = (m && m[1].trim()) || text(companyBtn) || null;
     }
 
+    const match = location.href.match(PROFILE_RE);
     return {
-      linkedinUrl: location_href_clean(),
+      // Canonical /in/<slug> form — no query params or fragments.
+      linkedinUrl: match ? `https://www.linkedin.com/in/${match[2]}` : location.href,
       name,
       jobTitle,
-      location,
+      location: location_,
       companyName,
       domText: (document.body?.innerText || '').slice(0, DOM_TEXT_CAP),
     };
-  }
-
-  function location_href_clean() {
-    // Send the canonical /in/<slug> form — no query params or fragments.
-    const match = location.href.match(PROFILE_RE);
-    return match ? `https://www.linkedin.com/in/${match[2]}` : location.href;
   }
 
   // ---------------------------------------------------------------------
@@ -120,22 +114,47 @@
           }
         });
       } catch (err) {
-        resolve({ ok: false, error: String(err?.message || err) });
+        // "Extension context invalidated" — the extension was reloaded
+        // under this page; only a page refresh reconnects it.
+        resolve({ ok: false, error: 'RELOADED', detail: String(err?.message || err) });
       }
     });
   }
 
-  async function observeProfile(slug) {
-    showPanel();
+  async function lookUp(slug, { auto = false } = {}) {
+    if (busy) return;
+    busy = true;
     renderLoading();
 
+    // On auto-lookup right after navigation the profile header may not be
+    // rendered yet — give it a few beats so the parser has something to
+    // read, but never block the lookup on it (matching is by URL; parsed
+    // fields are gravy).
+    if (auto) {
+      for (let i = 0; i < 10 && lastSlug === slug; i++) {
+        const h1 = document.querySelector('main h1, h1');
+        if (h1 && h1.textContent.trim()) break;
+        await new Promise((r) => setTimeout(r, 500));
+      }
+    }
+    if (lastSlug !== slug) {
+      busy = false;
+      return; // navigated away while waiting
+    }
+
     const payload = parseProfile();
+    log('observe', payload.linkedinUrl);
     const res = await send({ type: 'observe', payload });
+    busy = false;
     if (lastSlug !== slug) return; // stale response — user moved on
 
+    lookedUpSlug = slug;
     if (!res.ok) {
       if (res.error === 'NOT_CONNECTED') return renderSignedOut();
-      if (res.status === 429) return renderError('Rate limit reached — try again in a bit.');
+      if (res.error === 'RELOADED') {
+        return renderError('DataPit was updated — refresh this page to reconnect.');
+      }
+      if (res.status === 429) return renderError('Rate limit reached — try again in a minute.');
       return renderError(res.error || 'Something went wrong.');
     }
 
@@ -161,17 +180,32 @@
   }
 
   // ---------------------------------------------------------------------
-  // Panel UI — a shadow-DOM card so LinkedIn's CSS can't touch it.
+  // UI — a shadow-DOM launcher bubble + card so LinkedIn's CSS can't touch
+  // it. The bubble is ALWAYS visible on profile pages; the card opens over
+  // it and collapses back to it.
   // ---------------------------------------------------------------------
 
   const STYLES = `
-    .card {
+    :host { all: initial; }
+    .wrap {
       position: fixed; right: 20px; bottom: 20px; z-index: 2147483646;
-      width: 300px; padding: 14px 16px; border-radius: 12px;
-      background: #16121f; color: #f4f2f8;
       font: 13px/1.45 -apple-system, "Segoe UI", Roboto, sans-serif;
+      display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
+    }
+    .launcher {
+      width: 46px; height: 46px; border-radius: 50%; border: 0; cursor: pointer;
+      background: linear-gradient(135deg,#7c3aed,#db2777); color: #fff;
+      font-weight: 800; font-size: 18px;
+      box-shadow: 0 6px 20px rgba(124,58,237,.5);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .launcher:hover { transform: scale(1.06); }
+    .card {
+      width: 320px; padding: 14px 16px; border-radius: 12px;
+      background: #16121f; color: #f4f2f8;
       box-shadow: 0 8px 30px rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.12);
     }
+    .card.hidden { display: none; }
     .brand { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
     .brand b { font-size: 12px; letter-spacing:.04em; text-transform:uppercase;
       background: linear-gradient(90deg,#a78bfa,#f472b6); -webkit-background-clip:text; background-clip:text; color:transparent; }
@@ -182,7 +216,7 @@
     .row { margin-top:8px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
     .value { font-family: ui-monospace, Consolas, monospace; font-size:12px; color:#e9e6f0;
       background: rgba(255,255,255,.07); border-radius:6px; padding:3px 7px; word-break:break-all; }
-    .btn { cursor:pointer; border:0; border-radius:8px; padding:7px 12px; font-weight:700; font-size:12px;
+    .btn { cursor:pointer; border:0; border-radius:8px; padding:8px 13px; font-weight:700; font-size:12px;
       background: linear-gradient(90deg,#7c3aed,#db2777); color:#fff; }
     .btn:disabled { opacity:.55; cursor:default; }
     .btn.ghost { background: rgba(255,255,255,.09); }
@@ -191,38 +225,64 @@
     .pill.info { background: rgba(167,139,250,.18); color:#c4b5fd; }
     .pill.warn { background: rgba(251,191,36,.15); color:#fbbf24; }
     .note { margin-top:8px; font-size:12px; color:#fca5a5; }
+    .footer { margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,.08);
+      display:flex; align-items:center; justify-content:space-between; gap:8px; }
     .spin { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,.25);
       border-top-color:#a78bfa; border-radius:50%; animation: dp-spin .8s linear infinite; }
     @keyframes dp-spin { to { transform: rotate(360deg); } }
   `;
 
-  function showPanel() {
-    if (panel) {
-      panel.host.style.display = '';
-      return;
-    }
+  function mountUi() {
     const host = document.createElement('div');
     host.id = 'datapit-panel-host';
     const root = host.attachShadow({ mode: 'closed' });
     const style = document.createElement('style');
     style.textContent = STYLES;
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = `
-      <div class="brand">
-        <b>DataPit</b>
-        <button class="close" title="Hide" aria-label="Hide DataPit panel">✕</button>
+
+    const wrap = document.createElement('div');
+    wrap.className = 'wrap';
+    wrap.innerHTML = `
+      <div class="card hidden">
+        <div class="brand">
+          <b>DataPit</b>
+          <button class="close" title="Minimize" aria-label="Minimize DataPit panel">—</button>
+        </div>
+        <div class="body"></div>
+        <div class="footer">
+          <span class="muted" data-cost>Reveals cost 4 credits</span>
+          <button class="btn ghost" data-search>Search this profile</button>
+        </div>
       </div>
-      <div class="body"></div>
+      <button class="launcher" title="DataPit — look up this profile" aria-label="Open DataPit">D</button>
     `;
-    root.append(style, card);
-    card.querySelector('.close').addEventListener('click', () => hidePanel());
+    root.append(style, wrap);
+
+    const card = wrap.querySelector('.card');
+    const launcher = wrap.querySelector('.launcher');
+    launcher.addEventListener('click', () => {
+      collapsed = false;
+      setCardVisible(true);
+      // Fresh slug (or an earlier failure) -> run the lookup on open.
+      if (lastSlug && lookedUpSlug !== lastSlug) lookUp(lastSlug);
+    });
+    card.querySelector('.close').addEventListener('click', () => {
+      collapsed = true;
+      setCardVisible(false);
+    });
+    card.querySelector('[data-search]').addEventListener('click', () => {
+      if (lastSlug) {
+        lookedUpSlug = null;
+        lookUp(lastSlug);
+      }
+    });
+
     document.documentElement.appendChild(host);
-    panel = { host, root, body: card.querySelector('.body') };
+    ui = { host, launcher, card, body: card.querySelector('.body') };
   }
 
-  function hidePanel() {
-    if (panel) panel.host.style.display = 'none';
+  function setCardVisible(visible) {
+    if (!ui) return;
+    ui.card.classList.toggle('hidden', !visible || collapsed);
   }
 
   function esc(s) {
@@ -230,21 +290,21 @@
   }
 
   function renderLoading() {
-    panel.body.innerHTML = `<div class="row"><span class="spin"></span><span class="muted">Checking DataPit…</span></div>`;
+    ui.body.innerHTML = `<div class="row"><span class="spin"></span><span class="muted">Checking this profile against DataPit…</span></div>`;
   }
 
   function renderSignedOut() {
-    panel.body.innerHTML = `
+    ui.body.innerHTML = `
       <div class="title">Connect DataPit</div>
       <div class="muted" style="margin-top:4px">Click the DataPit icon in your toolbar and paste an API key from Settings → API &amp; Extension.</div>
     `;
   }
 
   function renderNotFound(name) {
-    panel.body.innerHTML = `
-      <div class="title">${esc(name || 'This profile')} isn’t in DataPit yet</div>
-      <div class="row"><span class="pill info">Queued for our data team</span></div>
-      <div class="muted" style="margin-top:6px">We’ve recorded it — it’ll be sourced and added to the database.</div>
+    ui.body.innerHTML = `
+      <div class="row" style="margin-top:0"><span class="pill info">✗ Not in DataPit</span></div>
+      <div class="title" style="margin-top:6px">${esc(name || 'This profile')} isn’t in the database yet</div>
+      <div class="muted" style="margin-top:4px">It’s been queued for our data team — it’ll be sourced and added.</div>
     `;
   }
 
@@ -252,10 +312,11 @@
     const c = data.contact;
     const fullName = `${c.firstName} ${c.lastName}`.trim();
     const already = c.revealed;
-    panel.body.innerHTML = `
-      <div class="title">${esc(fullName)} <span class="pill ok">Found in DataPit</span></div>
+    ui.body.innerHTML = `
+      <div class="row" style="margin-top:0"><span class="pill ok">✓ Found in DataPit</span>
+        ${data.titleChangeReported ? `<span class="pill warn">Title change reported</span>` : ''}</div>
+      <div class="title" style="margin-top:6px">${esc(fullName)}</div>
       <div class="muted" style="margin-top:2px">${esc(c.title || '')}${c.company ? ` · ${esc(c.company.name)}` : ''}</div>
-      ${data.titleChangeReported ? `<div class="row"><span class="pill warn">Title change reported</span></div>` : ''}
       ${already
         ? `<div class="row"><span class="value" data-copy>${esc(c.email || '—')}</span></div>
            ${c.phone ? `<div class="row"><span class="value" data-copy>${esc(c.phone)}</span></div>` : ''}
@@ -266,23 +327,23 @@
            ${c.hasPhone ? '' : `<div class="muted" style="margin-top:6px">No phone on file for this contact.</div>`}`
       }
     `;
-    const revealBtn = panel.body.querySelector('[data-reveal]');
+    const revealBtn = ui.body.querySelector('[data-reveal]');
     if (revealBtn) revealBtn.addEventListener('click', () => revealContact(c.id, revealBtn));
     wireCopy();
   }
 
   function renderRevealed(result) {
-    panel.body.innerHTML = `
-      <div class="title">Revealed <span class="pill ok">${result.alreadyRevealed ? 'Free — already unlocked' : 'Done'}</span></div>
+    ui.body.innerHTML = `
+      <div class="row" style="margin-top:0"><span class="pill ok">${result.alreadyRevealed ? '✓ Already unlocked — free' : '✓ Revealed'}</span></div>
       <div class="row"><span class="value" data-copy>${esc(result.email || 'No email found')}</span></div>
       ${result.phone ? `<div class="row"><span class="value" data-copy>${esc(result.phone)}</span></div>` : `<div class="muted" style="margin-top:6px">No phone on file.</div>`}
-      <div class="muted" style="margin-top:6px">${result.emailVerified ? 'Email verified ✓' : 'Email unverified — pattern-matched'}</div>
+      <div class="muted" style="margin-top:6px">${result.emailVerified ? 'Email verified ✓' : 'Email unverified — pattern-matched'} · click a value to copy</div>
     `;
     wireCopy();
   }
 
   function wireCopy() {
-    panel.body.querySelectorAll('[data-copy]').forEach((el) => {
+    ui.body.querySelectorAll('[data-copy]').forEach((el) => {
       el.style.cursor = 'pointer';
       el.title = 'Click to copy';
       el.addEventListener('click', () => {
@@ -296,18 +357,30 @@
   }
 
   function renderError(message) {
-    panel.body.innerHTML = `
+    ui.body.innerHTML = `
       <div class="title">Hmm, that didn’t work</div>
       <div class="note">${esc(message)}</div>
+      <div class="muted" style="margin-top:6px">Use “Search this profile” below to retry.</div>
     `;
+    lookedUpSlug = null; // let the launcher/search button retry
   }
 
   function renderErrorNote(message) {
-    const existing = panel.body.querySelector('.note');
+    const existing = ui.body.querySelector('.note');
     if (existing) existing.remove();
     const note = document.createElement('div');
     note.className = 'note';
     note.textContent = message;
-    panel.body.appendChild(note);
+    ui.body.appendChild(note);
   }
+
+  // -- start ------------------------------------------------------------
+  // Last in the file on purpose: tick() -> mountUi() touches consts
+  // (STYLES) that only exist once the whole module body has run — calling
+  // it any earlier is a TDZ crash on direct profile loads (caught by the
+  // jsdom harness).
+  setInterval(tick, 700);
+  // Don't wait 700ms for the first paint on a direct profile load.
+  tick();
+  log('content script loaded', location.href);
 })();
