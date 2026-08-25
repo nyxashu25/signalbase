@@ -3,9 +3,9 @@ import { Download, Copy, Check, CheckCircle2, Loader2, KeyRound } from 'lucide-r
 import { Banner } from '../ui/Banner.jsx';
 import { Modal } from '../ui/Modal.jsx';
 import { Button } from '../ui/Button.jsx';
-import { useExtensionInstalled } from '../../hooks/useExtensionInstalled.js';
+import { useExtensionInstalled, EXTENSION_DOWNLOAD_URL } from '../../hooks/useExtensionInstalled.js';
 
-const ZIP_URL = '/downloads/datapit-extension.zip';
+const ZIP_URL = EXTENSION_DOWNLOAD_URL;
 
 function CopyableCommand({ value }) {
   const [copied, setCopied] = useState(false);

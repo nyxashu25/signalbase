@@ -5,6 +5,13 @@ import { useCallback, useEffect, useState } from 'react';
 // without breaking this detector for existing installs.
 const EXTENSION_ID = 'cdfkakmanagglkhamigfaoallhiigdla';
 
+// The version currently shipped in the download (extension/manifest.json).
+// Keep this in step with a version bump so the UI can tell an installed
+// user their copy is out of date. The download itself is served at
+// EXTENSION_DOWNLOAD_URL (Vite copies frontend/public/ verbatim).
+export const EXTENSION_VERSION = '0.3.3';
+export const EXTENSION_DOWNLOAD_URL = '/downloads/datapit-extension.zip';
+
 /**
  * Chrome (and other Chromium browsers) expose `chrome.runtime.sendMessage`
  * to any web page for messaging a specific extension id — no permission

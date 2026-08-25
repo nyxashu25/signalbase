@@ -24,6 +24,15 @@ describe('SettingsApi', () => {
     expect(screen.getByText('Never')).toBeInTheDocument();
   });
 
+  it('always offers the extension download (the permanent home for updates)', async () => {
+    mockFetchRoutes([{ url: '/api-keys', method: 'GET', respond: { body: { keys: [] } } }]);
+    renderWithProviders(<SettingsApi />, { preloadedState: authenticatedState });
+
+    const download = await screen.findByRole('link', { name: /Download extension · v/ });
+    expect(download).toHaveAttribute('href', '/downloads/datapit-extension.zip');
+    expect(download).toHaveAttribute('download');
+  });
+
   it('creates a key and surfaces the full secret exactly once', async () => {
     const user = userEvent.setup();
     let created = false;

@@ -1,5 +1,10 @@
 import { useState } from 'react';
-import { KeyRound, Plus, X, Copy, Check } from 'lucide-react';
+import { KeyRound, Plus, X, Copy, Check, Download, CheckCircle2 } from 'lucide-react';
+import {
+  useExtensionInstalled,
+  EXTENSION_VERSION,
+  EXTENSION_DOWNLOAD_URL,
+} from '../../hooks/useExtensionInstalled.js';
 import {
   useListApiKeysQuery,
   useCreateApiKeyMutation,
@@ -183,21 +188,69 @@ export function SettingsApi() {
         )}
       </SettingsSection>
 
-      <SettingsSection
-        title="Chrome extension"
-        description="Look up any LinkedIn profile against DataPit as you browse."
-      >
-        <ol className="list-decimal space-y-1.5 pl-5 text-sm text-text-muted">
-          <li>Create an API key above and copy it.</li>
-          <li>Install the DataPit extension in Chrome (ask your admin for the build).</li>
-          <li>Click the extension icon, paste the key, and open any LinkedIn profile.</li>
-        </ol>
-        <p className="mt-3 text-sm text-text-muted">
-          Found profiles reveal their email and phone for <strong className="text-text">4 credits</strong> —
-          contacts your workspace already revealed are free. Profiles we don't have yet are queued for our
-          data team automatically.
-        </p>
-      </SettingsSection>
+      <ExtensionSection />
     </div>
+  );
+}
+
+// Always-available home for the extension download + install steps. Unlike
+// the Dashboard install banner (which hides once the extension is
+// detected), this stays put so an installed user can always fetch an
+// update — and tells them when their installed copy is behind the current
+// build.
+function ExtensionSection() {
+  const { status, version } = useExtensionInstalled();
+  const installed = status === 'installed';
+  const outdated = installed && version && version !== EXTENSION_VERSION;
+
+  return (
+    <SettingsSection
+      title="Chrome extension"
+      description="Look up any LinkedIn profile against DataPit as you browse."
+      footer={
+        <Button variant="primary" icon={Download} href={EXTENSION_DOWNLOAD_URL} download>
+          {installed ? 'Download update' : 'Download extension'} · v{EXTENSION_VERSION}
+        </Button>
+      }
+    >
+      {installed && (
+        <div
+          className={`mb-4 flex items-center gap-2 rounded-md border px-3 py-2 text-sm ${
+            outdated
+              ? 'border-amber-500/30 bg-amber-500/10 text-text'
+              : 'border-emerald-500/30 bg-emerald-500/10 text-text'
+          }`}
+        >
+          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" aria-hidden="true" />
+          {outdated ? (
+            <span>
+              Connected — but you're on <strong>v{version}</strong>. Download v{EXTENSION_VERSION} below and reload
+              it in <code className="rounded bg-surface-sunken px-1 py-0.5 font-mono text-xs">chrome://extensions</code>.
+            </span>
+          ) : (
+            <span>
+              Extension connected{version ? ` (v${version})` : ''} — you're on the latest version.
+            </span>
+          )}
+        </div>
+      )}
+
+      <ol className="list-decimal space-y-1.5 pl-5 text-sm text-text-muted">
+        <li>Create an API key above and copy it.</li>
+        <li>
+          Download the extension (button below) and unzip it. In{' '}
+          <code className="rounded bg-surface-sunken px-1 py-0.5 font-mono text-xs">chrome://extensions</code>, turn
+          on <strong className="text-text">Developer mode</strong>, then <strong className="text-text">Load unpacked</strong>{' '}
+          and pick the <code className="rounded bg-surface-sunken px-1 py-0.5 font-mono text-xs">datapit-extension</code> folder.
+          (To update later: download again, unzip over the old folder, and hit <strong className="text-text">↻ reload</strong> on the card.)
+        </li>
+        <li>Click the extension icon, paste the key, and open any LinkedIn profile.</li>
+      </ol>
+      <p className="mt-3 text-sm text-text-muted">
+        Found profiles reveal their email and phone for <strong className="text-text">4 credits</strong> —
+        contacts your workspace already revealed are free. Profiles we don't have yet are queued for our
+        data team automatically.
+      </p>
+    </SettingsSection>
   );
 }
