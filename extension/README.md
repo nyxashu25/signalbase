@@ -40,11 +40,18 @@ API base to `http://localhost:4000/api/v1`. (The dev origin is already in
 - `background.js` — the only code that talks to the API; holds the key in
   `chrome.storage.local` (never visible to LinkedIn page scripts).
 - `content.js` — SPA-aware profile detection (URL watcher), a best-effort
-  top-card parser, and the shadow-DOM result panel. Always ships the page's
-  visible text (capped) as `domText`, so when LinkedIn's markup changes the
-  pipeline degrades to "admin reads the text" instead of breaking.
+  top-card parser (with a tab-title fallback that survives LinkedIn markup
+  changes), and the shadow-DOM result panel.
 - `popup.html/js` — connect/disconnect a key, see your credit balance.
 - `options.html/js` — API base override for local dev.
+
+## What it captures
+
+Exactly five fields per profile you open, nothing else: the person's
+**name**, the **profile URL**, their **job title**, the **current
+company's name**, and their **location**. No page text, no DOM dumps, no
+browsing history — and it only ever runs on `linkedin.com/in/…` pages and
+only talks to DataPit.
 
 ## A note on LinkedIn's terms
 

@@ -6,13 +6,14 @@
 // that is ALWAYS visible, auto-runs the lookup, and shows an explicit
 // verdict — "Found in DataPit" with a reveal button, or "Not in DataPit —
 // queued" — plus a manual "Search this profile" button so the user is never
-// staring at a page wondering whether anything happened. The parser is
-// best-effort and the page's visible text always ships as a fallback, so a
-// LinkedIn markup change degrades to "the data team reads the text", never
-// to silence.
+// staring at a page wondering whether anything happened.
+//
+// Data captured is EXACTLY these five things and nothing else (product
+// decision 2026-08-25 — no page text, no DOM dumps): the person's name,
+// the profile URL, their job title, the current company's name, and their
+// location. The parser is best-effort with a tab-title fallback.
 
 (() => {
-  const DOM_TEXT_CAP = 200_000;
   const PROFILE_RE = /^https?:\/\/([^/]*\.)?linkedin\.com\/in\/([^/?#]+)/i;
 
   let lastSlug = null; // slug the card currently represents
@@ -115,7 +116,6 @@
       jobTitle,
       location: location_,
       companyName,
-      domText: (document.body?.innerText || '').slice(0, DOM_TEXT_CAP),
     };
     // Send only what was actually captured — a null field carries no
     // information, and older backends rejected nulls outright.

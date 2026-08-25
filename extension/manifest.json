@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "DataPit — LinkedIn Lookup",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Look up LinkedIn profiles against DataPit as you browse: reveal emails and phone numbers, and queue missing people for sourcing.",
   "permissions": ["storage"],
   "host_permissions": [
