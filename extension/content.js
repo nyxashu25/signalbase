@@ -104,20 +104,14 @@
     return true;
   }
 
-  // Diagnostic: when a field can't be parsed, dump the labeled text
-  // structure of the region around the name so the exact markup can be read
-  // from a single console paste (no need to hand-inspect the DOM). Runs at
-  // most once per page load.
-  let dumpedOnce = false;
-  function dumpCandidates(h1) {
-    if (dumpedOnce) return;
-    dumpedOnce = true;
-    const scope = h1 ? (h1.closest('section') || h1.parentElement?.parentElement || document.querySelector('main')) : document.querySelector('main');
-    if (!scope) return;
+  // Collect labeled direct-text leaves ("tag.class [aria] = text") under a
+  // root — the raw material for reading unfamiliar markup.
+  function textRows(root, limit) {
     const rows = [];
-    for (const el of scope.querySelectorAll('*')) {
-      // Elements with their OWN direct text (not just inherited from
-      // children) — these are the leaf labels we'd parse.
+    if (!root) return rows;
+    for (const el of root.querySelectorAll('*')) {
+      const tag = el.tagName.toLowerCase();
+      if (tag === 'script' || tag === 'style' || tag === 'svg' || tag === 'path') continue;
       const direct = Array.from(el.childNodes)
         .filter((n) => n.nodeType === 3)
         .map((n) => n.textContent.replace(/\s+/g, ' ').trim())
@@ -126,12 +120,41 @@
       if (!direct || direct.length > 120) continue;
       const cls = (el.getAttribute('class') || '').split(/\s+/).slice(0, 3).join('.');
       const aria = el.getAttribute('aria-label');
-      rows.push(`${el.tagName.toLowerCase()}${cls ? '.' + cls : ''}${aria ? ` [aria="${aria.slice(0, 40)}"]` : ''} = ${JSON.stringify(direct)}`);
-      if (rows.length >= 40) break;
+      rows.push(`${tag}${cls ? '.' + cls : ''}${aria ? ` [aria="${aria.slice(0, 40)}"]` : ''} = ${JSON.stringify(direct)}`);
+      if (rows.length >= limit) break;
     }
+    return rows;
+  }
+
+  // Diagnostic: when a field can't be parsed, dump the page's structure so
+  // the exact markup can be read from a single console paste. Scoped to the
+  // name's section first; if that's thin (card not rendered, or a layout we
+  // can't scope), it falls back to the whole document so it can never come
+  // back empty. Runs at most once per page load.
+  let dumpedOnce = false;
+  function dumpCandidates(h1) {
+    if (dumpedOnce) return;
+    dumpedOnce = true;
+    const main = document.querySelector('main');
+    const env = [
+      `url = ${location.href}`,
+      `title = ${JSON.stringify(document.title)}`,
+      `main present = ${Boolean(main)}`,
+      `h1 count = ${document.querySelectorAll('h1').length}`,
+      `section count = ${document.querySelectorAll('section').length}`,
+    ];
+    const scope = h1 ? (h1.closest('section') || h1.parentElement?.parentElement) : null;
+    let rows = textRows(scope, 40);
+    let source = 'name section';
+    // Thin scoped result -> the card probably wasn't where we looked (or
+    // wasn't rendered): dump main, then the whole body.
+    if (rows.length < 3) { rows = textRows(main, 60); source = 'main'; }
+    if (rows.length < 3) { rows = textRows(document.body, 60); source = 'body'; }
     console.info(
       '[DataPit] Some fields did not parse. Please copy everything below this line and send it to support:\n' +
       '----- DataPit top-card dump -----\n' +
+      env.join('\n') +
+      `\nsource = ${source}\n` +
       rows.join('\n') +
       '\n----- end dump -----',
     );
@@ -246,15 +269,21 @@
     busy = true;
     renderLoading();
 
-    // On auto-lookup right after navigation the profile header may not be
-    // rendered yet — give it a few beats so the parser has something to
-    // read, but never block the lookup on it (matching is by URL; parsed
-    // fields are gravy).
+    // On auto-lookup right after navigation the profile card may not be
+    // rendered yet — LinkedIn is a heavy SPA and firing too early means we
+    // parse a skeleton (name from the tab title, everything else blank).
+    // Wait until the top card actually has content — a name heading AND
+    // several other text lines — or a generous timeout. Never block the
+    // lookup itself past that (matching is by URL; parsed fields are gravy).
     if (auto) {
-      for (let i = 0; i < 10 && lastSlug === slug; i++) {
-        const h1 = document.querySelector('main h1, h1');
-        if (h1 && h1.textContent.trim()) break;
-        await new Promise((r) => setTimeout(r, 500));
+      for (let i = 0; i < 24 && lastSlug === slug; i++) {
+        const main = document.querySelector('main');
+        const hasName = Boolean(document.querySelector('main h1, h1')?.textContent.trim());
+        // A rendered card has several text lines; an unrendered skeleton
+        // (the empty-dump case) has ~none. 3 cleanly separates them.
+        const contentful = main ? textRows(main, 4).length >= 3 : false;
+        if (hasName && contentful) break;
+        await new Promise((r) => setTimeout(r, 400)); // up to ~9.6s
       }
     }
     if (lastSlug !== slug) {
