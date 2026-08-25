@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "DataPit — LinkedIn Lookup",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "description": "Look up LinkedIn profiles against DataPit as you browse: reveal emails and phone numbers, and queue missing people for sourcing.",
   "permissions": ["storage"],
   "host_permissions": [
@@ -16,11 +16,13 @@
       "matches": ["https://www.linkedin.com/*", "https://*.linkedin.com/*"],
       "js": ["content.js"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://datapit.io/*", "http://localhost:5173/*"],
+      "js": ["announce.js"],
+      "run_at": "document_start"
     }
   ],
-  "externally_connectable": {
-    "matches": ["https://datapit.io/*", "http://localhost:5173/*"]
-  },
   "action": {
     "default_popup": "popup.html",
     "default_title": "DataPit"
@@ -30,6 +32,5 @@
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
-  },
-  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAp09RDrPD63GmLF4WTIi1SD8b+hSg9R1TB11RlFQcPEyCCncmSuh9LENmUqjTv/Onf5WQydeA3VBTEObLHgkmFXznXG3ZcdsghlmMdQSZOt+n2LcJM/l7n8jexV1nMsT47G1omk4mIHnOMXgjimwhkhtpXLygxotoKyIhSkrvXBxDmEbNK2cGkVO0T7wiCylIKQmYKPc3cgku3vw0l0q8AjckQil3nrNEbfvq73hpbQrYKg3KduggT+TlsWJdxtUrMlCiCdlxvgJpi3NmfwWFlva+EbOM316tMiD5gxswLEk9iDkB8ZbVUid8bTMAKdpfxkCUf56NF01wYsdAmvsetwIDAQAB"
+  }
 }

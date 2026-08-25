@@ -4,46 +4,37 @@ import userEvent from '@testing-library/user-event';
 import { InstallExtensionCard } from './InstallExtensionCard.jsx';
 import { renderWithProviders, authenticatedState } from '../../test/testUtils.jsx';
 
-// Simulates the one API Chrome exposes to any web page for messaging a
-// specific extension id — no `chrome.runtime` at all (like Firefox, or
-// jsdom's default) reads the same as "not installed" through this mock's
-// absence.
-function mockChromeRuntime({ installed, version = '0.1.0' }) {
-  window.chrome = {
-    runtime: {
-      lastError: installed ? undefined : { message: 'Could not establish connection.' },
-      sendMessage: (id, message, callback) => {
-        callback(installed ? { installed: true, version } : undefined);
-      },
-    },
-  };
+// The extension announces itself by marking <html> and firing an event (see
+// extension/announce.js) — detection is id-independent. These helpers stand
+// in for that content script.
+function announceExtension(version = '0.4.0') {
+  document.documentElement.setAttribute('data-datapit-extension', version);
+  window.dispatchEvent(new CustomEvent('datapit-extension-ready', { detail: { version } }));
+}
+function removeExtension() {
+  document.documentElement.removeAttribute('data-datapit-extension');
 }
 
 describe('InstallExtensionCard', () => {
   beforeEach(() => {
     localStorage.clear();
+    removeExtension();
   });
 
   afterEach(() => {
-    delete window.chrome;
+    removeExtension();
   });
 
-  it('renders nothing while chrome.runtime is entirely absent from the environment, once checked', async () => {
-    // No window.chrome at all — jsdom's default, and Firefox/Safari's reality.
+  it('shows the install banner when no extension has announced itself', async () => {
     renderWithProviders(<InstallExtensionCard />, { preloadedState: authenticatedState });
-    // "unsupported" still shows the banner today (detection just never
-    // flips to installed) — assert the banner text still renders so this
-    // documents the current behavior rather than silently changing it.
     expect(await screen.findByText('Install the DataPit Chrome extension')).toBeInTheDocument();
   });
 
-  it('shows the install banner when the extension is not detected, and walks through the steps in the modal', async () => {
-    mockChromeRuntime({ installed: false });
+  it('walks through the steps in the modal', async () => {
     const user = userEvent.setup();
     renderWithProviders(<InstallExtensionCard />, { preloadedState: authenticatedState });
 
-    expect(await screen.findByText('Install the DataPit Chrome extension')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Install extension' }));
+    await user.click(await screen.findByRole('button', { name: 'Install extension' }));
 
     expect(screen.getByRole('dialog', { name: 'Install the DataPit extension' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Download the extension/ })).toHaveAttribute(
@@ -54,18 +45,17 @@ describe('InstallExtensionCard', () => {
     expect(screen.getByText('Waiting for the extension…')).toBeInTheDocument();
   });
 
-  it('flips to the connected state once the extension responds, and hides the banner behind it', async () => {
-    mockChromeRuntime({ installed: false });
+  it('flips to the connected state when the extension announces, and hides the banner behind it', async () => {
     const user = userEvent.setup();
     renderWithProviders(<InstallExtensionCard />, { preloadedState: authenticatedState });
     await user.click(await screen.findByRole('button', { name: 'Install extension' }));
     expect(screen.getByText('Waiting for the extension…')).toBeInTheDocument();
 
-    // The user finishes "Load unpacked" — the extension starts responding.
-    mockChromeRuntime({ installed: true, version: '0.1.0' });
-    await user.click(screen.getByRole('button', { name: 'Check again' }));
+    // The user finishes "Load unpacked" and reloads — the extension's
+    // announce.js marks the page and fires its ready event.
+    announceExtension('0.4.0');
 
-    expect(await screen.findByText('Extension connected — v0.1.0')).toBeInTheDocument();
+    expect(await screen.findByText('Extension connected — v0.4.0')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Create an API key' })).toHaveAttribute(
       'href',
       '/app/settings/api',
@@ -77,8 +67,15 @@ describe('InstallExtensionCard', () => {
     );
   });
 
+  it('never shows the banner when the extension is already present', async () => {
+    announceExtension('0.4.0'); // present before the component mounts
+    renderWithProviders(<InstallExtensionCard />, { preloadedState: authenticatedState });
+    // Give the hook its grace window; the banner must never appear.
+    await new Promise((r) => setTimeout(r, 500));
+    expect(screen.queryByText('Install the DataPit Chrome extension')).not.toBeInTheDocument();
+  });
+
   it('dismissing the banner hides it for the session (persisted)', async () => {
-    mockChromeRuntime({ installed: false });
     const user = userEvent.setup();
     renderWithProviders(<InstallExtensionCard />, { preloadedState: authenticatedState });
     await screen.findByText('Install the DataPit Chrome extension');

@@ -110,17 +110,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true; // keep the message channel open for the async response
 });
 
-// External messages — from the DataPit web app itself (see
-// manifest.json's externally_connectable, scoped to datapit.io / localhost
-// dev only). This is how the Dashboard's "Install extension" card detects
-// that installation actually succeeded, without polling anything. The only
-// thing exposed here is "am I installed, and what version" — nothing that
-// reads or changes extension state.
-chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
-  if (message?.type === 'ping') {
-    sendResponse({ installed: true, version: chrome.runtime.getManifest().version });
-  } else {
-    sendResponse({ installed: false });
-  }
-  return false;
-});
+// The DataPit web app detects the extension via announce.js (a content
+// script that marks the page), not by messaging this worker — so there is
+// no onMessageExternal handler and no externally_connectable in the
+// manifest. That's deliberate: it keeps the extension keyless (no pinned
+// id), which is what lets it upload to the Chrome Web Store cleanly.

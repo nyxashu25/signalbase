@@ -15,8 +15,9 @@ Plain Manifest V3, no build step — this folder loads as-is.
 
 Easiest path: log into DataPit and click **Install extension** on the
 Dashboard — it downloads this as a zip, walks through the same steps below
-in a modal, and detects the moment it connects (via `externally_connectable`
-+ the pinned id in `manifest.json` — see `EXTENSION_ID.md`).
+in a modal, and detects the moment it connects (via `announce.js`, a content
+script that marks the DataPit page — no fixed extension id needed; see
+`EXTENSION_ID.md`).
 
 Manually:
 
