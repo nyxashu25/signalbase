@@ -65,12 +65,31 @@
     return el?.textContent?.replace(/\s+/g, ' ').trim() || null;
   }
 
+  // The tab title is the most markup-rot-proof source LinkedIn has:
+  // "(3) Jane Doe | LinkedIn" when logged in, and often
+  // "Jane Doe - VP Engineering - Nova Systems | LinkedIn" — parse it as
+  // the fallback for anything the DOM selectors missed.
+  function parseTitleTag() {
+    let t = document.title || '';
+    t = t.replace(/^\(\d+\)\s*/, '').replace(/\s*[|·]\s*LinkedIn\s*$/i, '').trim();
+    if (!t || /^linkedin$/i.test(t)) return {};
+    const segments = t.split(/\s+-\s+/).map((s) => s.trim()).filter(Boolean);
+    return {
+      name: segments[0] || null,
+      jobTitle: segments[1] || null,
+      companyName: segments[2] || null,
+    };
+  }
+
   function parseProfile() {
-    const name = text(document.querySelector('main h1, h1'));
+    const fromTitle = parseTitleTag();
+
+    const name = text(document.querySelector('main h1, h1')) || fromTitle.name || null;
 
     const jobTitle =
       text(document.querySelector('main .text-body-medium.break-words')) ||
       text(document.querySelector('main [data-generated-suggestion-target]')) ||
+      fromTitle.jobTitle ||
       null;
 
     const location_ =
@@ -86,9 +105,10 @@
       const m = aria.match(/^Current company:?\s*([^.]+)/i);
       companyName = (m && m[1].trim()) || text(companyBtn) || null;
     }
+    companyName = companyName || fromTitle.companyName || null;
 
     const match = location.href.match(PROFILE_RE);
-    return {
+    const payload = {
       // Canonical /in/<slug> form — no query params or fragments.
       linkedinUrl: match ? `https://www.linkedin.com/in/${match[2]}` : location.href,
       name,
@@ -97,6 +117,12 @@
       companyName,
       domText: (document.body?.innerText || '').slice(0, DOM_TEXT_CAP),
     };
+    // Send only what was actually captured — a null field carries no
+    // information, and older backends rejected nulls outright.
+    for (const key of Object.keys(payload)) {
+      if (payload[key] == null || payload[key] === '') delete payload[key];
+    }
+    return payload;
   }
 
   // ---------------------------------------------------------------------

@@ -200,6 +200,31 @@ describe('extension: observe + reveal', () => {
     expect(await prisma.lostChild.count()).toBe(0);
   });
 
+  it('accepts null parsed fields — a parser miss must never 400 the observation', async () => {
+    // Regression: the content script reports unparsed fields as null (not
+    // absent). With .optional() instead of .nullish() every real-world
+    // observation where the parser missed a field was rejected 400 and
+    // nothing ever reached the missing-person queue.
+    const org = await registerOrgWithKey('Acme', 'owner@acme.test');
+    const res = await observe(org.apiKey, {
+      linkedinUrl: 'https://www.linkedin.com/in/unparsed-profile',
+      name: null,
+      jobTitle: null,
+      location: null,
+      companyName: null,
+      domText: 'the raw page text still made it through',
+    });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ status: 'not_found', queued: true });
+
+    const row = await prisma.missingPerson.findUnique({
+      where: { linkedinSlug: 'unparsed-profile' },
+    });
+    expect(row.status).toBe('PENDING');
+    expect(row.name).toBeNull();
+    expect(row.domText).toBe('the raw page text still made it through');
+  });
+
   it('rejects a non-profile URL with 422', async () => {
     const org = await registerOrgWithKey('Acme', 'owner@acme.test');
     const res = await observe(org.apiKey, {

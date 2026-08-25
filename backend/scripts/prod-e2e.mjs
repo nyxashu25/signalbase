@@ -250,9 +250,12 @@ try {
   const missSlug = `e2e-missing-${STAMP}`;
   const miss = await api('POST', '/extension/observe', {
     token: dpk,
-    body: { linkedinUrl: `https://www.linkedin.com/in/${missSlug}`, name: 'E2E Missing', jobTitle: 'Ghost', companyName: 'Nowhere Inc' },
+    // location/companyName deliberately null: the content script reports
+    // unparsed fields as null, and this exact shape once 400'd in prod
+    // (validator used .optional() instead of .nullish()).
+    body: { linkedinUrl: `https://www.linkedin.com/in/${missSlug}`, name: 'E2E Missing', jobTitle: 'Ghost', location: null, companyName: null },
   });
-  check('observe unknown -> queued (Pending peoples)', miss.status === 200 && miss.body.status === 'not_found' && miss.body.queued === true);
+  check('observe unknown (with null parsed fields) -> queued (Pending peoples)', miss.status === 200 && miss.body.status === 'not_found' && miss.body.queued === true, JSON.stringify(miss.body));
 
   const balBeforeExt = (await api('GET', '/billing/summary', { token: owner })).body.balance;
   const extReveal = await api('POST', `/extension/contacts/${extContact.id}/reveal`, { token: dpk });
