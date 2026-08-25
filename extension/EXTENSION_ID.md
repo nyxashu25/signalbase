@@ -17,6 +17,32 @@ to change if `key` in `manifest.json` changes.
 (e.g. by re-running the keygen below) changes the id and breaks detection
 for anyone who already has the extension installed, until they reinstall.
 
+## Two builds (`scripts/build-extension-zip.py`)
+
+The `key` field is valid for load-unpacked but the **Chrome Web Store
+rejects it** ("key field is not allowed in manifest"). So the build script
+emits two zips:
+
+- **`frontend/public/downloads/datapit-extension.zip`** — load-unpacked
+  build, `key` kept. This is the Dashboard download; it always loads with
+  the pinned id above, so the detector works. Served to end users.
+- **`extension-build/datapit-extension-webstore.zip`** — Web Store upload,
+  `key` (and `update_url`) stripped. **Not** served publicly (a keyless
+  build loaded unpacked would get a random id the detector can't see);
+  it exists only for the maintainer to upload to the store.
+
+## When published to the Web Store
+
+The store assigns the published extension **its own id** (not the pinned
+`cdfkak…` one). After the first publish:
+
+1. Copy the published id from the store dashboard / listing URL.
+2. Add it to `useExtensionInstalled.js` — detect **both** ids (the pinned
+   load-unpacked id AND the store id) so both install methods are
+   recognized during the transition.
+3. Point the Dashboard's primary "Add to Chrome" link at
+   `https://chromewebstore.google.com/detail/<published-id>`.
+
 ## The private key
 
 Generated once with:
