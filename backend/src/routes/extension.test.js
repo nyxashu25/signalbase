@@ -159,13 +159,15 @@ describe('extension: observe + reveal', () => {
     expect(row.reportCount).toBe(2);
   });
 
-  it('records a LostChild when the observed title differs, updating one PENDING row in place', async () => {
+  it('records a LostChild when the observed title genuinely differs, storing the CLEAN extracted title', async () => {
     const org = await registerOrgWithKey('Acme', 'owner@acme.test');
     const contact = await seedContact();
 
+    // A real LinkedIn headline: title + company + fluff. Only the title
+    // segment must be compared and stored, never the whole headline.
     const first = await observe(org.apiKey, {
       linkedinUrl: 'https://www.linkedin.com/in/jordan-bennett',
-      jobTitle: 'Chief Technology Officer',
+      jobTitle: 'Chief Technology Officer at Nova Systems | Speaker',
       companyName: 'Nova Systems',
     });
     expect(first.body.status).toBe('found');
@@ -173,7 +175,7 @@ describe('extension: observe + reveal', () => {
 
     const second = await observe(org.apiKey, {
       linkedinUrl: 'https://www.linkedin.com/in/jordan-bennett',
-      jobTitle: 'CTO & Co-founder',
+      jobTitle: 'CTO & Co-founder · Nova Systems',
     });
     expect(second.body.titleChangeReported).toBe(true);
 
@@ -182,21 +184,31 @@ describe('extension: observe + reveal', () => {
     expect(rows[0]).toMatchObject({
       contactId: contact.id,
       oldTitle: 'VP Engineering',
+      // Clean title only — no " at Nova Systems", no " | Speaker".
       newTitle: 'CTO & Co-founder',
       status: 'PENDING',
       reportCount: 2,
     });
   });
 
-  it('title comparison is case-insensitive — same title reports nothing', async () => {
+  it('does NOT flag a title change when the headline just dresses up the same title (false-positive guard)', async () => {
     const org = await registerOrgWithKey('Acme', 'owner@acme.test');
-    await seedContact();
+    await seedContact(); // stored title: "VP Engineering"
 
-    const res = await observe(org.apiKey, {
-      linkedinUrl: 'https://www.linkedin.com/in/jordan-bennett',
-      jobTitle: '  vp engineering ',
-    });
-    expect(res.body.titleChangeReported).toBe(false);
+    // Same title, wrapped in company + marketing — the exact shape the
+    // parser sends. Must be treated as unchanged.
+    for (const headline of [
+      'VP Engineering at Nova Systems',
+      'VP Engineering | Ex-Google | Angel investor',
+      '  vp  engineering ',
+      'VP Engineering — Nova Systems',
+    ]) {
+      const res = await observe(org.apiKey, {
+        linkedinUrl: 'https://www.linkedin.com/in/jordan-bennett',
+        jobTitle: headline,
+      });
+      expect(res.body.titleChangeReported, `for headline ${JSON.stringify(headline)}`).toBe(false);
+    }
     expect(await prisma.lostChild.count()).toBe(0);
   });
 

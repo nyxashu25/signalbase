@@ -240,12 +240,22 @@ try {
 
   const obs = await api('POST', '/extension/observe', {
     token: dpk,
-    body: { linkedinUrl: `https://www.linkedin.com/in/${extSlug}?utm_source=e2e`, jobTitle: 'Head of QA', domText: 'e2e page text' },
+    // A realistic LinkedIn headline (title + company + fluff). The backend
+    // must distil it to the clean title "Head of QA" for the comparison and
+    // for storage — proving title extraction against the live API.
+    body: { linkedinUrl: `https://www.linkedin.com/in/${extSlug}?utm_source=e2e`, jobTitle: 'Head of QA at BigCorp | ex-Google | speaker', companyName: 'BigCorp' },
   });
   check('observe known -> found, masked, cost 4', obs.status === 200 && obs.body.status === 'found' && obs.body.cost === 4 && obs.body.contact.revealed === false, JSON.stringify({ status: obs.body?.status, cost: obs.body?.cost }));
   check('observe reported the title change', obs.body.titleChangeReported === true);
   const lostChildRow = await prisma.lostChild.findFirst({ where: { contactId: extContact.id, status: 'PENDING' } });
-  check('LostChild row queued (Childs found)', Boolean(lostChildRow) && lostChildRow.newTitle === 'Head of QA');
+  check('LostChild stores the CLEAN extracted title (not the headline)', Boolean(lostChildRow) && lostChildRow.newTitle === 'Head of QA', lostChildRow?.newTitle);
+
+  // Same title dressed up as a headline must NOT re-flag (false-positive guard).
+  const sameTitle = await api('POST', '/extension/observe', {
+    token: dpk,
+    body: { linkedinUrl: `https://www.linkedin.com/in/${extSlug}`, jobTitle: 'QA Engineer at BigCorp | mentor' },
+  });
+  check('headline of the SAME stored title reports no change', sameTitle.body.titleChangeReported === false, String(sameTitle.body?.titleChangeReported));
 
   const missSlug = `e2e-missing-${STAMP}`;
   const miss = await api('POST', '/extension/observe', {

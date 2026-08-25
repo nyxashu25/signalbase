@@ -14,6 +14,31 @@ export const DOM_TEXT_MAX_CHARS = 200_000;
 const clip = (s) => (typeof s === 'string' ? s.slice(0, DOM_TEXT_MAX_CHARS) : null);
 const clean = (s) => (typeof s === 'string' && s.trim() ? s.trim() : null);
 
+// The extension sends LinkedIn's *headline*, which is freeform and usually
+// wraps the real job title in company + marketing fluff:
+//   "Head of Growth at Skyline Labs | ex-Google | Speaker"
+//   "Full Stack Developer · React · Node"
+//   "VP Engineering — Acme Corp"
+// Our database stores a *clean* title ("Head of Growth"). Comparing the raw
+// headline against the clean title would flag EVERY found contact as a
+// title change (and Apply would then overwrite the clean title with the
+// fluff). So distil the headline down to its leading title segment before
+// comparing or storing.
+export function extractJobTitle(headline) {
+  const h = clean(headline);
+  if (!h) return null;
+  let t = h.split(/\s+(?:at|@)\s+/i)[0]; // "Title at/@  Company"
+  t = t.split(/\s*[|·•]\s*/)[0]; // "Title | x", "Title · x", "Title • x"
+  t = t.split(/\s+[-–—]\s+/)[0]; // "Title - x" (spaced hyphen/dash only — keeps "Co-founder")
+  return clean(t);
+}
+
+// Compare titles by meaning, not formatting: lowercase, punctuation and
+// spacing collapsed. "VP of Sales" and "vp of sales." read equal.
+function normalizeTitle(s) {
+  return (s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
 /**
  * The extension's one lookup call. Classifies a LinkedIn profile visit into
  * exactly one of three outcomes:
@@ -125,12 +150,17 @@ async function recordMissingPerson(auth, payload, slug) {
 // re-observation; once resolved (APPLIED/DISMISSED) a later sighting may
 // open a fresh row.
 async function maybeRecordTitleChange(auth, payload, contact, slug) {
-  const observedTitle = clean(payload.jobTitle);
+  // Distil the headline to a clean title, then compare title-to-title by
+  // meaning. Only a genuine difference is a "lost child" — a headline that
+  // merely dresses up the same title is not.
+  const observedTitle = extractJobTitle(payload.jobTitle);
   const ourTitle = clean(contact.title);
   if (!observedTitle || !ourTitle) return false;
-  if (observedTitle.toLowerCase() === ourTitle.toLowerCase()) return false;
+  if (normalizeTitle(observedTitle) === normalizeTitle(ourTitle)) return false;
 
   const observed = {
+    // Store the CLEAN extracted title — this is what Apply writes onto the
+    // shared Contact, so it must never carry headline fluff.
     newTitle: observedTitle,
     observedCompanyName: clean(payload.companyName),
     domText: clip(payload.domText),
