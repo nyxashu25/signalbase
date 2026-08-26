@@ -1,37 +1,13 @@
 import { useState } from 'react';
-import { Download, Copy, Check, CheckCircle2, Loader2, KeyRound } from 'lucide-react';
+import { CheckCircle2, Loader2, KeyRound, Puzzle } from 'lucide-react';
 import { Banner } from '../ui/Banner.jsx';
 import { Modal } from '../ui/Modal.jsx';
 import { Button } from '../ui/Button.jsx';
-import { useExtensionInstalled, EXTENSION_DOWNLOAD_URL } from '../../hooks/useExtensionInstalled.js';
-
-const ZIP_URL = EXTENSION_DOWNLOAD_URL;
-
-function CopyableCommand({ value }) {
-  const [copied, setCopied] = useState(false);
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1200);
-    } catch {
-      // clipboard unavailable — the text is right there to select
-    }
-  }
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-md bg-surface-sunken px-2 py-1">
-      <code className="font-mono text-xs text-text">{value}</code>
-      <button
-        type="button"
-        onClick={copy}
-        aria-label={`Copy ${value}`}
-        className="rounded-sm p-0.5 text-text-muted hover:text-text"
-      >
-        {copied ? <Check className="h-3 w-3" aria-hidden="true" /> : <Copy className="h-3 w-3" aria-hidden="true" />}
-      </button>
-    </span>
-  );
-}
+import {
+  useExtensionInstalled,
+  EXTENSION_DOWNLOAD_URL,
+  EXTENSION_STORE_URL,
+} from '../../hooks/useExtensionInstalled.js';
 
 function Step({ n, children }) {
   return (
@@ -46,12 +22,11 @@ function Step({ n, children }) {
 
 /**
  * Dashboard promo (banner) + install walkthrough (modal) for the Chrome
- * extension. Chrome has no API for a webpage to silently install an
- * unpacked extension — the closest thing to "one click" is: download the
- * zip, walk through chrome://extensions -> Load unpacked, and detect the
- * moment it connects (useExtensionInstalled, via the extension's pinned id
- * and externally_connectable). Not on the Chrome Web Store yet, so this is
- * genuinely the fastest path today; see extension/README.md.
+ * extension. Now that it's on the Chrome Web Store, the primary path is a
+ * one-click "Add to Chrome" that opens the listing; the manual .zip stays as
+ * a fallback (other Chromium browsers / dev). Detection is id-independent
+ * (announce.js marks the page — see useExtensionInstalled), so it flips to
+ * connected the moment the user returns after installing, store id and all.
  */
 export function InstallExtensionCard() {
   const [open, setOpen] = useState(false);
@@ -70,7 +45,7 @@ export function InstallExtensionCard() {
         <Banner
           tone="info"
           title="Install the DataPit Chrome extension"
-          action="Install extension"
+          action="Add to Chrome"
           onAction={() => setOpen(true)}
           dismissible
           dismissKey="install-extension"
@@ -88,21 +63,23 @@ export function InstallExtensionCard() {
           <div className="flex flex-col gap-4">
             <ol className="flex flex-col gap-3">
               <Step n={1}>
-                <Button variant="secondary" size="sm" icon={Download} href={ZIP_URL} download>
-                  Download the extension
+                <Button
+                  variant="primary"
+                  size="sm"
+                  icon={Puzzle}
+                  href={EXTENSION_STORE_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Add to Chrome
                 </Button>{' '}
-                and unzip it.
+                — opens the Chrome Web Store in a new tab.
               </Step>
               <Step n={2}>
-                Open a new tab, go to <CopyableCommand value="chrome://extensions" /> (Chrome blocks
-                links to this page, so paste it in yourself).
+                On the store page, click <strong className="text-text">Add to Chrome</strong>, then
+                confirm.
               </Step>
-              <Step n={3}>Turn on <strong className="text-text">Developer mode</strong> (top right).</Step>
-              <Step n={4}>
-                Click <strong className="text-text">Load unpacked</strong> and select the unzipped{' '}
-                <code className="rounded bg-surface-sunken px-1 py-0.5 font-mono text-xs">datapit-extension</code>{' '}
-                folder.
-              </Step>
+              <Step n={3}>Come back to this tab — we'll detect it automatically.</Step>
             </ol>
 
             <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-surface px-3 py-2.5">
@@ -115,7 +92,11 @@ export function InstallExtensionCard() {
               </Button>
             </div>
             <p className="text-xs text-text-muted">
-              This updates automatically the moment Chrome loads it — no need to reload this page.
+              Not on Chrome, or installing manually?{' '}
+              <a className="font-semibold text-primary hover:underline" href={EXTENSION_DOWNLOAD_URL} download>
+                Download the .zip
+              </a>{' '}
+              and load it unpacked from <code className="font-mono">chrome://extensions</code>.
             </p>
           </div>
         )}

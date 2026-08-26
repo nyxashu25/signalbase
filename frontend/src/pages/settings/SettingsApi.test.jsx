@@ -24,13 +24,16 @@ describe('SettingsApi', () => {
     expect(screen.getByText('Never')).toBeInTheDocument();
   });
 
-  it('always offers the extension download (the permanent home for updates)', async () => {
+  it('always offers Add to Chrome (store) plus the manual .zip fallback', async () => {
     mockFetchRoutes([{ url: '/api-keys', method: 'GET', respond: { body: { keys: [] } } }]);
     renderWithProviders(<SettingsApi />, { preloadedState: authenticatedState });
 
-    const download = await screen.findByRole('link', { name: /Download extension · v/ });
-    expect(download).toHaveAttribute('href', '/downloads/datapit-extension.zip');
-    expect(download).toHaveAttribute('download');
+    const store = await screen.findByRole('link', { name: 'Add to Chrome' });
+    expect(store).toHaveAttribute('href', expect.stringContaining('chromewebstore.google.com'));
+
+    const zip = screen.getByRole('link', { name: /Download .zip/ });
+    expect(zip).toHaveAttribute('href', '/downloads/datapit-extension.zip');
+    expect(zip).toHaveAttribute('download');
   });
 
   it('creates a key and surfaces the full secret exactly once', async () => {

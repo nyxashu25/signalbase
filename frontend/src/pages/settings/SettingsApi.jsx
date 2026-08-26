@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { KeyRound, Plus, X, Copy, Check, Download, CheckCircle2 } from 'lucide-react';
+import { KeyRound, Plus, X, Copy, Check, Download, CheckCircle2, Puzzle } from 'lucide-react';
 import {
   useExtensionInstalled,
   EXTENSION_VERSION,
   EXTENSION_DOWNLOAD_URL,
+  EXTENSION_STORE_URL,
 } from '../../hooks/useExtensionInstalled.js';
 import {
   useListApiKeysQuery,
@@ -208,9 +209,14 @@ function ExtensionSection() {
       title="Chrome extension"
       description="Look up any LinkedIn profile against DataPit as you browse."
       footer={
-        <Button variant="primary" icon={Download} href={EXTENSION_DOWNLOAD_URL} download>
-          {installed ? 'Download update' : 'Download extension'} · v{EXTENSION_VERSION}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <a className="text-xs font-semibold text-text-muted hover:text-text" href={EXTENSION_DOWNLOAD_URL} download>
+            Download .zip (manual)
+          </a>
+          <Button variant="primary" icon={Puzzle} href={EXTENSION_STORE_URL} target="_blank" rel="noreferrer">
+            Add to Chrome
+          </Button>
+        </div>
       }
     >
       {installed && (
@@ -224,8 +230,9 @@ function ExtensionSection() {
           <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" aria-hidden="true" />
           {outdated ? (
             <span>
-              Connected — but you're on <strong>v{version}</strong>. Download v{EXTENSION_VERSION} below and reload
-              it in <code className="rounded bg-surface-sunken px-1 py-0.5 font-mono text-xs">chrome://extensions</code>.
+              Connected — but you're on <strong>v{version}</strong> (latest is v{EXTENSION_VERSION}). Chrome updates
+              the Web Store version automatically within a few hours; if you installed manually, download the .zip
+              and reload it in <code className="rounded bg-surface-sunken px-1 py-0.5 font-mono text-xs">chrome://extensions</code>.
             </span>
           ) : (
             <span>
@@ -238,11 +245,7 @@ function ExtensionSection() {
       <ol className="list-decimal space-y-1.5 pl-5 text-sm text-text-muted">
         <li>Create an API key above and copy it.</li>
         <li>
-          Download the extension (button below) and unzip it. In{' '}
-          <code className="rounded bg-surface-sunken px-1 py-0.5 font-mono text-xs">chrome://extensions</code>, turn
-          on <strong className="text-text">Developer mode</strong>, then <strong className="text-text">Load unpacked</strong>{' '}
-          and pick the <code className="rounded bg-surface-sunken px-1 py-0.5 font-mono text-xs">datapit-extension</code> folder.
-          (To update later: download again, unzip over the old folder, and hit <strong className="text-text">↻ reload</strong> on the card.)
+          Click <strong className="text-text">Add to Chrome</strong> (below) to install from the Chrome Web Store.
         </li>
         <li>Click the extension icon, paste the key, and open any LinkedIn profile.</li>
       </ol>

@@ -30,28 +30,32 @@ describe('InstallExtensionCard', () => {
     expect(await screen.findByText('Install the DataPit Chrome extension')).toBeInTheDocument();
   });
 
-  it('walks through the steps in the modal', async () => {
+  it('walks through the steps in the modal — Add to Chrome primary, .zip fallback', async () => {
     const user = userEvent.setup();
     renderWithProviders(<InstallExtensionCard />, { preloadedState: authenticatedState });
 
-    await user.click(await screen.findByRole('button', { name: 'Install extension' }));
+    await user.click(await screen.findByRole('button', { name: 'Add to Chrome' }));
 
     expect(screen.getByRole('dialog', { name: 'Install the DataPit extension' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Download the extension/ })).toHaveAttribute(
+    // Primary: the store link.
+    const store = screen.getByRole('link', { name: 'Add to Chrome' });
+    expect(store).toHaveAttribute('href', expect.stringContaining('chromewebstore.google.com'));
+    expect(store).toHaveAttribute('target', '_blank');
+    // Fallback: the manual .zip.
+    expect(screen.getByRole('link', { name: /Download the .zip/ })).toHaveAttribute(
       'href',
       '/downloads/datapit-extension.zip',
     );
-    expect(screen.getByText('chrome://extensions')).toBeInTheDocument();
     expect(screen.getByText('Waiting for the extension…')).toBeInTheDocument();
   });
 
   it('flips to the connected state when the extension announces, and hides the banner behind it', async () => {
     const user = userEvent.setup();
     renderWithProviders(<InstallExtensionCard />, { preloadedState: authenticatedState });
-    await user.click(await screen.findByRole('button', { name: 'Install extension' }));
+    await user.click(await screen.findByRole('button', { name: 'Add to Chrome' }));
     expect(screen.getByText('Waiting for the extension…')).toBeInTheDocument();
 
-    // The user finishes "Load unpacked" and reloads — the extension's
+    // The user installs from the store and returns — the extension's
     // announce.js marks the page and fires its ready event.
     announceExtension('0.4.0');
 

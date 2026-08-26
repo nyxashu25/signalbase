@@ -7,6 +7,12 @@ import { useCallback, useEffect, useState } from 'react';
 export const EXTENSION_VERSION = '0.4.0';
 export const EXTENSION_DOWNLOAD_URL = '/downloads/datapit-extension.zip';
 
+// Live Chrome Web Store listing — the one-click "Add to Chrome" path for
+// end users. The .zip download above stays as a manual fallback (other
+// Chromium browsers, or loading unpacked for development).
+export const EXTENSION_STORE_URL =
+  'https://chromewebstore.google.com/detail/datapit-%E2%80%94-linkedin-lookup/mgkohbpdpfgdfnlbipfkhnjadbncdgnj';
+
 // How the extension announces itself: its content script (announce.js) sets
 // this attribute on <html> and fires this event. Detection is therefore
 // id-independent — it works however the extension was installed (unpacked or
