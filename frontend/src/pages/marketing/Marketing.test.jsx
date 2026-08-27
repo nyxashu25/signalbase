@@ -21,17 +21,17 @@ describe('marketing: Home', () => {
 });
 
 describe('marketing: Pricing', () => {
-  it('shows all four tiers with whole-plan monthly prices', () => {
+  it('shows all four tiers with per-block monthly prices', () => {
     mockFetchRoutes([]);
     renderWithProviders(<Pricing />);
     for (const name of ['Free', 'Basic', 'Professional', 'Organization']) {
       expect(screen.getByRole('heading', { name })).toBeInTheDocument();
     }
-    // Whole-plan price = per-seat rate x the plan's fixed seat count.
-    expect(screen.getAllByText('$290').length).toBeGreaterThan(0); // Basic: 29 x 10
-    expect(screen.getAllByText('$4455').length).toBeGreaterThan(0); // Organization: 99 x 45
-    // Each tier states its included seat count.
-    expect(screen.getAllByText(/45 seats/).length).toBeGreaterThan(0);
+    // Per-block prices: Basic $29, Organization $99.
+    expect(screen.getAllByText('$29').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('$99').length).toBeGreaterThan(0);
+    // Each paid tier states its block composition.
+    expect(screen.getAllByText(/14 paid \+ 5 free seats/).length).toBeGreaterThan(0);
   });
 
   it('recomputes prices when the billing interval changes (annual = 12 months − 20%)', async () => {
@@ -40,12 +40,12 @@ describe('marketing: Pricing', () => {
     renderWithProviders(<Pricing />);
 
     await user.click(screen.getByRole('button', { name: /Annually/ }));
-    // 29 * 12 * 0.8 * 10 seats — the same math the backend charges.
-    await waitFor(() => expect(screen.getAllByText('$2784').length).toBeGreaterThan(0));
-    expect(screen.getAllByText('$14160').length).toBeGreaterThan(0); // 59 * 12 * 0.8 * 25
+    // 29 * 12 * 0.8 per block — the same math the backend charges.
+    await waitFor(() => expect(screen.getAllByText('$278.40').length).toBeGreaterThan(0));
+    expect(screen.getAllByText('$566.40').length).toBeGreaterThan(0); // 59 * 12 * 0.8
 
     await user.click(screen.getByRole('button', { name: /Quarterly/ }));
-    await waitFor(() => expect(screen.getAllByText('$783').length).toBeGreaterThan(0)); // 29 * 3 * 0.9 * 10
+    await waitFor(() => expect(screen.getAllByText('$78.30').length).toBeGreaterThan(0)); // 29 * 3 * 0.9
   });
 });
 

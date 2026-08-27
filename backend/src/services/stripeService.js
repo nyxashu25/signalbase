@@ -9,13 +9,14 @@ import { getDecryptedStripeCredentials } from './paymentSettingsService.js';
 import * as notificationService from './notificationService.js';
 import * as creditService from './creditService.js';
 import {
-  PLAN_MONTHLY_CREDITS,
-  PLAN_PRICE_USD_CENTS,
+  BLOCK_CONFIG,
+  MAX_BLOCKS,
   PLAN_ORDER,
   INTERVAL_MONTHS,
-  planPriceForInterval,
-  includedSeats,
+  blockPriceForInterval,
 } from '../config/planConfig.js';
+import * as seatService from './seatService.js';
+import * as creditGrantService from './creditGrantService.js';
 
 /** Adds calendar months (not a flat day count) — correct across variable month lengths. */
 function addMonths(date, months) {
@@ -119,11 +120,13 @@ async function updateSubscriptionState(subscription) {
 }
 
 // Sets the plan and links the subscription — deliberately does NOT grant
-// credits here. Stripe always generates an invoice for a new subscription
-// (even a $0 one) and fires invoice.paid for it, same as every renewal, so
-// granting only happens in grantMonthlyCredits below. Granting in both
-// places would double-credit the first cycle.
-async function activatePlanSubscription(session) {
+// monthly credits here. Stripe always generates an invoice for a new
+// subscription (even a $0 one) and fires invoice.paid for it, same as every
+// renewal, so the per-member distribution only happens in
+// grantMonthlyCredits below. What DOES happen here is coverage activation:
+// pending members promote into the newly purchased seats and receive their
+// one-time welcome gift (idempotent — welcomeGiftAt guards + claimEvent).
+async function activatePlanSubscription(session, makeClient = (key) => new Stripe(key)) {
   const { workspaceId, plan, interval } = session.metadata ?? {};
   if (!workspaceId || !plan) {
     logger.error(
@@ -132,29 +135,55 @@ async function activatePlanSubscription(session) {
     );
     return;
   }
-  // Seats are fixed by the plan (see planConfig.PLAN_INCLUDED_SEATS) — the
-  // plan is the source of truth, not the session metadata.
-  const seats = includedSeats(plan);
+  const blocks = Math.max(1, Number(session.metadata?.blocks) || 1);
+
+  const previous = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    select: { stripeSubscriptionId: true },
+  });
 
   await prisma.workspace.update({
     where: { id: workspaceId },
     data: {
       plan,
-      seats,
-      // Plan credits x the plan's included seats.
-      monthlyCreditGrant: PLAN_MONTHLY_CREDITS[plan] * seats,
+      blocks,
       stripeCustomerId: session.customer,
       stripeSubscriptionId: session.subscription,
       billingInterval: interval || 'MONTH',
       // Starts (or restarts) the minimum commitment — every paid checkout
       // is a fresh subscription, whether it's a first purchase, an
-      // upgrade, or a downgrade taken after an earlier lock expired.
+      // upgrade, or adding blocks.
       planActivatedAt: new Date(),
     },
   });
 
+  // Every checkout is a FRESH subscription — cancel the one it replaces or
+  // the customer would be double-billed from here on.
+  if (previous?.stripeSubscriptionId && previous.stripeSubscriptionId !== session.subscription) {
+    try {
+      const credentials = await getDecryptedStripeCredentials();
+      if (credentials?.secretKey) {
+        const stripe = makeClient(credentials.secretKey);
+        await stripe.subscriptions.cancel(previous.stripeSubscriptionId);
+        logger.info(
+          { workspaceId, cancelled: previous.stripeSubscriptionId },
+          'Cancelled the replaced Stripe subscription',
+        );
+      }
+    } catch (err) {
+      // Never fail the activation over this — flag it for support instead.
+      logger.error(
+        { workspaceId, subscriptionId: previous.stripeSubscriptionId, err: err.message },
+        'Could not cancel the replaced Stripe subscription',
+      );
+    }
+  }
+
+  // Promote pending members into the purchased seats + pay welcome gifts.
+  const { activated } = await seatService.activateCoverage(workspaceId);
+
   logger.info(
-    { workspaceId, plan, interval, seats },
+    { workspaceId, plan, interval, blocks, activated },
     'Workspace plan activated via Stripe subscription checkout',
   );
 
@@ -177,7 +206,7 @@ async function grantMonthlyCredits(invoice) {
 
   const workspace = await prisma.workspace.findFirst({
     where: { stripeSubscriptionId: invoice.subscription },
-    select: { id: true, monthlyCreditGrant: true, billingInterval: true },
+    select: { id: true, billingInterval: true },
   });
   if (!workspace) {
     logger.warn(
@@ -188,29 +217,22 @@ async function grantMonthlyCredits(invoice) {
   }
 
   // A quarterly/annual invoice covers that many months of usage in one
-  // charge — grant that many months' worth of credits, not just one, or a
-  // quarterly subscriber would get 1/3 the credits of a monthly one for
-  // the same money.
-  const amount = workspace.monthlyCreditGrant * INTERVAL_MONTHS[workspace.billingInterval];
+  // charge — distribute that many months' worth of credits, not just one,
+  // or a quarterly subscriber would get 1/3 the credits of a monthly one
+  // for the same money.
+  const months = INTERVAL_MONTHS[workspace.billingInterval];
 
-  // Transitional (until the block-billing grant engine distributes per
-  // member): the plan grant lands on the OWNER's personal balance.
+  // Per-member distribution: paid seats at the plan rate, free seats at the
+  // flat rate, plus the owner bonus — see creditGrantService.
+  const { totalCredits } = await creditGrantService.distributeWorkspaceGrant(
+    workspace.id,
+    months,
+  );
+
   const owner = await getWorkspaceOwnerEmail(workspace.id);
-  if (!owner) {
-    logger.warn({ workspaceId: workspace.id }, 'No owner found — skipping monthly credit grant');
-    return;
+  if (owner && totalCredits > 0) {
+    await notificationService.sendMonthlyCreditsRenewed(owner, totalCredits);
   }
-
-  await creditService.grantCredits({
-    userId: owner.id,
-    workspaceId: workspace.id,
-    amount,
-    reason: 'MONTHLY_GRANT',
-  });
-
-  logger.info({ workspaceId: workspace.id, userId: owner.id, amount }, 'Monthly plan credits granted');
-
-  await notificationService.sendMonthlyCreditsRenewed(owner, amount);
 }
 
 export async function handleEvent(event) {
@@ -322,19 +344,20 @@ const STRIPE_RECURRING = {
 const INTERVAL_LABEL = { MONTH: 'monthly', QUARTER: 'quarterly', YEAR: 'annual' };
 
 export async function createPlanSubscriptionSession(
-  { workspaceId, plan, interval = 'MONTH' },
+  { workspaceId, plan, interval = 'MONTH', blocks = 1 },
   makeClient = (key) => new Stripe(key),
 ) {
-  if (PLAN_PRICE_USD_CENTS[plan] === undefined) {
+  if (BLOCK_CONFIG[plan] === undefined) {
     throw new ApiError(400, 'Unknown plan');
   }
   if (!STRIPE_RECURRING[interval]) {
     throw new ApiError(400, 'Unknown billing interval');
   }
-  // Fixed by the plan — the buyer doesn't choose a seat count. Total billed is
-  // the per-seat rate x the plan's included seats (Stripe quantity below).
-  const seats = includedSeats(plan);
-  const amountMinor = planPriceForInterval(plan, interval);
+  if (!Number.isInteger(blocks) || blocks < 1 || blocks > MAX_BLOCKS) {
+    throw new ApiError(400, `Blocks must be between 1 and ${MAX_BLOCKS}`);
+  }
+  // Per-block price at this interval; Stripe multiplies by quantity=blocks.
+  const amountMinor = blockPriceForInterval(plan, interval);
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
@@ -358,13 +381,14 @@ export async function createPlanSubscriptionSession(
   if (!credentials?.secretKey) {
     const sessionId = `cs_simulated_plan_${workspaceId}_${Date.now()}`;
     logger.info(
-      { workspaceId, plan, interval, seats, amountMinor, sessionId },
+      { workspaceId, plan, interval, blocks, amountMinor, sessionId },
       'Stripe plan subscription checkout simulated (no key configured in admin settings)',
     );
     return { sessionId, url: `https://billing.simulated.local/checkout/${sessionId}` };
   }
 
   const stripe = makeClient(credentials.secretKey);
+  const config = BLOCK_CONFIG[plan];
   const session = await stripe.checkout.sessions.create({
     mode: 'subscription',
     payment_method_types: ['card'],
@@ -372,17 +396,19 @@ export async function createPlanSubscriptionSession(
       {
         price_data: {
           currency: 'usd',
-          product_data: { name: `DataPit ${plan} plan (${INTERVAL_LABEL[interval]})` },
+          product_data: {
+            name: `DataPit ${plan} — seat block (${config.paidSeats} paid + ${config.freeSeats} free seats, ${INTERVAL_LABEL[interval]})`,
+          },
           unit_amount: amountMinor,
           recurring: STRIPE_RECURRING[interval],
         },
-        // Per-seat pricing: the checkout charges unit price x seats.
-        quantity: seats,
+        // Block pricing: the checkout charges the per-block price x blocks.
+        quantity: blocks,
       },
     ],
     success_url: `${env.CORS_ORIGIN}/app/billing?checkout=success`,
     cancel_url: `${env.CORS_ORIGIN}/app/billing?checkout=cancelled`,
-    metadata: { workspaceId, plan, interval, seats: String(seats) },
+    metadata: { workspaceId, plan, interval, blocks: String(blocks) },
   });
 
   return { sessionId: session.id, url: session.url };

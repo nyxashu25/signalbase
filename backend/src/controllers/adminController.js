@@ -37,12 +37,13 @@ export async function addCredits(req, res) {
 }
 
 export async function updateUserPlan(req, res) {
-  // (seats is optional — omitted keeps the workspace's current count)
+  // (blocks is optional — omitted keeps the workspace's current count, or 1
+  // when granting a paid plan to a workspace that had none)
   const result = await adminService.updateUserPlan(
     req.params.userId,
     req.body.plan,
     req.superAdmin.adminId,
-    req.body.seats,
+    req.body.blocks,
   );
   res.json(result);
 }

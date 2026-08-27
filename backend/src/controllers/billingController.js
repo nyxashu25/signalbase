@@ -1,5 +1,6 @@
 import * as stripeService from '../services/stripeService.js';
 import * as creditService from '../services/creditService.js';
+import * as seatService from '../services/seatService.js';
 import {
   CREDIT_PACKAGES,
   CUSTOM_CREDITS_MIN,
@@ -33,8 +34,8 @@ export async function getSummary(req, res) {
 
   // Balance and usage are PERSONAL since the per-user credit migration —
   // the caller sees their own balance and their own spend, not the
-  // workspace's aggregate. Plan/seats stay workspace-level.
-  const [balance, workspace, usedAgg] = await Promise.all([
+  // workspace's aggregate. Plan/blocks/seat coverage stay workspace-level.
+  const [balance, workspace, usedAgg, overview] = await Promise.all([
     creditService.getBalance(userId),
     prisma.workspace.findUnique({
       where: { id: workspaceId },
@@ -51,6 +52,7 @@ export async function getSummary(req, res) {
       where: { userId, delta: { lt: 0 } },
       _sum: { delta: true },
     }),
+    seatService.seatOverview(workspaceId),
   ]);
 
   res.json({
@@ -58,6 +60,13 @@ export async function getSummary(req, res) {
     plan: workspace.plan,
     seats: workspace.seats,
     blocks: workspace.blocks,
+    capacity: overview.capacity,
+    assigned: overview.assigned,
+    memberCount: overview.memberCount,
+    suggestedBlocks: seatService.suggestedBlocks(
+      workspace.plan === 'FREE' ? 'BASIC' : workspace.plan,
+      overview.memberCount,
+    ),
     monthlyCreditGrant: workspace.monthlyCreditGrant,
     creditsUsed: Math.abs(usedAgg._sum.delta ?? 0),
     planActivatedAt: workspace.planActivatedAt,
@@ -124,12 +133,13 @@ export async function createCheckoutSession(req, res) {
 
 export async function createPlanSubscriptionSession(req, res) {
   const { workspaceId } = req.auth;
-  const { plan, interval } = req.body;
+  const { plan, interval, blocks } = req.body;
 
   const session = await stripeService.createPlanSubscriptionSession({
     workspaceId,
     plan,
     interval,
+    blocks,
   });
   res.status(201).json({ provider: 'stripe', ...session });
 }

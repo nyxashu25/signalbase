@@ -142,7 +142,7 @@ describe('admin data routes', () => {
     expect(ledgerEntry.amountCents).toBeNull();
   });
 
-  it('changes a workspace plan and its monthly credit grant, without touching the balance', async () => {
+  it('changes a workspace plan to a block allotment and activates the owner into a paid seat', async () => {
     const token = await loginAsAdmin();
     const { user, workspace } = await createTenantUser();
     const balanceBefore = await request(app)
@@ -156,24 +156,32 @@ describe('admin data routes', () => {
       .send({ plan: 'PROFESSIONAL' });
 
     expect(res.status).toBe(200);
-    // No explicit seats -> defaults to the plan's allotment (Professional = 25),
-    // so the grant is 1200 x 25.
+    // No explicit blocks -> a paid override grants one block (5 paid + 3 free).
     expect(res.body).toEqual({
       workspaceId: workspace.id,
       plan: 'PROFESSIONAL',
-      seats: 25,
-      monthlyCreditGrant: 30000,
+      blocks: 1,
+      capacity: { paid: 5, free: 3 },
     });
 
     const updated = await prisma.workspace.findUnique({ where: { id: workspace.id } });
     expect(updated.plan).toBe('PROFESSIONAL');
-    expect(updated.monthlyCreditGrant).toBe(30000);
+    expect(updated.blocks).toBe(1);
+
+    // Coverage activation promoted the (previously PENDING) owner into a
+    // PAID seat and paid the one-time welcome gift.
+    const membership = await prisma.membership.findFirst({
+      where: { workspaceId: workspace.id, userId: user.id },
+    });
+    expect(membership.seatType).toBe('PAID');
+    expect(membership.welcomeGiftAt).not.toBeNull();
 
     const detail = await request(app)
       .get(`/api/v1/admin/users/${user.id}`)
       .set('Authorization', `Bearer ${token}`);
     expect(detail.body.workspace.plan).toBe('PROFESSIONAL');
-    expect(detail.body.balance).toBe(balanceBefore); // no credits granted just from switching plans
+    // Only the welcome gift moved — no monthly grant fires from a plan switch.
+    expect(detail.body.balance).toBe(balanceBefore + 1500);
   });
 
   it('rejects an unknown plan value', async () => {
@@ -422,32 +430,32 @@ describe('audit log coverage for settings, imports and promotions', () => {
   });
 });
 
-describe('admin seats override', () => {
+describe('admin blocks override', () => {
   beforeEach(async () => {
     await resetDb();
     await resetRedis();
   });
 
-  it('setting seats scales the monthly grant and lands in the audit log', async () => {
+  it('setting blocks scales the seat capacity and lands in the audit log', async () => {
     const token = await loginAsAdmin();
     const { user, workspace } = await createTenantUser();
 
     const res = await request(app)
       .put(`/api/v1/admin/users/${user.id}/plan`)
       .set('Authorization', `Bearer ${token}`)
-      .send({ plan: 'BASIC', seats: 4 });
+      .send({ plan: 'BASIC', blocks: 4 });
     expect(res.status).toBe(200);
     expect(res.body).toEqual({
       workspaceId: workspace.id,
       plan: 'BASIC',
-      seats: 4,
-      monthlyCreditGrant: 2000, // 500/seat x 4
+      blocks: 4,
+      capacity: { paid: 20, free: 4 }, // 4 blocks x (5 paid + 1 free)
     });
 
     const log = await request(app)
       .get('/api/v1/admin/audit-log')
       .set('Authorization', `Bearer ${token}`);
     const entry = log.body.results.find((e) => e.action === 'UPDATE_PLAN');
-    expect(entry.metadata).toMatchObject({ to: 'BASIC', fromSeats: 1, toSeats: 4 });
+    expect(entry.metadata).toMatchObject({ to: 'BASIC', fromBlocks: 0, toBlocks: 4 });
   });
 });

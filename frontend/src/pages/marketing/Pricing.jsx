@@ -84,7 +84,7 @@ export function Pricing() {
             className: 'sm:ml-[6vw]',
           },
         ]}
-        sub="Every plan runs on the same credit ledger. Each tier bundles a fixed team size, and you spend credits only on the contacts you actually reveal."
+        sub="Paid plans come in seat blocks — each block bundles paid seats plus bonus free seats, and every teammate earns their own monthly credits. Buy as many blocks as your team needs."
       >
         <div className="inline-flex rounded-md border border-white/15 bg-white/5 p-0.5">
           {BILLING_INTERVALS.map((i) => (
@@ -112,7 +112,9 @@ export function Pricing() {
           {PLANS.map((plan) => {
             const displayPrice =
               plan.key === 'FREE' ? 0 : planTotalForInterval(plan.key, billingIntervalChoice);
-            const unit = plan.unit && `${cadence} · ${plan.seats} seats`;
+            const unit =
+              plan.block &&
+              `block/${cadence} · ${plan.block.paidSeats} paid + ${plan.block.freeSeats} free seats`;
 
             return (
               <StaggerItem
@@ -139,7 +141,7 @@ export function Pricing() {
                   />
                   {unit && <span className="text-sm text-text-muted">/{unit}</span>}
                 </div>
-                {!plan.unit && <div className="mt-1 text-sm text-text-muted">forever</div>}
+                {!plan.block && <div className="mt-1 text-sm text-text-muted">forever</div>}
 
                 <div className="mt-3 inline-flex w-fit rounded-full bg-surface px-3 py-1 text-xs font-bold text-text-muted">
                   {plan.credits}
@@ -169,9 +171,10 @@ export function Pricing() {
           })}
         </Stagger>
         <p className="mt-8 text-center text-xs text-text-muted">
-          Each paid plan includes a fixed number of seats — the price shown is for the whole plan.
-          Quarterly and annual billing come with a 10% and 20% discount — pick your cadence above or
-          at checkout.
+          Prices are per seat block — buy as many blocks as your team needs, with no seat limit.
+          Free seats never cost anything and still earn 1,500 credits a month. Every newly covered
+          teammate gets a one-time 1,500-credit welcome gift. Quarterly and annual billing come
+          with a 10% and 20% discount.
         </p>
       </section>
 

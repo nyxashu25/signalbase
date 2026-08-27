@@ -3,7 +3,8 @@ import * as creditService from './creditService.js';
 import { getBalance } from './creditService.js';
 import { ApiError } from '../middleware/errorHandler.js';
 import { getStripeSettings } from './paymentSettingsService.js';
-import { PLAN_MONTHLY_CREDITS, includedSeats } from '../config/planConfig.js';
+import { seatCapacity } from '../config/planConfig.js';
+import * as seatService from './seatService.js';
 import * as notificationService from './notificationService.js';
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
@@ -190,33 +191,36 @@ export async function getUserDetail(userId) {
  * support tool used sparingly, not something to build real dunning logic
  * around yet.
  */
-export async function updateUserPlan(userId, plan, actorAdminId, seats) {
+export async function updateUserPlan(userId, plan, actorAdminId, blocks) {
   const { user, membership } = await loadUserWithPrimaryWorkspace(userId);
   const workspaceId = membership.workspace.id;
   const previousPlan = membership.workspace.plan;
-  const previousSeats = membership.workspace.seats;
-  // Default to the new plan's included seats (Basic 10 / Pro 25 / Org 45) so a
-  // plain plan override lands on the right allotment; an explicit `seats`
-  // still wins for bespoke enterprise deals. Grant is plan credits x seats.
-  const nextSeats = seats ?? includedSeats(plan);
+  const previousBlocks = membership.workspace.blocks;
+  // A paid override defaults to one seat block; FREE always means zero. An
+  // explicit `blocks` wins for bespoke enterprise deals.
+  const nextBlocks = plan === 'FREE' ? 0 : (blocks ?? Math.max(1, previousBlocks));
 
   const workspace = await prisma.workspace.update({
     where: { id: workspaceId },
-    data: { plan, seats: nextSeats, monthlyCreditGrant: PLAN_MONTHLY_CREDITS[plan] * nextSeats },
+    data: { plan, blocks: nextBlocks },
   });
+  // A support-granted paid plan should behave like a purchased one: promote
+  // pending members into the granted seats (welcome gifts included).
+  if (plan !== 'FREE') await seatService.activateCoverage(workspaceId);
+
   await recordAuditLog({
     superAdminId: actorAdminId,
     action: 'UPDATE_PLAN',
     targetUserId: userId,
-    metadata: { from: previousPlan, to: plan, fromSeats: previousSeats, toSeats: nextSeats },
+    metadata: { from: previousPlan, to: plan, fromBlocks: previousBlocks, toBlocks: nextBlocks },
   });
   await notificationService.sendAdminPlanChanged(user, plan);
 
   return {
     workspaceId,
     plan: workspace.plan,
-    seats: workspace.seats,
-    monthlyCreditGrant: workspace.monthlyCreditGrant,
+    blocks: workspace.blocks,
+    capacity: seatCapacity(workspace.plan, workspace.blocks),
   };
 }
 

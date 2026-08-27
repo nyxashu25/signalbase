@@ -1,7 +1,11 @@
 // Single source of truth for what each plan grants and gates. Mirrors the
-// four tiers on the public Pricing page (frontend/src/pages/marketing/
-// Pricing.jsx) — keep both in sync by hand, since the frontend has no way
-// to import this file directly.
+// tiers on the public Pricing page (frontend/src/data/plans.js) — keep both
+// in sync by hand, since the frontend has no way to import this file.
+
+// Legacy per-plan monthly credits — only still written to the legacy
+// Workspace.monthlyCreditGrant column at signup (dropped in a later cleanup
+// migration). Real credit amounts live in BLOCK_CONFIG and the FREE
+// constants below.
 export const PLAN_MONTHLY_CREDITS = {
   FREE: 100,
   BASIC: 500,
@@ -15,14 +19,48 @@ export const PLAN_MONTHLY_CREDITS = {
 // a paid/free seat in a paid workspace earn via that seat instead.
 export const FREE_PLAN_MONTHLY_CREDITS = 800;
 
-// Per-seat monthly price, in USD cents — matches the $0/$29/$59/$99 shown
-// on the Pricing page.
-export const PLAN_PRICE_USD_CENTS = {
-  FREE: 0,
-  BASIC: 2900,
-  PROFESSIONAL: 5900,
-  ORGANIZATION: 9900,
+// ---------------------------------------------------------------------------
+// Seat-block billing (product decision 2026-08-27). A paid plan is bought in
+// BLOCKS: each block bundles a number of PAID seats (billed at priceCents
+// per block) plus bonus FREE seats. A workspace buys as many blocks as it
+// needs — Workspace.blocks — and capacity = blocks x per-block counts.
+//
+// Monthly personal credits per member:
+//   PAID seat -> paidSeatCredits         FREE seat -> FREE_SEAT_MONTHLY_CREDITS
+//   PENDING (not yet payment-covered) -> nothing
+// plus a flat ownerBonus to the workspace OWNER each cycle, and a one-time
+// WELCOME_GIFT_CREDITS to each member when they first become covered.
+// ---------------------------------------------------------------------------
+export const BLOCK_CONFIG = {
+  BASIC: { priceCents: 2900, paidSeats: 5, freeSeats: 1, paidSeatCredits: 900, ownerBonus: 0 },
+  PROFESSIONAL: {
+    priceCents: 5900,
+    paidSeats: 5,
+    freeSeats: 3,
+    paidSeatCredits: 2000,
+    ownerBonus: 2000,
+  },
+  ORGANIZATION: {
+    priceCents: 9900,
+    paidSeats: 14,
+    freeSeats: 5,
+    paidSeatCredits: 2000,
+    ownerBonus: 3000,
+  },
 };
+
+export const FREE_SEAT_MONTHLY_CREDITS = 1500;
+export const WELCOME_GIFT_CREDITS = 1500;
+
+// Sanity ceiling for self-serve checkout — larger deals go through sales.
+export const MAX_BLOCKS = 200;
+
+/** Seat capacity a plan grants at a given block count. FREE: 1 solo seat. */
+export function seatCapacity(plan, blocks) {
+  const config = BLOCK_CONFIG[plan];
+  if (!config) return { paid: 1, free: 0 };
+  return { paid: blocks * config.paidSeats, free: blocks * config.freeSeats };
+}
 
 // Which plans unlock Sequences (build + enroll). Free is search/reveal
 // only — matches the Pricing page's feature list ("Sequences with wait
@@ -45,27 +83,6 @@ export function planIncludesTeam(plan) {
   return plan !== 'FREE';
 }
 
-// Seats are FIXED per plan (product decision 2026-08-27): buying a plan grants
-// exactly this many seats — the buyer no longer picks a quantity. Price and
-// monthly credits both scale by it (per-seat rate x seats, plan credits x
-// seats), so this constant is the one knob that sets all three. Mirrored in
-// frontend/src/data/plans.js — keep both in sync by hand.
-export const PLAN_INCLUDED_SEATS = {
-  FREE: 1,
-  BASIC: 10,
-  PROFESSIONAL: 25,
-  ORGANIZATION: 45,
-};
-
-/** How many seats a plan grants (defaults to 1 for an unknown plan). */
-export function includedSeats(plan) {
-  return PLAN_INCLUDED_SEATS[plan] ?? 1;
-}
-
-// Admin overrides (support actions) may still set an arbitrary seat count up
-// to this ceiling; self-serve checkout always uses PLAN_INCLUDED_SEATS above.
-export const MAX_SEATS = 500;
-
 // Low to high — index comparison is how a "downgrade" is detected.
 export const PLAN_ORDER = ['FREE', 'BASIC', 'PROFESSIONAL', 'ORGANIZATION'];
 
@@ -80,9 +97,13 @@ export const INTERVAL_MONTHS = { MONTH: 1, QUARTER: 3, YEAR: 12 };
 // interval — e.g. QUARTER charges 3 * monthly * (1 - 0.10) up front.
 export const INTERVAL_DISCOUNT = { MONTH: 0, QUARTER: 0.1, YEAR: 0.2 };
 
-/** What one invoice at this plan/interval actually charges, in USD cents. */
-export function planPriceForInterval(plan, interval) {
-  const monthly = PLAN_PRICE_USD_CENTS[plan];
+/**
+ * What one invoice charges PER BLOCK at this plan/interval, in USD cents.
+ * The checkout multiplies by the block count (Stripe line-item quantity).
+ */
+export function blockPriceForInterval(plan, interval) {
+  const monthly = BLOCK_CONFIG[plan]?.priceCents;
+  if (monthly === undefined) return undefined;
   const months = INTERVAL_MONTHS[interval];
   const discount = INTERVAL_DISCOUNT[interval];
   return Math.round(monthly * months * (1 - discount));

@@ -180,20 +180,29 @@ describe('POST /webhooks/stripe', () => {
     expect(res.status).toBe(204);
     const updated = await prisma.workspace.findUnique({ where: { id: workspace.id } });
     expect(updated.plan).toBe('PROFESSIONAL');
-    // Seats are fixed by the plan (Professional = 25); grant = 1200 x 25.
-    expect(updated.seats).toBe(25);
-    expect(updated.monthlyCreditGrant).toBe(30000);
+    // No blocks in the metadata -> defaults to 1.
+    expect(updated.blocks).toBe(1);
     expect(updated.stripeCustomerId).toBe('cus_plan_1');
     expect(updated.stripeSubscriptionId).toBe('sub_plan_1');
-    // No grant on activation itself — invoice.paid is the only place credits move (below).
-    expect(await getBalance(workspace.ownerId)).toBe(before);
+    // Coverage activation promoted the PENDING owner into a PAID seat and
+    // paid the one-time 1,500 welcome gift — but no monthly grant yet
+    // (invoice.paid is the only place those move, below).
+    const membership = await prisma.membership.findFirst({
+      where: { workspaceId: workspace.id, userId: workspace.ownerId },
+    });
+    expect(membership.seatType).toBe('PAID');
+    expect(await getBalance(workspace.ownerId)).toBe(before + 1500);
   });
 
-  it('grants the plan’s monthly credits on invoice.paid, including the first invoice', async () => {
+  it('distributes seat credits + owner bonus on invoice.paid, including the first invoice', async () => {
     const workspace = await makeWorkspace();
     await prisma.workspace.update({
       where: { id: workspace.id },
-      data: { plan: 'PROFESSIONAL', monthlyCreditGrant: 1200, stripeSubscriptionId: 'sub_plan_2' },
+      data: { plan: 'PROFESSIONAL', blocks: 1, stripeSubscriptionId: 'sub_plan_2' },
+    });
+    await prisma.membership.updateMany({
+      where: { workspaceId: workspace.id },
+      data: { seatType: 'PAID' },
     });
     const before = await getBalance(workspace.ownerId);
 
@@ -204,21 +213,27 @@ describe('POST /webhooks/stripe', () => {
     });
 
     expect(res.status).toBe(204);
-    expect(await getBalance(workspace.ownerId)).toBe(before + 1200);
-    // The seed grant (100) is also MONTHLY_GRANT — assert on the
-    // invoice-driven row by its amount.
-    const ledger = await prisma.creditLedgerEntry.findMany({
-      where: { workspaceId: workspace.id, reason: 'MONTHLY_GRANT', delta: 1200 },
+    // PAID seat 2,000 + flat owner bonus 2,000 (Professional).
+    expect(await getBalance(workspace.ownerId)).toBe(before + 4000);
+    const grantRow = await prisma.creditLedgerEntry.findFirst({
+      where: { workspaceId: workspace.id, reason: 'MONTHLY_GRANT', delta: 2000 },
     });
-    expect(ledger).toHaveLength(1);
-    expect(ledger[0]).toMatchObject({ delta: 1200, userId: workspace.ownerId });
+    expect(grantRow).toMatchObject({ userId: workspace.ownerId });
+    const bonusRow = await prisma.creditLedgerEntry.findFirst({
+      where: { workspaceId: workspace.id, reason: 'OWNER_BONUS' },
+    });
+    expect(bonusRow).toMatchObject({ delta: 2000, userId: workspace.ownerId });
   });
 
   it('grants credits again on a second invoice.paid (renewal), not just the first', async () => {
     const workspace = await makeWorkspace();
     await prisma.workspace.update({
       where: { id: workspace.id },
-      data: { plan: 'BASIC', monthlyCreditGrant: 500, stripeSubscriptionId: 'sub_plan_3' },
+      data: { plan: 'BASIC', blocks: 1, stripeSubscriptionId: 'sub_plan_3' },
+    });
+    await prisma.membership.updateMany({
+      where: { workspaceId: workspace.id },
+      data: { seatType: 'PAID' },
     });
 
     await postStripeWebhook({
@@ -235,9 +250,9 @@ describe('POST /webhooks/stripe', () => {
     const ledger = await prisma.creditLedgerEntry.findMany({
       where: { workspaceId: workspace.id },
     });
-    // Two invoice-driven grants of 500 each (the 100-credit seed grant is
-    // also MONTHLY_GRANT, so filter by amount).
-    expect(ledger.filter((e) => e.reason === 'MONTHLY_GRANT' && e.delta === 500)).toHaveLength(2);
+    // Two invoice-driven grants of 900 each (Basic paid-seat rate; the
+    // 100-credit seed grant is also MONTHLY_GRANT, so filter by amount).
+    expect(ledger.filter((e) => e.reason === 'MONTHLY_GRANT' && e.delta === 900)).toHaveLength(2);
   });
 
   it('sets billingInterval from checkout metadata on activation', async () => {
@@ -267,10 +282,14 @@ describe('POST /webhooks/stripe', () => {
       where: { id: workspace.id },
       data: {
         plan: 'BASIC',
-        monthlyCreditGrant: 500,
+        blocks: 1,
         billingInterval: 'QUARTER',
         stripeSubscriptionId: 'sub_quarterly_1',
       },
+    });
+    await prisma.membership.updateMany({
+      where: { workspaceId: workspace.id },
+      data: { seatType: 'PAID' },
     });
     const before = await getBalance(workspace.ownerId);
 
@@ -280,7 +299,7 @@ describe('POST /webhooks/stripe', () => {
       data: { object: { id: 'in_q1', subscription: 'sub_quarterly_1' } },
     });
 
-    expect(await getBalance(workspace.ownerId)).toBe(before + 1500); // 500 * 3 months
+    expect(await getBalance(workspace.ownerId)).toBe(before + 2700); // 900/paid seat * 3 months
   });
 
   it('grants 12 months of credits per invoice for an annual subscription', async () => {
@@ -289,10 +308,14 @@ describe('POST /webhooks/stripe', () => {
       where: { id: workspace.id },
       data: {
         plan: 'PROFESSIONAL',
-        monthlyCreditGrant: 1200,
+        blocks: 1,
         billingInterval: 'YEAR',
         stripeSubscriptionId: 'sub_annual_1',
       },
+    });
+    await prisma.membership.updateMany({
+      where: { workspaceId: workspace.id },
+      data: { seatType: 'PAID' },
     });
     const before = await getBalance(workspace.ownerId);
 
@@ -302,7 +325,8 @@ describe('POST /webhooks/stripe', () => {
       data: { object: { id: 'in_y1', subscription: 'sub_annual_1' } },
     });
 
-    expect(await getBalance(workspace.ownerId)).toBe(before + 14400); // 1200 * 12 months
+    // (2,000 paid-seat + 2,000 owner bonus) x 12 months.
+    expect(await getBalance(workspace.ownerId)).toBe(before + 48000);
   });
 
   it('ignores a non-subscription invoice (no invoice.subscription)', async () => {
@@ -408,14 +432,14 @@ describe('stripeService.createPlanSubscriptionSession (unit, injected client)', 
     const create = async (params) => {
       expect(params.mode).toBe('subscription');
       expect(params.line_items[0].price_data.unit_amount).toBe(5900);
-      // Per-seat unit_amount x the plan's fixed seat count (Professional = 25).
-      expect(params.line_items[0].quantity).toBe(25);
+      // Per-block unit_amount x the chosen block count.
+      expect(params.line_items[0].quantity).toBe(2);
       expect(params.line_items[0].price_data.recurring).toEqual({ interval: 'month' });
       expect(params.metadata).toEqual({
         workspaceId: workspace.id,
         plan: 'PROFESSIONAL',
         interval: 'MONTH',
-        seats: '25',
+        blocks: '2',
       });
       return { id: 'cs_test_sub', url: 'https://checkout.stripe.com/pay/cs_test_sub' };
     };
@@ -425,7 +449,7 @@ describe('stripeService.createPlanSubscriptionSession (unit, injected client)', 
     };
 
     const session = await createPlanSubscriptionSession(
-      { workspaceId: workspace.id, plan: 'PROFESSIONAL' },
+      { workspaceId: workspace.id, plan: 'PROFESSIONAL', blocks: 2 },
       makeClient,
     );
 

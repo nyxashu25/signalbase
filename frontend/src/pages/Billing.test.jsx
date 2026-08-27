@@ -6,7 +6,19 @@ import { renderWithProviders, authenticatedState, mockFetchRoutes } from '../tes
 
 const summaryRoute = (plan) => ({
   url: '/billing/summary',
-  respond: { body: { balance: 96, plan, monthlyCreditGrant: 500, creditsUsed: 4 } },
+  respond: {
+    body: {
+      balance: 96,
+      plan,
+      blocks: plan === 'FREE' ? 0 : 1,
+      capacity: plan === 'FREE' ? { paid: 1, free: 0 } : { paid: 5, free: 1 },
+      assigned: { paid: 1, free: 0, pending: 0 },
+      memberCount: 1,
+      suggestedBlocks: 1,
+      monthlyCreditGrant: 500,
+      creditsUsed: 4,
+    },
+  },
 });
 const emptyTransactionsRoute = {
   url: '/billing/transactions',
@@ -19,7 +31,8 @@ describe('Billing', () => {
     renderWithProviders(<Billing />, { preloadedState: authenticatedState });
 
     expect(await screen.findByText('Current')).toBeInTheDocument(); // badge on the matching grid card
-    expect(screen.getByText('500')).toBeInTheDocument(); // monthly grant shown in the summary (exact match, unlike the "500 credits/..." grid copy)
+    // Seat coverage from the summary's capacity/assigned.
+    expect(screen.getByText(/1\/5 paid/)).toBeInTheDocument();
     const currentPlanButtons = screen.getAllByRole('button', { name: 'Current plan' });
     expect(currentPlanButtons).toHaveLength(1);
     expect(currentPlanButtons[0]).toBeDisabled();
@@ -30,8 +43,9 @@ describe('Billing', () => {
     renderWithProviders(<Billing />, { preloadedState: authenticatedState });
 
     await screen.findByText('Current');
-    // Professional sits above Basic; Organization always reads "Talk to sales" regardless of position.
-    expect(screen.getByRole('button', { name: 'Upgrade' })).toBeInTheDocument();
+    // Professional and Organization both sit above Basic — each self-serve
+    // purchasable under block billing.
+    expect(screen.getAllByRole('button', { name: 'Upgrade' })).toHaveLength(2);
   });
 
   it('offers "Downgrade" to a paid plan below the current one', async () => {
@@ -122,16 +136,16 @@ describe('Billing', () => {
     renderWithProviders(<Billing />, { preloadedState: authenticatedState });
     await screen.findByText('Current');
 
-    // BASIC is $29/seat x 10 seats = $290/mo -> monthly default shown first.
-    expect(screen.getByText('$290')).toBeInTheDocument();
+    // BASIC is $29/block, default 1 block -> monthly shown first.
+    expect(screen.getAllByText('$29').length).toBeGreaterThan(0);
 
     await user.click(screen.getByRole('button', { name: /Quarterly/ }));
-    // 29 * 3 * 0.9 * 10 = 783
-    expect(await screen.findByText('$783')).toBeInTheDocument();
+    // 29 * 3 * 0.9 = 78.30 per block
+    expect((await screen.findAllByText('$78.30')).length).toBeGreaterThan(0);
 
     await user.click(screen.getByRole('button', { name: /Annually/ }));
-    // 29 * 12 * 0.8 * 10 = 2784
-    expect(await screen.findByText('$2784')).toBeInTheDocument();
+    // 29 * 12 * 0.8 = 278.40 per block
+    expect((await screen.findAllByText('$278.40')).length).toBeGreaterThan(0);
   });
 
   it('locks a quarterly plan for a full 3 months', async () => {

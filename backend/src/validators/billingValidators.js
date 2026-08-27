@@ -10,9 +10,10 @@ export const createCheckoutSessionSchema = z.object({
 export const createPlanSubscriptionSchema = z.object({
   plan: z.enum(['BASIC', 'PROFESSIONAL', 'ORGANIZATION']),
   interval: z.enum(['MONTH', 'QUARTER', 'YEAR']).optional(),
-  // Seats are fixed by the plan (planConfig.PLAN_INCLUDED_SEATS), not chosen at
-  // checkout — no seats field. A `seats` sent by an older client is ignored
+  // Seat blocks (planConfig.BLOCK_CONFIG): each bundles paid + free seats.
+  // 200 matches MAX_BLOCKS. A `seats` field from an older client is ignored
   // (unknown keys are stripped by Zod).
+  blocks: z.number().int().min(1).max(200).default(1),
 });
 
 // Matches CUSTOM_CREDITS_MIN/MAX in config/creditPackages.js.

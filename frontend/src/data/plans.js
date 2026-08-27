@@ -1,81 +1,81 @@
-// Single source of truth for the four plan tiers, shared by the public
-// Pricing page and the in-app Billing page so they can never show different
-// numbers for the same plan. `key` matches the backend Plan enum
-// (backend/prisma/schema.prisma) and config/planConfig.js's credit grants —
-// keep both in sync by hand, since the frontend has no way to import the
-// backend config directly.
-// `price` is the per-seat monthly rate; `seats` is the FIXED number of seats
-// the plan grants (buyers don't pick a quantity). The whole-plan price is
-// price x seats (see planTotalForInterval), and monthly credits are the flat
-// pool shown in `credits`. `seats` mirrors backend PLAN_INCLUDED_SEATS and
-// `credits` mirrors PLAN_MONTHLY_CREDITS x seats — keep both in sync by hand.
+// Single source of truth for the plan tiers, shared by the public Pricing
+// page and the in-app Billing page so they can never show different numbers
+// for the same plan. `key` matches the backend Plan enum and `block` mirrors
+// backend/src/config/planConfig.js's BLOCK_CONFIG — keep both in sync by
+// hand, since the frontend has no way to import the backend config directly.
+//
+// Paid plans are bought in BLOCKS: each block is a bundle of paid seats
+// (billed) plus bonus free seats. Every member earns PERSONAL monthly
+// credits by the seat they occupy — paid seats at the plan rate, free seats
+// at a flat 1,500 — plus a flat monthly bonus to the workspace owner and a
+// one-time 1,500 welcome gift when a member is first covered by payment.
+export const FREE_SEAT_MONTHLY_CREDITS = 1500;
+export const WELCOME_GIFT_CREDITS = 1500;
+export const FREE_PLAN_MONTHLY_CREDITS = 800;
+
 export const PLANS = [
   {
     key: 'FREE',
     name: 'Free',
     price: 0,
-    seats: 1,
-    unit: null,
-    credits: '100 credits / month',
+    block: null,
+    credits: '800 credits / month',
     tagline: "Try DataPit's search and reveal on a real workspace.",
     features: [
       'People & company search',
       'Masked email results',
-      '100 reveal credits / month',
+      '800 personal credits / month',
       '1 saved list',
-      '1 seat',
+      'Solo workspace (1 seat)',
     ],
   },
   {
     key: 'BASIC',
     name: 'Basic',
     price: 29,
-    seats: 10,
-    unit: 'month, billed annually',
-    credits: '5,000 credits / month',
+    block: { paidSeats: 5, freeSeats: 1, paidSeatCredits: 900, ownerBonus: 0 },
+    credits: '900 credits / paid seat / month',
     tagline: 'Take prospecting and outreach further.',
     features: [
       'Everything in Free',
-      '10 seats included',
-      '5,000 reveal credits / month',
+      'Per block: 5 paid + 1 free seat',
+      '900 credits / paid seat / month',
+      '1,500 credits / free seat / month',
       'Unlimited lists',
       'Sequences with wait steps',
-      'Email support',
     ],
   },
   {
     key: 'PROFESSIONAL',
     name: 'Professional',
     price: 59,
-    seats: 25,
-    unit: 'month, billed annually',
-    credits: '30,000 credits / month',
+    block: { paidSeats: 5, freeSeats: 3, paidSeatCredits: 2000, ownerBonus: 2000 },
+    credits: '2,000 credits / paid seat / month',
     tagline: 'Multi-touch outreach with room to scale a team.',
     popular: true,
     features: [
       'Everything in Basic',
-      '25 seats included',
-      '30,000 reveal credits / month',
+      'Per block: 5 paid + 3 free seats',
+      '2,000 credits / paid seat / month',
+      '+2,000 monthly owner bonus',
       'Sequence pause/resume & analytics',
       'API access',
-      'Priority support',
     ],
   },
   {
     key: 'ORGANIZATION',
     name: 'Organization',
     price: 99,
-    seats: 45,
-    unit: 'month, billed annually',
-    credits: '112,500 credits / month',
+    block: { paidSeats: 14, freeSeats: 5, paidSeatCredits: 2000, ownerBonus: 3000 },
+    credits: '2,000 credits / paid seat / month',
     tagline: 'Advanced controls for larger go-to-market teams.',
     features: [
       'Everything in Professional',
-      '45 seats included',
-      '112,500 reveal credits / month',
+      'Per block: 14 paid + 5 free seats',
+      '2,000 credits / paid seat / month',
+      '+3,000 monthly owner bonus',
       'Single sign-on (SSO)',
       'Dedicated onboarding',
-      'Custom credit pooling',
     ],
   },
 ];
@@ -92,22 +92,17 @@ export const BILLING_INTERVALS = [
   { key: 'YEAR', label: 'Annually', months: 12, discount: 0.2 },
 ];
 
-/** The per-seat charge for one invoice at this plan/interval, in whole USD. */
-export function planPriceForInterval(planKey, intervalKey) {
+/** The per-BLOCK charge for one invoice at this plan/interval, in whole USD. */
+export function blockPriceForInterval(planKey, intervalKey) {
   const plan = findPlan(planKey);
   const interval = BILLING_INTERVALS.find((i) => i.key === intervalKey);
   if (!plan || !interval) return null;
   return Math.round(plan.price * interval.months * (1 - interval.discount) * 100) / 100;
 }
 
-/**
- * What one invoice actually charges for the WHOLE plan (per-seat rate x the
- * plan's fixed seat count), in whole USD — this is the headline price now that
- * seats are bundled. Mirrors backend planPriceForInterval x PLAN_INCLUDED_SEATS.
- */
-export function planTotalForInterval(planKey, intervalKey) {
-  const plan = findPlan(planKey);
-  const perSeat = planPriceForInterval(planKey, intervalKey);
-  if (!plan || perSeat == null) return null;
-  return Math.round(perSeat * plan.seats * 100) / 100;
+/** What one invoice charges for N blocks of this plan/interval, in whole USD. */
+export function planTotalForInterval(planKey, intervalKey, blocks = 1) {
+  const perBlock = blockPriceForInterval(planKey, intervalKey);
+  if (perBlock == null) return null;
+  return Math.round(perBlock * blocks * 100) / 100;
 }

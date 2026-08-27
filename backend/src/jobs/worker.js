@@ -7,7 +7,13 @@ import { creditReaperProcessor } from './processors/creditReaperProcessor.js';
 import { reconciliationProcessor } from './processors/reconciliationProcessor.js';
 import { sequenceProcessor } from './processors/sequenceProcessor.js';
 import { databaseImportProcessor } from './processors/databaseImportProcessor.js';
-import { creditReaperQueue, reconciliationQueue, sequenceQueue } from './queues.js';
+import { monthlyGrantProcessor } from './processors/monthlyGrantProcessor.js';
+import {
+  creditReaperQueue,
+  reconciliationQueue,
+  sequenceQueue,
+  monthlyGrantQueue,
+} from './queues.js';
 
 // Additional queue processors (crm-sync) register here starting in Phase 05.
 
@@ -50,6 +56,13 @@ async function main() {
     logger.error({ jobId: job?.id, batchId: job?.data?.batchId, err }, 'database-import job failed');
   });
 
+  const monthlyGrantWorker = new Worker('monthly-grant', monthlyGrantProcessor, {
+    connection: bullConnection,
+  });
+  monthlyGrantWorker.on('failed', (job, err) => {
+    logger.error({ jobId: job?.id, err }, 'monthly-grant job failed');
+  });
+
   // Repeatable jobs — BullMQ dedupes by jobId+repeat pattern, so re-running
   // this on every worker boot doesn't stack up duplicate schedules.
   await creditReaperQueue.add(
@@ -63,9 +76,17 @@ async function main() {
     { repeat: { every: 15 * 60_000 }, jobId: 'credit-reconciliation-sweep' },
   );
   await sequenceQueue.add('tick', {}, { repeat: { every: 60_000 }, jobId: 'sequence-tick' });
+  // FREE-plan personal credit refills — a due-check, not the grant cadence
+  // itself (each user's own lastMonthlyGrantAt decides when a month is up),
+  // so every 6h just bounds how late a grant can land.
+  await monthlyGrantQueue.add(
+    'sweep',
+    {},
+    { repeat: { every: 6 * 60 * 60_000 }, jobId: 'free-monthly-grant-sweep' },
+  );
 
   logger.info(
-    'Worker process started (es-index, credit-reaper, credit-reconciliation, sequence-tick, database-import queues active)',
+    'Worker process started (es-index, credit-reaper, credit-reconciliation, sequence-tick, database-import, monthly-grant queues active)',
   );
 
   const shutdown = async () => {
@@ -75,6 +96,7 @@ async function main() {
       reconciliationWorker.close(),
       sequenceWorker.close(),
       databaseImportWorker.close(),
+      monthlyGrantWorker.close(),
     ]);
     process.exit(0);
   };

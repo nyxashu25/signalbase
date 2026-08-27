@@ -7,7 +7,13 @@ import {
   useSubscribeToPlanMutation,
 } from '../api/billingApi.js';
 import { Pagination } from '../components/Pagination.jsx';
-import { PLANS, findPlan, BILLING_INTERVALS, planTotalForInterval } from '../data/plans.js';
+import {
+  PLANS,
+  findPlan,
+  BILLING_INTERVALS,
+  blockPriceForInterval,
+  planTotalForInterval,
+} from '../data/plans.js';
 import { PageHeader } from '../components/ui/PageHeader.jsx';
 import { Button } from '../components/ui/Button.jsx';
 import { Banner } from '../components/ui/Banner.jsx';
@@ -71,6 +77,9 @@ function addMonths(date, months) {
 export function Billing() {
   const [page, setPage] = useState(1);
   const [billingIntervalChoice, setBillingIntervalChoice] = useState('MONTH');
+  // null = "not touched yet" — falls back to the server's suggestedBlocks
+  // (enough blocks to cover every current member) until the owner dials it.
+  const [blockChoice, setBlockChoice] = useState(null);
   const { data: summary } = useGetBillingSummaryQuery();
   const { data: transactions, isFetching } = useListBillingTransactionsQuery({
     page,
@@ -93,6 +102,9 @@ export function Billing() {
     addMonths(new Date(summary.planActivatedAt), currentInterval?.months ?? 1);
   const isLocked = Boolean(lockedUntil && lockedUntil > new Date());
 
+  const blocks = blockChoice ?? summary?.suggestedBlocks ?? 1;
+  const pendingCount = summary?.assigned?.pending ?? 0;
+
   async function handleSubscribe(planKey) {
     setSubscribeError(null);
     setSubscribingKey(planKey);
@@ -100,7 +112,7 @@ export function Billing() {
       const session = await subscribeToPlan({
         plan: planKey,
         interval: billingIntervalChoice,
-        // Seats are fixed by the plan server-side — nothing to send.
+        blocks,
       }).unwrap();
       window.location.href = session.url;
     } catch (err) {
@@ -109,10 +121,12 @@ export function Billing() {
     }
   }
 
+  // Personal usage: what you've spent vs everything you've ever had
+  // (current balance + spent) — a per-user view now that credits are
+  // personal.
+  const totalEver = (summary?.balance ?? 0) + (summary?.creditsUsed ?? 0);
   const usedPct =
-    summary && summary.monthlyCreditGrant > 0
-      ? Math.min(100, Math.round((summary.creditsUsed / summary.monthlyCreditGrant) * 100))
-      : 0;
+    summary && totalEver > 0 ? Math.min(100, Math.round((summary.creditsUsed / totalEver) * 100)) : 0;
 
   return (
     <div>
@@ -129,31 +143,46 @@ export function Billing() {
       {/* Plan overview */}
       <Card className="p-5">
         <div className="grid grid-cols-2 gap-6 md:grid-cols-5">
-          <Metric label="Current plan" hint="Change plans below — upgrades apply immediately. Each plan bundles a fixed number of seats; credits scale with them.">
+          <Metric label="Current plan" hint="Change plans below — upgrades apply immediately. Paid plans come in seat blocks (paid + free seats); every teammate earns their own monthly credits.">
             <span className="text-2xl font-extrabold text-text">{currentPlan?.name ?? '—'}</span>
-            {summary?.seats > 0 && (
+            {summary?.blocks > 0 && (
               <span className="ml-2 text-xs font-medium text-text-muted">
-                {summary.seats} {summary.seats === 1 ? 'seat' : 'seats'}
+                {summary.blocks} {summary.blocks === 1 ? 'block' : 'blocks'}
               </span>
             )}
-            {currentPlan && currentPlan.price > 0 && currentInterval && (
+            {currentPlan && currentPlan.price > 0 && currentInterval && summary?.blocks > 0 && (
               <span className="ml-2 text-xs font-medium text-text-muted">
-                {formatUsd(planTotalForInterval(currentPlan.key, currentInterval.key))}/
-                {CADENCE[currentInterval.key]}
+                {formatUsd(
+                  planTotalForInterval(currentPlan.key, currentInterval.key, summary.blocks),
+                )}
+                /{CADENCE[currentInterval.key]}
               </span>
             )}
           </Metric>
-          <Metric label="Balance" hint="Credits available right now, including any top-ups.">
+          <Metric label="Your balance" hint="Your personal credits, available right now — every teammate has their own balance.">
             <span className="text-2xl font-extrabold tabular-nums text-text">
               {summary?.balance ?? '—'}
             </span>
           </Metric>
-          <Metric label="Monthly grant" hint="Credits added at the start of every billing cycle on your plan.">
-            <span className="text-2xl font-extrabold tabular-nums text-text">
-              {summary?.monthlyCreditGrant ?? '—'}
-            </span>
+          <Metric
+            label="Seat coverage"
+            hint="Paid + free seats in use vs what your blocks provide. Pending members can log in but can't spend until a block covers them."
+          >
+            {summary?.capacity ? (
+              <span className="text-base font-bold tabular-nums text-text">
+                {summary.assigned.paid}/{summary.capacity.paid} paid ·{' '}
+                {summary.assigned.free}/{summary.capacity.free} free
+              </span>
+            ) : (
+              <span className="text-base font-bold text-text">—</span>
+            )}
+            {pendingCount > 0 && (
+              <span className="ml-2 text-xs font-semibold text-amber-500">
+                {pendingCount} pending
+              </span>
+            )}
           </Metric>
-          <Metric label="Used this cycle" hint="Credits spent since your last grant.">
+          <Metric label="Used this cycle" hint="Credits you personally spent since your last grant.">
             <span className="text-2xl font-extrabold tabular-nums text-text">
               {summary?.creditsUsed ?? '—'}
             </span>
@@ -173,10 +202,10 @@ export function Billing() {
             </span>
           </Metric>
         </div>
-        {summary && summary.monthlyCreditGrant > 0 && (
+        {summary && totalEver > 0 && (
           <div className="mt-5">
             <div className="flex items-center justify-between text-xs text-text-muted">
-              <span>Monthly usage</span>
+              <span>Your credit usage</span>
               <span className="tabular-nums">{usedPct}%</span>
             </div>
             <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-sunken">
@@ -195,6 +224,20 @@ export function Billing() {
           {summary?.plan === 'ORGANIZATION' ? 'Your plan' : 'Plans'}
         </h2>
         <div className="flex flex-wrap items-center gap-3">
+          <label className="flex items-center gap-2 text-xs font-semibold text-text-muted">
+            Blocks
+            <input
+              type="number"
+              min={1}
+              max={200}
+              value={blocks}
+              onChange={(e) =>
+                setBlockChoice(Math.max(1, Math.min(200, Number(e.target.value) || 1)))
+              }
+              aria-label="Seat blocks"
+              className="h-8 w-16 rounded-md border border-border bg-surface-elevated px-2 text-sm tabular-nums text-text outline-none focus:border-focus focus:ring-2 focus:ring-focus/25"
+            />
+          </label>
           <SegmentedControl
             ariaLabel="Billing interval"
             value={billingIntervalChoice}
@@ -207,6 +250,13 @@ export function Billing() {
           />
         </div>
       </div>
+      {pendingCount > 0 && (
+        <Banner tone="info" className="mb-3" title={`${pendingCount} teammate${pendingCount === 1 ? '' : 's'} awaiting payment`}>
+          Buying {summary?.suggestedBlocks ?? 1}{' '}
+          {(summary?.suggestedBlocks ?? 1) === 1 ? 'block' : 'blocks'} covers everyone currently in
+          your workspace — each newly covered teammate gets a one-time 1,500-credit welcome gift.
+        </Banner>
+      )}
       {subscribeError && (
         <Banner tone="danger" className="mb-3">
           {subscribeError}
@@ -218,9 +268,14 @@ export function Billing() {
           const isDowngrade =
             summary && PLAN_ORDER.indexOf(plan.key) < PLAN_ORDER.indexOf(summary.plan);
           const displayPrice =
-            plan.key === 'FREE' ? 0 : planTotalForInterval(plan.key, billingIntervalChoice);
+            plan.key === 'FREE' ? 0 : planTotalForInterval(plan.key, billingIntervalChoice, blocks);
           const cadence = CADENCE[billingIntervalChoice];
-          const cadenceUnit = `${cadence} · ${plan.seats} seats`;
+          const seatCapacityLabel = plan.block
+            ? `${blocks * plan.block.paidSeats} paid + ${blocks * plan.block.freeSeats} free seats`
+            : null;
+          const cadenceUnit = plan.block
+            ? `${cadence} · ${blocks} ${blocks === 1 ? 'block' : 'blocks'}`
+            : cadence;
 
           return (
             <Card
@@ -240,6 +295,14 @@ export function Billing() {
                   <span className="text-xs font-medium text-text-muted">/{cadenceUnit}</span>
                 )}
               </p>
+              {seatCapacityLabel && (
+                <p className="mt-1 text-xs font-semibold text-text">
+                  {seatCapacityLabel}
+                  <span className="ml-1 font-normal text-text-muted">
+                    ({formatUsd(blockPriceForInterval(plan.key, billingIntervalChoice))}/block)
+                  </span>
+                </p>
+              )}
               <p className="mt-1 text-xs text-text-muted">{plan.credits}</p>
 
               <div className="mt-4">
@@ -247,16 +310,14 @@ export function Billing() {
                   <div className="rounded-md border border-border px-3 py-2 text-center text-xs font-semibold text-text-muted">
                     No purchase needed
                   </div>
-                ) : plan.key === 'ORGANIZATION' && !isCurrent ? (
-                  <Button variant="secondary" size="sm" to="/contact" className="w-full">
-                    Talk to sales
-                  </Button>
                 ) : (
                   <Button
                     variant={isCurrent ? 'secondary' : isDowngrade ? 'secondary' : 'primary'}
                     size="sm"
                     className="w-full"
-                    disabled={isCurrent || (isDowngrade && isLocked)}
+                    disabled={
+                      (isCurrent && blocks === summary?.blocks) || (isDowngrade && isLocked)
+                    }
                     loading={subscribingKey === plan.key && subscribing}
                     onClick={() => handleSubscribe(plan.key)}
                     title={
@@ -265,15 +326,17 @@ export function Billing() {
                         : undefined
                     }
                   >
-                    {isCurrent
+                    {isCurrent && blocks === summary?.blocks
                       ? 'Current plan'
                       : subscribingKey === plan.key && subscribing
                         ? 'Starting checkout…'
                         : isDowngrade && isLocked
                           ? `Locked until ${lockedUntil.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
-                          : isDowngrade
-                            ? 'Downgrade'
-                            : 'Upgrade'}
+                          : isCurrent
+                            ? `Change to ${blocks} ${blocks === 1 ? 'block' : 'blocks'}`
+                            : isDowngrade
+                              ? 'Downgrade'
+                              : 'Upgrade'}
                   </Button>
                 )}
               </div>
