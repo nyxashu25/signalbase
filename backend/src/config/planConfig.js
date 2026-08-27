@@ -9,6 +9,12 @@ export const PLAN_MONTHLY_CREDITS = {
   ORGANIZATION: 2500,
 };
 
+// Per-user monthly credits for FREE-plan users (credits are personal since
+// the per-user migration): granted at signup and then re-granted monthly by
+// the free-user sweep (jobs/processors/monthlyGrantProcessor). Users holding
+// a paid/free seat in a paid workspace earn via that seat instead.
+export const FREE_PLAN_MONTHLY_CREDITS = 800;
+
 // Per-seat monthly price, in USD cents — matches the $0/$29/$59/$99 shown
 // on the Pricing page.
 export const PLAN_PRICE_USD_CENTS = {

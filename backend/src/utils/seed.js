@@ -3,7 +3,7 @@ import { prisma } from '../config/db.js';
 import { redis } from '../config/redis.js';
 import { hashPassword } from './password.js';
 import { reindexAll } from '../services/indexerService.js';
-import { initializeBalance } from '../services/creditService.js';
+import { grantCredits } from '../services/creditService.js';
 import { logger } from '../config/logger.js';
 
 const DEMO_ORG_SLUG = 'datapit-demo';
@@ -180,10 +180,21 @@ async function seedDemoTenant() {
   // Redis-backed — the relational demo data (org/workspace/user/companies/
   // contacts) is still worth having even if Redis is unavailable, so this
   // step is optional rather than fatal. Without it the demo user exists but
-  // has no initialized credit balance, and login/register won't work
-  // either (both are Redis-dependent) until Redis comes up.
+  // has no credit balance, and login/register won't work either (both are
+  // Redis-dependent) until Redis comes up. Guarded by a ledger check so a
+  // re-run doesn't stack another grant onto the demo user.
   try {
-    await initializeBalance(workspace.id, workspace.monthlyCreditGrant);
+    const alreadyGranted = await prisma.creditLedgerEntry.findFirst({
+      where: { userId: user.id, reason: 'MONTHLY_GRANT' },
+    });
+    if (!alreadyGranted) {
+      await grantCredits({
+        userId: user.id,
+        workspaceId: workspace.id,
+        amount: workspace.monthlyCreditGrant,
+        reason: 'MONTHLY_GRANT',
+      });
+    }
   } catch (err) {
     logger.warn(
       { err: err.message },

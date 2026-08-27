@@ -196,7 +196,7 @@ export async function extensionStatus(auth) {
       where: { id: auth.workspaceId },
       select: { name: true, plan: true },
     }),
-    getBalance(auth.workspaceId),
+    getBalance(auth.userId),
   ]);
   return {
     user,

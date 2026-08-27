@@ -7,7 +7,8 @@ import { reserveCredit, releaseReservation } from '../services/creditService.js'
 export function reserveCredits(amount = 1) {
   return async (req, res, next) => {
     try {
-      req.reservationId = await reserveCredit(req.auth.workspaceId, amount);
+      // Credits are personal — the reservation debits the CALLER's balance.
+      req.reservationId = await reserveCredit(req.auth.userId, req.auth.workspaceId, amount);
       next();
     } catch (err) {
       next(err);

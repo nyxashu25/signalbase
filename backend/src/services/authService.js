@@ -1,8 +1,8 @@
 import { OAuth2Client } from 'google-auth-library';
 import { prisma } from '../config/db.js';
 import { hashPassword, verifyPassword } from '../utils/password.js';
-import { initializeBalance } from './creditService.js';
-import { PLAN_MONTHLY_CREDITS } from '../config/planConfig.js';
+import { grantCredits } from './creditService.js';
+import { PLAN_MONTHLY_CREDITS, FREE_PLAN_MONTHLY_CREDITS } from '../config/planConfig.js';
 import { createHash } from 'node:crypto';
 import {
   signAccessToken,
@@ -60,19 +60,28 @@ async function createAccount({ email, name, passwordHash, googleId, orgName, ema
       },
     });
     const user = await tx.user.create({
-      data: { email, passwordHash, googleId, name, emailVerified },
+      // lastMonthlyGrantAt: the signup grant below counts as this month's
+      // FREE grant, so the sweep won't double-grant within the first month.
+      data: { email, passwordHash, googleId, name, emailVerified, lastMonthlyGrantAt: new Date() },
     });
     const membership = await tx.membership.create({
-      data: { userId: user.id, workspaceId: workspace.id, role: 'OWNER' },
+      // The owner occupies a paid seat once the workspace ever upgrades;
+      // seatType is ignored while the plan is FREE.
+      data: { userId: user.id, workspaceId: workspace.id, role: 'OWNER', seatType: 'PAID' },
     });
     return { user, workspace, membership, org };
   });
 
-  // Redis isn't part of the Postgres transaction above — this runs
-  // immediately after commit, so there's a brief window where the
-  // workspace exists without a credit balance yet. Acceptable for MVP;
+  // Personal starting credits (ledger row + Redis, via the single grant
+  // chokepoint). Runs immediately after the transaction commits — there's a
+  // brief window where the account exists without a balance yet; acceptable,
   // reserveCredit fails closed (missing balance = 0 available) in that gap.
-  await initializeBalance(workspace.id, workspace.monthlyCreditGrant);
+  await grantCredits({
+    userId: user.id,
+    workspaceId: workspace.id,
+    amount: FREE_PLAN_MONTHLY_CREDITS,
+    reason: 'MONTHLY_GRANT',
+  });
 
   return { user, workspace, membership, org };
 }

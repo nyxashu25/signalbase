@@ -18,7 +18,11 @@ async function registerOrg(orgName, email) {
     name: 'Owner',
     orgName,
   });
-  return { accessToken: res.body.accessToken, workspaceId: res.body.workspace.id };
+  return {
+    accessToken: res.body.accessToken,
+    workspaceId: res.body.workspace.id,
+    userId: res.body.user.id,
+  };
 }
 
 async function seedContact() {
@@ -360,21 +364,21 @@ describe('list export', () => {
       .post('/api/v1/lists')
       .set('Authorization', `Bearer ${orgA.accessToken}`)
       .send({ name: "Org A's leads", type: 'CONTACTS' });
-    const before = await getBalance(orgA.workspaceId);
+    const before = await getBalance(orgA.userId);
 
     const success = await request(app)
       .get(`/api/v1/lists/${createRes.body.list.id}/export`)
       .set('Authorization', `Bearer ${orgA.accessToken}`);
     expect(success.status).toBe(200);
-    expect(await getBalance(orgA.workspaceId)).toBe(before - CREDIT_COSTS.CSV_EXPORT);
+    expect(await getBalance(orgA.userId)).toBe(before - CREDIT_COSTS.CSV_EXPORT);
 
-    const beforeB = await getBalance(orgB.workspaceId);
+    const beforeB = await getBalance(orgB.userId);
     const notFound = await request(app)
       .get(`/api/v1/lists/${createRes.body.list.id}/export`)
       .set('Authorization', `Bearer ${orgB.accessToken}`);
     expect(notFound.status).toBe(404);
     // Reserved then released on the 404 — org B's balance is untouched.
-    expect(await getBalance(orgB.workspaceId)).toBe(beforeB);
+    expect(await getBalance(orgB.userId)).toBe(beforeB);
   });
 
   it('rejects with 402 when the workspace is out of credits', async () => {
@@ -383,7 +387,7 @@ describe('list export', () => {
       .post('/api/v1/lists')
       .set('Authorization', `Bearer ${owner.accessToken}`)
       .send({ name: 'Empty list', type: 'CONTACTS' });
-    await redis.set(`credits:balance:${owner.workspaceId}`, 0);
+    await redis.set(`credits:balance:user:${owner.userId}`, 0);
 
     const res = await request(app)
       .get(`/api/v1/lists/${createRes.body.list.id}/export`)

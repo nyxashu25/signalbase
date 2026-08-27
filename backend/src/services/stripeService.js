@@ -7,6 +7,7 @@ import { logger } from '../config/logger.js';
 import { findPackage, priceCustomCredits } from '../config/creditPackages.js';
 import { getDecryptedStripeCredentials } from './paymentSettingsService.js';
 import * as notificationService from './notificationService.js';
+import * as creditService from './creditService.js';
 import {
   PLAN_MONTHLY_CREDITS,
   PLAN_PRICE_USD_CENTS,
@@ -71,7 +72,7 @@ async function getWorkspaceOwnerEmail(workspaceId) {
 }
 
 async function topUpCredits(session) {
-  const { workspaceId, credits, amountCents } = session.metadata ?? {};
+  const { workspaceId, credits, amountCents, userId } = session.metadata ?? {};
   if (!workspaceId || !credits) {
     logger.error({ sessionId: session.id }, 'Stripe session missing workspaceId/credits metadata');
     return;
@@ -79,20 +80,30 @@ async function topUpCredits(session) {
 
   const amount = Number(credits);
 
-  // Redis balance and the Postgres ledger move together — a top-up that
-  // updated one without the other is exactly the drift reconciliationService
-  // watches for, so keep this symmetric with commitReservation's approach.
-  await prisma.creditLedgerEntry.create({
-    data: {
-      workspaceId,
-      delta: amount,
-      reason: 'TOPUP',
-      amountCents: amountCents ? Number(amountCents) : null,
-    },
-  });
-  await redis.incrby(`credits:balance:${workspaceId}`, amount);
+  // Credits are personal: they land on the buyer's balance (metadata.userId,
+  // stamped at checkout). Older sessions without it fall back to the owner.
+  let recipientId = userId || null;
+  if (!recipientId) {
+    const owner = await getWorkspaceOwnerEmail(workspaceId);
+    recipientId = owner?.id ?? null;
+  }
+  if (!recipientId) {
+    logger.error({ sessionId: session.id, workspaceId }, 'Top-up has no resolvable recipient');
+    return;
+  }
 
-  logger.info({ workspaceId, amount, amountCents }, 'Credits topped up from Stripe payment');
+  await creditService.grantCredits({
+    userId: recipientId,
+    workspaceId,
+    amount,
+    reason: 'TOPUP',
+    amountCents: amountCents ? Number(amountCents) : null,
+  });
+
+  logger.info(
+    { workspaceId, userId: recipientId, amount, amountCents },
+    'Credits topped up from Stripe payment',
+  );
 
   const owner = await getWorkspaceOwnerEmail(workspaceId);
   if (owner) await notificationService.sendCreditPurchaseReceipt(owner, amount, amountCents);
@@ -182,19 +193,24 @@ async function grantMonthlyCredits(invoice) {
   // the same money.
   const amount = workspace.monthlyCreditGrant * INTERVAL_MONTHS[workspace.billingInterval];
 
-  await prisma.creditLedgerEntry.create({
-    data: {
-      workspaceId: workspace.id,
-      delta: amount,
-      reason: 'MONTHLY_GRANT',
-    },
-  });
-  await redis.incrby(`credits:balance:${workspace.id}`, amount);
-
-  logger.info({ workspaceId: workspace.id, amount }, 'Monthly plan credits granted');
-
+  // Transitional (until the block-billing grant engine distributes per
+  // member): the plan grant lands on the OWNER's personal balance.
   const owner = await getWorkspaceOwnerEmail(workspace.id);
-  if (owner) await notificationService.sendMonthlyCreditsRenewed(owner, amount);
+  if (!owner) {
+    logger.warn({ workspaceId: workspace.id }, 'No owner found — skipping monthly credit grant');
+    return;
+  }
+
+  await creditService.grantCredits({
+    userId: owner.id,
+    workspaceId: workspace.id,
+    amount,
+    reason: 'MONTHLY_GRANT',
+  });
+
+  logger.info({ workspaceId: workspace.id, userId: owner.id, amount }, 'Monthly plan credits granted');
+
+  await notificationService.sendMonthlyCreditsRenewed(owner, amount);
 }
 
 export async function handleEvent(event) {
@@ -239,7 +255,7 @@ export async function handleEvent(event) {
  * client instead of mocking network calls.
  */
 export async function createCheckoutSession(
-  { workspaceId, credits, currency = 'USD' },
+  { workspaceId, userId, credits, currency = 'USD' },
   makeClient = (key) => new Stripe(key),
 ) {
   // An exact package match keeps its own listed price; anything else (a
@@ -275,7 +291,13 @@ export async function createCheckoutSession(
     ],
     success_url: `${env.CORS_ORIGIN}/app/billing?checkout=success`,
     cancel_url: `${env.CORS_ORIGIN}/app/billing/add-credits?checkout=cancelled`,
-    metadata: { workspaceId, credits: String(credits), amountCents: String(amountMinor) },
+    // userId: credits are personal — the webhook credits the BUYER's balance.
+    metadata: {
+      workspaceId,
+      userId: userId ?? '',
+      credits: String(credits),
+      amountCents: String(amountMinor),
+    },
   });
 
   return { sessionId: session.id, url: session.url };

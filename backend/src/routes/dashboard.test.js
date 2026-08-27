@@ -37,8 +37,8 @@ function getOnboarding(token) {
   return request(app).get('/api/v1/dashboard/onboarding').set('Authorization', `Bearer ${token}`);
 }
 
-async function balance(workspaceId) {
-  return Number(await redis.get(`credits:balance:${workspaceId}`));
+async function balance(userId) {
+  return Number(await redis.get(`credits:balance:user:${userId}`));
 }
 
 describe('dashboard: onboarding checklist', () => {
@@ -58,7 +58,7 @@ describe('dashboard: onboarding checklist', () => {
 
   it('starts a fresh workspace with only "verify email" done and rewards nothing for it', async () => {
     const org = await registerOrg('Acme', 'owner@acme.test');
-    const before = await balance(org.workspaceId);
+    const before = await balance(org.userId);
 
     const res = await getOnboarding(org.accessToken);
     expect(res.status).toBe(200);
@@ -80,7 +80,7 @@ describe('dashboard: onboarding checklist', () => {
     expect(res.body.creditsEarned).toBe(0);
     expect(res.body.creditsAvailable).toBe(MAX_REWARD_CREDITS);
     expect(res.body.justRewarded).toEqual([]);
-    expect(await balance(org.workspaceId)).toBe(before);
+    expect(await balance(org.userId)).toBe(before);
   });
 
   it('marks sequence tasks as plan-locked on the Free plan', async () => {
@@ -100,7 +100,7 @@ describe('dashboard: onboarding checklist', () => {
   it('detects a completed task from existing data, rewards it exactly once, and writes an ONBOARDING_REWARD ledger row', async () => {
     const org = await registerOrg('Acme', 'owner@acme.test');
     const { contact } = await seedContact();
-    const before = await balance(org.workspaceId);
+    const before = await balance(org.userId);
 
     await prisma.emailReveal.create({
       data: { workspaceId: org.workspaceId, contactId: contact.id, revealedById: org.userId },
@@ -114,7 +114,7 @@ describe('dashboard: onboarding checklist', () => {
       { key: 'REVEAL_EMAIL', label: 'Reveal an email address', credits: 5 },
     ]);
     expect(first.body.creditsEarned).toBe(5);
-    expect(await balance(org.workspaceId)).toBe(before + 5);
+    expect(await balance(org.userId)).toBe(before + 5);
 
     const ledger = await prisma.creditLedgerEntry.findMany({
       where: { workspaceId: org.workspaceId, reason: 'ONBOARDING_REWARD' },
@@ -126,7 +126,7 @@ describe('dashboard: onboarding checklist', () => {
     const second = await getOnboarding(org.accessToken);
     expect(second.body.justRewarded).toEqual([]);
     expect(second.body.creditsEarned).toBe(5);
-    expect(await balance(org.workspaceId)).toBe(before + 5);
+    expect(await balance(org.userId)).toBe(before + 5);
   });
 
   it('records a people search as a completed task and pays the reward on the next checklist read', async () => {
@@ -145,7 +145,7 @@ describe('dashboard: onboarding checklist', () => {
   it('pays the group bonus once every task in a group is done', async () => {
     const org = await registerOrg('Acme', 'owner@acme.test');
     const { contact } = await seedContact();
-    const before = await balance(org.workspaceId);
+    const before = await balance(org.userId);
 
     // Complete all four "find" tasks via their data trails.
     await prisma.onboardingTaskCompletion.create({
@@ -178,13 +178,13 @@ describe('dashboard: onboarding checklist', () => {
     );
     // 4 tasks × 5 + group bonus 10
     expect(res.body.creditsEarned).toBe(30);
-    expect(await balance(org.workspaceId)).toBe(before + 30);
+    expect(await balance(org.userId)).toBe(before + 30);
     expect(res.body.nextTask).toBe('TAKE_TOUR'); // "reach" is plan-locked on Free
   });
 
   it('never pays out more than the cap', async () => {
     const org = await registerOrg('Acme', 'owner@acme.test');
-    const before = await balance(org.workspaceId);
+    const before = await balance(org.userId);
     // Pretend every reward has already been earned.
     await prisma.onboardingTaskCompletion.create({
       data: {
@@ -201,7 +201,7 @@ describe('dashboard: onboarding checklist', () => {
     const res = await getOnboarding(org.accessToken);
     expect(res.body.justRewarded).toEqual([]);
     expect(res.body.creditsEarned).toBe(MAX_REWARD_CREDITS);
-    expect(await balance(org.workspaceId)).toBe(before);
+    expect(await balance(org.userId)).toBe(before);
   });
 
   it('is workspace-isolated', async () => {

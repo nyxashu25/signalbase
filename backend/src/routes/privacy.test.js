@@ -79,7 +79,7 @@ describe('POST /privacy/opt-out', () => {
     expect(res.status).toBe(410);
 
     const ledger = await prisma.creditLedgerEntry.findMany({
-      where: { workspaceId: org.workspaceId },
+      where: { workspaceId: org.workspaceId, delta: { lt: 0 } },
     });
     expect(ledger).toHaveLength(0);
   });
@@ -105,7 +105,7 @@ describe('POST /privacy/opt-out', () => {
     expect(res.status).toBe(422);
 
     const ledger = await prisma.creditLedgerEntry.findMany({
-      where: { workspaceId: org.workspaceId },
+      where: { workspaceId: org.workspaceId, delta: { lt: 0 } },
     });
     expect(ledger).toHaveLength(0);
     const unchanged = await prisma.contact.findUnique({ where: { id: contact.id } });

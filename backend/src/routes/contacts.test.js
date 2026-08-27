@@ -56,7 +56,7 @@ describe('POST /contacts/:id/reveal', () => {
     expect(res.body.alreadyRevealed).toBe(false);
 
     const ledger = await prisma.creditLedgerEntry.findMany({
-      where: { workspaceId: org.workspaceId },
+      where: { workspaceId: org.workspaceId, delta: { lt: 0 } },
     });
     expect(ledger).toHaveLength(1);
     expect(ledger[0].delta).toBe(-2);
@@ -95,7 +95,7 @@ describe('POST /contacts/:id/reveal', () => {
     expect(second.body).toEqual(first.body);
 
     const ledger = await prisma.creditLedgerEntry.findMany({
-      where: { workspaceId: org.workspaceId },
+      where: { workspaceId: org.workspaceId, delta: { lt: 0 } },
     });
     expect(ledger).toHaveLength(1);
   });
@@ -112,7 +112,7 @@ describe('POST /contacts/:id/reveal', () => {
     expect(second.body.email).toBe('jordan.bennett@novasystems.com');
 
     const ledger = await prisma.creditLedgerEntry.findMany({
-      where: { workspaceId: org.workspaceId },
+      where: { workspaceId: org.workspaceId, delta: { lt: 0 } },
     });
     expect(ledger).toHaveLength(1); // only the first reveal charged anything
   });
@@ -120,13 +120,13 @@ describe('POST /contacts/:id/reveal', () => {
   it('rejects with 402 and charges nothing when the workspace is out of credits', async () => {
     const org = await registerOrg('Acme', 'owner@acme.test');
     const contact = await seedContact();
-    await redis.set(`credits:balance:${org.workspaceId}`, 0);
+    await redis.set(`credits:balance:user:${org.userId}`, 0);
 
     const res = await reveal(app, org.accessToken, contact.id);
 
     expect(res.status).toBe(402);
     const ledger = await prisma.creditLedgerEntry.findMany({
-      where: { workspaceId: org.workspaceId },
+      where: { workspaceId: org.workspaceId, delta: { lt: 0 } },
     });
     expect(ledger).toHaveLength(0);
   });
@@ -144,10 +144,10 @@ describe('POST /contacts/:id/reveal', () => {
     expect(resB.body.email).toBe(resA.body.email); // same underlying contact, same guessed email
 
     const ledgerA = await prisma.creditLedgerEntry.findMany({
-      where: { workspaceId: orgA.workspaceId },
+      where: { workspaceId: orgA.workspaceId, delta: { lt: 0 } },
     });
     const ledgerB = await prisma.creditLedgerEntry.findMany({
-      where: { workspaceId: orgB.workspaceId },
+      where: { workspaceId: orgB.workspaceId, delta: { lt: 0 } },
     });
     expect(ledgerA).toHaveLength(1);
     expect(ledgerB).toHaveLength(1);

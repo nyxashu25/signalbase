@@ -68,13 +68,13 @@ export async function revealContactEmail({ workspaceId, userId, contactId, reser
     emailVerified = Boolean(verification.verified);
   }
 
-  const { amount } = await resolveReservationForCommit(reservationId, { workspaceId });
+  const { amount } = await resolveReservationForCommit(reservationId, { userId, workspaceId });
 
   try {
     await prisma.$transaction([
       prisma.contact.update({ where: { id: contactId }, data: { email, emailVerified } }),
       prisma.creditLedgerEntry.create({
-        data: { workspaceId, delta: -amount, reason, contactId, spentById: userId },
+        data: { userId, workspaceId, delta: -amount, reason, contactId, spentById: userId },
       }),
       prisma.emailReveal.create({ data: { workspaceId, contactId, revealedById: userId } }),
     ]);
@@ -84,7 +84,7 @@ export async function revealContactEmail({ workspaceId, userId, contactId, reser
       // workspace — it already committed its EmailReveal row. The
       // reservation's Redis side is already cleared, so refund directly
       // rather than double-charge for a result someone else just paid for.
-      await refundAmount(workspaceId, amount);
+      await refundAmount(userId, amount);
       const winner = await prisma.contact.findUnique({ where: { id: contactId } });
       return {
         email: winner.email,

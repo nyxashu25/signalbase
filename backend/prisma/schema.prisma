@@ -67,6 +67,20 @@ model Workspace {
   // retroactively — reducing seats below the current member count only
   // blocks further joins.
   seats                Int             @default(1)
+  // Purchased seat blocks (see planConfig.BLOCK_CONFIG). Each block bundles
+  // paid + free seats; capacity = blocks x per-block counts. 0 on FREE.
+  // Replaces `seats` as the capacity source once block billing lands —
+  // `seats`/`monthlyCreditGrant` above are legacy, kept until a cleanup
+  // migration drops them.
+  blocks               Int             @default(0)
+  // Super-admin workspace freeze — blocks every authenticated request for
+  // members of this workspace (workspaceGuard middleware) without touching
+  // individual User.suspendedAt flags. Reversible.
+  suspendedAt          DateTime?
+  // Soft delete (super-admin). Hidden everywhere while set; restorable from
+  // the admin "Deleted" section; hard-purged by the deletion-purge job 60
+  // days after this timestamp.
+  deletedAt            DateTime?
   // Workspace branding (Settings → Workspace), available on every plan.
   // `logoUrl` holds a small image inline as a data: URI (capped in
   // workspaceService) rather than a file path — no storage infra, and it's
@@ -129,6 +143,15 @@ model User {
   // and never cleared, so it truly shows only the first time, across
   // devices/browsers, not per-localStorage.
   tutorialCompletedAt DateTime?
+  // Soft delete (super-admin). Blocks login/refresh like suspendedAt, hides
+  // the user from member lists; restorable from the admin "Deleted" section;
+  // hard-purged by the deletion-purge job 60 days after this timestamp.
+  deletedAt           DateTime?
+  // When this user last received their personal monthly credit grant — the
+  // FREE-plan 800/mo sweep's cursor (monthlyGrantProcessor). A guarded
+  // updateMany on this field is the concurrency lock that makes the grant
+  // exactly-once. Null = never granted (new pre-sweep account).
+  lastMonthlyGrantAt  DateTime?
   createdAt           DateTime  @default(now())
 
   memberships        Membership[]
@@ -141,6 +164,9 @@ model User {
   ticketMessages     TicketMessage[]
   sentInvites        WorkspaceInvite[]   @relation("InvitedBy")
   apiKeys            ApiKey[]
+
+  @@index([deletedAt])
+  @@index([lastMonthlyGrantAt])
 }
 
 // A personal API credential (Settings → API & Extension) — how the Chrome
@@ -288,11 +314,29 @@ enum Role {
   MEMBER
 }
 
+// Which seat a member occupies under block billing (planConfig.BLOCK_CONFIG):
+// PAID seats earn the plan's per-seat monthly credits, FREE seats earn the
+// flat free-seat rate, PENDING means the member has joined but isn't covered
+// by a purchased block yet — they can log in but hold no spendable credits
+// until the owner's payment covers them. Ignored on FREE-plan workspaces
+// (solo; the user earns via the free-user monthly sweep instead).
+enum SeatType {
+  PAID
+  FREE
+  PENDING
+}
+
 model Membership {
   id          String   @id @default(uuid())
   userId      String
   workspaceId String
   role        Role     @default(MEMBER)
+  seatType    SeatType @default(PENDING)
+  // One-time 1,500-credit welcome gift, paid the first time this membership
+  // becomes payment-covered (seatService.activateCoverage / seat assignment).
+  // Flipped with a guarded updateMany so concurrent webhook redeliveries can
+  // never double-grant. Null = not yet gifted.
+  welcomeGiftAt DateTime?
   createdAt   DateTime @default(now())
 
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -539,6 +583,22 @@ enum CreditReason {
   // distinct from ADJUSTMENT so the ledger reads "Onboarding reward", not
   // "Adjustment", and so the total a workspace has earned is one SUM away.
   ONBOARDING_REWARD
+  // The workspace owner's flat monthly bonus on Pro/Org plans (2,000/3,000 —
+  // planConfig.BLOCK_CONFIG.ownerBonus), granted alongside MONTHLY_GRANT on
+  // each paid invoice.
+  OWNER_BONUS
+  // One-time 1,500-credit gift when a membership first becomes
+  // payment-covered (Membership.welcomeGiftAt guards exactly-once).
+  WELCOME_GIFT
+  // Owner-to-member personal credit transfer — every transfer writes a
+  // matched pair: TRANSFER_OUT (negative) on the sender, TRANSFER_IN
+  // (positive) on the receiver, both with spentById = sender.
+  TRANSFER_IN
+  TRANSFER_OUT
+  // One-time baseline written by the shared-pool -> per-user migration: the
+  // workspace's whole legacy balance, credited to the owner's personal
+  // balance. Also the marker the migration script keys its idempotency off.
+  BALANCE_MIGRATION
 }
 
 // One row per (workspace, checklist key) once that task — or, for
@@ -562,12 +622,18 @@ model OnboardingTaskCompletion {
   @@index([workspaceId])
 }
 
-// Append-only — never UPDATE or DELETE a row. Balance is always
-// workspace.monthlyCreditGrant + SUM(delta) [- reservations held in Redis].
+// Append-only — never UPDATE or DELETE a row. Since the per-user migration,
+// a USER's balance is SUM(delta WHERE userId = them) [- reservations held in
+// Redis]; rows with userId = null are legacy shared-pool history whose value
+// was absorbed into the owner's BALANCE_MIGRATION baseline row.
 // See README.md "How the credit flow works".
 model CreditLedgerEntry {
   id          String       @id @default(uuid())
   workspaceId String
+  // Whose PERSONAL balance this row moved — a soft reference like spentById
+  // below, so the row survives account deletion. Null only on legacy rows
+  // written before the per-user migration (shared-pool era).
+  userId      String?
   delta       Int
   reason      CreditReason
   contactId   String?
@@ -590,6 +656,7 @@ model CreditLedgerEntry {
 
   @@index([workspaceId, createdAt])
   @@index([workspaceId, spentById])
+  @@index([userId, createdAt])
 }
 
 // Audit trail + reveal-state: once any member of a workspace reveals a

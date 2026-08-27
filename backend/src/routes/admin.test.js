@@ -4,7 +4,7 @@ import { createApp } from '../app.js';
 import { resetDb, resetRedis } from '../test/dbHelpers.js';
 import { prisma } from '../config/db.js';
 import { hashPassword } from '../utils/password.js';
-import { initializeBalance } from '../services/creditService.js';
+import { grantCredits } from '../services/creditService.js';
 
 const app = createApp();
 
@@ -35,7 +35,13 @@ async function createTenantUser({ suspended = false } = {}) {
   await prisma.membership.create({
     data: { userId: user.id, workspaceId: workspace.id, role: 'OWNER' },
   });
-  await initializeBalance(workspace.id, workspace.monthlyCreditGrant);
+  // Credits are personal — seed the user's own balance (ledger + Redis).
+  await grantCredits({
+    userId: user.id,
+    workspaceId: workspace.id,
+    amount: workspace.monthlyCreditGrant,
+    reason: 'MONTHLY_GRANT',
+  });
   return { user, workspace };
 }
 

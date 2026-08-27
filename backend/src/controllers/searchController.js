@@ -63,10 +63,17 @@ const CONTACT_COLUMNS = [
 // query never touches the reservation (releaseOnError refunds it).
 async function chargeCsvExport(req) {
   const { amount } = await resolveReservationForCommit(req.reservationId, {
+    userId: req.auth.userId,
     workspaceId: req.auth.workspaceId,
   });
   await prisma.creditLedgerEntry.create({
-    data: { workspaceId: req.auth.workspaceId, delta: -amount, reason: 'CSV_EXPORT', spentById: req.auth.userId },
+    data: {
+      userId: req.auth.userId,
+      workspaceId: req.auth.workspaceId,
+      delta: -amount,
+      reason: 'CSV_EXPORT',
+      spentById: req.auth.userId,
+    },
   });
 }
 

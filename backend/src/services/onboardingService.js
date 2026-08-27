@@ -1,5 +1,5 @@
 import { prisma } from '../config/db.js';
-import { redis } from '../config/redis.js';
+import { grantCredits } from './creditService.js';
 import { logger } from '../config/logger.js';
 import { planIncludesSequences } from '../config/planConfig.js';
 import {
@@ -85,7 +85,7 @@ export async function recordEvent(workspaceId, key) {
 // against the sum already recorded on the rows themselves.
 // ---------------------------------------------------------------------------
 
-async function payReward(workspaceId, row, configuredReward, alreadyEarned) {
+async function payReward(workspaceId, userId, row, configuredReward, alreadyEarned) {
   const remaining = Math.max(0, MAX_REWARD_CREDITS - alreadyEarned);
   const amount = Math.min(configuredReward, remaining);
 
@@ -96,10 +96,10 @@ async function payReward(workspaceId, row, configuredReward, alreadyEarned) {
   if (claimed.count !== 1) return 0; // someone else paid it out first
 
   if (amount > 0) {
-    await prisma.creditLedgerEntry.create({
-      data: { workspaceId, delta: amount, reason: 'ONBOARDING_REWARD' },
-    });
-    await redis.incrby(`credits:balance:${workspaceId}`, amount);
+    // Credits are personal — the reward lands on the balance of the user
+    // whose getProgress() call claimed it (in practice, whoever finished
+    // the checklist task).
+    await grantCredits({ userId, workspaceId, amount, reason: 'ONBOARDING_REWARD' });
   }
   return amount;
 }
@@ -174,7 +174,7 @@ export async function getProgress(workspaceId, userId) {
     .sort((a, b) => a.completedAt - b.completedAt);
   for (const row of unpaid) {
     const configured = rewardFor(row.key);
-    const paid = await payReward(workspaceId, row, configured, earned);
+    const paid = await payReward(workspaceId, userId, row, configured, earned);
     if (paid > 0) {
       earned += paid;
       justRewarded.push({ key: row.key, label: labelFor(row.key), credits: paid });

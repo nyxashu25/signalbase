@@ -22,7 +22,8 @@ export function reserveCompanyViewCredits(amount) {
         return next();
       }
 
-      req.reservationId = await reserveCredit(req.auth.workspaceId, amount);
+      // Credits are personal — the reservation debits the CALLER's balance.
+      req.reservationId = await reserveCredit(req.auth.userId, req.auth.workspaceId, amount);
       next();
     } catch (err) {
       next(err);

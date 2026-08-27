@@ -29,10 +29,13 @@ export function getCreditCosts(req, res) {
 }
 
 export async function getSummary(req, res) {
-  const { workspaceId } = req.auth;
+  const { workspaceId, userId } = req.auth;
 
+  // Balance and usage are PERSONAL since the per-user credit migration —
+  // the caller sees their own balance and their own spend, not the
+  // workspace's aggregate. Plan/seats stay workspace-level.
   const [balance, workspace, usedAgg] = await Promise.all([
-    creditService.getBalance(workspaceId),
+    creditService.getBalance(userId),
     prisma.workspace.findUnique({
       where: { id: workspaceId },
       select: {
@@ -41,10 +44,11 @@ export async function getSummary(req, res) {
         planActivatedAt: true,
         billingInterval: true,
         seats: true,
+        blocks: true,
       },
     }),
     prisma.creditLedgerEntry.aggregate({
-      where: { workspaceId, delta: { lt: 0 } },
+      where: { userId, delta: { lt: 0 } },
       _sum: { delta: true },
     }),
   ]);
@@ -53,6 +57,7 @@ export async function getSummary(req, res) {
     balance,
     plan: workspace.plan,
     seats: workspace.seats,
+    blocks: workspace.blocks,
     monthlyCreditGrant: workspace.monthlyCreditGrant,
     creditsUsed: Math.abs(usedAgg._sum.delta ?? 0),
     planActivatedAt: workspace.planActivatedAt,
@@ -61,10 +66,12 @@ export async function getSummary(req, res) {
 }
 
 export async function listTransactions(req, res) {
-  const { workspaceId } = req.auth;
+  const { workspaceId, userId } = req.auth;
   const { page, pageSize } = req.validatedQuery;
 
-  const where = { workspaceId };
+  // Personal history: only rows that moved the CALLER's balance. Team-wide
+  // spend visibility lives in the team audit (Settings → Members).
+  const where = { workspaceId, userId };
   const [total, entries] = await Promise.all([
     prisma.creditLedgerEntry.count({ where }),
     prisma.creditLedgerEntry.findMany({
@@ -103,11 +110,12 @@ export async function listTransactions(req, res) {
 }
 
 export async function createCheckoutSession(req, res) {
-  const { workspaceId } = req.auth;
+  const { workspaceId, userId } = req.auth;
   const { credits, currency } = req.body;
 
   const session = await stripeService.createCheckoutSession({
     workspaceId,
+    userId,
     credits,
     currency: currency ?? 'USD',
   });

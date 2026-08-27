@@ -19,13 +19,14 @@ async function registerOrg(orgName, email) {
     orgName,
   });
   const workspaceId = res.body.workspace.id;
+  const userId = res.body.user.id;
   // Sequences are gated to paid plans (see config/planConfig.js) — every
   // test in this file exercises sequence routes, so upgrade past the Free
-  // default and give it enough credits for enrollment tests, matching
-  // sequenceService.test.js's own approach.
+  // default and give the ACTING USER enough personal credits for enrollment
+  // tests (credits are per-user), matching sequenceService.test.js.
   await prisma.workspace.update({ where: { id: workspaceId }, data: { plan: 'BASIC' } });
-  await redis.set(`credits:balance:${workspaceId}`, 10_000);
-  return { accessToken: res.body.accessToken, workspaceId };
+  await redis.set(`credits:balance:user:${userId}`, 10_000);
+  return { accessToken: res.body.accessToken, workspaceId, userId };
 }
 
 async function seedContact(email = null) {
@@ -356,7 +357,7 @@ describe('sequences routes', () => {
       await request(app)
         .post(`/api/v1/sequences/${createRes.body.sequence.id}/activate`)
         .set('Authorization', `Bearer ${owner.accessToken}`);
-      const before = await getBalance(owner.workspaceId);
+      const before = await getBalance(owner.userId);
 
       const res = await request(app)
         .post(`/api/v1/sequences/${createRes.body.sequence.id}/enrollments`)
@@ -364,9 +365,10 @@ describe('sequences routes', () => {
         .send({ contactId: contact.id });
 
       expect(res.status).toBe(201);
-      expect(await getBalance(owner.workspaceId)).toBe(before - CREDIT_COSTS.SEQUENCE_ENROLLMENT);
+      expect(await getBalance(owner.userId)).toBe(before - CREDIT_COSTS.SEQUENCE_ENROLLMENT);
+      // Spends only — registration itself writes a +grant row now.
       const ledger = await prisma.creditLedgerEntry.findMany({
-        where: { workspaceId: owner.workspaceId },
+        where: { workspaceId: owner.workspaceId, delta: { lt: 0 } },
       });
       expect(ledger).toHaveLength(1);
       expect(ledger[0]).toMatchObject({
@@ -382,7 +384,7 @@ describe('sequences routes', () => {
         .post('/api/v1/sequences')
         .set('Authorization', `Bearer ${owner.accessToken}`)
         .send(twoStepSequence);
-      const before = await getBalance(owner.workspaceId);
+      const before = await getBalance(owner.userId);
 
       const res = await request(app)
         .post(`/api/v1/sequences/${createRes.body.sequence.id}/enrollments`)
@@ -390,9 +392,9 @@ describe('sequences routes', () => {
         .send({ contactId: contact.id });
 
       expect(res.status).toBe(409);
-      expect(await getBalance(owner.workspaceId)).toBe(before);
+      expect(await getBalance(owner.userId)).toBe(before);
       const ledger = await prisma.creditLedgerEntry.findMany({
-        where: { workspaceId: owner.workspaceId },
+        where: { workspaceId: owner.workspaceId, delta: { lt: 0 } },
       });
       expect(ledger).toHaveLength(0);
     });
@@ -411,7 +413,7 @@ describe('sequences routes', () => {
         .post(`/api/v1/sequences/${createRes.body.sequence.id}/enrollments`)
         .set('Authorization', `Bearer ${owner.accessToken}`)
         .send({ contactId: contact.id });
-      const afterFirst = await getBalance(owner.workspaceId);
+      const afterFirst = await getBalance(owner.userId);
 
       const second = await request(app)
         .post(`/api/v1/sequences/${createRes.body.sequence.id}/enrollments`)
@@ -419,7 +421,7 @@ describe('sequences routes', () => {
         .send({ contactId: contact.id });
 
       expect(second.status).toBe(409);
-      expect(await getBalance(owner.workspaceId)).toBe(afterFirst); // unchanged — no double charge
+      expect(await getBalance(owner.userId)).toBe(afterFirst); // unchanged — no double charge
       const ledger = await prisma.creditLedgerEntry.findMany({
         where: { workspaceId: owner.workspaceId, reason: 'SEQUENCE_ENROLLMENT' },
       });
@@ -436,7 +438,7 @@ describe('sequences routes', () => {
       await request(app)
         .post(`/api/v1/sequences/${createRes.body.sequence.id}/activate`)
         .set('Authorization', `Bearer ${owner.accessToken}`);
-      await redis.set(`credits:balance:${owner.workspaceId}`, 0);
+      await redis.set(`credits:balance:user:${owner.userId}`, 0);
 
       const res = await request(app)
         .post(`/api/v1/sequences/${createRes.body.sequence.id}/enrollments`)

@@ -1,5 +1,5 @@
 import { prisma } from '../config/db.js';
-import { redis } from '../config/redis.js';
+import * as creditService from './creditService.js';
 import { getBalance } from './creditService.js';
 import { ApiError } from '../middleware/errorHandler.js';
 import { getStripeSettings } from './paymentSettingsService.js';
@@ -152,10 +152,11 @@ export async function getUserDetail(userId) {
   const { user, membership } = await loadUserWithPrimaryWorkspace(userId);
   const workspace = membership.workspace;
 
+  // Personal balance and personal spend — credits are per-user now.
   const [balance, usedAgg] = await Promise.all([
-    getBalance(workspace.id),
+    getBalance(user.id),
     prisma.creditLedgerEntry.aggregate({
-      where: { workspaceId: workspace.id, delta: { lt: 0 } },
+      where: { userId: user.id, delta: { lt: 0 } },
       _sum: { delta: true },
     }),
   ]);
@@ -171,6 +172,8 @@ export async function getUserDetail(userId) {
       id: workspace.id,
       name: workspace.name,
       plan: workspace.plan,
+      seats: workspace.seats,
+      blocks: workspace.blocks,
       monthlyCreditGrant: workspace.monthlyCreditGrant,
     },
     balance,
@@ -298,10 +301,8 @@ export async function addCredits(userId, amount, actorAdminId) {
   const { user, membership } = await loadUserWithPrimaryWorkspace(userId);
   const workspaceId = membership.workspace.id;
 
-  await prisma.creditLedgerEntry.create({
-    data: { workspaceId, delta: amount, reason: 'ADJUSTMENT' },
-  });
-  await redis.incrby(`credits:balance:${workspaceId}`, amount);
+  // Credits are personal — the adjustment lands on THIS user's balance.
+  await creditService.grantCredits({ userId, workspaceId, amount, reason: 'ADJUSTMENT' });
   await recordAuditLog({
     superAdminId: actorAdminId,
     action: 'ADD_CREDITS',
@@ -310,7 +311,7 @@ export async function addCredits(userId, amount, actorAdminId) {
   });
   await notificationService.sendAdminCreditsAdded(user, amount);
 
-  return { workspaceId, balance: await getBalance(workspaceId) };
+  return { workspaceId, balance: await getBalance(userId) };
 }
 
 /**

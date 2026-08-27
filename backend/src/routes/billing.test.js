@@ -5,7 +5,7 @@ import { createApp } from '../app.js';
 import { resetDb, resetRedis } from '../test/dbHelpers.js';
 import { registerAndVerify } from '../test/authHelpers.js';
 import { prisma } from '../config/db.js';
-import { getBalance, initializeBalance } from '../services/creditService.js';
+import { getBalance, grantCredits } from '../services/creditService.js';
 import { saveStripeSettings } from '../services/paymentSettingsService.js';
 import { createCheckoutSession, createPlanSubscriptionSession } from '../services/stripeService.js';
 
@@ -47,8 +47,25 @@ async function makeWorkspace() {
   const workspace = await prisma.workspace.create({
     data: { orgId: org.id, name: 'Billing Test WS', monthlyCreditGrant: 100 },
   });
-  await initializeBalance(workspace.id, workspace.monthlyCreditGrant);
-  return workspace;
+  // Credits are personal — grants land on the OWNER, so every webhook test
+  // needs a real owner membership to credit.
+  const owner = await prisma.user.create({
+    data: {
+      email: `owner-${Date.now()}-${Math.random()}@billing.test`,
+      passwordHash: 'x',
+      name: 'Billing Owner',
+    },
+  });
+  await prisma.membership.create({
+    data: { userId: owner.id, workspaceId: workspace.id, role: 'OWNER' },
+  });
+  await grantCredits({
+    userId: owner.id,
+    workspaceId: workspace.id,
+    amount: workspace.monthlyCreditGrant,
+    reason: 'MONTHLY_GRANT',
+  });
+  return Object.assign(workspace, { ownerId: owner.id });
 }
 
 describe('POST /webhooks/stripe', () => {
@@ -96,20 +113,20 @@ describe('POST /webhooks/stripe', () => {
 
   it('tops up credits on checkout.session.completed', async () => {
     const workspace = await makeWorkspace();
-    const before = await getBalance(workspace.id);
+    const before = await getBalance(workspace.ownerId);
 
     const res = await postStripeWebhook(
       checkoutCompletedEvent({ id: 'evt_2', workspaceId: workspace.id, credits: 50 }),
     );
 
     expect(res.status).toBe(204);
-    expect(await getBalance(workspace.id)).toBe(before + 50);
+    expect(await getBalance(workspace.ownerId)).toBe(before + 50);
 
     const ledger = await prisma.creditLedgerEntry.findMany({
-      where: { workspaceId: workspace.id },
+      where: { workspaceId: workspace.id, reason: 'TOPUP' },
     });
     expect(ledger).toHaveLength(1);
-    expect(ledger[0]).toMatchObject({ delta: 50, reason: 'TOPUP' });
+    expect(ledger[0]).toMatchObject({ delta: 50, reason: 'TOPUP', userId: workspace.ownerId });
   });
 
   it('does not double-credit a redelivered event id', async () => {
@@ -120,7 +137,7 @@ describe('POST /webhooks/stripe', () => {
     await postStripeWebhook(event); // Stripe retries on anything but a 2xx, and can also just redeliver
 
     const ledger = await prisma.creditLedgerEntry.findMany({
-      where: { workspaceId: workspace.id },
+      where: { workspaceId: workspace.id, reason: 'TOPUP' },
     });
     expect(ledger).toHaveLength(1);
   });
@@ -144,7 +161,7 @@ describe('POST /webhooks/stripe', () => {
 
   it('activates the plan on a subscription checkout, without granting credits yet', async () => {
     const workspace = await makeWorkspace();
-    const before = await getBalance(workspace.id);
+    const before = await getBalance(workspace.ownerId);
 
     const res = await postStripeWebhook({
       id: 'evt_plan_1',
@@ -169,7 +186,7 @@ describe('POST /webhooks/stripe', () => {
     expect(updated.stripeCustomerId).toBe('cus_plan_1');
     expect(updated.stripeSubscriptionId).toBe('sub_plan_1');
     // No grant on activation itself — invoice.paid is the only place credits move (below).
-    expect(await getBalance(workspace.id)).toBe(before);
+    expect(await getBalance(workspace.ownerId)).toBe(before);
   });
 
   it('grants the plan’s monthly credits on invoice.paid, including the first invoice', async () => {
@@ -178,7 +195,7 @@ describe('POST /webhooks/stripe', () => {
       where: { id: workspace.id },
       data: { plan: 'PROFESSIONAL', monthlyCreditGrant: 1200, stripeSubscriptionId: 'sub_plan_2' },
     });
-    const before = await getBalance(workspace.id);
+    const before = await getBalance(workspace.ownerId);
 
     const res = await postStripeWebhook({
       id: 'evt_plan_2',
@@ -187,12 +204,14 @@ describe('POST /webhooks/stripe', () => {
     });
 
     expect(res.status).toBe(204);
-    expect(await getBalance(workspace.id)).toBe(before + 1200);
+    expect(await getBalance(workspace.ownerId)).toBe(before + 1200);
+    // The seed grant (100) is also MONTHLY_GRANT — assert on the
+    // invoice-driven row by its amount.
     const ledger = await prisma.creditLedgerEntry.findMany({
-      where: { workspaceId: workspace.id },
+      where: { workspaceId: workspace.id, reason: 'MONTHLY_GRANT', delta: 1200 },
     });
     expect(ledger).toHaveLength(1);
-    expect(ledger[0]).toMatchObject({ delta: 1200, reason: 'MONTHLY_GRANT' });
+    expect(ledger[0]).toMatchObject({ delta: 1200, userId: workspace.ownerId });
   });
 
   it('grants credits again on a second invoice.paid (renewal), not just the first', async () => {
@@ -216,7 +235,9 @@ describe('POST /webhooks/stripe', () => {
     const ledger = await prisma.creditLedgerEntry.findMany({
       where: { workspaceId: workspace.id },
     });
-    expect(ledger.filter((e) => e.reason === 'MONTHLY_GRANT')).toHaveLength(2);
+    // Two invoice-driven grants of 500 each (the 100-credit seed grant is
+    // also MONTHLY_GRANT, so filter by amount).
+    expect(ledger.filter((e) => e.reason === 'MONTHLY_GRANT' && e.delta === 500)).toHaveLength(2);
   });
 
   it('sets billingInterval from checkout metadata on activation', async () => {
@@ -251,7 +272,7 @@ describe('POST /webhooks/stripe', () => {
         stripeSubscriptionId: 'sub_quarterly_1',
       },
     });
-    const before = await getBalance(workspace.id);
+    const before = await getBalance(workspace.ownerId);
 
     await postStripeWebhook({
       id: 'evt_quarterly_1',
@@ -259,7 +280,7 @@ describe('POST /webhooks/stripe', () => {
       data: { object: { id: 'in_q1', subscription: 'sub_quarterly_1' } },
     });
 
-    expect(await getBalance(workspace.id)).toBe(before + 1500); // 500 * 3 months
+    expect(await getBalance(workspace.ownerId)).toBe(before + 1500); // 500 * 3 months
   });
 
   it('grants 12 months of credits per invoice for an annual subscription', async () => {
@@ -273,7 +294,7 @@ describe('POST /webhooks/stripe', () => {
         stripeSubscriptionId: 'sub_annual_1',
       },
     });
-    const before = await getBalance(workspace.id);
+    const before = await getBalance(workspace.ownerId);
 
     await postStripeWebhook({
       id: 'evt_annual_1',
@@ -281,12 +302,12 @@ describe('POST /webhooks/stripe', () => {
       data: { object: { id: 'in_y1', subscription: 'sub_annual_1' } },
     });
 
-    expect(await getBalance(workspace.id)).toBe(before + 14400); // 1200 * 12 months
+    expect(await getBalance(workspace.ownerId)).toBe(before + 14400); // 1200 * 12 months
   });
 
   it('ignores a non-subscription invoice (no invoice.subscription)', async () => {
     const workspace = await makeWorkspace();
-    const before = await getBalance(workspace.id);
+    const before = await getBalance(workspace.ownerId);
 
     const res = await postStripeWebhook({
       id: 'evt_plan_4',
@@ -295,7 +316,7 @@ describe('POST /webhooks/stripe', () => {
     });
 
     expect(res.status).toBe(204);
-    expect(await getBalance(workspace.id)).toBe(before);
+    expect(await getBalance(workspace.ownerId)).toBe(before);
   });
 });
 
@@ -619,6 +640,7 @@ describe('stripeService.createCheckoutSession (unit, injected client)', () => {
       expect(params.line_items[0].price_data.unit_amount).toBe(125_000);
       expect(params.metadata).toEqual({
         workspaceId: 'ws_1',
+        userId: 'user_1',
         credits: '250',
         amountCents: '125000',
       });
@@ -630,7 +652,7 @@ describe('stripeService.createCheckoutSession (unit, injected client)', () => {
     };
 
     const session = await createCheckoutSession(
-      { workspaceId: 'ws_1', credits: 250, currency: 'INR' },
+      { workspaceId: 'ws_1', userId: 'user_1', credits: 250, currency: 'INR' },
       makeClient,
     );
 
@@ -659,6 +681,7 @@ describe('GET /billing/transactions', () => {
       orgName: 'Billing Co',
     });
     const workspaceId = registerRes.body.workspace.id;
+    const userId = registerRes.body.user.id;
 
     const company = await prisma.company.create({
       data: { name: 'Nova Systems', domain: `novasystems-${Date.now()}.com` },
@@ -671,11 +694,18 @@ describe('GET /billing/transactions', () => {
     // together can otherwise land in the same DB timestamp tick, making
     // "newest first" ordering nondeterministic between ties.
     const now = Date.now();
+    // The signup grant (+800) is part of the caller's personal history too —
+    // shove it into the distant past so the three rows below order cleanly.
+    await prisma.creditLedgerEntry.updateMany({
+      where: { workspaceId },
+      data: { createdAt: new Date(now - 60_000) },
+    });
     await prisma.creditLedgerEntry.create({
-      data: { workspaceId, delta: 100, reason: 'MONTHLY_GRANT', createdAt: new Date(now - 2000) },
+      data: { userId, workspaceId, delta: 100, reason: 'MONTHLY_GRANT', createdAt: new Date(now - 2000) },
     });
     await prisma.creditLedgerEntry.create({
       data: {
+        userId,
         workspaceId,
         delta: -1,
         reason: 'EMAIL_REVEAL',
@@ -685,6 +715,7 @@ describe('GET /billing/transactions', () => {
     });
     await prisma.creditLedgerEntry.create({
       data: {
+        userId,
         workspaceId,
         delta: 250,
         reason: 'TOPUP',
@@ -698,11 +729,12 @@ describe('GET /billing/transactions', () => {
       .set('Authorization', `Bearer ${registerRes.body.accessToken}`);
 
     expect(res.status).toBe(200);
-    expect(res.body.total).toBe(3);
+    expect(res.body.total).toBe(4); // + the signup grant
     expect(res.body.results.map((r) => r.reason)).toEqual([
       'TOPUP',
       'EMAIL_REVEAL',
       'MONTHLY_GRANT',
+      'MONTHLY_GRANT', // signup grant, pushed oldest above
     ]);
 
     const revealRow = res.body.results.find((r) => r.reason === 'EMAIL_REVEAL');
@@ -728,15 +760,22 @@ describe('GET /billing/transactions', () => {
     });
 
     await prisma.creditLedgerEntry.create({
-      data: { workspaceId: orgA.body.workspace.id, delta: 100, reason: 'MONTHLY_GRANT' },
+      data: {
+        userId: orgA.body.user.id,
+        workspaceId: orgA.body.workspace.id,
+        delta: 100,
+        reason: 'ADJUSTMENT',
+      },
     });
 
     const res = await request(app)
       .get('/api/v1/billing/transactions')
       .set('Authorization', `Bearer ${orgB.body.accessToken}`);
 
-    expect(res.body.total).toBe(0);
-    expect(res.body.results).toHaveLength(0);
+    // Only org B's own signup grant — org A's rows never leak across.
+    expect(res.body.total).toBe(1);
+    expect(res.body.results).toHaveLength(1);
+    expect(res.body.results[0].reason).toBe('MONTHLY_GRANT');
   });
 });
 

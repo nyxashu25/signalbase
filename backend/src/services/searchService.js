@@ -207,11 +207,11 @@ export async function getCompanyDetail(workspaceId, userId, companyId, reservati
 
   let charged = false;
   if (reservationId) {
-    const { amount } = await resolveReservationForCommit(reservationId, { workspaceId });
+    const { amount } = await resolveReservationForCommit(reservationId, { userId, workspaceId });
     try {
       await prisma.$transaction([
         prisma.creditLedgerEntry.create({
-          data: { workspaceId, delta: -amount, reason: 'COMPANY_VIEW', spentById: userId },
+          data: { userId, workspaceId, delta: -amount, reason: 'COMPANY_VIEW', spentById: userId },
         }),
         prisma.companyDetailView.create({ data: { workspaceId, companyId, viewedById: userId } }),
       ]);
@@ -222,7 +222,7 @@ export async function getCompanyDetail(workspaceId, userId, companyId, reservati
       // workspace — it already committed its CompanyDetailView row. The
       // reservation's Redis side is already cleared, so refund directly
       // rather than double-charge for a view someone else just paid for.
-      await refundAmount(workspaceId, amount);
+      await refundAmount(userId, amount);
     }
   }
 

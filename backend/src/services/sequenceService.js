@@ -63,7 +63,7 @@ export async function enroll(workspaceId, sequenceId, contactId, reservationId, 
     throw new ApiError(409, 'Sequence must be ACTIVE to enroll contacts');
   }
 
-  const { amount } = await resolveReservationForCommit(reservationId, { workspaceId });
+  const { amount } = await resolveReservationForCommit(reservationId, { userId, workspaceId });
 
   try {
     const [enrollment] = await prisma.$transaction([
@@ -71,7 +71,7 @@ export async function enroll(workspaceId, sequenceId, contactId, reservationId, 
         data: { sequenceId, workspaceId, contactId, nextStepDueAt: new Date() },
       }),
       prisma.creditLedgerEntry.create({
-        data: { workspaceId, delta: -amount, reason: 'SEQUENCE_ENROLLMENT', spentById: userId },
+        data: { userId, workspaceId, delta: -amount, reason: 'SEQUENCE_ENROLLMENT', spentById: userId },
       }),
     ]);
     return enrollment;
@@ -80,7 +80,7 @@ export async function enroll(workspaceId, sequenceId, contactId, reservationId, 
       // The reservation's Redis side is already cleared by the resolve
       // call above — refund directly rather than double-charge for an
       // enrollment that didn't happen.
-      await refundAmount(workspaceId, amount);
+      await refundAmount(userId, amount);
       throw new ApiError(409, 'This contact is already enrolled in this sequence');
     }
     throw err;

@@ -265,7 +265,9 @@ describe('extension: observe + reveal', () => {
     expect(res.body.phone).toBe('+1 415 555 0132');
     expect(res.body.alreadyRevealed).toBe(false);
 
-    const ledger = await prisma.creditLedgerEntry.findMany({ where: { workspaceId: org.workspaceId } });
+    const ledger = await prisma.creditLedgerEntry.findMany({
+      where: { workspaceId: org.workspaceId, delta: { lt: 0 } },
+    });
     expect(ledger).toHaveLength(1);
     expect(ledger[0].delta).toBe(-4);
     expect(ledger[0].reason).toBe('EXTENSION_REVEAL');
@@ -296,7 +298,9 @@ describe('extension: observe + reveal', () => {
     expect(ext.body.alreadyRevealed).toBe(true);
     expect(ext.body.phone).toBe('+1 415 555 0132');
 
-    const ledger = await prisma.creditLedgerEntry.findMany({ where: { workspaceId: org.workspaceId } });
+    const ledger = await prisma.creditLedgerEntry.findMany({
+      where: { workspaceId: org.workspaceId, delta: { lt: 0 } },
+    });
     expect(ledger).toHaveLength(1); // only the in-app reveal charged
     expect(ledger[0].delta).toBe(-2);
   });
@@ -314,7 +318,7 @@ describe('extension: observe + reveal', () => {
     const first = await extReveal(org.apiKey, contact.id, key);
     const replay = await extReveal(org.apiKey, contact.id, key);
     expect(replay.body).toEqual(first.body);
-    expect(await prisma.creditLedgerEntry.count({ where: { workspaceId: org.workspaceId } })).toBe(1);
+    expect(await prisma.creditLedgerEntry.count({ where: { workspaceId: org.workspaceId, delta: { lt: 0 } } })).toBe(1);
   });
 
   it('GET /extension/me reports identity, balance and the reveal price', async () => {
