@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 // Keep this in step with a version bump so the UI can tell an installed user
 // their copy is out of date. The download is served at EXTENSION_DOWNLOAD_URL
 // (Vite copies frontend/public/ verbatim).
-export const EXTENSION_VERSION = '0.4.0';
+export const EXTENSION_VERSION = '0.5.0';
 export const EXTENSION_DOWNLOAD_URL = '/downloads/datapit-extension.zip';
 
 // Live Chrome Web Store listing — the one-click "Add to Chrome" path for

@@ -3,49 +3,123 @@
 <head>
   <meta charset="utf-8" />
   <style>
+    :root {
+      --cyan:#22d3ee; --cyan-hi:#67e8f9; --mag:#ff2a6d; --violet:#a855f7;
+      --ok:#00ffa3; --danger:#ff5c7a;
+      --ink:#e8f6ff; --muted:#7f8bb0; --panel:#0a0d18; --line:rgba(34,211,238,.32);
+    }
+    @keyframes dp-led { 0%,100% { opacity:1; } 50% { opacity:.25; } }
+    @keyframes dp-sheen { from { transform:translateX(-120%);} to { transform:translateX(320%);} }
+    @keyframes dp-grid { from { background-position:0 0; } to { background-position:0 26px; } }
+
+    * { box-sizing: border-box; }
     body {
-      width: 300px; margin: 0; padding: 16px;
-      background: #16121f; color: #f4f2f8;
-      font: 13px/1.5 -apple-system, "Segoe UI", Roboto, sans-serif;
+      position: relative; width: 312px; margin: 0; padding: 18px 16px 16px; overflow: hidden;
+      color: var(--ink);
+      background:
+        radial-gradient(120% 70% at 100% 0%, rgba(255,42,109,.12), transparent 45%),
+        radial-gradient(120% 70% at 0% 0%, rgba(34,211,238,.14), transparent 45%),
+        var(--panel);
+      font: 13px/1.5 "Segoe UI", Roboto, -apple-system, sans-serif;
     }
+    body::before { /* faint grid */
+      content:''; position:absolute; inset:0; pointer-events:none; opacity:.35;
+      background-image:
+        linear-gradient(rgba(34,211,238,.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(34,211,238,.06) 1px, transparent 1px);
+      background-size: 26px 26px; animation: dp-grid 9s linear infinite;
+    }
+    body::after { /* top neon rail */
+      content:''; position:absolute; top:0; left:0; right:0; height:2px;
+      background: linear-gradient(90deg,var(--cyan),var(--violet) 55%,var(--mag));
+      box-shadow: 0 0 10px rgba(34,211,238,.7);
+    }
+
+    .head { position:relative; display:flex; align-items:center; gap:9px; }
+    .led { width:8px; height:8px; border-radius:50%; background:var(--ok);
+      box-shadow:0 0 9px var(--ok); animation: dp-led 1.8s ease-in-out infinite; flex:none; }
     h1 {
-      margin: 0 0 2px; font-size: 13px; letter-spacing: .05em; text-transform: uppercase;
-      background: linear-gradient(90deg,#a78bfa,#f472b6);
-      -webkit-background-clip: text; background-clip: text; color: transparent;
+      margin:0; font: 800 14px/1 ui-monospace, "Cascadia Code", Consolas, monospace;
+      letter-spacing:.24em; text-transform:uppercase;
+      background: linear-gradient(90deg,var(--cyan),var(--mag));
+      -webkit-background-clip:text; background-clip:text; color:transparent;
     }
-    .muted { color: #a49fb3; font-size: 12px; }
-    .row { margin-top: 12px; }
+    .head .tag { margin-left:auto; font:700 9px/1 ui-monospace,Consolas,monospace; letter-spacing:.16em;
+      text-transform:uppercase; color:var(--muted); padding:3px 7px;
+      border:1px solid rgba(127,139,176,.3); border-radius:3px; }
+    .sub { position:relative; margin-top:6px; font:11px/1.4 ui-monospace,Consolas,monospace;
+      letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+
+    .muted { color: var(--muted); font-size: 12px; }
+    .row { position:relative; margin-top: 13px; }
+    label, .lead { font:700 10px/1 ui-monospace,Consolas,monospace; letter-spacing:.14em;
+      text-transform:uppercase; color:var(--muted); }
+
     input {
-      width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px;
-      border: 1px solid rgba(255,255,255,.15); background: rgba(255,255,255,.06);
-      color: #fff; font: 12px ui-monospace, Consolas, monospace;
+      width: 100%; margin-top:7px; padding: 9px 11px; border-radius: 5px;
+      border: 1px solid var(--line); border-left:2px solid var(--cyan);
+      background: rgba(34,211,238,.05); color: var(--cyan-hi);
+      font: 12px ui-monospace, "Cascadia Code", Consolas, monospace; letter-spacing:.02em;
     }
-    input:focus { outline: 2px solid #7c3aed; border-color: transparent; }
+    input::placeholder { color: rgba(127,139,176,.7); }
+    input:focus { outline: none; border-color: var(--cyan);
+      box-shadow: 0 0 0 1px var(--cyan), 0 0 14px rgba(34,211,238,.35); }
+
     button {
-      margin-top: 10px; width: 100%; cursor: pointer; border: 0; border-radius: 8px;
-      padding: 9px 12px; font-weight: 700; font-size: 12px;
-      background: linear-gradient(90deg,#7c3aed,#db2777); color: #fff;
+      position:relative; overflow:hidden; margin-top: 12px; width: 100%; cursor: pointer; border: 0;
+      padding: 10px 12px; font: 800 11px/1 ui-monospace, Consolas, monospace;
+      letter-spacing:.12em; text-transform:uppercase; color:#04121a;
+      background: linear-gradient(120deg,var(--cyan),var(--cyan-hi));
+      clip-path: polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);
+      box-shadow: 0 0 16px rgba(34,211,238,.35); transition: box-shadow .18s ease, transform .1s ease;
     }
-    button.ghost { background: rgba(255,255,255,.09); }
-    button:disabled { opacity: .55; cursor: default; }
-    .status { margin-top: 12px; padding: 10px 12px; border-radius: 8px; background: rgba(255,255,255,.06); }
+    button:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 0 24px rgba(34,211,238,.6); }
+    button::after { content:''; position:absolute; top:0; left:0; width:40%; height:100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent);
+      transform: translateX(-120%); animation: dp-sheen 3.4s ease-in-out infinite; }
+    button.ghost { color:var(--cyan-hi); background: rgba(34,211,238,.06); box-shadow: 0 0 0 1px rgba(34,211,238,.35) inset; }
+    button.ghost::after { display:none; }
+    button.ghost:hover:not(:disabled) { box-shadow: 0 0 0 1px var(--cyan) inset, 0 0 14px rgba(34,211,238,.4); }
+    button:disabled { opacity: .5; cursor: default; box-shadow:none; }
+    button:disabled::after { display:none; }
+
+    .status { position:relative; margin-top: 14px; padding: 13px; border-radius: 6px;
+      background: rgba(34,211,238,.05);
+      box-shadow: 0 0 0 1px var(--line) inset;
+      clip-path: polygon(11px 0,100% 0,100% calc(100% - 11px),calc(100% - 11px) 100%,0 100%,0 11px); }
     .status b { color: #fff; }
-    .balance { font-size: 20px; font-weight: 800; color: #fff; }
-    .error { margin-top: 10px; color: #fca5a5; font-size: 12px; }
-    .ok { color: #34d399; }
-    a { color: #c4b5fd; }
+    .status .who { font-weight:700; color:#fff; }
+    .status .ws { margin-top:3px; font: 11px ui-monospace,Consolas,monospace; letter-spacing:.04em; color: var(--muted); }
+    .balrow { margin-top:12px; display:flex; align-items:baseline; gap:8px; }
+    .balance { font: 800 26px/1 ui-monospace, "Cascadia Code", Consolas, monospace; color:var(--cyan-hi);
+      text-shadow: 0 0 14px rgba(34,211,238,.5); }
+    .balrow .unit { font:700 10px/1 ui-monospace,Consolas,monospace; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); }
+    #cost { margin-top:8px; font:11px/1.4 ui-monospace,Consolas,monospace; color: var(--muted); }
+
+    .hint { position:relative; margin-top:13px; padding-left:10px; border-left:2px solid var(--violet);
+      font-size:12px; color:var(--muted); }
+    .hint b { color: var(--cyan-hi); }
+    .error { position:relative; margin-top: 11px; color: var(--danger); font: 12px ui-monospace,Consolas,monospace;
+      padding-left:9px; border-left:2px solid var(--danger); }
+    .ok { color: var(--ok); }
+    a { color: var(--cyan-hi); }
     .hidden { display: none; }
   </style>
 </head>
 <body>
-  <h1>DataPit</h1>
-  <div class="muted">LinkedIn lookup &amp; reveal</div>
+  <div class="head">
+    <span class="led"></span>
+    <h1>DataPit</h1>
+    <span class="tag">v0.5</span>
+  </div>
+  <div class="sub">LinkedIn lookup &amp; reveal</div>
 
   <div id="connect" class="hidden">
-    <div class="row muted">
+    <div class="hint">
       Paste an API key from <b>Settings → API &amp; Extension</b> in DataPit.
     </div>
     <div class="row">
+      <label for="key">Access key</label>
       <input id="key" type="password" placeholder="dpk_…" autocomplete="off" spellcheck="false" />
     </div>
     <button id="save">Connect</button>
@@ -54,19 +128,19 @@
 
   <div id="connected" class="hidden">
     <div class="status">
-      <div><b id="who"></b></div>
-      <div class="muted" id="workspace"></div>
-      <div class="row">
+      <div class="who" id="who"></div>
+      <div class="ws" id="workspace"></div>
+      <div class="balrow">
         <span class="balance" id="balance"></span>
-        <span class="muted"> credits</span>
+        <span class="unit">credits</span>
       </div>
-      <div class="muted" id="cost"></div>
+      <div id="cost"></div>
     </div>
-    <div class="row muted">Open any <b>linkedin.com/in/…</b> profile — the DataPit card appears automatically.</div>
+    <div class="hint">Open any <b>linkedin.com/in/…</b> profile — the DataPit scanner deploys automatically.</div>
     <button id="disconnect" class="ghost">Disconnect</button>
   </div>
 
-  <div id="loading" class="muted row">Checking connection…</div>
+  <div id="loading" class="row muted">Establishing link…</div>
 
   <script src="popup.js"></script>
 </body>

@@ -334,51 +334,138 @@
   // it and collapses back to it.
   // ---------------------------------------------------------------------
 
+  // ---- Cyberpunk visual system --------------------------------------
+  // Neon cyan primary + hot-magenta secondary on a deep blue-black ground.
+  // Chamfered corners (clip-path), hairline neon edges with outer glow, a
+  // faint scanline wash, and a corner-bracket targeting reticle on the
+  // launcher. Every class hook the JS below relies on is preserved.
   const STYLES = `
     :host { all: initial; }
+    @keyframes dp-spin { to { transform: rotate(360deg); } }
+    @keyframes dp-pulse {
+      0%,100% { opacity:.9; transform:scale(1); }
+      50% { opacity:.35; transform:scale(1.18); }
+    }
+    @keyframes dp-led { 0%,100% { opacity:1; } 50% { opacity:.25; } }
+    @keyframes dp-sheen { from { transform:translateX(-120%); } to { transform:translateX(320%); } }
+    @keyframes dp-boot { from { opacity:0; transform:translateY(8px) scale(.98); } to { opacity:1; transform:none; } }
+
     .wrap {
       position: fixed; right: 20px; bottom: 20px; z-index: 2147483646;
-      font: 13px/1.45 -apple-system, "Segoe UI", Roboto, sans-serif;
-      display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
+      font: 13px/1.45 "Segoe UI", Roboto, -apple-system, sans-serif;
+      display: flex; flex-direction: column; align-items: flex-end; gap: 12px;
+      --cyan:#22d3ee; --cyan-hi:#67e8f9; --mag:#ff2a6d; --violet:#a855f7;
+      --ok:#00ffa3; --warn:#fbbf24; --danger:#ff5c7a;
+      --ink:#e8f6ff; --muted:#7f8bb0; --panel:#0a0d18; --line:rgba(34,211,238,.35);
     }
+
+    /* ---- launcher: chamfered reticle with a pulsing neon ring ---- */
     .launcher {
-      width: 46px; height: 46px; border-radius: 50%; border: 0; cursor: pointer;
-      background: linear-gradient(135deg,#7c3aed,#db2777); color: #fff;
-      font-weight: 800; font-size: 18px;
-      box-shadow: 0 6px 20px rgba(124,58,237,.5);
+      position: relative; width: 50px; height: 50px; border: 0; cursor: pointer;
+      background:
+        radial-gradient(120% 120% at 28% 22%, rgba(103,232,249,.35), transparent 55%),
+        linear-gradient(145deg,#0d1424,#0a0f1c);
+      color: var(--cyan-hi); font-weight: 800; font-size: 19px; letter-spacing:.04em;
       display: flex; align-items: center; justify-content: center;
+      clip-path: polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px);
+      box-shadow: 0 0 0 1px rgba(34,211,238,.55) inset, 0 6px 22px rgba(34,211,238,.35),
+        0 0 16px rgba(255,42,109,.25);
+      text-shadow: 0 0 10px rgba(34,211,238,.7);
+      transition: transform .12s ease, box-shadow .2s ease;
     }
-    .launcher:hover { transform: scale(1.06); }
+    .launcher::before { /* corner-bracket reticle */
+      content:''; position:absolute; inset:5px; pointer-events:none;
+      background:
+        linear-gradient(var(--cyan),var(--cyan)) left top/9px 1.5px no-repeat,
+        linear-gradient(var(--cyan),var(--cyan)) left top/1.5px 9px no-repeat,
+        linear-gradient(var(--mag),var(--mag)) right bottom/9px 1.5px no-repeat,
+        linear-gradient(var(--mag),var(--mag)) right bottom/1.5px 9px no-repeat;
+      opacity:.85;
+    }
+    .launcher::after { /* pulsing halo */
+      content:''; position:absolute; inset:-3px; z-index:-1;
+      clip-path: polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px);
+      background: linear-gradient(145deg,var(--cyan),var(--mag));
+      filter: blur(7px); opacity:.5; animation: dp-pulse 2.6s ease-in-out infinite;
+    }
+    .launcher:hover { transform: translateY(-1px) scale(1.06);
+      box-shadow: 0 0 0 1px var(--cyan) inset, 0 8px 26px rgba(34,211,238,.5), 0 0 22px rgba(255,42,109,.4); }
+
+    /* ---- card ---- */
     .card {
-      width: 320px; padding: 14px 16px; border-radius: 12px;
-      background: #16121f; color: #f4f2f8;
-      box-shadow: 0 8px 30px rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.12);
+      position: relative; width: 328px; padding: 15px 17px 14px;
+      background:
+        radial-gradient(140% 90% at 100% 0%, rgba(255,42,109,.10), transparent 45%),
+        radial-gradient(120% 90% at 0% 0%, rgba(34,211,238,.12), transparent 45%),
+        var(--panel);
+      color: var(--ink); overflow: hidden;
+      clip-path: polygon(14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%,0 14px);
+      box-shadow: 0 0 0 1px var(--line) inset, 0 18px 50px rgba(0,0,0,.6),
+        0 0 24px rgba(34,211,238,.14);
+      animation: dp-boot .28s ease both;
+    }
+    .card::before { /* top neon rail */
+      content:''; position:absolute; top:0; left:14px; right:0; height:2px;
+      background: linear-gradient(90deg,var(--cyan),var(--violet) 55%,var(--mag));
+      box-shadow: 0 0 10px rgba(34,211,238,.7);
+    }
+    .card::after { /* scanline wash */
+      content:''; position:absolute; inset:0; pointer-events:none; opacity:.5;
+      background: repeating-linear-gradient(0deg, rgba(120,220,255,.04) 0 1px, transparent 1px 3px);
+      mix-blend-mode: screen;
     }
     .card.hidden { display: none; }
-    .brand { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
-    .brand b { font-size: 12px; letter-spacing:.04em; text-transform:uppercase;
-      background: linear-gradient(90deg,#a78bfa,#f472b6); -webkit-background-clip:text; background-clip:text; color:transparent; }
-    .close { cursor:pointer; border:0; background:none; color:#8b8698; font-size:15px; line-height:1; padding:2px 4px; }
-    .close:hover { color:#fff; }
-    .title { font-weight:600; font-size:14px; color:#fff; }
-    .muted { color:#a49fb3; font-size:12px; }
-    .row { margin-top:8px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-    .value { font-family: ui-monospace, Consolas, monospace; font-size:12px; color:#e9e6f0;
-      background: rgba(255,255,255,.07); border-radius:6px; padding:3px 7px; word-break:break-all; }
-    .btn { cursor:pointer; border:0; border-radius:8px; padding:8px 13px; font-weight:700; font-size:12px;
-      background: linear-gradient(90deg,#7c3aed,#db2777); color:#fff; }
-    .btn:disabled { opacity:.55; cursor:default; }
-    .btn.ghost { background: rgba(255,255,255,.09); }
-    .pill { display:inline-block; border-radius:99px; padding:2px 8px; font-size:11px; font-weight:700; }
-    .pill.ok { background: rgba(52,211,153,.15); color:#34d399; }
-    .pill.info { background: rgba(167,139,250,.18); color:#c4b5fd; }
-    .pill.warn { background: rgba(251,191,36,.15); color:#fbbf24; }
-    .note { margin-top:8px; font-size:12px; color:#fca5a5; }
-    .footer { margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,.08);
+
+    .brand { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+    .led { width:7px; height:7px; border-radius:50%; background:var(--ok);
+      box-shadow:0 0 8px var(--ok); animation: dp-led 1.8s ease-in-out infinite; flex:none; }
+    .brand b { font: 800 12px/1 ui-monospace, "Cascadia Code", Consolas, monospace;
+      letter-spacing:.22em; text-transform:uppercase;
+      background: linear-gradient(90deg,var(--cyan),var(--mag)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .brand .tag { font: 700 9px/1 ui-monospace, Consolas, monospace; letter-spacing:.18em;
+      text-transform:uppercase; color:var(--muted); padding:2px 6px;
+      border:1px solid rgba(127,139,176,.3); border-radius:3px; }
+    .brand .sp { flex:1; }
+    .close { cursor:pointer; border:1px solid rgba(127,139,176,.25); background:rgba(255,255,255,.02);
+      color:var(--muted); font:700 13px/1 ui-monospace,Consolas,monospace; line-height:1; width:22px; height:22px;
+      border-radius:3px; display:flex; align-items:center; justify-content:center; }
+    .close:hover { color:var(--ink); border-color:var(--cyan); box-shadow:0 0 8px rgba(34,211,238,.4); }
+
+    .title { font-weight:700; font-size:15px; color:#fff; letter-spacing:.01em; text-shadow:0 0 12px rgba(34,211,238,.18); }
+    .muted { color:var(--muted); font-size:12px; }
+    .row { margin-top:9px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .value { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size:12px; color:var(--cyan-hi);
+      background: rgba(34,211,238,.07); border:1px solid rgba(34,211,238,.28); border-left:2px solid var(--cyan);
+      border-radius:4px; padding:4px 8px; word-break:break-all; transition: box-shadow .15s ease, background .15s ease; }
+    .value:hover { background: rgba(34,211,238,.12); box-shadow:0 0 12px rgba(34,211,238,.25); }
+
+    .btn { position:relative; cursor:pointer; border:0; padding:9px 14px; overflow:hidden;
+      font:800 11px/1 ui-monospace, Consolas, monospace; letter-spacing:.1em; text-transform:uppercase;
+      color:#04121a; background: linear-gradient(120deg,var(--cyan),var(--cyan-hi));
+      clip-path: polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px);
+      box-shadow: 0 0 16px rgba(34,211,238,.35); transition: box-shadow .18s ease, transform .1s ease; }
+    .btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 0 22px rgba(34,211,238,.6); }
+    .btn::after { content:''; position:absolute; top:0; left:0; width:40%; height:100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent);
+      transform: translateX(-120%); animation: dp-sheen 3.4s ease-in-out infinite; }
+    .btn:disabled { opacity:.5; cursor:default; box-shadow:none; }
+    .btn:disabled::after { display:none; }
+    .btn.ghost { color:var(--cyan-hi); background: rgba(34,211,238,.06); box-shadow: 0 0 0 1px rgba(34,211,238,.35) inset; }
+    .btn.ghost:hover:not(:disabled) { box-shadow: 0 0 0 1px var(--cyan) inset, 0 0 14px rgba(34,211,238,.4); }
+    .btn.ghost::after { display:none; }
+
+    .pill { display:inline-flex; align-items:center; gap:5px; border-radius:3px; padding:3px 8px;
+      font:800 10px/1 ui-monospace,Consolas,monospace; letter-spacing:.1em; text-transform:uppercase; }
+    .pill.ok   { color:var(--ok);     border:1px solid rgba(0,255,163,.45);  background:rgba(0,255,163,.08);  box-shadow:0 0 12px rgba(0,255,163,.2); }
+    .pill.info { color:var(--cyan-hi);border:1px solid rgba(34,211,238,.5);  background:rgba(34,211,238,.08); box-shadow:0 0 12px rgba(34,211,238,.18); }
+    .pill.warn { color:var(--warn);   border:1px solid rgba(251,191,36,.5);  background:rgba(251,191,36,.08); }
+    .note { margin-top:9px; font-size:12px; color:var(--danger); padding-left:9px; border-left:2px solid var(--danger); }
+    .footer { margin-top:13px; padding-top:11px; border-top:1px solid rgba(34,211,238,.14);
       display:flex; align-items:center; justify-content:space-between; gap:8px; }
-    .spin { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,.25);
-      border-top-color:#a78bfa; border-radius:50%; animation: dp-spin .8s linear infinite; }
-    @keyframes dp-spin { to { transform: rotate(360deg); } }
+    .footer .muted { font-family: ui-monospace, Consolas, monospace; font-size:10.5px; letter-spacing:.06em; }
+    .spin { display:inline-block; width:15px; height:15px; border:2px solid rgba(34,211,238,.2);
+      border-top-color:var(--cyan); border-right-color:var(--mag); border-radius:50%; animation: dp-spin .8s linear infinite;
+      box-shadow:0 0 10px rgba(34,211,238,.3); }
   `;
 
   function mountUi() {
@@ -393,16 +480,19 @@
     wrap.innerHTML = `
       <div class="card hidden">
         <div class="brand">
+          <span class="led"></span>
           <b>DataPit</b>
-          <button class="close" title="Minimize" aria-label="Minimize DataPit panel">—</button>
+          <span class="tag">LINK//SCAN</span>
+          <span class="sp"></span>
+          <button class="close" title="Minimize" aria-label="Minimize DataPit panel">×</button>
         </div>
         <div class="body"></div>
         <div class="footer">
-          <span class="muted" data-cost>Reveals cost 4 credits</span>
-          <button class="btn ghost" data-search>Search this profile</button>
+          <span class="muted" data-cost>REVEAL · 4 CR</span>
+          <button class="btn ghost" data-search>Scan profile</button>
         </div>
       </div>
-      <button class="launcher" title="DataPit — look up this profile" aria-label="Open DataPit">D</button>
+      <button class="launcher" title="DataPit — look up this profile" aria-label="Open DataPit">◈</button>
     `;
     root.append(style, wrap);
 
