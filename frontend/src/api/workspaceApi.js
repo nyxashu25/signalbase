@@ -20,8 +20,28 @@ export const workspaceApi = baseApi.injectEndpoints({
       query: (id) => ({ url: `/workspace/invites/${id}`, method: 'DELETE' }),
       invalidatesTags: ['Workspace'],
     }),
-    renameWorkspace: builder.mutation({
+    getWorkspaceProfile: builder.query({
+      query: () => '/workspace',
+      transformResponse: (res) => res.workspace, // { id, name, plan, motto, logoUrl }
+      providesTags: ['Workspace'],
+    }),
+    updateWorkspace: builder.mutation({
+      // { name, motto } — branding, free on every plan.
       query: (body) => ({ url: '/workspace', method: 'PATCH', body }),
+      transformResponse: (res) => res.workspace,
+      invalidatesTags: ['Workspace'],
+    }),
+    uploadWorkspaceLogo: builder.mutation({
+      query: (file) => {
+        const formData = new FormData();
+        formData.append('logo', file);
+        return { url: '/workspace/logo', method: 'POST', body: formData };
+      },
+      transformResponse: (res) => res.workspace,
+      invalidatesTags: ['Workspace'],
+    }),
+    removeWorkspaceLogo: builder.mutation({
+      query: () => ({ url: '/workspace/logo', method: 'DELETE' }),
       transformResponse: (res) => res.workspace,
       invalidatesTags: ['Workspace'],
     }),
@@ -30,7 +50,10 @@ export const workspaceApi = baseApi.injectEndpoints({
 
 export const {
   useListWorkspaceMembersQuery,
-  useRenameWorkspaceMutation,
+  useGetWorkspaceProfileQuery,
+  useUpdateWorkspaceMutation,
+  useUploadWorkspaceLogoMutation,
+  useRemoveWorkspaceLogoMutation,
   useListInvitesQuery,
   useCreateInviteMutation,
   useRevokeInviteMutation,

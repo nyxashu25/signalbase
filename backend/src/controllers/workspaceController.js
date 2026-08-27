@@ -1,4 +1,5 @@
 import * as workspaceService from '../services/workspaceService.js';
+import { ApiError } from '../middleware/errorHandler.js';
 
 export async function members(req, res) {
   const [members, seats] = await Promise.all([
@@ -26,6 +27,23 @@ export async function revokeInvite(req, res) {
   res.status(204).end();
 }
 
-export async function rename(req, res) {
-  res.json({ workspace: await workspaceService.renameWorkspace(req.auth.workspaceId, req.body.name) });
+export async function profile(req, res) {
+  res.json({ workspace: await workspaceService.getWorkspaceProfile(req.auth.workspaceId) });
+}
+
+export async function update(req, res) {
+  res.json({ workspace: await workspaceService.updateWorkspace(req.auth.workspaceId, req.body) });
+}
+
+export async function uploadLogo(req, res) {
+  if (!req.file) throw new ApiError(400, 'No logo file provided');
+  const workspace = await workspaceService.setLogo(req.auth.workspaceId, {
+    buffer: req.file.buffer,
+    mimetype: req.file.mimetype,
+  });
+  res.json({ workspace });
+}
+
+export async function removeLogo(req, res) {
+  res.json({ workspace: await workspaceService.clearLogo(req.auth.workspaceId) });
 }

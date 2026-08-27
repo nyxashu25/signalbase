@@ -150,8 +150,42 @@ export async function listMembers(workspaceId) {
     .sort((a, b) => rank[a.role] - rank[b.role] || a.joinedAt - b.joinedAt);
 }
 
-export async function renameWorkspace(workspaceId, name) {
-  const workspace = await prisma.workspace.update({ where: { id: workspaceId }, data: { name } });
+function serializeProfile(w) {
+  return { id: w.id, name: w.name, plan: w.plan, motto: w.motto ?? null, logoUrl: w.logoUrl ?? null };
+}
+
+/** Branding for Settings → Workspace (name, motto, logo). Free on every plan. */
+export async function getWorkspaceProfile(workspaceId) {
+  const workspace = await prisma.workspace.findUnique({ where: { id: workspaceId } });
   if (!workspace) throw new ApiError(404, 'Workspace not found');
-  return { id: workspace.id, name: workspace.name, plan: workspace.plan };
+  return serializeProfile(workspace);
+}
+
+/** Update name + motto. `motto` null/empty clears it. */
+export async function updateWorkspace(workspaceId, { name, motto }) {
+  const workspace = await prisma.workspace.update({
+    where: { id: workspaceId },
+    data: { name, motto: motto ? motto : null },
+  });
+  return serializeProfile(workspace);
+}
+
+// Stores the uploaded image inline as a data: URI (see uploadImage.js for
+// the size/type caps). Kept off the session/auth-me payloads — only the
+// workspace-profile and members endpoints return it.
+export async function setLogo(workspaceId, { buffer, mimetype }) {
+  const dataUri = `data:${mimetype};base64,${buffer.toString('base64')}`;
+  const workspace = await prisma.workspace.update({
+    where: { id: workspaceId },
+    data: { logoUrl: dataUri },
+  });
+  return serializeProfile(workspace);
+}
+
+export async function clearLogo(workspaceId) {
+  const workspace = await prisma.workspace.update({
+    where: { id: workspaceId },
+    data: { logoUrl: null },
+  });
+  return serializeProfile(workspace);
 }

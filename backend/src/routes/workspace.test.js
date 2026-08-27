@@ -53,6 +53,64 @@ describe('workspace', () => {
     ]);
   });
 
+  it('returns branding via GET /workspace and updates name + motto', async () => {
+    const org = await registerOrg('Acme', 'owner@acme.test');
+
+    const before = await request(app).get('/api/v1/workspace').set(auth(org.accessToken));
+    expect(before.status).toBe(200);
+    expect(before.body.workspace).toMatchObject({ name: 'Acme', motto: null, logoUrl: null });
+
+    const upd = await request(app)
+      .patch('/api/v1/workspace')
+      .set(auth(org.accessToken))
+      .send({ name: 'Acme Growth', motto: 'We find the people who matter.' });
+    expect(upd.status).toBe(200);
+    expect(upd.body.workspace).toMatchObject({ name: 'Acme Growth', motto: 'We find the people who matter.' });
+
+    // Clearing the motto (empty/null) wipes it.
+    const cleared = await request(app)
+      .patch('/api/v1/workspace')
+      .set(auth(org.accessToken))
+      .send({ name: 'Acme Growth', motto: '' });
+    expect(cleared.body.workspace.motto).toBeNull();
+  });
+
+  it('uploads and removes a workspace logo (stored inline as a data URI), ADMIN+ only', async () => {
+    const org = await registerOrg('Acme', 'owner@acme.test');
+    const member = await addMember(org.workspaceId, 'member@acme.test', 'MEMBER');
+    // A tiny valid 1x1 PNG.
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQDJ/pLvAAAAAElFTkSuQmCC',
+      'base64',
+    );
+
+    const denied = await request(app)
+      .post('/api/v1/workspace/logo')
+      .set(auth(member.accessToken))
+      .attach('logo', png, { filename: 'logo.png', contentType: 'image/png' });
+    expect(denied.status).toBe(403);
+
+    const up = await request(app)
+      .post('/api/v1/workspace/logo')
+      .set(auth(org.accessToken))
+      .attach('logo', png, { filename: 'logo.png', contentType: 'image/png' });
+    expect(up.status).toBe(200);
+    expect(up.body.workspace.logoUrl).toMatch(/^data:image\/png;base64,/);
+
+    const rm = await request(app).delete('/api/v1/workspace/logo').set(auth(org.accessToken));
+    expect(rm.status).toBe(200);
+    expect(rm.body.workspace.logoUrl).toBeNull();
+  });
+
+  it('rejects a non-image logo upload', async () => {
+    const org = await registerOrg('Acme', 'owner@acme.test');
+    const res = await request(app)
+      .post('/api/v1/workspace/logo')
+      .set(auth(org.accessToken))
+      .attach('logo', Buffer.from('not an image'), { filename: 'x.txt', contentType: 'text/plain' });
+    expect(res.status).toBe(400);
+  });
+
   it('renames the workspace for ADMIN+ and refuses a MEMBER', async () => {
     const org = await registerOrg('Acme', 'owner@acme.test');
     const member = await addMember(org.workspaceId, 'member@acme.test', 'MEMBER');

@@ -3,8 +3,9 @@ import * as workspaceController from '../controllers/workspaceController.js';
 import { requireAuth } from '../middleware/auth.js';
 import { requireRole } from '../middleware/rbac.js';
 import { validateBody } from '../middleware/validate.js';
-import { renameWorkspaceSchema, createInviteSchema } from '../validators/workspaceValidators.js';
+import { updateWorkspaceSchema, createInviteSchema } from '../validators/workspaceValidators.js';
 import { rateLimit, byWorkspace } from '../middleware/rateLimit.js';
+import { uploadImage } from '../middleware/uploadImage.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 // The signed-in user's *current* workspace (from the access token) — there
@@ -23,6 +24,12 @@ const inviteLimiter = rateLimit({
   keyFn: byWorkspace,
 });
 
+// Workspace branding — readable by any member, editable by ADMIN+ (free on
+// every plan). Logo is a small uploaded image stored inline (uploadImage).
+workspaceRouter.get('/', asyncHandler(workspaceController.profile));
+workspaceRouter.post('/logo', requireRole('ADMIN'), uploadImage, asyncHandler(workspaceController.uploadLogo));
+workspaceRouter.delete('/logo', requireRole('ADMIN'), asyncHandler(workspaceController.removeLogo));
+
 workspaceRouter.get('/members', asyncHandler(workspaceController.members));
 workspaceRouter.get('/invites', requireRole('ADMIN'), asyncHandler(workspaceController.listInvites));
 workspaceRouter.post(
@@ -40,6 +47,6 @@ workspaceRouter.delete(
 workspaceRouter.patch(
   '/',
   requireRole('ADMIN'),
-  validateBody(renameWorkspaceSchema),
-  asyncHandler(workspaceController.rename),
+  validateBody(updateWorkspaceSchema),
+  asyncHandler(workspaceController.update),
 );
