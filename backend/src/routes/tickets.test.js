@@ -224,10 +224,7 @@ describe('tickets', () => {
       .get('/api/v1/admin/tickets')
       .set('Authorization', `Bearer ${adminToken}`);
     expect(all.body.total).toBe(2);
-    expect(all.body.results.map((t) => t.workspace.name).sort()).toEqual([
-      'Org A Workspace',
-      'Org B Workspace',
-    ]);
+    expect(all.body.results.map((t) => t.workspace.name).sort()).toEqual(['Org A', 'Org B']);
 
     const salesOnly = await request(app)
       .get('/api/v1/admin/tickets?type=SALES')

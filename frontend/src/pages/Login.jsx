@@ -21,7 +21,7 @@ export function Login() {
   const initialMode =
     new URLSearchParams(location.search).get('mode') === 'register' ? 'register' : 'login';
   const [mode, setMode] = useState(initialMode);
-  const [form, setForm] = useState({ email: '', password: '', name: '', orgName: '' });
+  const [form, setForm] = useState({ email: '', password: '', name: '' });
   const [googleScriptError, setGoogleScriptError] = useState(null);
   // Set once register() responds with pendingVerification — swaps the form
   // for a "check your email" panel instead of navigating anywhere, since
@@ -49,7 +49,7 @@ export function Login() {
     const body =
       mode === 'login'
         ? { email: form.email, password: form.password }
-        : { email: form.email, password: form.password, name: form.name, orgName: form.orgName };
+        : { email: form.email, password: form.password, name: form.name };
 
     const result = await action(body);
     if (result.data?.pendingVerification) {
@@ -109,15 +109,7 @@ export function Login() {
 
               <form className="mt-5 flex flex-col gap-3" onSubmit={handleSubmit}>
                 {mode === 'register' && (
-                  <>
-                    <Field label="Your name" value={form.name} onChange={update('name')} required />
-                    <Field
-                      label="Workspace / org name"
-                      value={form.orgName}
-                      onChange={update('orgName')}
-                      required
-                    />
-                  </>
+                  <Field label="Your name" value={form.name} onChange={update('name')} required />
                 )}
                 <Field
                   label="Email"

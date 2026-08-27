@@ -52,7 +52,7 @@ export async function createSequence(workspaceId, createdById, { name, steps }) 
   });
 }
 
-export async function enroll(workspaceId, sequenceId, contactId, reservationId) {
+export async function enroll(workspaceId, sequenceId, contactId, reservationId, userId) {
   const sequence = await prisma.sequence.findFirst({ where: { id: sequenceId, workspaceId } });
   if (!sequence) {
     await releaseReservation(reservationId);
@@ -71,7 +71,7 @@ export async function enroll(workspaceId, sequenceId, contactId, reservationId) 
         data: { sequenceId, workspaceId, contactId, nextStepDueAt: new Date() },
       }),
       prisma.creditLedgerEntry.create({
-        data: { workspaceId, delta: -amount, reason: 'SEQUENCE_ENROLLMENT' },
+        data: { workspaceId, delta: -amount, reason: 'SEQUENCE_ENROLLMENT', spentById: userId },
       }),
     ]);
     return enrollment;

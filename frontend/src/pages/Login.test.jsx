@@ -37,12 +37,14 @@ describe('Login', () => {
     expect(screen.queryByLabelText('Workspace / org name')).not.toBeInTheDocument();
   });
 
-  it('opens straight into create-workspace mode at /login?mode=register', () => {
+  it('opens straight into create-workspace mode at /login?mode=register, without a workspace-name field', () => {
     renderWithProviders(<Login />, { route: '/login?mode=register' });
 
     expect(screen.getByText('Create a new workspace')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Create workspace' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Workspace / org name')).toBeInTheDocument();
+    // Signup no longer asks for a workspace name — one is auto-created.
+    expect(screen.getByLabelText('Your name')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Workspace / org name')).not.toBeInTheDocument();
   });
 
   it('signs in via the Google credential callback and navigates to /app', async () => {
@@ -88,7 +90,6 @@ describe('Login', () => {
     renderWithProviders(<Login />, { route: '/login?mode=register' });
 
     await user.type(screen.getByLabelText('Your name'), 'New User');
-    await user.type(screen.getByLabelText('Workspace / org name'), 'Acme');
     await user.type(screen.getByLabelText('Email'), 'new@acme.test');
     await user.type(screen.getByLabelText('Password'), 'correct-horse-battery');
     await user.click(screen.getByRole('button', { name: 'Create workspace' }));

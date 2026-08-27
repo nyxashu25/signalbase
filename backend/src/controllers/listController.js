@@ -72,7 +72,7 @@ export async function exportCsv(req, res) {
     workspaceId: req.auth.workspaceId,
   });
   await prisma.creditLedgerEntry.create({
-    data: { workspaceId: req.auth.workspaceId, delta: -amount, reason: 'CSV_EXPORT' },
+    data: { workspaceId: req.auth.workspaceId, delta: -amount, reason: 'CSV_EXPORT', spentById: req.auth.userId },
   });
 
   sendCsv(res, filename, csv);

@@ -19,7 +19,7 @@ const validRegistration = {
   email: 'owner@acme.test',
   password: 'correct-horse-battery',
   name: 'Owner Acme',
-  orgName: 'Acme Inc',
+  // No orgName — signup auto-names the workspace after the user.
 };
 
 describe('auth flow', () => {
@@ -134,7 +134,8 @@ describe('auth flow', () => {
 
     expect(me.status).toBe(200);
     expect(me.body.user.email).toBe(validRegistration.email);
-    expect(me.body.workspace.name).toBe('Acme Inc Workspace');
+    // Auto-named from the user's first name (no workspace-name prompt).
+    expect(me.body.workspace.name).toBe("Owner's workspace");
   });
 
   it('rotates the refresh token on use and rejects reuse of the old one (replay detection)', async () => {

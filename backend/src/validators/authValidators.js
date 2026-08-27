@@ -4,7 +4,9 @@ export const registerSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   name: z.string().trim().min(1).max(120),
-  orgName: z.string().trim().min(1).max(120),
+  // Optional — signup no longer asks for a workspace name; one is
+  // auto-created and named after the user, renameable later.
+  orgName: z.string().trim().min(1).max(120).optional(),
 });
 
 export const loginSchema = z.object({

@@ -211,7 +211,7 @@ export async function getCompanyDetail(workspaceId, userId, companyId, reservati
     try {
       await prisma.$transaction([
         prisma.creditLedgerEntry.create({
-          data: { workspaceId, delta: -amount, reason: 'COMPANY_VIEW' },
+          data: { workspaceId, delta: -amount, reason: 'COMPANY_VIEW', spentById: userId },
         }),
         prisma.companyDetailView.create({ data: { workspaceId, companyId, viewedById: userId } }),
       ]);

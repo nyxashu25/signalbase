@@ -38,13 +38,23 @@ function slugify(name) {
  * sign-in with no matching existing account) — passwordHash is null for
  * the latter, googleId is null for the former.
  */
+// Signup no longer asks for a workspace name — everyone gets a personal
+// workspace named after them ("Ada's workspace"), which they can rename and
+// brand later (Settings → Workspace, free on every plan). An explicit
+// `orgName` still wins when a caller provides one.
+function defaultWorkspaceName(name) {
+  const first = (name || '').trim().split(/\s+/)[0];
+  return first ? `${first}'s workspace` : 'My workspace';
+}
+
 async function createAccount({ email, name, passwordHash, googleId, orgName, emailVerified }) {
+  const workspaceName = (orgName && orgName.trim()) || defaultWorkspaceName(name);
   const { user, workspace, membership, org } = await prisma.$transaction(async (tx) => {
-    const org = await tx.org.create({ data: { name: orgName, slug: slugify(orgName) } });
+    const org = await tx.org.create({ data: { name: workspaceName, slug: slugify(workspaceName) } });
     const workspace = await tx.workspace.create({
       data: {
         orgId: org.id,
-        name: `${orgName} Workspace`,
+        name: workspaceName,
         plan: 'FREE',
         monthlyCreditGrant: PLAN_MONTHLY_CREDITS.FREE,
       },
@@ -84,6 +94,9 @@ export async function register({ email, password, name, orgName }) {
     name,
     passwordHash,
     googleId: null,
+    // The frontend no longer sends a workspace name (it's auto-derived from
+    // the user's name in createAccount), but the API still honors one if a
+    // caller provides it.
     orgName,
     emailVerified: false,
   });
@@ -296,8 +309,7 @@ export async function loginWithGoogle(credential, verify = verifyGoogleIdToken) 
       name,
       passwordHash: null,
       googleId,
-      orgName: `${name}'s Workspace`,
-      // Google already verified this email — no confirm-link step needed.
+      // Workspace auto-named from the user's name (same as password signup).
       emailVerified: true,
     });
     user = created.user;

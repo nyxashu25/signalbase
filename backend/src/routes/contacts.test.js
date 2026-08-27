@@ -16,7 +16,7 @@ async function registerOrg(orgName, email) {
     name: 'Owner',
     orgName,
   });
-  return { accessToken: res.body.accessToken, workspaceId: res.body.workspace.id };
+  return { accessToken: res.body.accessToken, workspaceId: res.body.workspace.id, userId: res.body.user.id };
 }
 
 async function seedContact() {
@@ -61,6 +61,9 @@ describe('POST /contacts/:id/reveal', () => {
     expect(ledger).toHaveLength(1);
     expect(ledger[0].delta).toBe(-2);
     expect(ledger[0].reason).toBe('EMAIL_REVEAL');
+    // The spend is attributed to the teammate who triggered it (powers the
+    // per-member team audit).
+    expect(ledger[0].spentById).toBe(org.userId);
 
     const emailReveal = await prisma.emailReveal.findUnique({
       where: { workspaceId_contactId: { workspaceId: org.workspaceId, contactId: contact.id } },

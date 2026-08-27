@@ -67,6 +67,13 @@ model Workspace {
   // retroactively — reducing seats below the current member count only
   // blocks further joins.
   seats                Int             @default(1)
+  // Workspace branding (Settings → Workspace), available on every plan.
+  // `logoUrl` holds a small image inline as a data: URI (capped in
+  // workspaceService) rather than a file path — no storage infra, and it's
+  // deliberately kept OUT of the lightweight session/auth-me payloads so
+  // hot paths stay small. `motto` is an optional one-liner.
+  logoUrl              String?
+  motto                String?
   createdAt            DateTime        @default(now())
 
   org                Org                  @relation(fields: [orgId], references: [id], onDelete: Cascade)
@@ -564,6 +571,13 @@ model CreditLedgerEntry {
   delta       Int
   reason      CreditReason
   contactId   String?
+  // The teammate whose action spent (or earned) these credits — a soft
+  // reference (plain id, like contactId above / AdminAuditLog.targetUserId),
+  // so the ledger row survives the member leaving. Null on system/webhook
+  // rows that no teammate triggered (MONTHLY_GRANT, TOPUP, ONBOARDING_REWARD,
+  // super-admin ADJUSTMENT) and on pre-existing rows this column predates.
+  // Powers the per-member team audit (workspaceService.teamAudit).
+  spentById   String?
   // Real money charged for this entry, in cents — only ever set on TOPUP
   // rows (a real Stripe purchase). Null for everything else, including
   // ADJUSTMENT rows (an admin-granted credit isn't revenue). This is the
@@ -575,6 +589,7 @@ model CreditLedgerEntry {
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId, createdAt])
+  @@index([workspaceId, spentById])
 }
 
 // Audit trail + reveal-state: once any member of a workspace reveals a

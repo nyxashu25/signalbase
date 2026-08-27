@@ -74,7 +74,7 @@ export async function revealContactEmail({ workspaceId, userId, contactId, reser
     await prisma.$transaction([
       prisma.contact.update({ where: { id: contactId }, data: { email, emailVerified } }),
       prisma.creditLedgerEntry.create({
-        data: { workspaceId, delta: -amount, reason, contactId },
+        data: { workspaceId, delta: -amount, reason, contactId, spentById: userId },
       }),
       prisma.emailReveal.create({ data: { workspaceId, contactId, revealedById: userId } }),
     ]);
