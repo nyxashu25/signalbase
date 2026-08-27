@@ -159,7 +159,7 @@ describe('Settings', () => {
     expect(screen.getByText(/2 of 5 seats filled/)).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Invite teammate' }));
-    await user.type(screen.getByLabelText('Email'), 'new@hire.test');
+    await user.type(screen.getByLabelText('Emails'), 'new@hire.test');
     await user.click(screen.getByRole('button', { name: 'Admin' }));
     await user.click(screen.getByRole('button', { name: 'Send invite' }));
 

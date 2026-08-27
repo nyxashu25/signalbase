@@ -2,6 +2,7 @@ import { OAuth2Client } from 'google-auth-library';
 import { prisma } from '../config/db.js';
 import { hashPassword, verifyPassword } from '../utils/password.js';
 import { grantCredits } from './creditService.js';
+import { activateCoverage } from './seatService.js';
 import { PLAN_MONTHLY_CREDITS, FREE_PLAN_MONTHLY_CREDITS } from '../config/planConfig.js';
 import { createHash } from 'node:crypto';
 import {
@@ -432,20 +433,9 @@ export async function acceptInvite(token, { name, password } = {}) {
   let user = await prisma.user.findUnique({ where: { email: invite.email } });
   if (user?.suspendedAt) throw new ApiError(403, 'This account has been suspended');
 
-  // Seat re-check at accept time: the seat that was free when the invite
-  // went out may be gone (another invite accepted first, or seats reduced).
-  // Skipped when the user already holds a membership — that's idempotent.
-  const alreadyMember = user
-    ? await prisma.membership.findUnique({
-        where: { userId_workspaceId: { userId: user.id, workspaceId: workspace.id } },
-      })
-    : null;
-  if (!alreadyMember) {
-    const memberCount = await prisma.membership.count({ where: { workspaceId: workspace.id } });
-    if (memberCount >= workspace.seats) {
-      throw new ApiError(422, 'No seats left in this workspace — ask an admin to upgrade the plan for more seats');
-    }
-  }
+  // No seat gate: under pay-later billing everyone lands as a PENDING member
+  // (can log in, can't spend). activateCoverage below promotes them straight
+  // into a paid/free seat when the workspace has spare purchased capacity.
 
   if (!user) {
     if (!name || !password) {
@@ -462,6 +452,7 @@ export async function acceptInvite(token, { name, password } = {}) {
   const membership = await prisma.membership.upsert({
     where: { userId_workspaceId: { userId: user.id, workspaceId: workspace.id } },
     update: {},
+    // seatType defaults to PENDING — coverage activation right below.
     create: { userId: user.id, workspaceId: workspace.id, role: invite.role },
   });
 
@@ -469,6 +460,10 @@ export async function acceptInvite(token, { name, password } = {}) {
     where: { id: invite.id },
     data: { acceptedAt: new Date() },
   });
+  // Spare purchased capacity? Promote the newcomer (and anyone else
+  // waiting) immediately — welcome gift included. No-op on FREE plans and
+  // full workspaces.
+  await activateCoverage(workspace.id);
   await notificationService.notifyInviteAccepted(invite.invitedBy, user, workspace);
 
   return issueSession({

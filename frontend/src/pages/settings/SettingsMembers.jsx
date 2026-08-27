@@ -5,6 +5,7 @@ import {
   useListWorkspaceMembersQuery,
   useListInvitesQuery,
   useCreateInviteMutation,
+  useBulkInviteMutation,
   useRevokeInviteMutation,
   useChangeMemberRoleMutation,
   useGetTeamAuditQuery,
@@ -30,6 +31,25 @@ const ROLE_HINT = {
 };
 const CAN_INVITE = new Set(['OWNER', 'ADMIN']);
 
+const SEAT_TONE = { PAID: 'success', FREE: 'info', PENDING: 'warning' };
+const SEAT_LABEL = { PAID: 'Paid seat', FREE: 'Free seat', PENDING: 'Awaiting payment' };
+const SEAT_HINT = {
+  PAID: 'Occupies a paid seat - earns the plan rate in personal credits every month.',
+  FREE: 'Occupies a bonus free seat - earns 1,500 personal credits every month.',
+  PENDING:
+    'Not covered by a purchased seat block yet - they can log in but hold no credits until payment covers them.',
+};
+
+// "a@x.com, b@x.com\nc@x.com" -> unique, trimmed, lowercased addresses.
+function parseEmails(raw) {
+  return [...new Set(
+    raw
+      .split(/[\s,;]+/)
+      .map((e) => e.trim().toLowerCase())
+      .filter((e) => e.includes('@')),
+  )];
+}
+
 // Spend reasons shown in the audit (mirrors the backend's SPEND_REASON_LABELS).
 const REASON_LABELS = {
   EMAIL_REVEAL: 'Reveals',
@@ -52,11 +72,12 @@ export function SettingsMembers() {
   const isFree = seatInfo?.plan === 'FREE';
   const teamUnlocked = canManage && !isFree;
   const canManageRoles = teamUnlocked;
-  const seatsFull = Boolean(seatInfo && seatInfo.used >= seatInfo.total);
-  const canInviteNow = teamUnlocked && !seatsFull;
-  const fullHint = 'All seats are in use — revoke a pending invite, or upgrade your plan for more seats';
+  // Invites are uncapped under pay-later billing — members beyond purchased
+  // capacity land as "awaiting payment" until a block covers them.
+  const canInviteNow = teamUnlocked;
   const { data: invites } = useListInvitesQuery(undefined, { skip: !canManage || isFree });
   const [createInvite, { isLoading: inviting }] = useCreateInviteMutation();
+  const [bulkInvite, { isLoading: bulkInviting }] = useBulkInviteMutation();
   const [revokeInvite] = useRevokeInviteMutation();
   const [changeRole] = useChangeMemberRoleMutation();
   const [showForm, setShowForm] = useState(false);
@@ -82,13 +103,28 @@ export function SettingsMembers() {
 
   async function handleInvite(e) {
     e.preventDefault();
+    const emails = parseEmails(form.email);
+    if (emails.length === 0) return;
     try {
-      const { invite } = await createInvite(form).unwrap();
-      toast.success('Invite sent', `${invite.email} has 7 days to accept — or copy them the link below.`);
+      if (emails.length === 1) {
+        const { invite } = await createInvite({ email: emails[0], role: form.role }).unwrap();
+        toast.success('Invite sent', `${invite.email} has 7 days to accept — or copy them the link below.`);
+      } else {
+        const result = await bulkInvite({ emails, role: form.role }).unwrap();
+        const failures = result.results.filter((r) => !r.ok);
+        if (result.failed === 0) {
+          toast.success(`${result.invited} invites sent`, 'Each has 7 days to accept.');
+        } else {
+          toast.success(
+            `${result.invited} sent · ${result.failed} skipped`,
+            failures.map((f) => `${f.email}: ${f.error}`).slice(0, 3).join(' · '),
+          );
+        }
+      }
       setForm({ email: '', role: 'MEMBER' });
       setShowForm(false);
     } catch (err) {
-      toast.error('Could not send invite', err.data?.error?.message);
+      toast.error('Could not send invites', err.data?.error?.message);
     }
   }
 
@@ -118,8 +154,8 @@ export function SettingsMembers() {
         description={
           seatInfo
             ? `${seatInfo.members} of ${seatInfo.total} ${seatInfo.total === 1 ? 'seat' : 'seats'} filled` +
-              (seatInfo.pendingInvites > 0 ? ` · ${seatInfo.pendingInvites} pending` : '') +
-              ' · all teammates share one credit balance'
+              (seatInfo.pendingInvites > 0 ? ` · ${seatInfo.pendingInvites} invites pending` : '') +
+              ' · every teammate earns their own monthly credits'
             : undefined
         }
         footer={
@@ -132,9 +168,7 @@ export function SettingsMembers() {
               content={
                 !canManage
                   ? 'Only workspace owners and admins can invite'
-                  : isFree
-                    ? 'Inviting teammates is a paid feature — upgrade from Billing'
-                    : fullHint
+                  : 'Inviting teammates is a paid feature — upgrade from Billing'
               }
             >
               <span className="inline-flex">
@@ -148,15 +182,19 @@ export function SettingsMembers() {
       >
         {showForm && canInviteNow && (
           <form onSubmit={handleInvite} className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-border bg-surface p-3">
-            <FormField label="Email" className="min-w-[220px] flex-1">
-              <input
-                id="field-email"
-                type="email"
+            <FormField
+              label="Emails"
+              hint="One or many — separate with commas, spaces or new lines. No seat limit: extra teammates wait as 'awaiting payment' until your next block purchase covers them."
+              className="min-w-[220px] flex-1"
+            >
+              <textarea
+                id="field-emails"
                 required
                 autoFocus
+                rows={2}
                 value={form.email}
                 onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                placeholder="teammate@company.com"
+                placeholder="teammate@company.com, another@company.com"
                 className={inputClass}
               />
             </FormField>
@@ -172,8 +210,16 @@ export function SettingsMembers() {
                 ]}
               />
             </div>
-            <Button type="submit" variant="primary" icon={Mail} loading={inviting} disabled={!form.email}>
-              Send invite
+            <Button
+              type="submit"
+              variant="primary"
+              icon={Mail}
+              loading={inviting || bulkInviting}
+              disabled={parseEmails(form.email).length === 0}
+            >
+              {parseEmails(form.email).length > 1
+                ? `Send ${parseEmails(form.email).length} invites`
+                : 'Send invite'}
             </Button>
             <Button variant="ghost" onClick={() => setShowForm(false)}>
               Cancel
@@ -187,11 +233,12 @@ export function SettingsMembers() {
               <tr>
                 <th className={thClass}>Member</th>
                 <th className={thClass}>Role</th>
+                <th className={thClass}>Seat</th>
                 <th className={thClass}>Joined</th>
               </tr>
             </thead>
             <tbody>
-              {isLoading && <SkeletonRows rows={2} columns={3} />}
+              {isLoading && <SkeletonRows rows={2} columns={4} />}
               {members?.map((m) => (
                 <tr key={m.id} className={trClass}>
                   <td className={tdClass}>
@@ -223,6 +270,19 @@ export function SettingsMembers() {
                         <span className="inline-flex">
                           <StatusPill tone={ROLE_TONE[m.role] ?? 'neutral'}>
                             {m.role === 'MEMBER' ? 'TEAMMATE' : m.role}
+                          </StatusPill>
+                        </span>
+                      </Tooltip>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {isFree ? (
+                      <span className="text-xs text-text-muted">—</span>
+                    ) : (
+                      <Tooltip content={SEAT_HINT[m.seatType] ?? ''}>
+                        <span className="inline-flex">
+                          <StatusPill tone={SEAT_TONE[m.seatType] ?? 'neutral'}>
+                            {SEAT_LABEL[m.seatType] ?? m.seatType}
                           </StatusPill>
                         </span>
                       </Tooltip>
@@ -301,15 +361,21 @@ export function SettingsMembers() {
 
       {canManage && isFree && (
         <Banner tone="info" title="Add your team on a paid plan" action="Open Billing" actionTo="/app/billing">
-          Inviting teammates, setting roles, and the team credit audit are paid features. Upgrade from
-          Billing to build your team — everyone will share this workspace's credit balance.
+          Inviting teammates, setting roles, and the team credit audit are paid features. Upgrade
+          from Billing to build your team — each seat block bundles paid + free seats, and every
+          teammate earns their own monthly credits.
         </Banner>
       )}
 
-      {canManage && teamUnlocked && seatsFull && (
-        <Banner tone="info" title="All seats are in use" action="Open Billing" actionTo="/app/billing">
-          Revoke a pending invite to free a seat, or upgrade to a higher plan for more seats — Basic
-          includes 10, Professional 25, and Organization 45.
+      {canManage && teamUnlocked && (seatInfo?.members ?? 0) > (seatInfo?.total ?? 0) && (
+        <Banner
+          tone="info"
+          title="Some teammates are awaiting payment"
+          action="Buy blocks"
+          actionTo="/app/billing"
+        >
+          You have more members than purchased seats. Buy another seat block from Billing to cover
+          them — each newly covered teammate gets a one-time 1,500-credit welcome gift.
         </Banner>
       )}
     </div>

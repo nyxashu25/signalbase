@@ -9,17 +9,20 @@ import { hashPassword } from '../utils/password.js';
 const app = createApp();
 const auth = (token) => ({ Authorization: `Bearer ${token}` });
 
-async function registerOrg(orgName, email, seats = 5, plan = 'BASIC') {
+async function registerOrg(orgName, email, blocks = 1, plan = 'BASIC') {
   const res = await registerAndVerify(app, {
     email,
     password: 'correct-horse-battery',
     name: 'Owner',
     orgName,
   });
-  // Fresh signups are FREE (1 seat). Team features (invite/roles/audit) are
-  // paid-only, so default these test workspaces to a paid plan with seat
-  // headroom; the FREE-gating test overrides plan back to FREE.
-  await prisma.workspace.update({ where: { id: res.body.workspace.id }, data: { seats, plan } });
+  // Fresh signups are FREE. Team features (invite/roles/audit) are
+  // paid-only, so default these test workspaces to a paid plan with one
+  // seat block; the FREE-gating test overrides plan back to FREE.
+  await prisma.workspace.update({
+    where: { id: res.body.workspace.id },
+    data: { blocks: plan === 'FREE' ? 0 : blocks, plan },
+  });
   return { accessToken: res.body.accessToken, workspaceId: res.body.workspace.id, userId: res.body.user.id };
 }
 
@@ -448,43 +451,81 @@ describe('seat-count enforcement', () => {
     expect(members.body.seats).toMatchObject({ total: 1, members: 1, pendingInvites: 0, used: 1 });
   });
 
-  it('pending invites reserve seats; the invite over the count is blocked; revoking frees it', async () => {
-    const org = await registerOrg('Acme', 'owner@acme.test', 2);
-    const first = await invite(org, 'one@hire.test');
-    expect(first.status).toBe(201);
-
-    const over = await invite(org, 'two@hire.test');
-    expect(over.status).toBe(422);
-    expect(over.body.error.message).toMatch(/All 2 seats are in use/);
-
-    // Re-inviting the already-invited address is not a new seat.
-    const reinvite = await invite(org, 'one@hire.test', 'ADMIN');
+  it('invites are uncapped under pay-later billing — no seat gate', async () => {
+    const org = await registerOrg('Acme', 'owner@acme.test', 1); // 1 block = 5 paid + 1 free
+    // Far more invites than capacity — every one succeeds.
+    for (let i = 0; i < 8; i++) {
+      const res = await invite(org, `hire-${i}@acme.test`);
+      expect(res.status).toBe(201);
+    }
+    // Re-inviting an already-invited address refreshes it rather than erroring.
+    const reinvite = await invite(org, 'hire-0@acme.test', 'ADMIN');
     expect(reinvite.status).toBe(201);
-
-    await request(app)
-      .delete(`/api/v1/workspace/invites/${first.body.invite.id}`)
-      .set(auth(org.accessToken));
-    const after = await invite(org, 'two@hire.test');
-    expect(after.status).toBe(201);
   });
 
-  it('accepting is blocked when the seats were taken after the invite went out', async () => {
-    const org = await registerOrg('Acme', 'owner@acme.test', 2);
+  it('bulk invite returns per-email results and never sinks the batch', async () => {
+    const org = await registerOrg('Acme', 'owner@acme.test');
+    const res = await request(app)
+      .post('/api/v1/workspace/invites/bulk')
+      .set(auth(org.accessToken))
+      .send({
+        emails: ['a@hire.test', 'b@hire.test', 'a@hire.test', 'owner@acme.test'],
+        role: 'MEMBER',
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.invited).toBe(2); // a + b
+    expect(res.body.failed).toBe(2); // in-batch duplicate + already-a-member
+    const okEmails = res.body.results.filter((r) => r.ok).map((r) => r.email);
+    expect(okEmails).toEqual(['a@hire.test', 'b@hire.test']);
+    const failures = res.body.results.filter((r) => !r.ok);
+    expect(failures.find((f) => f.email === 'a@hire.test').error).toMatch(/Duplicate/);
+    expect(failures.find((f) => f.email === 'owner@acme.test').error).toMatch(/already a member/);
+  });
+
+  it('accepting with spare capacity activates the member; beyond capacity they land PENDING', async () => {
+    const org = await registerOrg('Acme', 'owner@acme.test', 1); // capacity 5 paid + 1 free
     const created = await invite(org, 'new@hire.test');
     const token = new URL(created.body.invite.inviteUrl).searchParams.get('token');
-    // Seat disappears before they accept.
-    await prisma.workspace.update({ where: { id: org.workspaceId }, data: { seats: 1 } });
 
     const accept = await request(app)
       .post('/api/v1/auth/accept-invite')
       .send({ token, name: 'New Hire', password: 'a-solid-password-1' });
-    expect(accept.status).toBe(422);
-    expect(accept.body.error.message).toMatch(/No seats left/);
+    expect(accept.status).toBe(200);
 
-    await prisma.workspace.update({ where: { id: org.workspaceId }, data: { seats: 2 } });
-    const retry = await request(app)
+    // Spare paid capacity -> instantly covered + welcome gift.
+    const covered = await prisma.membership.findFirst({
+      where: { workspaceId: org.workspaceId, user: { email: 'new@hire.test' } },
+    });
+    expect(covered.seatType).toBe('PAID');
+    expect(covered.welcomeGiftAt).not.toBeNull();
+
+    // Fill the workspace past capacity, then accept one more — they stay PENDING.
+    for (let i = 0; i < 5; i++) {
+      const u = await prisma.user.create({
+        data: { email: `filler-${i}@acme.test`, passwordHash: 'x', name: 'Filler' },
+      });
+      await prisma.membership.create({
+        data: {
+          userId: u.id,
+          workspaceId: org.workspaceId,
+          role: 'MEMBER',
+          seatType: i < 4 ? 'PAID' : 'FREE',
+        },
+      });
+    }
+
+    const late = await invite(org, 'late@hire.test');
+    const lateToken = new URL(late.body.invite.inviteUrl).searchParams.get('token');
+    const lateAccept = await request(app)
       .post('/api/v1/auth/accept-invite')
-      .send({ token, name: 'New Hire', password: 'a-solid-password-1' });
-    expect(retry.status).toBe(200);
+      .send({ token: lateToken, name: 'Late Hire', password: 'a-solid-password-1' });
+    expect(lateAccept.status).toBe(200);
+
+    const pending = await prisma.membership.findFirst({
+      where: { workspaceId: org.workspaceId, user: { email: 'late@hire.test' } },
+    });
+    expect(pending.seatType).toBe('PENDING');
+    expect(pending.welcomeGiftAt).toBeNull();
   });
 });

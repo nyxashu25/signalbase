@@ -14,6 +14,13 @@ export const createInviteSchema = z.object({
   role: z.enum(['ADMIN', 'MEMBER']).default('MEMBER'),
 });
 
+// Bulk add: up to 200 addresses per request (MAX_BULK_INVITE_EMAILS in
+// workspaceService). Bad addresses fail per-email, not the whole batch.
+export const bulkInviteSchema = z.object({
+  emails: z.array(z.string().trim().toLowerCase().email()).min(1).max(200),
+  role: z.enum(['ADMIN', 'MEMBER']).default('MEMBER'),
+});
+
 // Change an existing member between teammate (MEMBER) and admin. OWNER can't
 // be set or unset here (see workspaceService.changeMemberRole).
 export const changeMemberRoleSchema = z.object({

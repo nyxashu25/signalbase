@@ -6,6 +6,7 @@ import { validateBody } from '../middleware/validate.js';
 import {
   updateWorkspaceSchema,
   createInviteSchema,
+  bulkInviteSchema,
   changeMemberRoleSchema,
 } from '../validators/workspaceValidators.js';
 import { rateLimit, byWorkspace } from '../middleware/rateLimit.js';
@@ -47,6 +48,17 @@ workspaceRouter.post(
   inviteLimiter,
   validateBody(createInviteSchema),
   asyncHandler(workspaceController.createInvite),
+);
+// Bulk add — one request, many addresses, per-email results. Same gates as
+// the single-invite route; the rate limiter counts the request, not the
+// addresses (a 200-email batch is one action, not 200).
+workspaceRouter.post(
+  '/invites/bulk',
+  requireRole('ADMIN'),
+  requireTeamPlan,
+  inviteLimiter,
+  validateBody(bulkInviteSchema),
+  asyncHandler(workspaceController.bulkInvite),
 );
 workspaceRouter.delete(
   '/invites/:id',

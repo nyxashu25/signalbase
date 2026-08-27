@@ -16,6 +16,11 @@ export const workspaceApi = baseApi.injectEndpoints({
       query: (body) => ({ url: '/workspace/invites', method: 'POST', body }),
       invalidatesTags: ['Workspace'],
     }),
+    bulkInvite: builder.mutation({
+      // { emails: string[], role } -> { results: [{email, ok, error?, invite?}], invited, failed }
+      query: (body) => ({ url: '/workspace/invites/bulk', method: 'POST', body }),
+      invalidatesTags: ['Workspace'],
+    }),
     revokeInvite: builder.mutation({
       query: (id) => ({ url: `/workspace/invites/${id}`, method: 'DELETE' }),
       invalidatesTags: ['Workspace'],
@@ -69,6 +74,7 @@ export const {
   useRemoveWorkspaceLogoMutation,
   useListInvitesQuery,
   useCreateInviteMutation,
+  useBulkInviteMutation,
   useRevokeInviteMutation,
   useChangeMemberRoleMutation,
   useGetTeamAuditQuery,

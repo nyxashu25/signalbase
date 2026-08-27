@@ -3,6 +3,7 @@ import { ApiError } from '../middleware/errorHandler.js';
 import { env } from '../config/env.js';
 import { signInviteToken } from './tokenService.js';
 import * as notificationService from './notificationService.js';
+import { seatCapacity } from '../config/planConfig.js';
 import { toCsv } from '../utils/csv.js';
 
 // Human labels for the spend reasons a teammate can trigger (the audit only
@@ -16,7 +17,10 @@ const SPEND_REASON_LABELS = {
 };
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-const MAX_PENDING_INVITES = 20;
+// Anti-abuse ceiling only — invites are otherwise uncapped under pay-later
+// (members land as PENDING until a purchased block covers them).
+const MAX_PENDING_INVITES = 500;
+export const MAX_BULK_INVITE_EMAILS = 200;
 
 function inviteUrl(inviteId) {
   return `${env.CORS_ORIGIN}/accept-invite?token=${signInviteToken(inviteId)}`;
@@ -50,23 +54,10 @@ export async function listInvites(workspaceId) {
 }
 
 export async function createInvite(workspaceId, invitedById, { email, role }) {
-  // Seat gate first ("block invites over the paid count"): a pending invite
-  // reserves a seat, so members + pending is what's compared. Re-inviting an
-  // already-invited address doesn't consume another seat and stays allowed.
-  const usage = await seatUsage(workspaceId);
-  const alreadyInvited = await prisma.workspaceInvite.findUnique({
-    where: { workspaceId_email: { workspaceId, email } },
-  });
-  const reInviting = Boolean(alreadyInvited && !alreadyInvited.acceptedAt);
-  if (!reInviting && usage.used >= usage.total) {
-    throw new ApiError(
-      422,
-      usage.plan === 'FREE' && usage.total === 1
-        ? 'The Free plan includes 1 seat — upgrade from Billing to invite teammates'
-        : `All ${usage.total} seats are in use — revoke a pending invite, or upgrade your plan for more seats`,
-    );
-  }
-
+  // No seat gate: under pay-later billing the owner can add anyone —
+  // members without a purchased seat land as PENDING (can log in, can't
+  // spend) until the owner's next block checkout covers them. Team features
+  // being paid-only is enforced by requireTeamPlan on the route.
   const existingUser = await prisma.user.findUnique({
     where: { email },
     include: { memberships: { where: { workspaceId } } },
@@ -117,6 +108,36 @@ export async function createInvite(workspaceId, invitedById, { email, role }) {
   return serializeInvite(invite);
 }
 
+/**
+ * Bulk add: one invite per email, each processed independently so a single
+ * duplicate/member address never sinks the batch. Returns per-email results
+ * in input order — the UI renders exactly what happened to each address.
+ */
+export async function bulkInvite(workspaceId, invitedById, { emails, role }) {
+  const seen = new Set();
+  const results = [];
+  for (const raw of emails) {
+    const email = raw.trim().toLowerCase();
+    if (!email) continue;
+    if (seen.has(email)) {
+      results.push({ email, ok: false, error: 'Duplicate address in this batch' });
+      continue;
+    }
+    seen.add(email);
+    try {
+      const invite = await createInvite(workspaceId, invitedById, { email, role });
+      results.push({ email, ok: true, invite });
+    } catch (err) {
+      results.push({ email, ok: false, error: err.message || 'Could not invite' });
+    }
+  }
+  return {
+    results,
+    invited: results.filter((r) => r.ok).length,
+    failed: results.filter((r) => !r.ok).length,
+  };
+}
+
 /** Revoke = delete: the emailed link dies with the row. 404 for another workspace's id. */
 export async function revokeInvite(workspaceId, inviteId) {
   const { count } = await prisma.workspaceInvite.deleteMany({
@@ -125,17 +146,27 @@ export async function revokeInvite(workspaceId, inviteId) {
   if (count === 0) throw new ApiError(404, 'Invite not found');
 }
 
-/** members + pending invites vs. the paid seat count — the invite gate's arithmetic. */
+/**
+ * Occupancy for Settings → Users & teams. `total` is the block-purchased
+ * seat capacity (paid + free); `used` counts members + pending invites —
+ * informational under pay-later billing, no longer a gate.
+ */
 export async function seatUsage(workspaceId) {
   const [workspace, members, pendingInvites] = await Promise.all([
-    prisma.workspace.findUnique({ where: { id: workspaceId }, select: { seats: true, plan: true } }),
+    prisma.workspace.findUnique({
+      where: { id: workspaceId },
+      select: { plan: true, blocks: true },
+    }),
     prisma.membership.count({ where: { workspaceId } }),
     prisma.workspaceInvite.count({
       where: { workspaceId, acceptedAt: null, expiresAt: { gt: new Date() } },
     }),
   ]);
+  const capacity = seatCapacity(workspace.plan, workspace.blocks);
   return {
-    total: workspace.seats,
+    total: capacity.paid + capacity.free,
+    capacity,
+    blocks: workspace.blocks,
     plan: workspace.plan,
     members,
     pendingInvites,
@@ -155,6 +186,7 @@ export async function listMembers(workspaceId) {
     .map((m) => ({
       id: m.id,
       role: m.role,
+      seatType: m.seatType,
       joinedAt: m.createdAt,
       user: m.user,
     }))
