@@ -10,7 +10,7 @@ import { GiantCTA } from '../../components/marketing/GiantCTA.jsx';
 import { SmoothScroll } from '../../components/marketing/SmoothScroll.jsx';
 import { Parallax } from '../../components/marketing/Parallax.jsx';
 import { FadeIn, Stagger, StaggerItem } from '../../components/marketing/motion.jsx';
-import { PLANS, BILLING_INTERVALS, planPriceForInterval } from '../../data/plans.js';
+import { PLANS, BILLING_INTERVALS, planTotalForInterval } from '../../data/plans.js';
 
 const CADENCE_LABEL = { MONTH: 'month', QUARTER: 'quarter', YEAR: 'year' };
 
@@ -76,7 +76,7 @@ export function Pricing() {
       <PageHero
         eyebrow="Pricing"
         lines={[
-          { content: 'Simple, seat-based' },
+          { content: 'Simple, team-based' },
           {
             content: (
               <span className="bg-gradient-brand bg-clip-text text-transparent">pricing.</span>
@@ -84,7 +84,7 @@ export function Pricing() {
             className: 'sm:ml-[6vw]',
           },
         ]}
-        sub="Every plan runs on the same credit ledger. Pay for seats, spend credits only on the contacts you actually reveal."
+        sub="Every plan runs on the same credit ledger. Each tier bundles a fixed team size, and you spend credits only on the contacts you actually reveal."
       >
         <div className="inline-flex rounded-md border border-white/15 bg-white/5 p-0.5">
           {BILLING_INTERVALS.map((i) => (
@@ -111,11 +111,8 @@ export function Pricing() {
         <Stagger as="div" className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4" staggerDelay={0.1}>
           {PLANS.map((plan) => {
             const displayPrice =
-              plan.key === 'FREE' ? 0 : planPriceForInterval(plan.key, billingIntervalChoice);
-            const unit =
-              plan.key === 'ORGANIZATION'
-                ? `seat/${cadence}, min 3 seats`
-                : plan.unit && `seat/${cadence}`;
+              plan.key === 'FREE' ? 0 : planTotalForInterval(plan.key, billingIntervalChoice);
+            const unit = plan.unit && `${cadence} · ${plan.seats} seats`;
 
             return (
               <StaggerItem
@@ -172,8 +169,9 @@ export function Pricing() {
           })}
         </Stagger>
         <p className="mt-8 text-center text-xs text-text-muted">
-          Prices shown are per seat. Quarterly and annual billing come with a 10% and 20% discount —
-          pick your cadence above or at checkout.
+          Each paid plan includes a fixed number of seats — the price shown is for the whole plan.
+          Quarterly and annual billing come with a 10% and 20% discount — pick your cadence above or
+          at checkout.
         </p>
       </section>
 
@@ -190,9 +188,9 @@ export function Pricing() {
           </ScrubHeadline>
           <div className="mt-14 grid grid-cols-1 items-center gap-14 lg:grid-cols-2">
             <FadeIn as="p" className="text-base leading-relaxed text-text-muted">
-              Your seat price covers the platform. Credits are the only thing that moves when you
-              actually use it &mdash; every grant, reveal, and top-up lands in the same append-only
-              ledger you can see in your workspace at any time.
+              Your plan price covers the platform and your whole team. Credits are the only thing
+              that moves when you actually use it &mdash; every grant, reveal, and top-up lands in
+              the same append-only ledger you can see in your workspace at any time.
             </FadeIn>
             <FadeIn as="div" delay={0.15}>
               <Parallax amount={28}>

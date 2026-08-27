@@ -163,7 +163,9 @@ describe('POST /webhooks/stripe', () => {
     expect(res.status).toBe(204);
     const updated = await prisma.workspace.findUnique({ where: { id: workspace.id } });
     expect(updated.plan).toBe('PROFESSIONAL');
-    expect(updated.monthlyCreditGrant).toBe(1200);
+    // Seats are fixed by the plan (Professional = 25); grant = 1200 x 25.
+    expect(updated.seats).toBe(25);
+    expect(updated.monthlyCreditGrant).toBe(30000);
     expect(updated.stripeCustomerId).toBe('cus_plan_1');
     expect(updated.stripeSubscriptionId).toBe('sub_plan_1');
     // No grant on activation itself — invoice.paid is the only place credits move (below).
@@ -385,12 +387,14 @@ describe('stripeService.createPlanSubscriptionSession (unit, injected client)', 
     const create = async (params) => {
       expect(params.mode).toBe('subscription');
       expect(params.line_items[0].price_data.unit_amount).toBe(5900);
+      // Per-seat unit_amount x the plan's fixed seat count (Professional = 25).
+      expect(params.line_items[0].quantity).toBe(25);
       expect(params.line_items[0].price_data.recurring).toEqual({ interval: 'month' });
       expect(params.metadata).toEqual({
         workspaceId: workspace.id,
         plan: 'PROFESSIONAL',
         interval: 'MONTH',
-        seats: '1',
+        seats: '25',
       });
       return { id: 'cs_test_sub', url: 'https://checkout.stripe.com/pay/cs_test_sub' };
     };
@@ -849,26 +853,22 @@ describe('POST /billing/subscribe seat quantity', () => {
     return { accessToken: res.body.accessToken, workspaceId: res.body.workspace.id };
   }
 
-  it('accepts a seat count and rejects Organization below its 3-seat minimum', async () => {
+  it('ignores any seat count in the body — seats are fixed by the plan', async () => {
     const { accessToken } = await registerOwner();
+    // A seat count is no longer accepted or required; the request still
+    // succeeds and the plan's own seat allotment is what gets used.
     const ok = await request(app)
       .post('/api/v1/billing/subscribe')
       .set('Authorization', `Bearer ${accessToken}`)
-      .send({ plan: 'BASIC', seats: 4 });
+      .send({ plan: 'BASIC', seats: 999 });
     expect(ok.status).toBe(201);
 
-    const tooFew = await request(app)
+    // Organization has no minimum-seat gate anymore — it simply grants 45.
+    const org = await request(app)
       .post('/api/v1/billing/subscribe')
       .set('Authorization', `Bearer ${accessToken}`)
-      .send({ plan: 'ORGANIZATION', seats: 2 });
-    expect(tooFew.status).toBe(400);
-    expect(tooFew.body.error.message).toMatch(/starts at 3 seats/);
-
-    const bad = await request(app)
-      .post('/api/v1/billing/subscribe')
-      .set('Authorization', `Bearer ${accessToken}`)
-      .send({ plan: 'BASIC', seats: 0 });
-    expect(bad.status).toBe(400);
+      .send({ plan: 'ORGANIZATION' });
+    expect(org.status).toBe(201);
   });
 
   it('summary reports the workspace seat count', async () => {

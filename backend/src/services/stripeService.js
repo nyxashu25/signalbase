@@ -9,11 +9,11 @@ import { getDecryptedStripeCredentials } from './paymentSettingsService.js';
 import * as notificationService from './notificationService.js';
 import {
   PLAN_MONTHLY_CREDITS,
-  PLAN_MIN_SEATS,
   PLAN_PRICE_USD_CENTS,
   PLAN_ORDER,
   INTERVAL_MONTHS,
   planPriceForInterval,
+  includedSeats,
 } from '../config/planConfig.js';
 
 /** Adds calendar months (not a flat day count) — correct across variable month lengths. */
@@ -114,7 +114,6 @@ async function updateSubscriptionState(subscription) {
 // places would double-credit the first cycle.
 async function activatePlanSubscription(session) {
   const { workspaceId, plan, interval } = session.metadata ?? {};
-  const seats = Math.max(1, Number(session.metadata?.seats) || 1);
   if (!workspaceId || !plan) {
     logger.error(
       { sessionId: session.id },
@@ -122,13 +121,16 @@ async function activatePlanSubscription(session) {
     );
     return;
   }
+  // Seats are fixed by the plan (see planConfig.PLAN_INCLUDED_SEATS) — the
+  // plan is the source of truth, not the session metadata.
+  const seats = includedSeats(plan);
 
   await prisma.workspace.update({
     where: { id: workspaceId },
     data: {
       plan,
       seats,
-      // Credits are per seat per month (see the Pricing page copy).
+      // Plan credits x the plan's included seats.
       monthlyCreditGrant: PLAN_MONTHLY_CREDITS[plan] * seats,
       stripeCustomerId: session.customer,
       stripeSubscriptionId: session.subscription,
@@ -298,7 +300,7 @@ const STRIPE_RECURRING = {
 const INTERVAL_LABEL = { MONTH: 'monthly', QUARTER: 'quarterly', YEAR: 'annual' };
 
 export async function createPlanSubscriptionSession(
-  { workspaceId, plan, interval = 'MONTH', seats = 1 },
+  { workspaceId, plan, interval = 'MONTH' },
   makeClient = (key) => new Stripe(key),
 ) {
   if (PLAN_PRICE_USD_CENTS[plan] === undefined) {
@@ -307,9 +309,9 @@ export async function createPlanSubscriptionSession(
   if (!STRIPE_RECURRING[interval]) {
     throw new ApiError(400, 'Unknown billing interval');
   }
-  if (seats < (PLAN_MIN_SEATS[plan] ?? 1)) {
-    throw new ApiError(400, `The ${plan} plan starts at ${PLAN_MIN_SEATS[plan]} seats`);
-  }
+  // Fixed by the plan — the buyer doesn't choose a seat count. Total billed is
+  // the per-seat rate x the plan's included seats (Stripe quantity below).
+  const seats = includedSeats(plan);
   const amountMinor = planPriceForInterval(plan, interval);
 
   const workspace = await prisma.workspace.findUnique({

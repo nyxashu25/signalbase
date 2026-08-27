@@ -7,7 +7,7 @@ import {
   useSubscribeToPlanMutation,
 } from '../api/billingApi.js';
 import { Pagination } from '../components/Pagination.jsx';
-import { PLANS, findPlan, BILLING_INTERVALS, planPriceForInterval } from '../data/plans.js';
+import { PLANS, findPlan, BILLING_INTERVALS, planTotalForInterval } from '../data/plans.js';
 import { PageHeader } from '../components/ui/PageHeader.jsx';
 import { Button } from '../components/ui/Button.jsx';
 import { Banner } from '../components/ui/Banner.jsx';
@@ -71,7 +71,6 @@ function addMonths(date, months) {
 export function Billing() {
   const [page, setPage] = useState(1);
   const [billingIntervalChoice, setBillingIntervalChoice] = useState('MONTH');
-  const [seatChoice, setSeatChoice] = useState(1);
   const { data: summary } = useGetBillingSummaryQuery();
   const { data: transactions, isFetching } = useListBillingTransactionsQuery({
     page,
@@ -101,8 +100,7 @@ export function Billing() {
       const session = await subscribeToPlan({
         plan: planKey,
         interval: billingIntervalChoice,
-        // Organization starts at 3 seats (mirrors the server-side check).
-        seats: Math.max(seatChoice, planKey === 'ORGANIZATION' ? 3 : 1),
+        // Seats are fixed by the plan server-side — nothing to send.
       }).unwrap();
       window.location.href = session.url;
     } catch (err) {
@@ -131,7 +129,7 @@ export function Billing() {
       {/* Plan overview */}
       <Card className="p-5">
         <div className="grid grid-cols-2 gap-6 md:grid-cols-5">
-          <Metric label="Current plan" hint="Change plans below — upgrades apply immediately. Prices are per seat; credits scale with seats.">
+          <Metric label="Current plan" hint="Change plans below — upgrades apply immediately. Each plan bundles a fixed number of seats; credits scale with them.">
             <span className="text-2xl font-extrabold text-text">{currentPlan?.name ?? '—'}</span>
             {summary?.seats > 0 && (
               <span className="ml-2 text-xs font-medium text-text-muted">
@@ -140,7 +138,7 @@ export function Billing() {
             )}
             {currentPlan && currentPlan.price > 0 && currentInterval && (
               <span className="ml-2 text-xs font-medium text-text-muted">
-                {formatUsd(planPriceForInterval(currentPlan.key, currentInterval.key))}/seat/
+                {formatUsd(planTotalForInterval(currentPlan.key, currentInterval.key))}/
                 {CADENCE[currentInterval.key]}
               </span>
             )}
@@ -197,18 +195,6 @@ export function Billing() {
           {summary?.plan === 'ORGANIZATION' ? 'Your plan' : 'Plans'}
         </h2>
         <div className="flex flex-wrap items-center gap-3">
-          <label className="flex items-center gap-2 text-xs font-semibold text-text-muted">
-            Seats
-            <input
-              type="number"
-              min={1}
-              max={50}
-              value={seatChoice}
-              onChange={(e) => setSeatChoice(Math.max(1, Math.min(50, Number(e.target.value) || 1)))}
-              aria-label="Seats"
-              className="h-8 w-16 rounded-md border border-border bg-surface-elevated px-2 text-sm tabular-nums text-text outline-none focus:border-focus focus:ring-2 focus:ring-focus/25"
-            />
-          </label>
           <SegmentedControl
             ariaLabel="Billing interval"
             value={billingIntervalChoice}
@@ -232,10 +218,9 @@ export function Billing() {
           const isDowngrade =
             summary && PLAN_ORDER.indexOf(plan.key) < PLAN_ORDER.indexOf(summary.plan);
           const displayPrice =
-            plan.key === 'FREE' ? 0 : planPriceForInterval(plan.key, billingIntervalChoice);
+            plan.key === 'FREE' ? 0 : planTotalForInterval(plan.key, billingIntervalChoice);
           const cadence = CADENCE[billingIntervalChoice];
-          const cadenceUnit =
-            plan.key === 'ORGANIZATION' ? `seat/${cadence}, min 3 seats` : `seat/${cadence}`;
+          const cadenceUnit = `${cadence} · ${plan.seats} seats`;
 
           return (
             <Card

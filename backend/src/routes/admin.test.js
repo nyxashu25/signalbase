@@ -150,16 +150,18 @@ describe('admin data routes', () => {
       .send({ plan: 'PROFESSIONAL' });
 
     expect(res.status).toBe(200);
+    // No explicit seats -> defaults to the plan's allotment (Professional = 25),
+    // so the grant is 1200 x 25.
     expect(res.body).toEqual({
       workspaceId: workspace.id,
       plan: 'PROFESSIONAL',
-      seats: 1,
-      monthlyCreditGrant: 1200,
+      seats: 25,
+      monthlyCreditGrant: 30000,
     });
 
     const updated = await prisma.workspace.findUnique({ where: { id: workspace.id } });
     expect(updated.plan).toBe('PROFESSIONAL');
-    expect(updated.monthlyCreditGrant).toBe(1200);
+    expect(updated.monthlyCreditGrant).toBe(30000);
 
     const detail = await request(app)
       .get(`/api/v1/admin/users/${user.id}`)

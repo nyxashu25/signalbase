@@ -54,7 +54,7 @@ export function SettingsMembers() {
   const canManageRoles = teamUnlocked;
   const seatsFull = Boolean(seatInfo && seatInfo.used >= seatInfo.total);
   const canInviteNow = teamUnlocked && !seatsFull;
-  const fullHint = 'All seats are in use — revoke a pending invite or add seats from Billing';
+  const fullHint = 'All seats are in use — revoke a pending invite, or upgrade your plan for more seats';
   const { data: invites } = useListInvitesQuery(undefined, { skip: !canManage || isFree });
   const [createInvite, { isLoading: inviting }] = useCreateInviteMutation();
   const [revokeInvite] = useRevokeInviteMutation();
@@ -308,8 +308,8 @@ export function SettingsMembers() {
 
       {canManage && teamUnlocked && seatsFull && (
         <Banner tone="info" title="All seats are in use" action="Open Billing" actionTo="/app/billing">
-          Revoke a pending invite to free a seat, or add seats by re-subscribing with a higher seat
-          count from Billing.
+          Revoke a pending invite to free a seat, or upgrade to a higher plan for more seats — Basic
+          includes 10, Professional 25, and Organization 45.
         </Banner>
       )}
     </div>

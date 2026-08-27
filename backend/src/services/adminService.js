@@ -3,7 +3,7 @@ import { redis } from '../config/redis.js';
 import { getBalance } from './creditService.js';
 import { ApiError } from '../middleware/errorHandler.js';
 import { getStripeSettings } from './paymentSettingsService.js';
-import { PLAN_MONTHLY_CREDITS } from '../config/planConfig.js';
+import { PLAN_MONTHLY_CREDITS, includedSeats } from '../config/planConfig.js';
 import * as notificationService from './notificationService.js';
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
@@ -192,9 +192,10 @@ export async function updateUserPlan(userId, plan, actorAdminId, seats) {
   const workspaceId = membership.workspace.id;
   const previousPlan = membership.workspace.plan;
   const previousSeats = membership.workspace.seats;
-  // Seats only change when explicitly provided — a plain plan override keeps
-  // the seat count the buyer paid for. Grant is per seat per month.
-  const nextSeats = seats ?? previousSeats;
+  // Default to the new plan's included seats (Basic 10 / Pro 25 / Org 45) so a
+  // plain plan override lands on the right allotment; an explicit `seats`
+  // still wins for bespoke enterprise deals. Grant is plan credits x seats.
+  const nextSeats = seats ?? includedSeats(plan);
 
   const workspace = await prisma.workspace.update({
     where: { id: workspaceId },

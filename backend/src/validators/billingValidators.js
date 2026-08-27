@@ -10,9 +10,9 @@ export const createCheckoutSessionSchema = z.object({
 export const createPlanSubscriptionSchema = z.object({
   plan: z.enum(['BASIC', 'PROFESSIONAL', 'ORGANIZATION']),
   interval: z.enum(['MONTH', 'QUARTER', 'YEAR']).optional(),
-  // Per-plan minimums (Organization: 3) are enforced in stripeService where
-  // the plan is known; 50 matches MAX_SEATS in config/planConfig.js.
-  seats: z.number().int().min(1).max(50).default(1),
+  // Seats are fixed by the plan (planConfig.PLAN_INCLUDED_SEATS), not chosen at
+  // checkout — no seats field. A `seats` sent by an older client is ignored
+  // (unknown keys are stripped by Zod).
 });
 
 // Matches CUSTOM_CREDITS_MIN/MAX in config/creditPackages.js.

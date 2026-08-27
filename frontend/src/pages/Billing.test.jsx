@@ -122,16 +122,16 @@ describe('Billing', () => {
     renderWithProviders(<Billing />, { preloadedState: authenticatedState });
     await screen.findByText('Current');
 
-    // BASIC is $29/mo -> monthly default shown first.
-    expect(screen.getByText('$29')).toBeInTheDocument();
+    // BASIC is $29/seat x 10 seats = $290/mo -> monthly default shown first.
+    expect(screen.getByText('$290')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /Quarterly/ }));
-    // 29 * 3 * 0.9 = 78.30
-    expect(await screen.findByText('$78.30')).toBeInTheDocument();
+    // 29 * 3 * 0.9 * 10 = 783
+    expect(await screen.findByText('$783')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /Annually/ }));
-    // 29 * 12 * 0.8 = 278.40
-    expect(await screen.findByText('$278.40')).toBeInTheDocument();
+    // 29 * 12 * 0.8 * 10 = 2784
+    expect(await screen.findByText('$2784')).toBeInTheDocument();
   });
 
   it('locks a quarterly plan for a full 3 months', async () => {

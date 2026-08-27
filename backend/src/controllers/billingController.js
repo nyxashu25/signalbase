@@ -116,13 +116,12 @@ export async function createCheckoutSession(req, res) {
 
 export async function createPlanSubscriptionSession(req, res) {
   const { workspaceId } = req.auth;
-  const { plan, interval, seats } = req.body;
+  const { plan, interval } = req.body;
 
   const session = await stripeService.createPlanSubscriptionSession({
     workspaceId,
     plan,
     interval,
-    seats,
   });
   res.status(201).json({ provider: 'stripe', ...session });
 }

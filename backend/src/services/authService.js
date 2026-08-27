@@ -434,7 +434,7 @@ export async function acceptInvite(token, { name, password } = {}) {
   if (!alreadyMember) {
     const memberCount = await prisma.membership.count({ where: { workspaceId: workspace.id } });
     if (memberCount >= workspace.seats) {
-      throw new ApiError(422, 'No seats left in this workspace — ask an admin to add seats');
+      throw new ApiError(422, 'No seats left in this workspace — ask an admin to upgrade the plan for more seats');
     }
   }
 

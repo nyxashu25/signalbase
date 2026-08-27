@@ -63,7 +63,7 @@ export async function createInvite(workspaceId, invitedById, { email, role }) {
       422,
       usage.plan === 'FREE' && usage.total === 1
         ? 'The Free plan includes 1 seat — upgrade from Billing to invite teammates'
-        : `All ${usage.total} seats are in use — revoke a pending invite or add seats from Billing`,
+        : `All ${usage.total} seats are in use — revoke a pending invite, or upgrade your plan for more seats`,
     );
   }
 

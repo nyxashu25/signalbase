@@ -39,16 +39,26 @@ export function planIncludesTeam(plan) {
   return plan !== 'FREE';
 }
 
-// Seat bounds per plan — the Pricing page's "min 3 seats" on Organization,
-// and a sanity ceiling for self-serve checkout (larger teams go through
-// sales/admin override).
-export const PLAN_MIN_SEATS = {
+// Seats are FIXED per plan (product decision 2026-08-27): buying a plan grants
+// exactly this many seats — the buyer no longer picks a quantity. Price and
+// monthly credits both scale by it (per-seat rate x seats, plan credits x
+// seats), so this constant is the one knob that sets all three. Mirrored in
+// frontend/src/data/plans.js — keep both in sync by hand.
+export const PLAN_INCLUDED_SEATS = {
   FREE: 1,
-  BASIC: 1,
-  PROFESSIONAL: 1,
-  ORGANIZATION: 3,
+  BASIC: 10,
+  PROFESSIONAL: 25,
+  ORGANIZATION: 45,
 };
-export const MAX_SEATS = 50;
+
+/** How many seats a plan grants (defaults to 1 for an unknown plan). */
+export function includedSeats(plan) {
+  return PLAN_INCLUDED_SEATS[plan] ?? 1;
+}
+
+// Admin overrides (support actions) may still set an arbitrary seat count up
+// to this ceiling; self-serve checkout always uses PLAN_INCLUDED_SEATS above.
+export const MAX_SEATS = 500;
 
 // Low to high — index comparison is how a "downgrade" is detected.
 export const PLAN_ORDER = ['FREE', 'BASIC', 'PROFESSIONAL', 'ORGANIZATION'];

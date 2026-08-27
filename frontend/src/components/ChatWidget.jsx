@@ -20,7 +20,7 @@ const FAQS = [
   },
   {
     q: 'What are the paid plans?',
-    a: 'Basic is $29/seat/mo (500 credits/seat). Professional is $59/seat/mo (1,200 credits/seat) — our most popular plan. Organization is $99/seat/mo, minimum 3 seats (2,500 credits/seat), with SSO and dedicated onboarding.',
+    a: 'Each paid plan bundles a fixed team size. Basic is $290/mo for 10 seats (5,000 credits). Professional is $1,475/mo for 25 seats (30,000 credits) — our most popular plan. Organization is $4,455/mo for 45 seats (112,500 credits), with SSO and dedicated onboarding.',
   },
   {
     q: 'Do unused credits roll over?',
