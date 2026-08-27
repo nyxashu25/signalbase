@@ -7,7 +7,9 @@ import {
   useCreateInviteMutation,
   useRevokeInviteMutation,
   useChangeMemberRoleMutation,
+  useGetTeamAuditQuery,
 } from '../../api/workspaceApi.js';
+import { ExportCsvButton } from '../../components/ExportCsvButton.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Banner } from '../../components/ui/Banner.jsx';
 import { FormField, inputClass } from '../../components/ui/FormField.jsx';
@@ -27,6 +29,15 @@ const ROLE_HINT = {
   MEMBER: 'Can search, reveal, build lists and run sequences.',
 };
 const CAN_INVITE = new Set(['OWNER', 'ADMIN']);
+
+// Spend reasons shown in the audit (mirrors the backend's SPEND_REASON_LABELS).
+const REASON_LABELS = {
+  EMAIL_REVEAL: 'Reveals',
+  EXTENSION_REVEAL: 'Extension reveals',
+  COMPANY_VIEW: 'Company views',
+  CSV_EXPORT: 'CSV exports',
+  SEQUENCE_ENROLLMENT: 'Sequence enrollments',
+};
 
 export function SettingsMembers() {
   const me = useSelector((s) => s.auth.user);
@@ -286,6 +297,8 @@ export function SettingsMembers() {
         </SettingsSection>
       )}
 
+      {teamUnlocked && <TeamAudit reasonLabels={REASON_LABELS} />}
+
       {canManage && isFree && (
         <Banner tone="info" title="Add your team on a paid plan" action="Open Billing" actionTo="/app/billing">
           Inviting teammates, setting roles, and the team credit audit are paid features. Upgrade from
@@ -300,5 +313,73 @@ export function SettingsMembers() {
         </Banner>
       )}
     </div>
+  );
+}
+
+// Per-teammate credit-usage audit — who spent what — with a downloadable CSV
+// (opens in Excel). Paid + admin only (the parent gates on teamUnlocked).
+function TeamAudit({ reasonLabels }) {
+  const { data, isLoading } = useGetTeamAuditQuery();
+  const rows = data?.members ?? [];
+  const hasUnattributed = (data?.unattributed?.totalSpent ?? 0) > 0;
+
+  return (
+    <SettingsSection
+      title="Team credit audit"
+      description="Every teammate's credit spend on this workspace's shared balance."
+      footer={
+        <ExportCsvButton path="/workspace/audit/export" label="Download team audit" />
+      }
+    >
+      <TableFrame className="-mx-5 -my-4 rounded-none border-0">
+        <table className="w-full">
+          <thead>
+            <tr>
+              <th className={thClass}>Teammate</th>
+              <th className={thClass}>Actions</th>
+              <th className={thClass}>Breakdown</th>
+              <th className={thClass}>Credits spent</th>
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading && <SkeletonRows rows={2} columns={4} />}
+            {rows.map((m) => (
+              <tr key={m.userId} className={trClass}>
+                <td className={tdClass}>
+                  <span className="block truncate font-semibold">{m.name}</span>
+                  <span className="block truncate text-xs text-text-muted">{m.email}</span>
+                </td>
+                <td className={`${tdMutedClass} tabular-nums`}>{m.actionCount}</td>
+                <td className="px-4 py-3">
+                  <span className="flex flex-wrap gap-1.5">
+                    {Object.entries(m.byReason).length === 0 && <span className="text-xs text-text-muted">—</span>}
+                    {Object.entries(m.byReason).map(([reason, amount]) => (
+                      <span
+                        key={reason}
+                        className="rounded-full bg-surface-sunken px-2 py-0.5 text-[11px] font-medium text-text-muted"
+                      >
+                        {`${reasonLabels[reason] ?? reason}: ${amount}`}
+                      </span>
+                    ))}
+                  </span>
+                </td>
+                <td className={`${tdClass} font-semibold tabular-nums`}>{m.totalSpent}</td>
+              </tr>
+            ))}
+            {hasUnattributed && (
+              <tr className={trClass}>
+                <td className={tdMutedClass}>
+                  <span className="block font-semibold text-text-muted">Unattributed</span>
+                  <span className="block text-xs text-text-muted">Older activity or former teammates</span>
+                </td>
+                <td className={`${tdMutedClass} tabular-nums`}>{data.unattributed.actionCount}</td>
+                <td className={tdMutedClass}>—</td>
+                <td className={`${tdMutedClass} font-semibold tabular-nums`}>{data.unattributed.totalSpent}</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </TableFrame>
+    </SettingsSection>
   );
 }

@@ -28,6 +28,11 @@ export const workspaceApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ['Workspace'],
     }),
+    getTeamAudit: builder.query({
+      query: () => '/workspace/audit',
+      // { members: [{ userId, name, email, role, totalSpent, actionCount, byReason }], unattributed, totalSpent }
+      providesTags: ['Workspace'],
+    }),
     getWorkspaceProfile: builder.query({
       query: () => '/workspace',
       transformResponse: (res) => res.workspace, // { id, name, plan, motto, logoUrl }
@@ -66,4 +71,5 @@ export const {
   useCreateInviteMutation,
   useRevokeInviteMutation,
   useChangeMemberRoleMutation,
+  useGetTeamAuditQuery,
 } = workspaceApi;

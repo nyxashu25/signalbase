@@ -36,6 +36,17 @@ export async function changeMemberRole(req, res) {
   res.json({ member });
 }
 
+export async function teamAudit(req, res) {
+  res.json(await workspaceService.teamAudit(req.auth.workspaceId));
+}
+
+export async function exportTeamAudit(req, res) {
+  const csv = await workspaceService.teamAuditCsv(req.auth.workspaceId);
+  res.set('Content-Type', 'text/csv; charset=utf-8');
+  res.set('Content-Disposition', 'attachment; filename="team-credit-audit.csv"');
+  res.send(csv);
+}
+
 export async function profile(req, res) {
   res.json({ workspace: await workspaceService.getWorkspaceProfile(req.auth.workspaceId) });
 }

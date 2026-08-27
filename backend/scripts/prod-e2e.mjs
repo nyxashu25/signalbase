@@ -216,6 +216,20 @@ try {
   const replay = await api('POST', '/auth/accept-invite', { body: { token: inviteToken, name: 'X', password: 'xxxxxxxxxx' } });
   check('invite link is single-use (400)', replay.status === 400);
 
+  // --- workspace branding (free) + role change + team audit (paid) ---
+  const brand = await api('PATCH', '/workspace', { token: owner, body: { name: 'E2E Probe Workspace', motto: 'Testing, one two.' } });
+  check('workspace branding: name + motto saved', brand.status === 200 && brand.body.workspace.motto === 'Testing, one two.');
+  const inviteeUser = await prisma.user.findUnique({ where: { email: INVITEE_EMAIL } });
+  const promote = await api('PATCH', `/workspace/members/${inviteeUser.id}/role`, { token: owner, body: { role: 'ADMIN' } });
+  check('promote teammate to admin', promote.status === 200 && promote.body.member.role === 'ADMIN');
+  const auditView = await api('GET', '/workspace/audit', { token: owner });
+  check('team audit attributes spend to a teammate', auditView.status === 200 && auditView.body.totalSpent >= 2 && auditView.body.members.some((m) => m.totalSpent >= 2), JSON.stringify(auditView.body?.totalSpent));
+  const csvRes = await fetch(`${BASE}/workspace/audit/export`, {
+    headers: { Authorization: `Bearer ${owner}`, 'X-Forwarded-For': `203.0.113.${STAMP % 250}` },
+  });
+  const csvText = await csvRes.text();
+  check('team audit CSV downloads with a header row', csvRes.status === 200 && csvText.startsWith('Date,Member,Email,Action,Credits,Detail'));
+
   // --- Chrome extension surface: API key -> observe -> 4-credit reveal ---
   const keyRes = await api('POST', '/api-keys', { token: owner, body: { name: 'E2E extension probe' } });
   check('create API key (dpk_…, shown once)', keyRes.status === 201 && /^dpk_[0-9a-f]{40}$/.test(keyRes.body.key ?? ''));

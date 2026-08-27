@@ -133,6 +133,57 @@ describe('workspace', () => {
     expect(me.body.workspace.name).toBe('Acme Growth');
   });
 
+  it('team audit summarizes credit spend per teammate and exports CSV (paid, ADMIN+)', async () => {
+    const org = await registerOrg('Acme', 'owner@acme.test');
+    const member = await addMember(org.workspaceId, 'member@acme.test', 'MEMBER');
+    const company = await prisma.company.create({ data: { name: 'Nova', domain: 'nova.test' } });
+    const contact = await prisma.contact.create({
+      data: { companyId: company.id, firstName: 'Jordan', lastName: 'Bennett' },
+    });
+    // Two spends by the owner, one by the teammate; one unattributed.
+    await prisma.creditLedgerEntry.createMany({
+      data: [
+        { workspaceId: org.workspaceId, delta: -2, reason: 'EMAIL_REVEAL', contactId: contact.id, spentById: org.userId },
+        { workspaceId: org.workspaceId, delta: -20, reason: 'CSV_EXPORT', spentById: org.userId },
+        { workspaceId: org.workspaceId, delta: -2, reason: 'EMAIL_REVEAL', spentById: member.user.id },
+        { workspaceId: org.workspaceId, delta: -20, reason: 'COMPANY_VIEW', spentById: null },
+        { workspaceId: org.workspaceId, delta: 100, reason: 'MONTHLY_GRANT' }, // a grant — must be excluded
+      ],
+    });
+
+    const audit = await request(app).get('/api/v1/workspace/audit').set(auth(org.accessToken));
+    expect(audit.status).toBe(200);
+    expect(audit.body.totalSpent).toBe(44); // 2 + 20 + 2 + 20, grant excluded
+    const owner = audit.body.members.find((m) => m.userId === org.userId);
+    expect(owner).toMatchObject({ totalSpent: 22, actionCount: 2, byReason: { EMAIL_REVEAL: 2, CSV_EXPORT: 20 } });
+    const teammate = audit.body.members.find((m) => m.userId === member.user.id);
+    expect(teammate).toMatchObject({ totalSpent: 2, actionCount: 1 });
+    expect(audit.body.unattributed).toMatchObject({ totalSpent: 20, actionCount: 1 });
+
+    // CSV export — one row per spend + a header.
+    const csv = await request(app).get('/api/v1/workspace/audit/export').set(auth(org.accessToken));
+    expect(csv.status).toBe(200);
+    expect(csv.headers['content-type']).toMatch(/text\/csv/);
+    expect(csv.headers['content-disposition']).toMatch(/team-credit-audit\.csv/);
+    const lines = csv.text.trim().split('\r\n');
+    expect(lines[0]).toBe('Date,Member,Email,Action,Credits,Detail');
+    expect(lines).toHaveLength(5); // header + 4 spends
+    expect(csv.text).toContain('Jordan Bennett'); // reveal detail resolved
+    expect(csv.text).toContain('(unattributed)');
+  });
+
+  it('team audit is gated: MEMBER forbidden, FREE plan blocked', async () => {
+    const org = await registerOrg('Acme', 'owner@acme.test');
+    const member = await addMember(org.workspaceId, 'member@acme.test', 'MEMBER');
+    const denied = await request(app).get('/api/v1/workspace/audit').set(auth(member.accessToken));
+    expect(denied.status).toBe(403);
+
+    const free = await registerOrg('Freebie', 'free@acme.test', 5, 'FREE');
+    const gated = await request(app).get('/api/v1/workspace/audit').set(auth(free.accessToken));
+    expect(gated.status).toBe(403);
+    expect(gated.body.error.message).toMatch(/Team features aren’t available on the Free plan/);
+  });
+
   it('is isolated — another workspace never sees these members', async () => {
     const a = await registerOrg('Acme', 'owner@acme.test');
     const b = await registerOrg('Globex', 'owner@globex.test');

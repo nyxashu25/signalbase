@@ -61,6 +61,20 @@ workspaceRouter.patch(
   validateBody(changeMemberRoleSchema),
   asyncHandler(workspaceController.changeMemberRole),
 );
+
+// Team credit audit — who spent which credits on what. Paid-only, ADMIN+.
+workspaceRouter.get(
+  '/audit',
+  requireRole('ADMIN'),
+  requireTeamPlan,
+  asyncHandler(workspaceController.teamAudit),
+);
+workspaceRouter.get(
+  '/audit/export',
+  requireRole('ADMIN'),
+  requireTeamPlan,
+  asyncHandler(workspaceController.exportTeamAudit),
+);
 workspaceRouter.patch(
   '/',
   requireRole('ADMIN'),

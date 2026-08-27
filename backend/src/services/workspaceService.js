@@ -3,6 +3,17 @@ import { ApiError } from '../middleware/errorHandler.js';
 import { env } from '../config/env.js';
 import { signInviteToken } from './tokenService.js';
 import * as notificationService from './notificationService.js';
+import { toCsv } from '../utils/csv.js';
+
+// Human labels for the spend reasons a teammate can trigger (the audit only
+// covers spends — delta < 0 — so grants/top-ups/onboarding aren't here).
+const SPEND_REASON_LABELS = {
+  EMAIL_REVEAL: 'Email reveal',
+  EXTENSION_REVEAL: 'Extension reveal (LinkedIn)',
+  COMPANY_VIEW: 'Company view',
+  CSV_EXPORT: 'CSV export',
+  SEQUENCE_ENROLLMENT: 'Sequence enrollment',
+};
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_PENDING_INVITES = 20;
@@ -212,4 +223,99 @@ export async function changeMemberRole(workspaceId, targetUserId, role) {
     include: { user: { select: { id: true, name: true, email: true, createdAt: true } } },
   });
   return { id: updated.id, role: updated.role, joinedAt: updated.createdAt, user: updated.user };
+}
+
+/**
+ * Per-teammate credit-usage summary for the admin "team audit". Sums every
+ * spend (delta < 0) by the attributed teammate (spentById), broken down by
+ * reason. Every current member appears (even zero-spend ones); spends with no
+ * attribution — old rows this feature predates, or a member who has since
+ * left — are pooled under `unattributed`.
+ */
+export async function teamAudit(workspaceId) {
+  const [members, entries] = await Promise.all([
+    listMembers(workspaceId),
+    prisma.creditLedgerEntry.findMany({
+      where: { workspaceId, delta: { lt: 0 } },
+      select: { delta: true, reason: true, spentById: true },
+    }),
+  ]);
+
+  const byUser = new Map();
+  for (const m of members) {
+    byUser.set(m.user.id, {
+      userId: m.user.id,
+      name: m.user.name,
+      email: m.user.email,
+      role: m.role,
+      totalSpent: 0,
+      actionCount: 0,
+      byReason: {},
+    });
+  }
+  const unattributed = { totalSpent: 0, actionCount: 0 };
+  let totalSpent = 0;
+
+  for (const e of entries) {
+    const amount = -e.delta;
+    totalSpent += amount;
+    const bucket = e.spentById ? byUser.get(e.spentById) : null;
+    if (bucket) {
+      bucket.totalSpent += amount;
+      bucket.actionCount += 1;
+      bucket.byReason[e.reason] = (bucket.byReason[e.reason] ?? 0) + amount;
+    } else {
+      unattributed.totalSpent += amount;
+      unattributed.actionCount += 1;
+    }
+  }
+
+  return {
+    members: [...byUser.values()].sort((a, b) => b.totalSpent - a.totalSpent),
+    unattributed,
+    totalSpent,
+    reasonLabels: SPEND_REASON_LABELS,
+  };
+}
+
+/** One CSV row per spend — the downloadable "download audit of all team". */
+export async function teamAuditCsv(workspaceId) {
+  const entries = await prisma.creditLedgerEntry.findMany({
+    where: { workspaceId, delta: { lt: 0 } },
+    orderBy: { createdAt: 'desc' },
+    select: { delta: true, reason: true, spentById: true, contactId: true, createdAt: true },
+  });
+
+  const userIds = [...new Set(entries.map((e) => e.spentById).filter(Boolean))];
+  const contactIds = [...new Set(entries.map((e) => e.contactId).filter(Boolean))];
+  const [users, contacts] = await Promise.all([
+    prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, name: true, email: true } }),
+    prisma.contact.findMany({
+      where: { id: { in: contactIds } },
+      select: { id: true, firstName: true, lastName: true },
+    }),
+  ]);
+  const userMap = new Map(users.map((u) => [u.id, u]));
+  const contactMap = new Map(contacts.map((c) => [c.id, `${c.firstName} ${c.lastName}`.trim()]));
+
+  const rows = entries.map((e) => {
+    const u = e.spentById ? userMap.get(e.spentById) : null;
+    return {
+      date: e.createdAt.toISOString(),
+      member: u ? u.name : e.spentById ? '(former teammate)' : '(unattributed)',
+      email: u ? u.email : '',
+      action: SPEND_REASON_LABELS[e.reason] ?? e.reason,
+      credits: -e.delta,
+      detail: e.contactId ? contactMap.get(e.contactId) ?? '' : '',
+    };
+  });
+
+  return toCsv(rows, [
+    { header: 'Date', value: (r) => r.date },
+    { header: 'Member', value: (r) => r.member },
+    { header: 'Email', value: (r) => r.email },
+    { header: 'Action', value: (r) => r.action },
+    { header: 'Credits', value: (r) => r.credits },
+    { header: 'Detail', value: (r) => r.detail },
+  ]);
 }

@@ -148,6 +148,8 @@ describe('Settings', () => {
         },
       },
       { url: '/workspace/invites', method: 'GET', respond: () => ({ body: { invites: [...pending] } }) },
+      { url: '/workspace/audit', method: 'GET', respond: { body: { members: [], unattributed: { totalSpent: 0, actionCount: 0 }, totalSpent: 0 } } },
+      { url: '/billing/credit-costs', method: 'GET', respond: { body: { CSV_EXPORT: 20 } } },
     ]);
     const user = userEvent.setup();
     renderWithProviders(<SettingsMembers />, { preloadedState: state });
@@ -186,6 +188,43 @@ describe('Settings', () => {
     expect(await screen.findByRole('button', { name: 'Invite teammate' })).toBeDisabled();
   });
 
+  it('Members: shows the team credit audit with a per-member breakdown and a download button', async () => {
+    mockFetchRoutes([
+      {
+        url: '/workspace/members',
+        method: 'GET',
+        respond: {
+          body: {
+            members: [{ id: 'm1', role: 'OWNER', joinedAt: '2026-08-01T00:00:00.000Z', user: { id: 'u1', name: 'Demo User', email: 'demo@datapit.io' } }],
+            seats: { total: 5, plan: 'BASIC', members: 1, pendingInvites: 0, used: 1 },
+          },
+        },
+      },
+      { url: '/workspace/invites', method: 'GET', respond: { body: { invites: [] } } },
+      { url: '/billing/credit-costs', method: 'GET', respond: { body: { CSV_EXPORT: 20 } } },
+      {
+        url: '/workspace/audit',
+        method: 'GET',
+        respond: {
+          body: {
+            totalSpent: 22,
+            unattributed: { totalSpent: 20, actionCount: 1 },
+            members: [
+              { userId: 'u1', name: 'Demo User', email: 'demo@datapit.io', role: 'OWNER', totalSpent: 22, actionCount: 2, byReason: { EMAIL_REVEAL: 2, CSV_EXPORT: 20 } },
+            ],
+          },
+        },
+      },
+    ]);
+    renderWithProviders(<SettingsMembers />, { preloadedState: state });
+
+    expect(await screen.findByText('Team credit audit')).toBeInTheDocument();
+    expect(await screen.findByText('Reveals: 2')).toBeInTheDocument();
+    expect(screen.getByText('CSV exports: 20')).toBeInTheDocument();
+    expect(screen.getByText('Unattributed')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Download team audit/ })).toBeInTheDocument();
+  });
+
   it('Members: an admin changes a teammate between Teammate and Admin (owner + self are not editable)', async () => {
     const calls = [];
     mockFetchRoutes([
@@ -203,6 +242,8 @@ describe('Settings', () => {
         },
       },
       { url: '/workspace/invites', method: 'GET', respond: { body: { invites: [] } } },
+      { url: '/workspace/audit', method: 'GET', respond: { body: { members: [], unattributed: { totalSpent: 0, actionCount: 0 }, totalSpent: 0 } } },
+      { url: '/billing/credit-costs', method: 'GET', respond: { body: { CSV_EXPORT: 20 } } },
       {
         url: '/workspace/members/u2/role',
         method: 'PATCH',
