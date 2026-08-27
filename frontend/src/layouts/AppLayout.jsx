@@ -21,6 +21,7 @@ import { ThemeToggle } from '../components/ThemeToggle.jsx';
 import { Logo } from '../components/Logo.jsx';
 import { GuidedTour } from '../components/GuidedTour.jsx';
 import { CreditBadge } from '../components/CreditBadge.jsx';
+import { UpgradeNagModal } from '../components/UpgradeNagModal.jsx';
 import { NotificationBell } from '../components/app/NotificationBell.jsx';
 import { UpgradeCard } from '../components/app/UpgradeCard.jsx';
 import { OnboardingCard } from '../components/app/OnboardingCard.jsx';
@@ -301,6 +302,7 @@ export function AppLayout() {
           <GuidedTour />
           <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
           <OnboardingRewardToasts />
+          <UpgradeNagModal />
         </div>
       </ToastProvider>
     </TooltipProvider>

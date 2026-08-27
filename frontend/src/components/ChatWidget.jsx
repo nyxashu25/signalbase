@@ -16,11 +16,11 @@ const FAQS = [
   },
   {
     q: "What's included in the Free plan?",
-    a: '100 credits every month, 1 seat, 1 saved list, and full people & company search — no credit card required.',
+    a: '800 personal credits every month, 1 seat, 1 saved list, and full people & company search — no credit card required.',
   },
   {
     q: 'What are the paid plans?',
-    a: 'Each paid plan bundles a fixed team size. Basic is $290/mo for 10 seats (5,000 credits). Professional is $1,475/mo for 25 seats (30,000 credits) — our most popular plan. Organization is $4,455/mo for 45 seats (112,500 credits), with SSO and dedicated onboarding.',
+    a: 'Paid plans come in seat blocks — buy as many as you need. Basic is $29/mo per block (5 paid + 1 free seat; paid seats earn 900 credits/mo each). Professional is $59/mo per block (5 paid + 3 free; 2,000 credits per paid seat + a 2,000 owner bonus) — our most popular. Organization is $99/mo per block (14 paid + 5 free; 2,000 per paid seat + a 3,000 owner bonus). Free bonus seats always earn 1,500/mo, and every newly covered teammate gets a one-time 1,500-credit gift.',
   },
   {
     q: 'Do unused credits roll over?',

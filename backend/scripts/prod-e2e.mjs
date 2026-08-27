@@ -107,6 +107,7 @@ async function cleanup() {
     await prisma.company.delete({ where: { id: testCompany.id } }).catch(() => {});
   }
   for (const wsId of workspaceIds) await redis.del(`credits:balance:${wsId}`).catch(() => {});
+  for (const u of users) await redis.del(`credits:balance:user:${u.id}`).catch(() => {});
   console.log(
     `  removed: ${users.length} users, ${orgIds.length} orgs/workspaces, ` +
       `${testContacts.length + (testCompany ? 1 : 0)} test records, opt-out row`,
@@ -138,7 +139,7 @@ try {
 
   // --- billing baseline ---
   const summary = await api('GET', '/billing/summary', { token: owner });
-  check('billing summary: 100 starting credits', summary.status === 200 && summary.body.balance === 100, JSON.stringify(summary.body));
+  check('billing summary: 800 starting personal credits', summary.status === 200 && summary.body.balance === 800, JSON.stringify(summary.body));
 
   // --- search (read-only against the real index) ---
   const search = await api('GET', '/search/people?page=1&pageSize=3&sort=relevance', { token: owner });
@@ -171,7 +172,7 @@ try {
   const reveal = await api('POST', `/contacts/${contact.id}/reveal`, { token: owner });
   check('reveal returns email + phone', reveal.status === 200 && reveal.body.email === `probe.person@${TEST_DOMAIN}` && reveal.body.phone === '+1 415 555 0000', JSON.stringify(reveal.body));
   const afterBalance = await api('GET', '/billing/summary', { token: owner });
-  check('reveal charged 2 credits', afterBalance.body.balance === 98, String(afterBalance.body.balance));
+  check('reveal charged 2 credits', afterBalance.body.balance === 798, String(afterBalance.body.balance));
   const listAfter = await api('GET', `/lists/${list.body.list.id}`, { token: owner });
   check('list detail shows clear phone after reveal', listAfter.body.list.items[0].contact.phone === '+1 415 555 0000');
 
@@ -203,7 +204,7 @@ try {
   const blocked = await api('POST', '/workspace/invites', { token: owner, body: { email: INVITEE_EMAIL, role: 'MEMBER' } });
   check('invite blocked on FREE plan (403 team gate)', blocked.status === 403, String(blocked.status));
   // Upgrade to a paid plan (+ seat headroom) so team features unlock.
-  await prisma.workspace.update({ where: { id: workspaceId }, data: { plan: 'BASIC', seats: 3 } });
+  await prisma.workspace.update({ where: { id: workspaceId }, data: { plan: 'BASIC', blocks: 1 } });
   const invite = await api('POST', '/workspace/invites', { token: owner, body: { email: INVITEE_EMAIL, role: 'MEMBER' } });
   check('create invite once on a paid plan', invite.status === 201 && invite.body.invite.inviteUrl.includes('token='));
   const inviteToken = new URL(invite.body.invite.inviteUrl).searchParams.get('token');
