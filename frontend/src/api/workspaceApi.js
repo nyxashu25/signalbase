@@ -33,6 +33,25 @@ export const workspaceApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ['Workspace'],
     }),
+    assignSeat: builder.mutation({
+      // OWNER only — moves a member between PAID / FREE / PENDING seats.
+      query: ({ userId, seatType }) => ({
+        url: `/workspace/members/${userId}/seat`,
+        method: 'PATCH',
+        body: { seatType },
+      }),
+      invalidatesTags: ['Workspace', 'BillingSummary'],
+    }),
+    removeMember: builder.mutation({
+      // OWNER only — hard-removes the membership (their account survives).
+      query: (userId) => ({ url: `/workspace/members/${userId}`, method: 'DELETE' }),
+      invalidatesTags: ['Workspace', 'BillingSummary'],
+    }),
+    transferCredits: builder.mutation({
+      // OWNER only — moves personal credits to a covered teammate.
+      query: (body) => ({ url: '/workspace/credits/transfer', method: 'POST', body }),
+      invalidatesTags: ['Workspace', 'BillingSummary'],
+    }),
     getTeamAudit: builder.query({
       query: () => '/workspace/audit',
       // { members: [{ userId, name, email, role, totalSpent, actionCount, byReason }], unattributed, totalSpent }
@@ -77,5 +96,8 @@ export const {
   useBulkInviteMutation,
   useRevokeInviteMutation,
   useChangeMemberRoleMutation,
+  useAssignSeatMutation,
+  useRemoveMemberMutation,
+  useTransferCreditsMutation,
   useGetTeamAuditQuery,
 } = workspaceApi;

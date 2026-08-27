@@ -8,6 +8,8 @@ import {
   createInviteSchema,
   bulkInviteSchema,
   changeMemberRoleSchema,
+  assignSeatSchema,
+  transferCreditsSchema,
 } from '../validators/workspaceValidators.js';
 import { rateLimit, byWorkspace } from '../middleware/rateLimit.js';
 import { uploadImage } from '../middleware/uploadImage.js';
@@ -72,6 +74,27 @@ workspaceRouter.patch(
   requireTeamPlan,
   validateBody(changeMemberRoleSchema),
   asyncHandler(workspaceController.changeMemberRole),
+);
+// Seat assignment, credit transfers, and member removal are the OWNER's
+// alone — the first OWNER-gated routes in the app (rbac RANK covers it).
+workspaceRouter.patch(
+  '/members/:userId/seat',
+  requireRole('OWNER'),
+  requireTeamPlan,
+  validateBody(assignSeatSchema),
+  asyncHandler(workspaceController.assignSeat),
+);
+workspaceRouter.delete(
+  '/members/:userId',
+  requireRole('OWNER'),
+  requireTeamPlan,
+  asyncHandler(workspaceController.removeMember),
+);
+workspaceRouter.post(
+  '/credits/transfer',
+  requireRole('OWNER'),
+  validateBody(transferCreditsSchema),
+  asyncHandler(workspaceController.transferCredits),
 );
 
 // Team credit audit — who spent which credits on what. Paid-only, ADMIN+.

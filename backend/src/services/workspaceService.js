@@ -4,6 +4,8 @@ import { env } from '../config/env.js';
 import { signInviteToken } from './tokenService.js';
 import * as notificationService from './notificationService.js';
 import { seatCapacity } from '../config/planConfig.js';
+import { activateCoverage } from './seatService.js';
+import { transferCredits, getBalance } from './creditService.js';
 import { toCsv } from '../utils/csv.js';
 
 // Human labels for the spend reasons a teammate can trigger (the audit only
@@ -174,15 +176,19 @@ export async function seatUsage(workspaceId) {
   };
 }
 
-/** Everyone with a seat in this workspace, owner first, then by join date. */
-export async function listMembers(workspaceId) {
+/**
+ * Everyone with a seat in this workspace, owner first, then by join date.
+ * `withBalances` (OWNER-only callers) attaches each member's personal
+ * credit balance — powers the transfer UI.
+ */
+export async function listMembers(workspaceId, { withBalances = false } = {}) {
   const memberships = await prisma.membership.findMany({
     where: { workspaceId },
     include: { user: { select: { id: true, name: true, email: true, createdAt: true } } },
     orderBy: { createdAt: 'asc' },
   });
   const rank = { OWNER: 0, ADMIN: 1, MEMBER: 2 };
-  return memberships
+  const members = memberships
     .map((m) => ({
       id: m.id,
       role: m.role,
@@ -191,6 +197,15 @@ export async function listMembers(workspaceId) {
       user: m.user,
     }))
     .sort((a, b) => rank[a.role] - rank[b.role] || a.joinedAt - b.joinedAt);
+
+  if (withBalances) {
+    await Promise.all(
+      members.map(async (m) => {
+        m.balance = await getBalance(m.user.id);
+      }),
+    );
+  }
+  return members;
 }
 
 function serializeProfile(w) {
@@ -255,6 +270,55 @@ export async function changeMemberRole(workspaceId, targetUserId, role) {
     include: { user: { select: { id: true, name: true, email: true, createdAt: true } } },
   });
   return { id: updated.id, role: updated.role, joinedAt: updated.createdAt, user: updated.user };
+}
+
+/**
+ * OWNER (or super-admin) removes a member: hard-deletes the Membership row —
+ * the person's account, their ledger rows (soft refs) and audit history all
+ * survive; re-inviting them later just creates a fresh membership. Their
+ * sessions fail closed at the next token refresh (≤15 min). The freed seat
+ * is immediately re-offered to any pending member.
+ */
+export async function removeMember(workspaceId, targetUserId, actorUserId) {
+  if (targetUserId === actorUserId) {
+    throw new ApiError(400, "You can't remove yourself from the workspace");
+  }
+  const membership = await prisma.membership.findUnique({
+    where: { userId_workspaceId: { userId: targetUserId, workspaceId } },
+  });
+  if (!membership) throw new ApiError(404, 'That person is not a member of this workspace');
+  if (membership.role === 'OWNER') {
+    throw new ApiError(409, 'The workspace owner cannot be removed');
+  }
+
+  await prisma.membership.delete({ where: { id: membership.id } });
+  await activateCoverage(workspaceId);
+}
+
+/**
+ * Owner hands some of their PERSONAL credits to a teammate. The recipient
+ * must be payment-covered (paid/free seat) — a pending member can't hold
+ * spendable credits, that's the whole point of pending.
+ */
+export async function transferToMember(workspaceId, fromUserId, toUserId, amount) {
+  const target = await prisma.membership.findUnique({
+    where: { userId_workspaceId: { userId: toUserId, workspaceId } },
+  });
+  if (!target) throw new ApiError(404, 'That person is not a member of this workspace');
+
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    select: { plan: true },
+  });
+  const covered = workspace.plan === 'FREE' || target.seatType !== 'PENDING';
+  if (!covered) {
+    throw new ApiError(
+      409,
+      "That teammate is awaiting payment — cover them with a seat block before transferring credits",
+    );
+  }
+
+  return transferCredits({ fromUserId, toUserId, workspaceId, amount });
 }
 
 /**

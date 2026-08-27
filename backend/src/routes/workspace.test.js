@@ -5,6 +5,7 @@ import { resetDb, resetRedis } from '../test/dbHelpers.js';
 import { registerAndVerify } from '../test/authHelpers.js';
 import { prisma } from '../config/db.js';
 import { hashPassword } from '../utils/password.js';
+import { getBalance } from '../services/creditService.js';
 
 const app = createApp();
 const auth = (token) => ({ Authorization: `Bearer ${token}` });
@@ -529,3 +530,149 @@ describe('seat-count enforcement', () => {
     expect(pending.welcomeGiftAt).toBeNull();
   });
 });
+
+describe('seat assignment, transfers, member removal (OWNER)', () => {
+  beforeEach(async () => {
+    await resetDb();
+    await resetRedis();
+  });
+
+  it('owner assigns seats; ADMIN gets 403; capacity + owner-demotion enforced', async () => {
+    const org = await registerOrg('Acme', 'owner@acme.test');
+    const mate = await addMember(org.workspaceId, 'mate@acme.test', 'MEMBER');
+    const admin = await addMember(org.workspaceId, 'admin@acme.test', 'ADMIN');
+
+    // Owner covers the teammate with the single free seat -> welcome gift.
+    const assign = await request(app)
+      .patch(`/api/v1/workspace/members/${mate.user.id}/seat`)
+      .set(auth(org.accessToken))
+      .send({ seatType: 'FREE' });
+    expect(assign.status).toBe(200);
+    expect(assign.body.member.seatType).toBe('FREE');
+    const gifted = await prisma.creditLedgerEntry.findFirst({
+      where: { userId: mate.user.id, reason: 'WELCOME_GIFT' },
+    });
+    expect(gifted).toMatchObject({ delta: 1500 });
+
+    // An ADMIN can't assign seats — OWNER-only.
+    const denied = await request(app)
+      .patch(`/api/v1/workspace/members/${mate.user.id}/seat`)
+      .set(auth(admin.accessToken))
+      .send({ seatType: 'PAID' });
+    expect(denied.status).toBe(403);
+
+    // The single free seat is now taken — no second FREE assignment.
+    const over = await request(app)
+      .patch(`/api/v1/workspace/members/${admin.user.id}/seat`)
+      .set(auth(org.accessToken))
+      .send({ seatType: 'FREE' });
+    expect(over.status).toBe(409);
+
+    // The owner always keeps a paid seat.
+    const demote = await request(app)
+      .patch(`/api/v1/workspace/members/${org.userId}/seat`)
+      .set(auth(org.accessToken))
+      .send({ seatType: 'PENDING' });
+    expect(demote.status).toBe(409);
+  });
+
+  it('owner transfers personal credits to a covered member, never to a pending one', async () => {
+    const org = await registerOrg('Acme', 'owner@acme.test');
+    const covered = await addMember(org.workspaceId, 'covered@acme.test', 'MEMBER');
+    const pending = await addMember(org.workspaceId, 'pending@acme.test', 'MEMBER');
+    await prisma.membership.updateMany({
+      where: { workspaceId: org.workspaceId, userId: covered.user.id },
+      data: { seatType: 'PAID' },
+    });
+    // Owner registered with 800 signup credits.
+
+    const ok = await request(app)
+      .post('/api/v1/workspace/credits/transfer')
+      .set(auth(org.accessToken))
+      .send({ toUserId: covered.user.id, amount: 300 });
+    expect(ok.status).toBe(200);
+    expect(ok.body.transferred).toBe(300);
+    expect(await getBalance(org.userId)).toBe(500);
+    expect(await getBalance(covered.user.id)).toBe(300);
+
+    const toPending = await request(app)
+      .post('/api/v1/workspace/credits/transfer')
+      .set(auth(org.accessToken))
+      .send({ toUserId: pending.user.id, amount: 100 });
+    expect(toPending.status).toBe(409);
+    expect(toPending.body.error.message).toMatch(/awaiting payment/);
+
+    const tooMuch = await request(app)
+      .post('/api/v1/workspace/credits/transfer')
+      .set(auth(org.accessToken))
+      .send({ toUserId: covered.user.id, amount: 501 });
+    expect(tooMuch.status).toBe(402);
+  });
+
+  it('owner sees per-member balances in the roster; members do not', async () => {
+    const org = await registerOrg('Acme', 'owner@acme.test');
+    const mate = await addMember(org.workspaceId, 'mate@acme.test', 'MEMBER');
+
+    const asOwner = await request(app)
+      .get('/api/v1/workspace/members')
+      .set(auth(org.accessToken));
+    expect(asOwner.body.members.every((m) => typeof m.balance === 'number')).toBe(true);
+
+    const asMate = await request(app)
+      .get('/api/v1/workspace/members')
+      .set(auth(mate.accessToken));
+    expect(asMate.body.members.every((m) => m.balance === undefined)).toBe(true);
+  });
+
+  it('owner removes a member (never self, never the owner); freed seat re-offers to pending', async () => {
+    const org = await registerOrg('Acme', 'owner@acme.test');
+    const mate = await addMember(org.workspaceId, 'mate@acme.test', 'MEMBER');
+    // Fill the free seat with the mate; a later joiner waits pending.
+    await prisma.membership.updateMany({
+      where: { workspaceId: org.workspaceId, userId: mate.user.id },
+      data: { seatType: 'FREE' },
+    });
+    // Also fill all paid seats so the waiter can ONLY get the freed free seat.
+    for (let i = 0; i < 4; i++) {
+      const u = await prisma.user.create({
+        data: { email: `pad-${i}@acme.test`, passwordHash: 'x', name: 'Pad' },
+      });
+      await prisma.membership.create({
+        data: { userId: u.id, workspaceId: org.workspaceId, role: 'MEMBER', seatType: 'PAID' },
+      });
+    }
+    const waiter = await addMember(org.workspaceId, 'waiter@acme.test', 'MEMBER');
+
+    // Self-removal and owner-removal are blocked.
+    const self = await request(app)
+      .delete(`/api/v1/workspace/members/${org.userId}`)
+      .set(auth(org.accessToken));
+    expect(self.status).toBe(400);
+
+    // Remove the mate -> membership gone, account survives, waiter promoted
+    // into the freed free seat with a welcome gift.
+    const removed = await request(app)
+      .delete(`/api/v1/workspace/members/${mate.user.id}`)
+      .set(auth(org.accessToken));
+    expect(removed.status).toBe(204);
+
+    const gone = await prisma.membership.findFirst({
+      where: { workspaceId: org.workspaceId, userId: mate.user.id },
+    });
+    expect(gone).toBeNull();
+    expect(await prisma.user.findUnique({ where: { id: mate.user.id } })).not.toBeNull();
+
+    const promoted = await prisma.membership.findFirst({
+      where: { workspaceId: org.workspaceId, userId: waiter.user.id },
+    });
+    expect(promoted.seatType).toBe('FREE');
+    expect(promoted.welcomeGiftAt).not.toBeNull();
+
+    // A MEMBER can't remove anyone.
+    const denied = await request(app)
+      .delete(`/api/v1/workspace/members/${org.userId}`)
+      .set(auth(waiter.accessToken));
+    expect(denied.status).toBe(403);
+  });
+});
+

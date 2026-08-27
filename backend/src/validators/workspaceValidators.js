@@ -21,6 +21,19 @@ export const bulkInviteSchema = z.object({
   role: z.enum(['ADMIN', 'MEMBER']).default('MEMBER'),
 });
 
+// Owner assigns a member to a paid/free seat (or back to pending). Capacity
+// is enforced in seatService.assignSeat where the block count is known.
+export const assignSeatSchema = z.object({
+  seatType: z.enum(['PAID', 'FREE', 'PENDING']),
+});
+
+// Owner -> teammate personal credit transfer. 100k ceiling is a sanity
+// bound, not a product rule — the real limit is the owner's own balance.
+export const transferCreditsSchema = z.object({
+  toUserId: z.string().uuid(),
+  amount: z.number().int().min(1).max(100_000),
+});
+
 // Change an existing member between teammate (MEMBER) and admin. OWNER can't
 // be set or unset here (see workspaceService.changeMemberRole).
 export const changeMemberRoleSchema = z.object({

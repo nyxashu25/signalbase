@@ -1,9 +1,14 @@
 import * as workspaceService from '../services/workspaceService.js';
+import * as seatService from '../services/seatService.js';
 import { ApiError } from '../middleware/errorHandler.js';
 
 export async function members(req, res) {
   const [members, seats] = await Promise.all([
-    workspaceService.listMembers(req.auth.workspaceId),
+    // Owners see every member's personal balance (drives the transfer UI);
+    // everyone else just sees the roster.
+    workspaceService.listMembers(req.auth.workspaceId, {
+      withBalances: req.auth.role === 'OWNER',
+    }),
     workspaceService.seatUsage(req.auth.workspaceId),
   ]);
   res.json({ members, seats });
@@ -43,6 +48,30 @@ export async function changeMemberRole(req, res) {
     req.body.role,
   );
   res.json({ member });
+}
+
+export async function assignSeat(req, res) {
+  const membership = await seatService.assignSeat(
+    req.auth.workspaceId,
+    req.params.userId,
+    req.body.seatType,
+  );
+  res.json({ member: { userId: membership.userId, seatType: membership.seatType } });
+}
+
+export async function removeMember(req, res) {
+  await workspaceService.removeMember(req.auth.workspaceId, req.params.userId, req.auth.userId);
+  res.status(204).end();
+}
+
+export async function transferCredits(req, res) {
+  const result = await workspaceService.transferToMember(
+    req.auth.workspaceId,
+    req.auth.userId,
+    req.body.toUserId,
+    req.body.amount,
+  );
+  res.json({ transferred: result.amount });
 }
 
 export async function teamAudit(req, res) {

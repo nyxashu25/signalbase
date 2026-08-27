@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { UserPlus, X, Copy, Check, Mail } from 'lucide-react';
+import { UserPlus, X, Copy, Check, Mail, Send, Trash2 } from 'lucide-react';
 import {
   useListWorkspaceMembersQuery,
   useListInvitesQuery,
@@ -8,6 +8,9 @@ import {
   useBulkInviteMutation,
   useRevokeInviteMutation,
   useChangeMemberRoleMutation,
+  useAssignSeatMutation,
+  useRemoveMemberMutation,
+  useTransferCreditsMutation,
   useGetTeamAuditQuery,
 } from '../../api/workspaceApi.js';
 import { ExportCsvButton } from '../../components/ExportCsvButton.jsx';
@@ -80,6 +83,12 @@ export function SettingsMembers() {
   const [bulkInvite, { isLoading: bulkInviting }] = useBulkInviteMutation();
   const [revokeInvite] = useRevokeInviteMutation();
   const [changeRole] = useChangeMemberRoleMutation();
+  const [assignSeat] = useAssignSeatMutation();
+  const [removeMember] = useRemoveMemberMutation();
+  const [transferCredits, { isLoading: transferring }] = useTransferCreditsMutation();
+  const isOwner = role === 'OWNER';
+  const [transferTarget, setTransferTarget] = useState(null); // member being transferred to
+  const [transferAmount, setTransferAmount] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ email: '', role: 'MEMBER' });
   const [copiedId, setCopiedId] = useState(null);
@@ -98,6 +107,51 @@ export function SettingsMembers() {
       toast.error('Could not change role', err.data?.error?.message);
     } finally {
       setSavingRoleFor(null);
+    }
+  }
+
+  async function handleSeatChange(member, seatType) {
+    if (seatType === member.seatType) return;
+    try {
+      await assignSeat({ userId: member.user.id, seatType }).unwrap();
+      toast.success(
+        `${member.user.name} → ${SEAT_LABEL[seatType].toLowerCase()}`,
+        seatType === 'PENDING'
+          ? 'They keep their balance but earn no new monthly credits.'
+          : 'Their monthly credits follow the seat from the next billing cycle.',
+      );
+    } catch (err) {
+      toast.error('Could not change seat', err.data?.error?.message);
+    }
+  }
+
+  async function handleRemove(member) {
+    const sure = window.confirm(
+      `Remove ${member.user.name} from this workspace? Their account and credit history survive — they just lose access here.`,
+    );
+    if (!sure) return;
+    try {
+      await removeMember(member.user.id).unwrap();
+      toast.success(`${member.user.name} removed`, 'Their seat is free again.');
+    } catch (err) {
+      toast.error('Could not remove member', err.data?.error?.message);
+    }
+  }
+
+  async function handleTransfer(e) {
+    e.preventDefault();
+    const amount = Number(transferAmount);
+    if (!transferTarget || !Number.isInteger(amount) || amount < 1) return;
+    try {
+      await transferCredits({ toUserId: transferTarget.user.id, amount }).unwrap();
+      toast.success(
+        `${amount} credits sent to ${transferTarget.user.name}`,
+        'Moved from your personal balance to theirs.',
+      );
+      setTransferTarget(null);
+      setTransferAmount('');
+    } catch (err) {
+      toast.error('Could not transfer credits', err.data?.error?.message);
     }
   }
 
@@ -234,11 +288,13 @@ export function SettingsMembers() {
                 <th className={thClass}>Member</th>
                 <th className={thClass}>Role</th>
                 <th className={thClass}>Seat</th>
+                {isOwner && <th className={thClass}>Balance</th>}
                 <th className={thClass}>Joined</th>
+                {isOwner && <th className={thClass} />}
               </tr>
             </thead>
             <tbody>
-              {isLoading && <SkeletonRows rows={2} columns={4} />}
+              {isLoading && <SkeletonRows rows={2} columns={isOwner ? 6 : 4} />}
               {members?.map((m) => (
                 <tr key={m.id} className={trClass}>
                   <td className={tdClass}>
@@ -278,6 +334,17 @@ export function SettingsMembers() {
                   <td className="px-4 py-3">
                     {isFree ? (
                       <span className="text-xs text-text-muted">—</span>
+                    ) : isOwner && m.role !== 'OWNER' ? (
+                      <select
+                        aria-label={`Seat for ${m.user.name}`}
+                        value={m.seatType}
+                        onChange={(e) => handleSeatChange(m, e.target.value)}
+                        className="h-8 rounded-md border border-border bg-surface-elevated px-2 text-xs font-semibold text-text outline-none focus:border-focus focus:ring-2 focus:ring-focus/25"
+                      >
+                        <option value="PAID">Paid seat</option>
+                        <option value="FREE">Free seat</option>
+                        <option value="PENDING">Awaiting payment</option>
+                      </select>
                     ) : (
                       <Tooltip content={SEAT_HINT[m.seatType] ?? ''}>
                         <span className="inline-flex">
@@ -288,12 +355,80 @@ export function SettingsMembers() {
                       </Tooltip>
                     )}
                   </td>
+                  {isOwner && (
+                    <td className={`${tdMutedClass} tabular-nums`}>{m.balance ?? '—'}</td>
+                  )}
                   <td className={tdMutedClass}>{new Date(m.joinedAt).toLocaleDateString()}</td>
+                  {isOwner && (
+                    <td className="px-4 py-3">
+                      {m.user.id !== me?.id && m.role !== 'OWNER' && (
+                        <span className="flex items-center gap-1.5">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            icon={Send}
+                            onClick={() => {
+                              setTransferTarget(m);
+                              setTransferAmount('');
+                            }}
+                            aria-label={`Transfer credits to ${m.user.name}`}
+                          >
+                            Transfer
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            icon={Trash2}
+                            onClick={() => handleRemove(m)}
+                            aria-label={`Remove ${m.user.name}`}
+                          >
+                            Remove
+                          </Button>
+                        </span>
+                      )}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
           </table>
         </TableFrame>
+
+        {transferTarget && (
+          <form
+            onSubmit={handleTransfer}
+            className="mt-4 flex flex-wrap items-end gap-3 rounded-md border border-border bg-surface p-3"
+          >
+            <FormField
+              label={`Transfer credits to ${transferTarget.user.name}`}
+              hint="Moved from YOUR personal balance to theirs — the ledger records both sides."
+              className="min-w-[200px]"
+            >
+              <input
+                id="field-transfer-credits-to"
+                type="number"
+                min={1}
+                autoFocus
+                value={transferAmount}
+                onChange={(e) => setTransferAmount(e.target.value)}
+                placeholder="250"
+                className={inputClass}
+              />
+            </FormField>
+            <Button
+              type="submit"
+              variant="primary"
+              icon={Send}
+              loading={transferring}
+              disabled={!Number(transferAmount)}
+            >
+              Send credits
+            </Button>
+            <Button variant="ghost" onClick={() => setTransferTarget(null)}>
+              Cancel
+            </Button>
+          </form>
+        )}
       </SettingsSection>
 
       {canManage && teamUnlocked && invites && invites.length > 0 && (
