@@ -9,6 +9,12 @@ export const listUsersQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   pageSize: z.coerce.number().int().positive().max(100).default(25),
   search: z.string().trim().max(200).optional(),
+  // 'true' flips the listing to soft-deleted accounts only. (String enum,
+  // not z.coerce.boolean() — that would turn the string "false" into true.)
+  deleted: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
 });
 
 export const paginationQuerySchema = z.object({
@@ -16,13 +22,12 @@ export const paginationQuerySchema = z.object({
   pageSize: z.coerce.number().int().positive().max(100).default(25),
 });
 
-export const addCreditsSchema = z.object({
-  amount: z
-    .number()
-    .int()
-    .min(-1_000_000)
-    .max(1_000_000)
-    .refine((n) => n !== 0, 'amount must not be zero'),
+// Per-user personal credit adjustment: 'add' grants amount, 'remove'
+// deducts up to their balance (never below zero), 'set' moves the balance
+// to exactly amount. Default 'add' keeps older clients working.
+export const adjustCreditsSchema = z.object({
+  mode: z.enum(['add', 'remove', 'set']).default('add'),
+  amount: z.number().int().min(0).max(1_000_000),
 });
 
 export const updateUserPlanSchema = z.object({

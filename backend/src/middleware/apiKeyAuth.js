@@ -1,5 +1,6 @@
 import { authenticateApiKey } from '../services/apiKeyService.js';
 import { ApiError } from './errorHandler.js';
+import { assertWorkspaceActive } from './workspaceGuard.js';
 
 /**
  * API-key twin of middleware/auth.js: authenticates `Authorization: Bearer
@@ -17,7 +18,11 @@ export async function requireApiKey(req, res, next) {
   }
 
   try {
-    req.auth = await authenticateApiKey(header.slice('Bearer '.length));
+    const auth = await authenticateApiKey(header.slice('Bearer '.length));
+    // Same workspace lifecycle guard as requireAuth — a suspended/deleted
+    // workspace's API keys stop working within the guard's cache window.
+    await assertWorkspaceActive(auth.workspaceId);
+    req.auth = auth;
     next();
   } catch (err) {
     next(err);

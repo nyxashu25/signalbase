@@ -354,15 +354,15 @@ describe('admin data routes', () => {
       expect(res.status).toBe(200);
       expect(res.body.total).toBe(4);
       const actions = res.body.results.map((e) => e.action);
-      expect(actions).toEqual(['ADD_CREDITS', 'UPDATE_PLAN', 'UNSUSPEND_USER', 'SUSPEND_USER']); // newest first
+      expect(actions).toEqual(['ADJUST_USER_CREDITS', 'UPDATE_PLAN', 'UNSUSPEND_USER', 'SUSPEND_USER']); // newest first
 
       const planEntry = res.body.results.find((e) => e.action === 'UPDATE_PLAN');
       expect(planEntry.metadata).toMatchObject({ from: 'FREE', to: 'BASIC' });
       expect(planEntry.targetUser.id).toBe(user.id);
       expect(planEntry.superAdmin.email).toBe(adminCreds.email);
 
-      const creditsEntry = res.body.results.find((e) => e.action === 'ADD_CREDITS');
-      expect(creditsEntry.metadata).toEqual({ amount: 500 });
+      const creditsEntry = res.body.results.find((e) => e.action === 'ADJUST_USER_CREDITS');
+      expect(creditsEntry.metadata).toMatchObject({ mode: 'add', amount: 500, delta: 500 });
     });
 
     it('filters by target user', async () => {

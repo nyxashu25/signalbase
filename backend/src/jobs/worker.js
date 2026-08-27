@@ -8,11 +8,13 @@ import { reconciliationProcessor } from './processors/reconciliationProcessor.js
 import { sequenceProcessor } from './processors/sequenceProcessor.js';
 import { databaseImportProcessor } from './processors/databaseImportProcessor.js';
 import { monthlyGrantProcessor } from './processors/monthlyGrantProcessor.js';
+import { deletionPurgeProcessor } from './processors/deletionPurgeProcessor.js';
 import {
   creditReaperQueue,
   reconciliationQueue,
   sequenceQueue,
   monthlyGrantQueue,
+  deletionPurgeQueue,
 } from './queues.js';
 
 // Additional queue processors (crm-sync) register here starting in Phase 05.
@@ -63,6 +65,13 @@ async function main() {
     logger.error({ jobId: job?.id, err }, 'monthly-grant job failed');
   });
 
+  const deletionPurgeWorker = new Worker('deletion-purge', deletionPurgeProcessor, {
+    connection: bullConnection,
+  });
+  deletionPurgeWorker.on('failed', (job, err) => {
+    logger.error({ jobId: job?.id, err }, 'deletion-purge job failed');
+  });
+
   // Repeatable jobs — BullMQ dedupes by jobId+repeat pattern, so re-running
   // this on every worker boot doesn't stack up duplicate schedules.
   await creditReaperQueue.add(
@@ -84,9 +93,15 @@ async function main() {
     {},
     { repeat: { every: 6 * 60 * 60_000 }, jobId: 'free-monthly-grant-sweep' },
   );
+  // 60-day hard purge of soft-deleted users/workspaces — daily due-check.
+  await deletionPurgeQueue.add(
+    'sweep',
+    {},
+    { repeat: { every: 24 * 60 * 60_000 }, jobId: 'deletion-purge-sweep' },
+  );
 
   logger.info(
-    'Worker process started (es-index, credit-reaper, credit-reconciliation, sequence-tick, database-import, monthly-grant queues active)',
+    'Worker process started (es-index, credit-reaper, credit-reconciliation, sequence-tick, database-import, monthly-grant, deletion-purge queues active)',
   );
 
   const shutdown = async () => {
@@ -97,6 +112,7 @@ async function main() {
       sequenceWorker.close(),
       databaseImportWorker.close(),
       monthlyGrantWorker.close(),
+      deletionPurgeWorker.close(),
     ]);
     process.exit(0);
   };

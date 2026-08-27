@@ -169,7 +169,7 @@ function passwordFingerprint(passwordHash) {
 /** Enumeration-safe: always {sent:true}, whether or not the email exists. */
 export async function requestPasswordReset(email) {
   const user = await prisma.user.findUnique({ where: { email } });
-  if (user && !user.suspendedAt) {
+  if (user && !user.suspendedAt && !user.deletedAt) {
     const token = signPasswordResetToken(user.id, passwordFingerprint(user.passwordHash));
     await notificationService.sendPasswordReset(user, token);
   }
@@ -185,7 +185,7 @@ export async function resetPassword(token, newPassword) {
     throw invalid();
   }
   const user = await prisma.user.findUnique({ where: { id: payload.sub } });
-  if (!user || user.suspendedAt) throw invalid();
+  if (!user || user.suspendedAt || user.deletedAt) throw invalid();
   // Single-use: the fingerprint stops matching as soon as the password
   // changes (including via this very endpoint).
   if (payload.pwfp !== passwordFingerprint(user.passwordHash)) throw invalid();
@@ -225,6 +225,7 @@ export async function login({ email, password, workspaceId }) {
   // unverified account's error message never doubles as a way to test
   // whether a guessed password was actually correct.
   if (user.suspendedAt) throw new ApiError(403, 'This account has been suspended');
+  if (user.deletedAt) throw new ApiError(403, 'This account has been deleted');
   if (!user.emailVerified) {
     throw new ApiError(403, 'Please verify your email address before signing in');
   }
@@ -309,6 +310,7 @@ export async function loginWithGoogle(credential, verify = verifyGoogleIdToken) 
   let workspace, membership, orgId;
   if (user) {
     if (user.suspendedAt) throw new ApiError(403, 'This account has been suspended');
+    if (user.deletedAt) throw new ApiError(403, 'This account has been deleted');
     membership = user.memberships[0];
     if (!membership) throw new ApiError(403, 'This account has no access to that workspace');
     workspace = membership.workspace;
@@ -369,6 +371,16 @@ export async function refresh(cookieValue) {
   // suspended user's session dies within one refresh cycle, not 30 days.
   if (membership.user.suspendedAt) {
     throw new ApiError(403, 'This account has been suspended');
+  }
+  if (membership.user.deletedAt) {
+    throw new ApiError(403, 'This account has been deleted');
+  }
+  // Workspace-level lifecycle applied mid-session dies here too.
+  if (membership.workspace.suspendedAt) {
+    throw new ApiError(403, 'This workspace has been suspended');
+  }
+  if (membership.workspace.deletedAt) {
+    throw new ApiError(403, 'This workspace has been deleted');
   }
 
   const accessToken = signAccessToken({
@@ -432,6 +444,7 @@ export async function acceptInvite(token, { name, password } = {}) {
 
   let user = await prisma.user.findUnique({ where: { email: invite.email } });
   if (user?.suspendedAt) throw new ApiError(403, 'This account has been suspended');
+  if (user?.deletedAt) throw new ApiError(403, 'This account has been deleted');
 
   // No seat gate: under pay-later billing everyone lands as a PENDING member
   // (can log in, can't spend). activateCoverage below promotes them straight

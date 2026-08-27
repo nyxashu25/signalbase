@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { to: '/control/pending-peoples', label: 'Pending peoples', badge: 'missingPersons' },
   { to: '/control/childs-found', label: 'Childs found', badge: 'lostChildren' },
   { to: '/control/audit-log', label: 'Audit log' },
+  { to: '/control/deleted', label: 'Deleted' },
   { to: '/control/settings', label: 'Settings' },
 ];
 

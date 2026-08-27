@@ -12,7 +12,7 @@ import {
   adminLoginSchema,
   listUsersQuerySchema,
   paginationQuerySchema,
-  addCreditsSchema,
+  adjustCreditsSchema,
   updateUserPlanSchema,
   sendPromotionSchema,
   auditLogQuerySchema,
@@ -63,14 +63,33 @@ adminRouter.post('/users/:userId/suspend', asyncHandler(adminController.suspendU
 adminRouter.post('/users/:userId/unsuspend', asyncHandler(adminController.unsuspendUser));
 adminRouter.post(
   '/users/:userId/credits',
-  validateBody(addCreditsSchema),
-  asyncHandler(adminController.addCredits),
+  validateBody(adjustCreditsSchema),
+  asyncHandler(adminController.adjustUserCredits),
 );
+adminRouter.delete('/users/:userId', asyncHandler(adminController.deleteUser));
+adminRouter.post('/users/:userId/restore', asyncHandler(adminController.restoreUser));
 adminRouter.put(
   '/users/:userId/plan',
   validateBody(updateUserPlanSchema),
   asyncHandler(adminController.updateUserPlan),
 );
+
+// Workspace lifecycle + the "Deleted" section.
+adminRouter.post('/workspaces/:workspaceId/suspend', asyncHandler(adminController.suspendWorkspace));
+adminRouter.post(
+  '/workspaces/:workspaceId/unsuspend',
+  asyncHandler(adminController.unsuspendWorkspace),
+);
+adminRouter.delete('/workspaces/:workspaceId', asyncHandler(adminController.deleteWorkspace));
+adminRouter.post(
+  '/workspaces/:workspaceId/restore',
+  asyncHandler(adminController.restoreWorkspace),
+);
+adminRouter.delete(
+  '/workspaces/:workspaceId/members/:userId',
+  asyncHandler(adminController.removeMember),
+);
+adminRouter.get('/deleted', asyncHandler(adminController.listDeleted));
 
 adminRouter.get('/billing/overview', asyncHandler(adminController.getBillingOverview));
 adminRouter.get(

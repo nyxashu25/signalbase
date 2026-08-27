@@ -134,7 +134,8 @@ export async function activateCoverage(workspaceId) {
 
   const capacity = seatCapacity(workspace.plan, workspace.blocks);
   const memberships = await prisma.membership.findMany({
-    where: { workspaceId },
+    // Soft-deleted accounts never occupy or claim seats.
+    where: { workspaceId, user: { deletedAt: null } },
     orderBy: { createdAt: 'asc' },
   });
 

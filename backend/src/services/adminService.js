@@ -5,6 +5,8 @@ import { ApiError } from '../middleware/errorHandler.js';
 import { getStripeSettings } from './paymentSettingsService.js';
 import { seatCapacity } from '../config/planConfig.js';
 import * as seatService from './seatService.js';
+import { activateCoverage } from './seatService.js';
+import { invalidateWorkspaceGuardCache } from '../middleware/workspaceGuard.js';
 import * as notificationService from './notificationService.js';
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
@@ -97,15 +99,21 @@ function primaryMembership(user) {
   return user.memberships[0];
 }
 
-export async function listUsers({ page, pageSize, search }) {
-  const where = search
-    ? {
-        OR: [
-          { email: { contains: search, mode: 'insensitive' } },
-          { name: { contains: search, mode: 'insensitive' } },
-        ],
-      }
-    : {};
+export async function listUsers({ page, pageSize, search, deleted = false }) {
+  // Default view hides soft-deleted accounts — they live in the "Deleted"
+  // section (listDeleted) until restored or purged; `deleted: true` flips
+  // the filter for the deleted-only listing.
+  const where = {
+    deletedAt: deleted ? { not: null } : null,
+    ...(search
+      ? {
+          OR: [
+            { email: { contains: search, mode: 'insensitive' } },
+            { name: { contains: search, mode: 'insensitive' } },
+          ],
+        }
+      : {}),
+  };
 
   const [total, users] = await Promise.all([
     prisma.user.count({ where }),
@@ -126,6 +134,7 @@ export async function listUsers({ page, pageSize, search }) {
       name: user.name,
       createdAt: user.createdAt,
       suspendedAt: user.suspendedAt,
+      deletedAt: user.deletedAt,
       workspace: membership
         ? { id: membership.workspace.id, name: membership.workspace.name }
         : null,
@@ -150,8 +159,15 @@ async function loadUserWithPrimaryWorkspace(userId) {
 }
 
 export async function getUserDetail(userId) {
-  const { user, membership } = await loadUserWithPrimaryWorkspace(userId);
-  const workspace = membership.workspace;
+  // Tolerates a membership-less user (removed from every workspace, or
+  // soft-deleted) — the admin must still be able to inspect and manage them.
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { memberships: { include: { workspace: true }, orderBy: { createdAt: 'asc' } } },
+  });
+  if (!user) throw new ApiError(404, 'User not found');
+  const membership = primaryMembership(user);
+  const workspace = membership?.workspace ?? null;
 
   // Personal balance and personal spend — credits are per-user now.
   const [balance, usedAgg] = await Promise.all([
@@ -168,15 +184,20 @@ export async function getUserDetail(userId) {
     name: user.name,
     createdAt: user.createdAt,
     suspendedAt: user.suspendedAt,
-    role: membership.role,
-    workspace: {
-      id: workspace.id,
-      name: workspace.name,
-      plan: workspace.plan,
-      seats: workspace.seats,
-      blocks: workspace.blocks,
-      monthlyCreditGrant: workspace.monthlyCreditGrant,
-    },
+    deletedAt: user.deletedAt,
+    role: membership?.role ?? null,
+    workspace: workspace
+      ? {
+          id: workspace.id,
+          name: workspace.name,
+          plan: workspace.plan,
+          seats: workspace.seats,
+          blocks: workspace.blocks,
+          suspendedAt: workspace.suspendedAt,
+          deletedAt: workspace.deletedAt,
+          monthlyCreditGrant: workspace.monthlyCreditGrant,
+        }
+      : null,
     balance,
     creditsUsed: Math.abs(usedAgg._sum.delta ?? 0),
   };
@@ -242,6 +263,173 @@ export async function unsuspendUser(userId, actorAdminId) {
   return user;
 }
 
+// ---------------------------------------------------------------------------
+// Lifecycle: per-user credit adjustment, workspace suspend, and soft delete
+// with restore. Soft-deleted entities are hidden from the product (login/
+// refresh/member lists) but fully intact — the deletion-purge job hard-
+// deletes them 60 days after deletedAt.
+// ---------------------------------------------------------------------------
+
+export const PURGE_AFTER_DAYS = 60;
+
+/**
+ * Adjust a USER's personal balance: mode 'add' credits `amount`, 'remove'
+ * deducts up to their balance (never below zero), 'set' moves the balance
+ * to exactly `amount`. Every mode is one ADJUST_USER_CREDITS ledger row via
+ * the grant chokepoint, so reconciliation stays green.
+ */
+export async function adjustUserCredits(userId, { mode, amount }, actorAdminId) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new ApiError(404, 'User not found');
+  const membership = await prisma.membership.findFirst({
+    where: { userId },
+    orderBy: { createdAt: 'asc' },
+  });
+  const workspaceId = membership?.workspaceId ?? null;
+  if (!workspaceId) throw new ApiError(409, 'User has no workspace to book the adjustment under');
+
+  const balance = await getBalance(userId);
+  let delta;
+  if (mode === 'add') delta = amount;
+  else if (mode === 'remove') delta = -Math.min(amount, balance);
+  else delta = amount - balance; // 'set'
+
+  if (delta !== 0) {
+    await creditService.grantCredits({
+      userId,
+      workspaceId,
+      amount: delta,
+      reason: 'ADJUSTMENT',
+    });
+  }
+  await recordAuditLog({
+    superAdminId: actorAdminId,
+    action: 'ADJUST_USER_CREDITS',
+    targetUserId: userId,
+    metadata: { mode, amount, delta, balanceBefore: balance },
+  });
+  await notificationService.sendAdminCreditsAdded(user, delta);
+
+  return { userId, balance: await getBalance(userId), delta };
+}
+
+export async function suspendWorkspace(workspaceId, actorAdminId) {
+  const workspace = await prisma.workspace.update({
+    where: { id: workspaceId },
+    data: { suspendedAt: new Date() },
+  });
+  invalidateWorkspaceGuardCache(workspaceId);
+  await recordAuditLog({
+    superAdminId: actorAdminId,
+    action: 'SUSPEND_WORKSPACE',
+    metadata: { workspaceId, name: workspace.name },
+  });
+  return workspace;
+}
+
+export async function unsuspendWorkspace(workspaceId, actorAdminId) {
+  const workspace = await prisma.workspace.update({
+    where: { id: workspaceId },
+    data: { suspendedAt: null },
+  });
+  invalidateWorkspaceGuardCache(workspaceId);
+  await recordAuditLog({
+    superAdminId: actorAdminId,
+    action: 'UNSUSPEND_WORKSPACE',
+    metadata: { workspaceId, name: workspace.name },
+  });
+  return workspace;
+}
+
+export async function deleteWorkspace(workspaceId, actorAdminId) {
+  const workspace = await prisma.workspace.update({
+    where: { id: workspaceId },
+    data: { deletedAt: new Date() },
+  });
+  invalidateWorkspaceGuardCache(workspaceId);
+  await recordAuditLog({
+    superAdminId: actorAdminId,
+    action: 'DELETE_WORKSPACE',
+    metadata: { workspaceId, name: workspace.name },
+  });
+  return workspace;
+}
+
+export async function restoreWorkspace(workspaceId, actorAdminId) {
+  const workspace = await prisma.workspace.update({
+    where: { id: workspaceId },
+    data: { deletedAt: null },
+  });
+  invalidateWorkspaceGuardCache(workspaceId);
+  await recordAuditLog({
+    superAdminId: actorAdminId,
+    action: 'RESTORE_WORKSPACE',
+    metadata: { workspaceId, name: workspace.name },
+  });
+  return workspace;
+}
+
+export async function deleteUser(userId, actorAdminId) {
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: { deletedAt: new Date() },
+  });
+  await recordAuditLog({ superAdminId: actorAdminId, action: 'DELETE_USER', targetUserId: userId });
+  return user;
+}
+
+export async function restoreUser(userId, actorAdminId) {
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: { deletedAt: null },
+  });
+  await recordAuditLog({ superAdminId: actorAdminId, action: 'RESTORE_USER', targetUserId: userId });
+  return user;
+}
+
+/** Admin removes a member from a workspace — same semantics as the OWNER's own removal. */
+export async function adminRemoveMember(workspaceId, targetUserId, actorAdminId) {
+  const membership = await prisma.membership.findUnique({
+    where: { userId_workspaceId: { userId: targetUserId, workspaceId } },
+  });
+  if (!membership) throw new ApiError(404, 'That person is not a member of this workspace');
+  if (membership.role === 'OWNER') {
+    throw new ApiError(409, 'The workspace owner cannot be removed — delete the workspace instead');
+  }
+  await prisma.membership.delete({ where: { id: membership.id } });
+  await activateCoverage(workspaceId);
+  await recordAuditLog({
+    superAdminId: actorAdminId,
+    action: 'REMOVE_MEMBER',
+    targetUserId,
+    metadata: { workspaceId },
+  });
+}
+
+/** The admin "Deleted" section: everything soft-deleted, with its purge date. */
+export async function listDeleted() {
+  const purgeAt = (deletedAt) =>
+    new Date(deletedAt.getTime() + PURGE_AFTER_DAYS * 24 * 60 * 60 * 1000);
+
+  const [users, workspaces] = await Promise.all([
+    prisma.user.findMany({
+      where: { deletedAt: { not: null } },
+      select: { id: true, name: true, email: true, deletedAt: true },
+      orderBy: { deletedAt: 'desc' },
+    }),
+    prisma.workspace.findMany({
+      where: { deletedAt: { not: null } },
+      select: { id: true, name: true, plan: true, deletedAt: true },
+      orderBy: { deletedAt: 'desc' },
+    }),
+  ]);
+
+  return {
+    users: users.map((u) => ({ ...u, purgeAt: purgeAt(u.deletedAt) })),
+    workspaces: workspaces.map((w) => ({ ...w, purgeAt: purgeAt(w.deletedAt) })),
+  };
+}
+
 export async function getBillingOverview() {
   const [revenueAgg, transactionCount, stripeSettings] = await Promise.all([
     prisma.creditLedgerEntry.aggregate({
@@ -296,36 +484,13 @@ export async function listTransactions({ page, pageSize }) {
 }
 
 /**
- * Admin-granted credits, any amount — same symmetric ledger+Redis pattern
- * as a real Stripe top-up (see stripeService.topUpCredits), just with
- * reason: ADJUSTMENT instead of TOPUP so it's distinguishable in the
- * transaction history from an actual payment.
- */
-export async function addCredits(userId, amount, actorAdminId) {
-  const { user, membership } = await loadUserWithPrimaryWorkspace(userId);
-  const workspaceId = membership.workspace.id;
-
-  // Credits are personal — the adjustment lands on THIS user's balance.
-  await creditService.grantCredits({ userId, workspaceId, amount, reason: 'ADJUSTMENT' });
-  await recordAuditLog({
-    superAdminId: actorAdminId,
-    action: 'ADD_CREDITS',
-    targetUserId: userId,
-    metadata: { amount },
-  });
-  await notificationService.sendAdminCreditsAdded(user, amount);
-
-  return { workspaceId, balance: await getBalance(userId) };
-}
-
-/**
  * Admin-composed broadcast (see routes/admin.js POST /promotions) to every
  * user who hasn't unsubscribed and isn't suspended — a suspended account
  * shouldn't hear about product offers it can't act on.
  */
 export async function sendPromotionalBroadcast({ subject, body }, actorAdminId) {
   const users = await prisma.user.findMany({
-    where: { suspendedAt: null, marketingOptOut: false },
+    where: { suspendedAt: null, deletedAt: null, marketingOptOut: false },
     select: { id: true, email: true, name: true },
   });
   await notificationService.sendPromotionalBroadcast(users, subject, body);

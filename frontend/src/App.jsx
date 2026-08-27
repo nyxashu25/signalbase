@@ -88,6 +88,7 @@ const AdminExtendDatabase = lazyNamed(
   'AdminExtendDatabase',
 );
 const AdminAuditLog = lazyNamed(() => import('./pages/admin/AdminAuditLog.jsx'), 'AdminAuditLog');
+const AdminDeleted = lazyNamed(() => import('./pages/admin/AdminDeleted.jsx'), 'AdminDeleted');
 const AdminTickets = lazyNamed(() => import('./pages/admin/AdminTickets.jsx'), 'AdminTickets');
 const AdminTicketDetail = lazyNamed(
   () => import('./pages/admin/AdminTicketDetail.jsx'),
@@ -192,6 +193,7 @@ export function App() {
               <Route path="pending-peoples" element={<AdminPendingPeoples />} />
               <Route path="childs-found" element={<AdminChildsFound />} />
               <Route path="audit-log" element={<AdminAuditLog />} />
+              <Route path="deleted" element={<AdminDeleted />} />
               <Route path="tickets" element={<AdminTickets />} />
               <Route path="tickets/:ticketId" element={<AdminTicketDetail />} />
               <Route path="settings" element={<AdminSettings />} />

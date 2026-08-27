@@ -251,6 +251,19 @@ enum AdminAuditAction {
   // the shared Contact row, which is exactly why it must be audited.
   RESOLVE_MISSING_PERSON
   RESOLVE_LOST_CHILD
+  // Per-user credit adjustment with an explicit mode (add/remove/set) —
+  // distinct from the legacy workspace-era ADD_CREDITS.
+  ADJUST_USER_CREDITS
+  // Workspace lifecycle (suspend = reversible freeze; delete = soft, purged
+  // hard by the deletion-purge job after 60 days; restore undoes a delete).
+  SUSPEND_WORKSPACE
+  UNSUSPEND_WORKSPACE
+  DELETE_WORKSPACE
+  RESTORE_WORKSPACE
+  DELETE_USER
+  RESTORE_USER
+  // Admin removed a member from a workspace (same action an OWNER can take).
+  REMOVE_MEMBER
 }
 
 // Compliance trail for support-desk overrides — who (which super admin) did
@@ -514,11 +527,11 @@ model List {
   workspaceId String
   name        String
   type        ListType
-  createdById String
+  createdById String?
   createdAt   DateTime @default(now())
 
   workspace Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  createdBy User       @relation("ListCreatedBy", fields: [createdById], references: [id])
+  createdBy User?      @relation("ListCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   items     ListItem[]
 
   @@index([workspaceId])
@@ -537,14 +550,14 @@ enum SavedSearchType {
 model SavedSearch {
   id          String          @id @default(uuid())
   workspaceId String
-  createdById String
+  createdById String?
   type        SavedSearchType
   name        String
   filters     Json
   createdAt   DateTime        @default(now())
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  createdBy User      @relation("SavedSearchCreatedBy", fields: [createdById], references: [id])
+  createdBy User?     @relation("SavedSearchCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
 
   @@index([workspaceId, type])
 }
@@ -666,12 +679,12 @@ model EmailReveal {
   id           String   @id @default(uuid())
   workspaceId  String
   contactId    String
-  revealedById String
+  revealedById String?
   createdAt    DateTime @default(now())
 
   workspace  Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   contact    Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  revealedBy User      @relation(fields: [revealedById], references: [id])
+  revealedBy User?     @relation(fields: [revealedById], references: [id], onDelete: SetNull)
 
   @@unique([workspaceId, contactId])
   @@index([workspaceId])
@@ -685,12 +698,12 @@ model CompanyDetailView {
   id          String   @id @default(uuid())
   workspaceId String
   companyId   String
-  viewedById  String
+  viewedById  String?
   createdAt   DateTime @default(now())
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  viewedBy  User      @relation(fields: [viewedById], references: [id])
+  viewedBy  User?     @relation(fields: [viewedById], references: [id], onDelete: SetNull)
 
   @@unique([workspaceId, companyId])
   @@index([workspaceId])
@@ -713,11 +726,11 @@ model Sequence {
   workspaceId String
   name        String
   status      SequenceStatus @default(DRAFT)
-  createdById String
+  createdById String?
   createdAt   DateTime       @default(now())
 
   workspace   Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  createdBy   User                 @relation("SequenceCreatedBy", fields: [createdById], references: [id])
+  createdBy   User?                @relation("SequenceCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   steps       SequenceStep[]
   enrollments SequenceEnrollment[]
 
@@ -889,7 +902,7 @@ enum TicketAuthorType {
 model Ticket {
   id          String       @id @default(uuid())
   workspaceId String
-  createdById String
+  createdById String?
   type        TicketType
   subject     String
   status      TicketStatus @default(UNANSWERED)
@@ -898,7 +911,7 @@ model Ticket {
   closedAt    DateTime?
 
   workspace Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  createdBy User            @relation(fields: [createdById], references: [id])
+  createdBy User?           @relation(fields: [createdById], references: [id], onDelete: SetNull)
   messages  TicketMessage[]
 
   @@index([workspaceId])
@@ -918,7 +931,7 @@ model TicketMessage {
   createdAt     DateTime         @default(now())
 
   ticket      Ticket      @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  authorUser  User?       @relation(fields: [authorUserId], references: [id])
+  authorUser  User?       @relation(fields: [authorUserId], references: [id], onDelete: SetNull)
   authorAdmin SuperAdmin? @relation(fields: [authorAdminId], references: [id])
 
   @@index([ticketId])

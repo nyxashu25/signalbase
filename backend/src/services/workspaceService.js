@@ -159,7 +159,7 @@ export async function seatUsage(workspaceId) {
       where: { id: workspaceId },
       select: { plan: true, blocks: true },
     }),
-    prisma.membership.count({ where: { workspaceId } }),
+    prisma.membership.count({ where: { workspaceId, user: { deletedAt: null } } }),
     prisma.workspaceInvite.count({
       where: { workspaceId, acceptedAt: null, expiresAt: { gt: new Date() } },
     }),
@@ -183,7 +183,9 @@ export async function seatUsage(workspaceId) {
  */
 export async function listMembers(workspaceId, { withBalances = false } = {}) {
   const memberships = await prisma.membership.findMany({
-    where: { workspaceId },
+    // Soft-deleted accounts vanish from the roster (restorable from the
+    // admin Deleted section; hard-purged after 60 days).
+    where: { workspaceId, user: { deletedAt: null } },
     include: { user: { select: { id: true, name: true, email: true, createdAt: true } } },
     orderBy: { createdAt: 'asc' },
   });

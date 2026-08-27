@@ -27,13 +27,56 @@ export async function unsuspendUser(req, res) {
   res.status(204).end();
 }
 
-export async function addCredits(req, res) {
-  const result = await adminService.addCredits(
+export async function adjustUserCredits(req, res) {
+  const result = await adminService.adjustUserCredits(
     req.params.userId,
-    req.body.amount,
+    req.body,
     req.superAdmin.adminId,
   );
   res.json(result);
+}
+
+export async function deleteUser(req, res) {
+  await adminService.deleteUser(req.params.userId, req.superAdmin.adminId);
+  res.status(204).end();
+}
+
+export async function restoreUser(req, res) {
+  await adminService.restoreUser(req.params.userId, req.superAdmin.adminId);
+  res.status(204).end();
+}
+
+export async function suspendWorkspace(req, res) {
+  await adminService.suspendWorkspace(req.params.workspaceId, req.superAdmin.adminId);
+  res.status(204).end();
+}
+
+export async function unsuspendWorkspace(req, res) {
+  await adminService.unsuspendWorkspace(req.params.workspaceId, req.superAdmin.adminId);
+  res.status(204).end();
+}
+
+export async function deleteWorkspace(req, res) {
+  await adminService.deleteWorkspace(req.params.workspaceId, req.superAdmin.adminId);
+  res.status(204).end();
+}
+
+export async function restoreWorkspace(req, res) {
+  await adminService.restoreWorkspace(req.params.workspaceId, req.superAdmin.adminId);
+  res.status(204).end();
+}
+
+export async function removeMember(req, res) {
+  await adminService.adminRemoveMember(
+    req.params.workspaceId,
+    req.params.userId,
+    req.superAdmin.adminId,
+  );
+  res.status(204).end();
+}
+
+export async function listDeleted(req, res) {
+  res.json(await adminService.listDeleted());
 }
 
 export async function updateUserPlan(req, res) {

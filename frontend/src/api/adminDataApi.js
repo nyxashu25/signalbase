@@ -26,21 +26,53 @@ export const adminDataApi = adminBaseApi.injectEndpoints({
       query: (userId) => ({ url: `/users/${userId}/unsuspend`, method: 'POST' }),
       invalidatesTags: ['AdminUsers'],
     }),
-    addAdminUserCredits: builder.mutation({
-      query: ({ userId, amount }) => ({
+    adjustAdminUserCredits: builder.mutation({
+      // { userId, mode: 'add'|'remove'|'set', amount } -> { userId, balance, delta }
+      query: ({ userId, mode, amount }) => ({
         url: `/users/${userId}/credits`,
         method: 'POST',
-        body: { amount },
+        body: { mode, amount },
       }),
       invalidatesTags: ['AdminUsers'],
     }),
     updateAdminUserPlan: builder.mutation({
-      query: ({ userId, plan }) => ({
+      // blocks (optional) rides along — fixes the old bug where seats were
+      // silently dropped from the body.
+      query: ({ userId, plan, blocks }) => ({
         url: `/users/${userId}/plan`,
         method: 'PUT',
-        body: { plan },
+        body: blocks ? { plan, blocks } : { plan },
       }),
       invalidatesTags: ['AdminUsers'],
+    }),
+    deleteAdminUser: builder.mutation({
+      query: (userId) => ({ url: `/users/${userId}`, method: 'DELETE' }),
+      invalidatesTags: ['AdminUsers'],
+    }),
+    restoreAdminUser: builder.mutation({
+      query: (userId) => ({ url: `/users/${userId}/restore`, method: 'POST' }),
+      invalidatesTags: ['AdminUsers'],
+    }),
+    suspendAdminWorkspace: builder.mutation({
+      query: (workspaceId) => ({ url: `/workspaces/${workspaceId}/suspend`, method: 'POST' }),
+      invalidatesTags: ['AdminUsers'],
+    }),
+    unsuspendAdminWorkspace: builder.mutation({
+      query: (workspaceId) => ({ url: `/workspaces/${workspaceId}/unsuspend`, method: 'POST' }),
+      invalidatesTags: ['AdminUsers'],
+    }),
+    deleteAdminWorkspace: builder.mutation({
+      query: (workspaceId) => ({ url: `/workspaces/${workspaceId}`, method: 'DELETE' }),
+      invalidatesTags: ['AdminUsers'],
+    }),
+    restoreAdminWorkspace: builder.mutation({
+      query: (workspaceId) => ({ url: `/workspaces/${workspaceId}/restore`, method: 'POST' }),
+      invalidatesTags: ['AdminUsers'],
+    }),
+    listAdminDeleted: builder.query({
+      // { users: [{id,name,email,deletedAt,purgeAt}], workspaces: [...] }
+      query: () => '/deleted',
+      providesTags: ['AdminUsers'],
     }),
     getAdminBillingOverview: builder.query({
       query: () => '/billing/overview',
@@ -139,8 +171,15 @@ export const {
   useGetAdminUserDetailQuery,
   useSuspendAdminUserMutation,
   useUnsuspendAdminUserMutation,
-  useAddAdminUserCreditsMutation,
+  useAdjustAdminUserCreditsMutation,
   useUpdateAdminUserPlanMutation,
+  useDeleteAdminUserMutation,
+  useRestoreAdminUserMutation,
+  useSuspendAdminWorkspaceMutation,
+  useUnsuspendAdminWorkspaceMutation,
+  useDeleteAdminWorkspaceMutation,
+  useRestoreAdminWorkspaceMutation,
+  useListAdminDeletedQuery,
   useGetAdminBillingOverviewQuery,
   useListAdminTransactionsQuery,
   useGetAdminStripeSettingsQuery,
