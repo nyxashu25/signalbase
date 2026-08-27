@@ -3,9 +3,14 @@ import * as workspaceController from '../controllers/workspaceController.js';
 import { requireAuth } from '../middleware/auth.js';
 import { requireRole } from '../middleware/rbac.js';
 import { validateBody } from '../middleware/validate.js';
-import { updateWorkspaceSchema, createInviteSchema } from '../validators/workspaceValidators.js';
+import {
+  updateWorkspaceSchema,
+  createInviteSchema,
+  changeMemberRoleSchema,
+} from '../validators/workspaceValidators.js';
 import { rateLimit, byWorkspace } from '../middleware/rateLimit.js';
 import { uploadImage } from '../middleware/uploadImage.js';
+import { requireTeamPlan } from '../middleware/requireTeamPlan.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 // The signed-in user's *current* workspace (from the access token) — there
@@ -31,10 +36,14 @@ workspaceRouter.post('/logo', requireRole('ADMIN'), uploadImage, asyncHandler(wo
 workspaceRouter.delete('/logo', requireRole('ADMIN'), asyncHandler(workspaceController.removeLogo));
 
 workspaceRouter.get('/members', asyncHandler(workspaceController.members));
+// Team features (invite, revoke, change role) are paid-only — requireTeamPlan
+// after the role check. Listing invites stays open to ADMIN on any plan so
+// the Free UI can render an empty list rather than erroring.
 workspaceRouter.get('/invites', requireRole('ADMIN'), asyncHandler(workspaceController.listInvites));
 workspaceRouter.post(
   '/invites',
   requireRole('ADMIN'),
+  requireTeamPlan,
   inviteLimiter,
   validateBody(createInviteSchema),
   asyncHandler(workspaceController.createInvite),
@@ -42,7 +51,15 @@ workspaceRouter.post(
 workspaceRouter.delete(
   '/invites/:id',
   requireRole('ADMIN'),
+  requireTeamPlan,
   asyncHandler(workspaceController.revokeInvite),
+);
+workspaceRouter.patch(
+  '/members/:userId/role',
+  requireRole('ADMIN'),
+  requireTeamPlan,
+  validateBody(changeMemberRoleSchema),
+  asyncHandler(workspaceController.changeMemberRole),
 );
 workspaceRouter.patch(
   '/',

@@ -6,6 +6,7 @@ import {
   useListInvitesQuery,
   useCreateInviteMutation,
   useRevokeInviteMutation,
+  useChangeMemberRoleMutation,
 } from '../../api/workspaceApi.js';
 import { Button } from '../../components/ui/Button.jsx';
 import { Banner } from '../../components/ui/Banner.jsx';
@@ -30,22 +31,43 @@ const CAN_INVITE = new Set(['OWNER', 'ADMIN']);
 export function SettingsMembers() {
   const me = useSelector((s) => s.auth.user);
   const role = useSelector((s) => s.auth.role);
-  const canInvite = CAN_INVITE.has(role);
+  const canManage = CAN_INVITE.has(role); // OWNER/ADMIN — the role permission
   const toast = useToast();
   const { data, isLoading } = useListWorkspaceMembersQuery();
   const members = data?.members;
   const seatInfo = data?.seats;
+  // Team features (invite, roles) are paid-only; on Free the whole section is
+  // an upgrade prompt regardless of seats.
+  const isFree = seatInfo?.plan === 'FREE';
+  const teamUnlocked = canManage && !isFree;
+  const canManageRoles = teamUnlocked;
   const seatsFull = Boolean(seatInfo && seatInfo.used >= seatInfo.total);
-  const fullHint =
-    seatInfo?.plan === 'FREE'
-      ? 'The Free plan includes 1 seat — upgrade to invite teammates'
-      : 'All seats are in use — revoke a pending invite or add seats from Billing';
-  const { data: invites } = useListInvitesQuery(undefined, { skip: !canInvite });
+  const canInviteNow = teamUnlocked && !seatsFull;
+  const fullHint = 'All seats are in use — revoke a pending invite or add seats from Billing';
+  const { data: invites } = useListInvitesQuery(undefined, { skip: !canManage || isFree });
   const [createInvite, { isLoading: inviting }] = useCreateInviteMutation();
   const [revokeInvite] = useRevokeInviteMutation();
+  const [changeRole] = useChangeMemberRoleMutation();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ email: '', role: 'MEMBER' });
   const [copiedId, setCopiedId] = useState(null);
+  const [savingRoleFor, setSavingRoleFor] = useState(null);
+
+  async function handleRoleChange(member, nextRole) {
+    if (nextRole === member.role) return;
+    setSavingRoleFor(member.user.id);
+    try {
+      await changeRole({ userId: member.user.id, role: nextRole }).unwrap();
+      toast.success(
+        `${member.user.name} is now ${nextRole === 'ADMIN' ? 'an admin' : 'a teammate'}`,
+        'Takes effect the next time they refresh (within 15 minutes).',
+      );
+    } catch (err) {
+      toast.error('Could not change role', err.data?.error?.message);
+    } finally {
+      setSavingRoleFor(null);
+    }
+  }
 
   async function handleInvite(e) {
     e.preventDefault();
@@ -85,24 +107,25 @@ export function SettingsMembers() {
         description={
           seatInfo
             ? `${seatInfo.members} of ${seatInfo.total} ${seatInfo.total === 1 ? 'seat' : 'seats'} filled` +
-              (seatInfo.pendingInvites > 0 ? ` · ${seatInfo.pendingInvites} pending` : '')
+              (seatInfo.pendingInvites > 0 ? ` · ${seatInfo.pendingInvites} pending` : '') +
+              ' · all teammates share one credit balance'
             : undefined
         }
         footer={
-          canInvite && !seatsFull ? (
+          canInviteNow ? (
             <Button variant="primary" icon={UserPlus} onClick={() => setShowForm((v) => !v)}>
               Invite teammate
             </Button>
-          ) : canInvite ? (
-            <Tooltip content={fullHint}>
-              <span className="inline-flex">
-                <Button variant="primary" icon={UserPlus} disabled aria-disabled="true">
-                  Invite teammate
-                </Button>
-              </span>
-            </Tooltip>
           ) : (
-            <Tooltip content="Only workspace owners and admins can invite">
+            <Tooltip
+              content={
+                !canManage
+                  ? 'Only workspace owners and admins can invite'
+                  : isFree
+                    ? 'Inviting teammates is a paid feature — upgrade from Billing'
+                    : fullHint
+              }
+            >
               <span className="inline-flex">
                 <Button variant="primary" icon={UserPlus} disabled aria-disabled="true">
                   Invite teammate
@@ -112,7 +135,7 @@ export function SettingsMembers() {
           )
         }
       >
-        {showForm && canInvite && (
+        {showForm && canInviteNow && (
           <form onSubmit={handleInvite} className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-border bg-surface p-3">
             <FormField label="Email" className="min-w-[220px] flex-1">
               <input
@@ -173,11 +196,26 @@ export function SettingsMembers() {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <Tooltip content={ROLE_HINT[m.role]}>
-                      <span className="inline-flex">
-                        <StatusPill tone={ROLE_TONE[m.role] ?? 'neutral'}>{m.role}</StatusPill>
-                      </span>
-                    </Tooltip>
+                    {canManageRoles && m.role !== 'OWNER' && m.user.id !== me?.id ? (
+                      <select
+                        aria-label={`Role for ${m.user.name}`}
+                        value={m.role}
+                        disabled={savingRoleFor === m.user.id}
+                        onChange={(e) => handleRoleChange(m, e.target.value)}
+                        className="h-8 rounded-md border border-border bg-surface-elevated px-2 text-xs font-semibold text-text outline-none focus:border-focus focus:ring-2 focus:ring-focus/25 disabled:opacity-60"
+                      >
+                        <option value="MEMBER">Teammate</option>
+                        <option value="ADMIN">Admin</option>
+                      </select>
+                    ) : (
+                      <Tooltip content={ROLE_HINT[m.role]}>
+                        <span className="inline-flex">
+                          <StatusPill tone={ROLE_TONE[m.role] ?? 'neutral'}>
+                            {m.role === 'MEMBER' ? 'TEAMMATE' : m.role}
+                          </StatusPill>
+                        </span>
+                      </Tooltip>
+                    )}
                   </td>
                   <td className={tdMutedClass}>{new Date(m.joinedAt).toLocaleDateString()}</td>
                 </tr>
@@ -187,7 +225,7 @@ export function SettingsMembers() {
         </TableFrame>
       </SettingsSection>
 
-      {canInvite && invites && invites.length > 0 && (
+      {canManage && teamUnlocked && invites && invites.length > 0 && (
         <SettingsSection
           title="Pending invites"
           description="Waiting to be accepted — each link works once and expires 7 days after it was sent."
@@ -248,11 +286,17 @@ export function SettingsMembers() {
         </SettingsSection>
       )}
 
-      {canInvite && seatsFull && (
-        <Banner tone="info" title={seatInfo?.plan === 'FREE' ? 'Invites need a paid plan' : 'All seats are in use'} action="Open Billing" actionTo="/app/billing">
-          {seatInfo?.plan === 'FREE'
-            ? 'The Free plan includes a single seat. Pick a plan and choose how many seats to buy — each seat adds its monthly credits too.'
-            : 'Revoke a pending invite to free a seat, or add seats by re-subscribing with a higher seat count from Billing.'}
+      {canManage && isFree && (
+        <Banner tone="info" title="Add your team on a paid plan" action="Open Billing" actionTo="/app/billing">
+          Inviting teammates, setting roles, and the team credit audit are paid features. Upgrade from
+          Billing to build your team — everyone will share this workspace's credit balance.
+        </Banner>
+      )}
+
+      {canManage && teamUnlocked && seatsFull && (
+        <Banner tone="info" title="All seats are in use" action="Open Billing" actionTo="/app/billing">
+          Revoke a pending invite to free a seat, or add seats by re-subscribing with a higher seat
+          count from Billing.
         </Banner>
       )}
     </div>

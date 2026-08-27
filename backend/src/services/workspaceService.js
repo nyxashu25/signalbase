@@ -189,3 +189,27 @@ export async function clearLogo(workspaceId) {
   });
   return serializeProfile(workspace);
 }
+
+/**
+ * Change a teammate's role between MEMBER ("teammate") and ADMIN. The OWNER
+ * is protected — ownership stays with whoever created the workspace until a
+ * real transfer flow exists — so the owner can neither be demoted nor be the
+ * target's new role. Note: the change takes effect on the member's next
+ * access-token refresh (role is a token claim, ≤15 min), not instantly.
+ */
+export async function changeMemberRole(workspaceId, targetUserId, role) {
+  const membership = await prisma.membership.findUnique({
+    where: { userId_workspaceId: { userId: targetUserId, workspaceId } },
+  });
+  if (!membership) throw new ApiError(404, 'That person is not a member of this workspace');
+  if (membership.role === 'OWNER') {
+    throw new ApiError(409, 'The workspace owner’s role can’t be changed');
+  }
+
+  const updated = await prisma.membership.update({
+    where: { userId_workspaceId: { userId: targetUserId, workspaceId } },
+    data: { role },
+    include: { user: { select: { id: true, name: true, email: true, createdAt: true } } },
+  });
+  return { id: updated.id, role: updated.role, joinedAt: updated.createdAt, user: updated.user };
+}

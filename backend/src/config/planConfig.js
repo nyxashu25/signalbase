@@ -32,6 +32,13 @@ export function planIncludesSequences(plan) {
   return PLAN_HAS_SEQUENCES[plan] ?? false;
 }
 
+// Team features — inviting teammates, changing their roles, and the team
+// credit audit — are paid-only. Free is a solo workspace (branding is still
+// free; only the multi-person features are gated).
+export function planIncludesTeam(plan) {
+  return plan !== 'FREE';
+}
+
 // Seat bounds per plan — the Pricing page's "min 3 seats" on Organization,
 // and a sanity ceiling for self-serve checkout (larger teams go through
 // sales/admin override).

@@ -13,3 +13,9 @@ export const createInviteSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
   role: z.enum(['ADMIN', 'MEMBER']).default('MEMBER'),
 });
+
+// Change an existing member between teammate (MEMBER) and admin. OWNER can't
+// be set or unset here (see workspaceService.changeMemberRole).
+export const changeMemberRoleSchema = z.object({
+  role: z.enum(['ADMIN', 'MEMBER']),
+});

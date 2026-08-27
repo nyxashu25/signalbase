@@ -20,6 +20,14 @@ export const workspaceApi = baseApi.injectEndpoints({
       query: (id) => ({ url: `/workspace/invites/${id}`, method: 'DELETE' }),
       invalidatesTags: ['Workspace'],
     }),
+    changeMemberRole: builder.mutation({
+      query: ({ userId, role }) => ({
+        url: `/workspace/members/${userId}/role`,
+        method: 'PATCH',
+        body: { role },
+      }),
+      invalidatesTags: ['Workspace'],
+    }),
     getWorkspaceProfile: builder.query({
       query: () => '/workspace',
       transformResponse: (res) => res.workspace, // { id, name, plan, motto, logoUrl }
@@ -57,4 +65,5 @@ export const {
   useListInvitesQuery,
   useCreateInviteMutation,
   useRevokeInviteMutation,
+  useChangeMemberRoleMutation,
 } = workspaceApi;

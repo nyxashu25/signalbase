@@ -27,6 +27,15 @@ export async function revokeInvite(req, res) {
   res.status(204).end();
 }
 
+export async function changeMemberRole(req, res) {
+  const member = await workspaceService.changeMemberRole(
+    req.auth.workspaceId,
+    req.params.userId,
+    req.body.role,
+  );
+  res.json({ member });
+}
+
 export async function profile(req, res) {
   res.json({ workspace: await workspaceService.getWorkspaceProfile(req.auth.workspaceId) });
 }

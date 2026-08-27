@@ -9,16 +9,17 @@ import { hashPassword } from '../utils/password.js';
 const app = createApp();
 const auth = (token) => ({ Authorization: `Bearer ${token}` });
 
-async function registerOrg(orgName, email, seats = 5) {
+async function registerOrg(orgName, email, seats = 5, plan = 'BASIC') {
   const res = await registerAndVerify(app, {
     email,
     password: 'correct-horse-battery',
     name: 'Owner',
     orgName,
   });
-  // Fresh signups are FREE (1 seat) — most invite tests need headroom, so
-  // grant a few; the seat-gate tests below set their own counts.
-  await prisma.workspace.update({ where: { id: res.body.workspace.id }, data: { seats } });
+  // Fresh signups are FREE (1 seat). Team features (invite/roles/audit) are
+  // paid-only, so default these test workspaces to a paid plan with seat
+  // headroom; the FREE-gating test overrides plan back to FREE.
+  await prisma.workspace.update({ where: { id: res.body.workspace.id }, data: { seats, plan } });
   return { accessToken: res.body.accessToken, workspaceId: res.body.workspace.id, userId: res.body.user.id };
 }
 
@@ -138,6 +139,45 @@ describe('workspace', () => {
     await addMember(a.workspaceId, 'member@acme.test', 'MEMBER');
     const res = await request(app).get('/api/v1/workspace/members').set(auth(b.accessToken));
     expect(res.body.members.map((m) => m.user.email)).toEqual(['owner@globex.test']);
+  });
+
+  it('changes a member between teammate and admin (ADMIN+), protects the owner, blocks a MEMBER, and gates FREE', async () => {
+    const org = await registerOrg('Acme', 'owner@acme.test');
+    const member = await addMember(org.workspaceId, 'member@acme.test', 'MEMBER');
+
+    // Promote the teammate to admin.
+    const promote = await request(app)
+      .patch(`/api/v1/workspace/members/${member.user.id}/role`)
+      .set(auth(org.accessToken))
+      .send({ role: 'ADMIN' });
+    expect(promote.status).toBe(200);
+    expect(promote.body.member).toMatchObject({ role: 'ADMIN', user: { email: 'member@acme.test' } });
+
+    // The owner's role can't be changed.
+    const owner = await prisma.membership.findFirst({ where: { workspaceId: org.workspaceId, role: 'OWNER' } });
+    const protectOwner = await request(app)
+      .patch(`/api/v1/workspace/members/${owner.userId}/role`)
+      .set(auth(org.accessToken))
+      .send({ role: 'MEMBER' });
+    expect(protectOwner.status).toBe(409);
+
+    // A plain MEMBER can't change roles (403 before the plan check).
+    const bystander = await addMember(org.workspaceId, 'other@acme.test', 'MEMBER');
+    const denied = await request(app)
+      .patch(`/api/v1/workspace/members/${member.user.id}/role`)
+      .set(auth(bystander.accessToken))
+      .send({ role: 'MEMBER' });
+    expect(denied.status).toBe(403);
+
+    // On FREE the whole feature is gated.
+    const free = await registerOrg('Freebie', 'free@acme.test', 5, 'FREE');
+    const freeMember = await addMember(free.workspaceId, 'fm@acme.test', 'MEMBER');
+    const gated = await request(app)
+      .patch(`/api/v1/workspace/members/${freeMember.user.id}/role`)
+      .set(auth(free.accessToken))
+      .send({ role: 'ADMIN' });
+    expect(gated.status).toBe(403);
+    expect(gated.body.error.message).toMatch(/Team features aren’t available on the Free plan/);
   });
 });
 
@@ -347,12 +387,12 @@ describe('seat-count enforcement', () => {
       .send({ email, role });
   }
 
-  it('a FREE workspace (1 seat) cannot invite at all, with a plan-aware message', async () => {
-    const org = await registerOrg('Acme', 'owner@acme.test', 1);
+  it('a FREE workspace cannot use team features at all (plan-gated before the seat check)', async () => {
+    const org = await registerOrg('Acme', 'owner@acme.test', 1, 'FREE');
     const res = await invite(org, 'new@hire.test');
-    expect(res.status).toBe(422);
-    expect(res.body.error.message).toMatch(/Free plan includes 1 seat/);
-    // Seat info comes back with the members list for the UI.
+    expect(res.status).toBe(403);
+    expect(res.body.error.message).toMatch(/Team features aren’t available on the Free plan/);
+    // Seat info still comes back with the members list for the UI.
     const members = await request(app).get('/api/v1/workspace/members').set(auth(org.accessToken));
     expect(members.body.seats).toMatchObject({ total: 1, members: 1, pendingInvites: 0, used: 1 });
   });

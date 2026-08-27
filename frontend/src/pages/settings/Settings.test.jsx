@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SettingsProfile } from './SettingsProfile.jsx';
 import { SettingsSecurity } from './SettingsSecurity.jsx';
@@ -154,7 +154,7 @@ describe('Settings', () => {
 
     expect(await screen.findByText('Grace Hopper')).toBeInTheDocument();
     expect(screen.getByText('(you)')).toBeInTheDocument();
-    expect(screen.getByText('2 of 5 seats filled')).toBeInTheDocument();
+    expect(screen.getByText(/2 of 5 seats filled/)).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Invite teammate' }));
     await user.type(screen.getByLabelText('Email'), 'new@hire.test');
@@ -185,6 +185,42 @@ describe('Settings', () => {
     });
     expect(await screen.findByRole('button', { name: 'Invite teammate' })).toBeDisabled();
   });
+
+  it('Members: an admin changes a teammate between Teammate and Admin (owner + self are not editable)', async () => {
+    const calls = [];
+    mockFetchRoutes([
+      {
+        url: '/workspace/members',
+        method: 'GET',
+        respond: {
+          body: {
+            members: [
+              { id: 'm1', role: 'OWNER', joinedAt: '2026-08-01T00:00:00.000Z', user: { id: 'u1', name: 'Demo User', email: 'demo@datapit.io' } },
+              { id: 'm2', role: 'MEMBER', joinedAt: '2026-08-10T00:00:00.000Z', user: { id: 'u2', name: 'Grace Hopper', email: 'grace@datapit.io' } },
+            ],
+            seats: { total: 5, plan: 'BASIC', members: 2, pendingInvites: 0, used: 2 },
+          },
+        },
+      },
+      { url: '/workspace/invites', method: 'GET', respond: { body: { invites: [] } } },
+      {
+        url: '/workspace/members/u2/role',
+        method: 'PATCH',
+        respond: (url, init) => {
+          calls.push(JSON.parse(init.body));
+          return { body: { member: { id: 'm2', role: 'ADMIN', joinedAt: '2026-08-10T00:00:00.000Z', user: { id: 'u2', name: 'Grace Hopper', email: 'grace@datapit.io' } } } };
+        },
+      },
+    ]);
+    renderWithProviders(<SettingsMembers />, { preloadedState: state });
+
+    // The owner (me) row has no role control; Grace's does.
+    const select = await screen.findByLabelText('Role for Grace Hopper');
+    expect(screen.queryByLabelText('Role for Demo User')).not.toBeInTheDocument();
+
+    fireEvent.change(select, { target: { value: 'ADMIN' } });
+    await waitFor(() => expect(calls).toEqual([{ role: 'ADMIN' }]));
+  });
 });
 
 describe('SettingsMembers seat gate', () => {
@@ -212,9 +248,9 @@ describe('SettingsMembers seat gate', () => {
       { url: '/workspace/invites', method: 'GET', respond: { body: { invites: [] } } },
     ]);
     renderWithProviders(<SettingsMembers />, { preloadedState: fullState });
-    expect(await screen.findByText('1 of 1 seat filled')).toBeInTheDocument();
+    expect(await screen.findByText(/1 of 1 seat filled/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Invite teammate' })).toBeDisabled();
-    expect(screen.getByText('Invites need a paid plan')).toBeInTheDocument();
+    expect(screen.getByText('Add your team on a paid plan')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open Billing' })).toHaveAttribute('href', '/app/billing');
   });
 });
