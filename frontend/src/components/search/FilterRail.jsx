@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, X, SlidersHorizontal } from 'lucide-react';
+import { ChevronDown, X, SlidersHorizontal, Lock } from 'lucide-react';
 import { cn } from '../ui/cn.js';
 import { CountPill } from '../ui/StatusPill.jsx';
 import { Skeleton } from '../ui/Skeleton.jsx';
+import { Tooltip } from '../ui/Tooltip.jsx';
 
 const INITIAL_VISIBLE_OPTIONS = 8;
 
@@ -11,9 +12,13 @@ const INITIAL_VISIBLE_OPTIONS = 8;
  *
  * groups: [{
  *   key, label, icon,
- *   type: 'checkbox' | 'text',
+ *   type: 'checkbox' | 'text' | 'locked',
  *   // checkbox: options [{ value, count, label? }], selected: string[], onToggle(value)
  *   // text:     value: string, onChange(value), placeholder
+ *   // locked:   hint (tooltip copy) — a non-interactive row for a filter
+ *   //           category DataPit doesn't have data for yet. Renders greyed
+ *   //           out with a lock icon and a "Coming soon" pill instead of an
+ *   //           expand chevron; never implies a paid plan unlocks it.
  * }]
  *
  * Every group is an accordion row — icon · label · active-count pill (click
@@ -91,11 +96,13 @@ export function FilterRail({ groups, total, isFetching = false, className }) {
 }
 
 function activeCountOf(group) {
+  if (group.type === 'locked') return 0;
   if (group.type === 'text') return group.value ? 1 : 0;
   return group.selected.length;
 }
 
 function clearGroup(group) {
+  if (group.type === 'locked') return;
   if (group.type === 'text') {
     if (group.value) group.onChange('');
     return;
@@ -104,6 +111,8 @@ function clearGroup(group) {
 }
 
 function FilterGroup({ group }) {
+  if (group.type === 'locked') return <LockedFilterRow group={group} />;
+
   const active = activeCountOf(group);
   const [open, setOpen] = useState(active > 0);
   const Icon = group.icon;
@@ -163,6 +172,26 @@ function FilterGroup({ group }) {
         </div>
       )}
     </div>
+  );
+}
+
+// A category DataPit doesn't have data for yet — same row rhythm as a real
+// group (icon · label) but greyed, non-expandable, and a "Coming soon" pill
+// instead of a chevron. The tooltip is the honest version of the same idea:
+// it never claims a plan upgrade would unlock this today.
+function LockedFilterRow({ group }) {
+  const Icon = group.icon;
+  return (
+    <Tooltip content={group.hint ?? `${group.label} isn't available yet — it's on our roadmap.`}>
+      <div className="flex w-full cursor-default items-center gap-2 border-b border-border px-3.5 py-2.5 text-left last:border-0">
+        {Icon && <Icon className="h-4 w-4 shrink-0 text-text-muted/50" aria-hidden="true" />}
+        <span className="flex-1 truncate text-sm font-semibold text-text-muted/70">{group.label}</span>
+        <span className="flex items-center gap-1 rounded-full border border-border bg-surface-sunken px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-text-muted">
+          <Lock className="h-2.5 w-2.5" aria-hidden="true" />
+          Soon
+        </span>
+      </div>
+    </Tooltip>
   );
 }
 

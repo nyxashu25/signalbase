@@ -30,6 +30,16 @@ function textGroup(overrides = {}) {
   };
 }
 
+function lockedGroup(overrides = {}) {
+  return {
+    key: 'scores',
+    label: 'Scores',
+    type: 'locked',
+    hint: "Lead/account scoring isn't available yet — it's on our roadmap.",
+    ...overrides,
+  };
+}
+
 describe('FilterRail', () => {
   it('shows the total and every option of an expanded group', async () => {
     const user = userEvent.setup();
@@ -88,6 +98,25 @@ describe('FilterRail', () => {
     await user.click(screen.getByText('Clear all 2'));
     expect(onToggle).toHaveBeenCalledWith('VP');
     expect(onChange).toHaveBeenCalledWith('');
+  });
+
+  it('renders a locked group as a non-expandable row, excluded from counts and Clear all', async () => {
+    const user = userEvent.setup();
+    const onToggle = vi.fn();
+    render(
+      <FilterRail
+        groups={[checkboxGroup({ selected: ['VP'], onToggle }), lockedGroup()]}
+      />,
+    );
+
+    expect(screen.getByText('Scores')).toBeInTheDocument();
+    expect(screen.getByText('Soon')).toBeInTheDocument();
+    // A locked row has no expand/collapse control and isn't counted.
+    expect(screen.queryByRole('button', { name: 'Expand Scores filter' })).not.toBeInTheDocument();
+    expect(screen.getByText('Clear all 1')).toBeInTheDocument();
+
+    await user.click(screen.getByText('Clear all 1'));
+    expect(onToggle).toHaveBeenCalledWith('VP');
   });
 
   it('collapses long option lists behind "Show more"', async () => {

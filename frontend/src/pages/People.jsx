@@ -11,6 +11,13 @@ import {
   SlidersHorizontal,
   Users,
   RotateCcw,
+  UserCircle,
+  Copy,
+  GraduationCap,
+  PieChart,
+  Hash,
+  TrendingUp,
+  Star,
 } from 'lucide-react';
 import { searchApi, useSearchPeopleQuery, toQueryString } from '../api/searchApi.js';
 import { useRevealContactMutation } from '../api/contactsApi.js';
@@ -215,7 +222,28 @@ export function People() {
   }
 
   const facets = data?.facets ?? {};
+  // Person attributes first, then company attributes, then the roadmap
+  // categories — mirrors Apollo's own grouping (persona-ish fields at the
+  // top, company fields below). The locked rows are deliberately dumb: no
+  // options, no selection, just a "Soon" pill — see FilterRail's 'locked'
+  // type. `hint` there is tooltip copy, not a form hint.
   const railGroups = [
+    {
+      key: 'persona',
+      label: 'Persona',
+      icon: UserCircle,
+      type: 'locked',
+      hint: "Saved buyer personas aren't available yet — it's on our roadmap.",
+    },
+    {
+      key: 'emailStatus',
+      label: 'Email status',
+      icon: Mail,
+      type: 'checkbox',
+      options: (facets.emailStatus ?? []).map((o) => ({ ...o, label: EMAIL_STATUS_LABELS[o.value] })),
+      selected: filters.emailStatus,
+      onToggle: (v) => updateArray('emailStatus', v),
+    },
     {
       key: 'title',
       label: 'Job title',
@@ -225,16 +253,6 @@ export function People() {
       placeholder: 'e.g. Finance manager',
       value: filters.title,
       onChange: (v) => updateText('title', v),
-    },
-    {
-      key: 'company',
-      label: 'Company',
-      icon: Building2,
-      type: 'text',
-      hint: 'Company name contains',
-      placeholder: 'e.g. Acme',
-      value: filters.company,
-      onChange: (v) => updateText('company', v),
     },
     {
       key: 'seniority',
@@ -255,13 +273,44 @@ export function People() {
       onToggle: (v) => updateArray('department', v),
     },
     {
-      key: 'emailStatus',
-      label: 'Email status',
-      icon: Mail,
+      key: 'peopleLookalikes',
+      label: 'People lookalikes',
+      icon: Copy,
+      type: 'locked',
+      hint: "Finding people similar to your best contacts isn't available yet — it's on our roadmap.",
+    },
+    {
+      key: 'company',
+      label: 'Company',
+      icon: Building2,
+      type: 'text',
+      hint: 'Company name contains',
+      placeholder: 'e.g. Acme',
+      value: filters.company,
+      onChange: (v) => updateText('company', v),
+    },
+    {
+      key: 'companyLookalikes',
+      label: 'Company lookalikes',
+      icon: Copy,
+      type: 'locked',
+      hint: "Finding companies similar to your best accounts isn't available yet — it's on our roadmap.",
+    },
+    {
+      key: 'education',
+      label: 'Education',
+      icon: GraduationCap,
+      type: 'locked',
+      hint: "School and degree data isn't available yet — it's on our roadmap.",
+    },
+    {
+      key: 'location',
+      label: 'Company location',
+      icon: MapPin,
       type: 'checkbox',
-      options: (facets.emailStatus ?? []).map((o) => ({ ...o, label: EMAIL_STATUS_LABELS[o.value] })),
-      selected: filters.emailStatus,
-      onToggle: (v) => updateArray('emailStatus', v),
+      options: facets.location ?? [],
+      selected: filters.location,
+      onToggle: (v) => updateArray('location', v),
     },
     {
       key: 'industry',
@@ -273,13 +322,32 @@ export function People() {
       onToggle: (v) => updateArray('industry', v),
     },
     {
-      key: 'location',
-      label: 'Company location',
-      icon: MapPin,
-      type: 'checkbox',
-      options: facets.location ?? [],
-      selected: filters.location,
-      onToggle: (v) => updateArray('location', v),
+      key: 'marketSegments',
+      label: 'Market segments',
+      icon: PieChart,
+      type: 'locked',
+      hint: "Market segment classification isn't available yet — it's on our roadmap.",
+    },
+    {
+      key: 'sicNaics',
+      label: 'SIC and NAICS',
+      icon: Hash,
+      type: 'locked',
+      hint: "SIC/NAICS industry codes aren't available yet — it's on our roadmap.",
+    },
+    {
+      key: 'buyingIntent',
+      label: 'Buying intent',
+      icon: TrendingUp,
+      type: 'locked',
+      hint: "Intent signal data isn't available yet — it's on our roadmap.",
+    },
+    {
+      key: 'scores',
+      label: 'Scores',
+      icon: Star,
+      type: 'locked',
+      hint: "Lead/account scoring isn't available yet — it's on our roadmap.",
     },
   ];
 
