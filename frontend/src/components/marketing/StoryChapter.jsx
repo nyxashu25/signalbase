@@ -18,9 +18,13 @@ gsap.registerPlugin(ScrollTrigger, SplitText);
  * — no nested ScrollTriggers, because the page's own 3D transform would
  * throw their measurements off.
  *
- * `tone`: 'deep' (transparent — the signal river shows through) or
- * 'surface' (the readable vellum page). `align` puts the plate on the
- * right ('left' means the copy leads) or the left.
+ * `tone`: 'deep' (transparent — the Signal World shows through) or
+ * 'surface' (the readable page, as a floating glass card over the world).
+ * `align` puts the plate on the right ('left' means the copy leads) or the
+ * left. `station` names the Signal World set piece this chapter hosts (see
+ * world/README.md); it sits on the copy's side of the frame — the plate is
+ * an opaque mockup and would hide it, while the copy column is transparent
+ * text over the world.
  *
  * Reduced motion: no timeline; everything renders flat and visible.
  */
@@ -34,6 +38,7 @@ export function StoryChapter({
   plate,
   align = 'left',
   tone = 'deep',
+  station,
 }) {
   const reduceMotion = useReducedMotion();
   const sectionRef = useRef(null);
@@ -107,79 +112,103 @@ export function StoryChapter({
   }, [reduceMotion, align]);
 
   const plateFirst = align === 'right';
+  const glass = tone === 'surface';
+
+  const page = (
+    <div
+      className={`relative mx-auto max-w-[1280px] px-6 ${glass ? 'py-20 sm:py-28' : 'py-28 sm:py-40'}`}
+      style={{ perspective: 1500 }}
+    >
+      <div ref={pageRef} className="preserve-3d">
+        <div className={`flex flex-col gap-6 sm:flex-row sm:items-end sm:gap-10 ${plateFirst ? 'sm:flex-row-reverse sm:text-right' : ''}`}>
+          <span
+            ref={numeralRef}
+            aria-hidden="true"
+            className="story-numeral select-none text-[clamp(6rem,16vw,13rem)] font-extrabold leading-[0.8] tracking-tight"
+          >
+            {n}
+          </span>
+          <div className="pb-2">
+            <p
+              className={`text-xs font-bold uppercase tracking-[0.22em] ${glass ? 'story-eyebrow' : 'text-mauve-magic'}`}
+            >
+              Chapter {n} — {eyebrow}
+            </p>
+            {narration && (
+              <p className={`story-narration mt-3 max-w-[440px] text-lg text-ink-300 ${tone === 'surface' ? 'text-text-muted' : ''}`}>
+                {narration}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <h2
+          ref={titleRef}
+          className={`mt-10 max-w-[900px] text-[clamp(2rem,5vw,4.4rem)] font-extrabold uppercase leading-[1.02] tracking-tight ${plateFirst ? 'sm:ml-auto sm:text-right' : ''}`}
+        >
+          {title}
+        </h2>
+
+        <div className="mt-14 grid grid-cols-1 items-center gap-14 lg:grid-cols-2">
+          <div ref={copyRef} className={plateFirst ? 'lg:order-2' : ''}>
+            <p className={`text-base leading-relaxed ${tone === 'surface' ? 'text-text-muted' : 'text-ink-300'}`}>
+              {desc}
+            </p>
+            {points.length > 0 && (
+              <ul className="mt-8 flex flex-col text-sm">
+                {points.map((p) => (
+                  <li
+                    key={p}
+                    className={`flex items-start gap-3 border-t py-4 last:border-b ${tone === 'surface' ? 'border-border' : 'border-white/10'}`}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      className="mt-0.5 shrink-0 text-mauve-magic"
+                      aria-hidden="true"
+                    >
+                      <path d="M5 12.5l4.5 4.5L19 7" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    <span className="font-medium">{p}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <div ref={plateRef} className={plateFirst ? 'lg:order-1' : ''}>
+            <Plate3D>{plate}</Plate3D>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <section
       ref={sectionRef}
       data-chapter
       data-chapter-title={eyebrow}
-      className={`relative overflow-hidden ${tone === 'surface' ? 'story-surface text-text' : 'text-white'}`}
+      data-station={station}
+      // The set piece takes the empty upper corner opposite the title —
+      // above the mockup plate, clear of the headline (world/README.md
+      // "Station placement").
+      data-station-side={align === 'right' ? -1 : 1}
+      data-station-x="0.6"
+      data-station-lift="0.34"
+      data-station-size="0.72"
+      className={`relative overflow-hidden ${glass ? 'py-6 text-text sm:py-10' : 'text-white'}`}
     >
-      <div className="relative mx-auto max-w-[1280px] px-6 py-28 sm:py-40" style={{ perspective: 1500 }}>
-        <div ref={pageRef} className="preserve-3d">
-          <div className={`flex flex-col gap-6 sm:flex-row sm:items-end sm:gap-10 ${plateFirst ? 'sm:flex-row-reverse sm:text-right' : ''}`}>
-            <span
-              ref={numeralRef}
-              aria-hidden="true"
-              className="story-numeral select-none text-[clamp(6rem,16vw,13rem)] font-extrabold leading-[0.8] tracking-tight"
-            >
-              {n}
-            </span>
-            <div className="pb-2">
-              <p className="text-xs font-bold uppercase tracking-[0.22em] text-mauve-magic">
-                Chapter {n} — {eyebrow}
-              </p>
-              {narration && (
-                <p className={`story-narration mt-3 max-w-[440px] text-lg text-ink-300 ${tone === 'surface' ? 'text-text-muted' : ''}`}>
-                  {narration}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <h2
-            ref={titleRef}
-            className={`mt-10 max-w-[900px] text-[clamp(2rem,5vw,4.4rem)] font-extrabold uppercase leading-[1.02] tracking-tight ${plateFirst ? 'sm:ml-auto sm:text-right' : ''}`}
-          >
-            {title}
-          </h2>
-
-          <div className="mt-14 grid grid-cols-1 items-center gap-14 lg:grid-cols-2">
-            <div ref={copyRef} className={plateFirst ? 'lg:order-2' : ''}>
-              <p className={`text-base leading-relaxed ${tone === 'surface' ? 'text-text-muted' : 'text-ink-300'}`}>
-                {desc}
-              </p>
-              {points.length > 0 && (
-                <ul className="mt-8 flex flex-col text-sm">
-                  {points.map((p) => (
-                    <li
-                      key={p}
-                      className={`flex items-start gap-3 border-t py-4 last:border-b ${tone === 'surface' ? 'border-border' : 'border-white/10'}`}
-                    >
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        className="mt-0.5 shrink-0 text-mauve-magic"
-                        aria-hidden="true"
-                      >
-                        <path d="M5 12.5l4.5 4.5L19 7" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                      <span className="font-medium">{p}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-            <div ref={plateRef} className={plateFirst ? 'lg:order-1' : ''}>
-              <Plate3D>{plate}</Plate3D>
-            </div>
-          </div>
+      {glass ? (
+        <div className="mx-auto max-w-[1328px] px-3 sm:px-6">
+          <div className="story-glass">{page}</div>
         </div>
-      </div>
+      ) : (
+        page
+      )}
     </section>
   );
 }

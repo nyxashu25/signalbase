@@ -1,27 +1,124 @@
-import { useLayoutEffect, useRef } from 'react';
-import { useReducedMotion } from 'framer-motion';
+import { useCallback, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { MaskedLines } from './MaskedLines.jsx';
 import { Hero3DMark } from './Hero3DMark.jsx';
 import { FadeIn } from './motion.jsx';
+import { useWorldState } from './worldStore.js';
 
 gsap.registerPlugin(ScrollTrigger);
 
+const EASE = [0.2, 0.8, 0.2, 1];
+
+// Same footprint as Hero3DMark's stage, so the layout never shifts when the
+// WebGL world takes over the mark.
+const STAGE_SIZE = {
+  lg: 'h-[280px] w-[280px] sm:h-[360px] sm:w-[360px] lg:h-[440px] lg:w-[440px]',
+  md: 'h-[200px] w-[200px] sm:h-[260px] sm:w-[260px]',
+};
+
+// The engine frames the cover's piece at the viewport's vertical middle when
+// the page is at the top (s = 0): on landscape viewports at NDC x ≈ 0.42
+// (71% across), on portrait ones centered behind the text (world/engine.js,
+// framing()). These queries mirror that split.
+const LANDSCAPE_QUERY = '(min-aspect-ratio: 1/1)';
+// Two columns (lg) and landscape: the piece sits over the empty right column.
+const WIDE_QUERY = '(min-width: 1024px) and (min-aspect-ratio: 1/1)';
+
+function useMediaQuery(query) {
+  const subscribe = useCallback(
+    (notify) => {
+      const mq = window.matchMedia?.(query);
+      mq?.addEventListener?.('change', notify);
+      return () => mq?.removeEventListener?.('change', notify);
+    },
+    [query],
+  );
+  return useSyncExternalStore(
+    subscribe,
+    () => Boolean(window.matchMedia?.(query).matches),
+    () => false,
+  );
+}
+
+function documentTop(el) {
+  let top = 0;
+  for (let node = el; node; node = node.offsetParent) top += node.offsetTop;
+  return top;
+}
+
+/**
+ * "Drag to spin", kept next to the 3D mark. Below it (`top` null): a
+ * zero-height box sticky to the viewport's lower band while the cover
+ * scrolls — the mark holds its spot for the first stretch of scroll too —
+ * so it never changes the layout. Above it (a cover that ends before the
+ * mark does): pinned at `top` px inside the cover, level with the viewport's
+ * upper fifth at load.
+ */
+function DragHint({ top, landscape }) {
+  const below = top == null;
+  return (
+    <div
+      aria-hidden="true"
+      className={`pointer-events-none h-0 ${below ? 'sticky bottom-[12vh]' : 'absolute inset-x-0'}`}
+      style={below ? undefined : { top }}
+    >
+      <p
+        className={`absolute flex -translate-x-1/2 items-center gap-2 whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.25em] text-ink-300/80 ${
+          below ? 'bottom-0' : 'top-0'
+        }`}
+        style={{ left: landscape ? '71%' : '50%' }}
+      >
+        <svg width="16" height="10" viewBox="0 0 16 10" fill="none" stroke="currentColor" strokeWidth="1.75">
+          <path d="M4 1L1 5l3 4M12 1l3 4-3 4M1 5h14" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        Drag to spin
+      </p>
+    </div>
+  );
+}
+
 /**
  * The cover of each book — the shared hero for every marketing page. Deep
- * tone (the signal river flows behind it), an art-directed masked-line
- * headline beside the 3D mark, the italic narration line, sub copy, and a
- * slot for page-specific controls (Pricing's billing toggle, Home's CTAs).
- * As the reader scrolls on, the headline lifts away faster than the page
- * and the mark sinks into the pit (see Hero3DMark's `sinkWith`).
+ * tone (the Signal World shows through), an art-directed per-character
+ * headline beside the hero set piece, the italic narration line, sub copy,
+ * and a slot for page-specific controls (Pricing's billing toggle, Home's
+ * CTAs). As the reader scrolls on, the headline lifts away faster than the
+ * page.
+ *
+ * `station` / `side`: which Signal World set piece this chapter hosts and
+ * which side of the frame it sits on (see world/README.md). The CSS
+ * Hero3DMark holds the stage until the world has drawn its first frame
+ * (`ready`), then cross-fades out as the canvas fades in; it stays as the
+ * fallback whenever the world is off (reduced motion, no WebGL2, load
+ * failure). For the `mark` station the drag-to-spin area covers where the
+ * engine actually draws the hero: the right-hand column on wide landscape
+ * screens, the whole cover elsewhere (the mark sits behind the text there).
  *
  * `size`: 'lg' for Home's full-height cover, 'md' for sub-pages.
  */
-export function StoryCover({ eyebrow, lines, narration, sub, children, size = 'md', mark = true }) {
+export function StoryCover({
+  eyebrow,
+  lines,
+  narration,
+  sub,
+  children,
+  size = 'md',
+  mark = true,
+  station = 'mark',
+  side = 1,
+}) {
   const reduceMotion = useReducedMotion();
+  const { ready: worldReady } = useWorldState();
+  const landscape = useMediaQuery(LANDSCAPE_QUERY);
+  const wide = useMediaQuery(WIDE_QUERY);
   const sectionRef = useRef(null);
   const headlineRef = useRef(null);
+  // null → under the mark (sticky); a number → above it, at that offset.
+  const [hintTop, setHintTop] = useState(null);
+
+  const grab = worldReady && mark && station === 'mark';
 
   useLayoutEffect(() => {
     if (reduceMotion) return undefined;
@@ -39,14 +136,40 @@ export function StoryCover({ eyebrow, lines, narration, sub, children, size = 'm
     return () => ctx.revert();
   }, [reduceMotion]);
 
+  // Room for the hint under the mark? The mark reaches ~76% of the viewport
+  // height at load; a cover that ends above ~92% puts the hint over the top.
+  useLayoutEffect(() => {
+    const section = sectionRef.current;
+    if (!grab || !section) return undefined;
+    const measure = () => {
+      const top = documentTop(section);
+      const vh = window.innerHeight;
+      setHintTop(top + section.offsetHeight >= vh * 0.92 ? null : Math.max(8, Math.round(vh * 0.2 - top)));
+    };
+    measure();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    ro?.observe(section);
+    window.addEventListener('resize', measure);
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [grab]);
+
   const tall = size === 'lg';
+  const stageSize = STAGE_SIZE[tall ? 'lg' : 'md'];
+  const sectionGrab = grab && !wide;
 
   return (
     <section
       ref={sectionRef}
       data-chapter
       data-chapter-title="Cover"
-      className="relative overflow-hidden text-white"
+      data-station={station}
+      data-station-side={side}
+      data-world-grab={sectionGrab ? '' : undefined}
+      style={sectionGrab ? { touchAction: 'pan-y pinch-zoom' } : undefined}
+      className="story-cover-clip relative text-white"
     >
       <div
         className={`relative mx-auto grid max-w-[1400px] items-center gap-10 px-6 lg:grid-cols-[1.25fr_1fr] ${
@@ -65,7 +188,7 @@ export function StoryCover({ eyebrow, lines, narration, sub, children, size = 'm
             lines={lines}
             className={`mt-8 font-extrabold uppercase tracking-tight ${
               tall
-                ? 'text-[clamp(2.8rem,8vw,7.6rem)] leading-[0.92]'
+                ? 'text-[clamp(2.8rem,8vw,7.6rem)] leading-[0.92] lg:text-[5.2vw]'
                 : 'text-[clamp(2.4rem,6.4vw,5.6rem)] leading-[0.95]'
             }`}
           />
@@ -87,16 +210,35 @@ export function StoryCover({ eyebrow, lines, narration, sub, children, size = 'm
         </div>
 
         {mark && (
-          <FadeIn
-            as="div"
-            whileInView={false}
-            delay={0.35}
-            className="flex justify-center lg:justify-end"
-          >
-            <Hero3DMark sinkWith={sectionRef} size={tall ? 'lg' : 'md'} />
+          <FadeIn as="div" whileInView={false} delay={0.35} className="flex justify-center lg:justify-end">
+            <div aria-hidden={worldReady ? 'true' : undefined} className={`relative ${stageSize}`}>
+              <AnimatePresence initial={false}>
+                {!worldReady && (
+                  <motion.div
+                    key="css-mark"
+                    className="absolute inset-0"
+                    exit={{ opacity: 0, transition: { duration: 0.7, ease: EASE } }}
+                  >
+                    <Hero3DMark sinkWith={sectionRef} size={tall ? 'lg' : 'md'} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </FadeIn>
         )}
       </div>
+
+      {/* Wide screens: the drag area is the right-hand column, full height —
+          wherever in the cover the engine draws the mark, it's under here. */}
+      {grab && wide && (
+        <div
+          aria-hidden="true"
+          data-world-grab
+          className="absolute inset-y-0 right-0 w-[45%] cursor-grab select-none active:cursor-grabbing"
+          style={{ touchAction: 'pan-y pinch-zoom' }}
+        />
+      )}
+      {grab && <DragHint top={hintTop} landscape={landscape} />}
     </section>
   );
 }

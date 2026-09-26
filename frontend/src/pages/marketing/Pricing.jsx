@@ -70,6 +70,7 @@ export function Pricing() {
   return (
     <div className="min-h-screen">
       <StoryCover
+        station="blocks"
         eyebrow="Pricing"
         narration="Pay for the platform in seat blocks. Spend credits only when the data is real."
         sub="Paid plans come in seat blocks — each block bundles paid seats plus bonus free seats, and every teammate earns their own monthly credits. Buy as many blocks as your team needs."
@@ -100,77 +101,93 @@ export function Pricing() {
         </div>
       </StoryCover>
 
-      <section data-chapter data-chapter-title="Plans" className="story-surface relative text-text">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-0 h-64"
-          style={{ background: 'linear-gradient(180deg, rgba(231,179,255,0.2), transparent)' }}
-        />
-        <div className="relative mx-auto max-w-[1240px] px-6 py-20 sm:py-24">
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-primary">Chapter 01 — The plans</p>
-          <Stagger as="div" className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4" staggerDelay={0.1}>
-            {PLANS.map((plan) => {
-              const displayPrice = plan.key === 'FREE' ? 0 : planTotalForInterval(plan.key, billingIntervalChoice);
-              const unit =
-                plan.block && `block/${cadence} · ${plan.block.paidSeats} paid + ${plan.block.freeSeats} free seats`;
+      <section
+        data-chapter
+        data-chapter-title="Plans"
+        data-station="drift"
+        data-station-side="0"
+        className="relative py-6 sm:py-10"
+      >
+        <div className="mx-auto max-w-[1288px] px-3 sm:px-6">
+          <div className="story-glass relative overflow-hidden text-text">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 top-0 h-64"
+              style={{ background: 'linear-gradient(180deg, rgba(231,179,255,0.2), transparent)' }}
+            />
+            <div className="relative mx-auto max-w-[1240px] px-6 py-16 sm:py-20">
+              <p className="story-eyebrow text-xs font-bold uppercase tracking-[0.22em]">Chapter 01 — The plans</p>
+              <Stagger as="div" className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4" staggerDelay={0.1}>
+                {PLANS.map((plan) => {
+                  const displayPrice = plan.key === 'FREE' ? 0 : planTotalForInterval(plan.key, billingIntervalChoice);
+                  const unit =
+                    plan.block && `block/${cadence} · ${plan.block.paidSeats} paid + ${plan.block.freeSeats} free seats`;
 
-              return (
-                <StaggerItem key={plan.key} as="div">
-                  <TiltCard featured={plan.popular} className="flex h-full flex-col p-7">
-                    <div className="flex h-full flex-col">
-                      {plan.popular && (
-                        <span className="mb-3 inline-flex w-fit items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-primary">
-                          Most popular
-                        </span>
-                      )}
-                      <h3 className="text-lg font-bold text-text">{plan.name}</h3>
-                      <p className="mt-1 text-sm text-text-muted">{plan.tagline}</p>
+                  return (
+                    <StaggerItem key={plan.key} as="div">
+                      <TiltCard featured={plan.popular} className="flex h-full flex-col p-7">
+                        <div className="flex h-full flex-col">
+                          {plan.popular && (
+                            <span className="mb-3 inline-flex w-fit items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-primary">
+                              Most popular
+                            </span>
+                          )}
+                          <h3 className="text-lg font-bold text-text">{plan.name}</h3>
+                          <p className="mt-1 text-sm text-text-muted">{plan.tagline}</p>
 
-                      <div className="relative mt-6 flex items-baseline gap-1">
-                        <AnimatedPrice value={formatUsd(displayPrice)} className="text-4xl font-extrabold tracking-tight text-text" />
-                        {unit && <span className="text-sm text-text-muted">/{unit}</span>}
-                      </div>
-                      {!plan.block && <div className="mt-1 text-sm text-text-muted">forever</div>}
+                          <div className="relative mt-6 flex items-baseline gap-1">
+                            <AnimatedPrice value={formatUsd(displayPrice)} className="text-4xl font-extrabold tracking-tight text-text" />
+                            {unit && <span className="text-sm text-text-muted">/{unit}</span>}
+                          </div>
+                          {!plan.block && <div className="mt-1 text-sm text-text-muted">forever</div>}
 
-                      <div className="mt-3 inline-flex w-fit rounded-full bg-surface px-3 py-1 text-xs font-bold text-text-muted">
-                        {plan.credits}
-                      </div>
+                          <div className="mt-3 inline-flex w-fit rounded-full bg-surface px-3 py-1 text-xs font-bold text-text-muted">
+                            {plan.credits}
+                          </div>
 
-                      <Link
-                        to={plan.key === 'ORGANIZATION' ? '/contact' : '/login?mode=register'}
-                        className={`mt-7 rounded-md px-4 py-2.5 text-center text-sm font-bold transition-transform duration-150 ease-brand hover:-translate-y-px ${
-                          plan.popular
-                            ? 'bg-gradient-action text-white shadow-[0_10px_24px_rgba(148,0,222,0.24)]'
-                            : 'border border-border bg-surface-elevated text-text'
-                        }`}
-                      >
-                        {plan.key === 'ORGANIZATION' ? 'Talk to sales' : 'Start free'}
-                      </Link>
+                          <Link
+                            to={plan.key === 'ORGANIZATION' ? '/contact' : '/login?mode=register'}
+                            className={`mt-7 rounded-md px-4 py-2.5 text-center text-sm font-bold transition-transform duration-150 ease-brand hover:-translate-y-px ${
+                              plan.popular
+                                ? 'bg-gradient-action text-white shadow-[0_10px_24px_rgba(148,0,222,0.24)]'
+                                : 'border border-border bg-surface-elevated text-text'
+                            }`}
+                          >
+                            {plan.key === 'ORGANIZATION' ? 'Talk to sales' : 'Start free'}
+                          </Link>
 
-                      <ul className="mt-7 flex flex-1 flex-col gap-3 text-sm text-text-muted">
-                        {plan.features.map((f) => (
-                          <li key={f} className="flex items-start gap-2">
-                            <CheckIcon />
-                            <span>{f}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </TiltCard>
-                </StaggerItem>
-              );
-            })}
-          </Stagger>
-          <p className="mt-8 text-center text-xs text-text-muted">
-            Prices are per seat block — buy as many blocks as your team needs, with no seat limit. Free
-            seats never cost anything and still earn 1,500 credits a month. Every newly covered teammate
-            gets a one-time 1,500-credit welcome gift. Quarterly and annual billing come with a 10% and
-            20% discount.
-          </p>
+                          <ul className="mt-7 flex flex-1 flex-col gap-3 text-sm text-text-muted">
+                            {plan.features.map((f) => (
+                              <li key={f} className="flex items-start gap-2">
+                                <CheckIcon />
+                                <span>{f}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </TiltCard>
+                    </StaggerItem>
+                  );
+                })}
+              </Stagger>
+              <p className="mt-8 text-center text-xs text-text-muted">
+                Prices are per seat block — buy as many blocks as your team needs, with no seat limit. Free
+                seats never cost anything and still earn 1,500 credits a month. Every newly covered teammate
+                gets a one-time 1,500-credit welcome gift. Quarterly and annual billing come with a 10% and
+                20% discount.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section data-chapter data-chapter-title="How billing works" className="relative text-white">
+      <section
+        data-chapter
+        data-chapter-title="How billing works"
+        data-station="ledger"
+        data-station-side="1"
+        className="relative text-white"
+      >
         <div className="mx-auto max-w-[1200px] px-6 py-28 sm:py-36">
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-mauve-magic">Chapter 02 — How billing actually works</p>
           <ScrubHeadline
@@ -194,29 +211,39 @@ export function Pricing() {
         </div>
       </section>
 
-      <section data-chapter data-chapter-title="FAQ" className="story-surface relative text-text">
-        <div className="mx-auto max-w-[900px] px-6 py-24 sm:py-28">
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-primary">Chapter 03 — Questions</p>
-          <ScrubHeadline
-            as="h2"
-            className="mt-6 text-[clamp(1.9rem,4.6vw,4rem)] font-extrabold uppercase leading-[1.05] tracking-tight text-text"
-          >
-            Frequently asked questions
-          </ScrubHeadline>
-          <Stagger as="div" className="mt-12 flex flex-col gap-5" staggerDelay={0.08}>
-            {FAQS.map((item) => (
-              <StaggerItem key={item.q} as="div">
-                <TiltCard tilt={3} className="p-6">
-                  <h3 className="text-sm font-bold text-text">{item.q}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-text-muted">{item.a}</p>
-                </TiltCard>
-              </StaggerItem>
-            ))}
-          </Stagger>
+      <section
+        data-chapter
+        data-chapter-title="FAQ"
+        data-station="drift"
+        data-station-side="0"
+        className="relative py-6 sm:py-10"
+      >
+        <div className="mx-auto max-w-[948px] px-3 sm:px-6">
+          <div className="story-glass relative overflow-hidden text-text">
+            <div className="mx-auto max-w-[900px] px-6 py-20 sm:py-24">
+              <p className="story-eyebrow text-xs font-bold uppercase tracking-[0.22em]">Chapter 03 — Questions</p>
+              <ScrubHeadline
+                as="h2"
+                className="mt-6 text-[clamp(1.9rem,4.6vw,4rem)] font-extrabold uppercase leading-[1.05] tracking-tight text-text"
+              >
+                Frequently asked questions
+              </ScrubHeadline>
+              <Stagger as="div" className="mt-12 flex flex-col gap-5" staggerDelay={0.08}>
+                {FAQS.map((item) => (
+                  <StaggerItem key={item.q} as="div">
+                    <TiltCard tilt={3} className="p-6">
+                      <h3 className="text-sm font-bold text-text">{item.q}</h3>
+                      <p className="mt-2 text-sm leading-relaxed text-text-muted">{item.a}</p>
+                    </TiltCard>
+                  </StaggerItem>
+                ))}
+              </Stagger>
+            </div>
+          </div>
         </div>
       </section>
 
-      <GiantCTA title="Start free. Upgrade when it pays for itself." />
+      <GiantCTA station="mark" title="Start free. Upgrade when it pays for itself." />
 
       <MarketingFooter />
     </div>

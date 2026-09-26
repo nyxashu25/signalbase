@@ -17,6 +17,7 @@ const MODULES = [
     points: ['Faceted people & company search', 'Masked results until reveal', 'Facet counts update live'],
     plate: <AnimatedSearchMockup />,
     align: 'left',
+    station: 'lens',
   },
   {
     n: '02',
@@ -27,6 +28,7 @@ const MODULES = [
     points: ["Verified before you're charged", 'Atomic reserve-then-commit — no double charges', 'Shared across the workspace, not per-seat'],
     plate: <AnimatedRevealMockup />,
     align: 'right',
+    station: 'reveal',
   },
   {
     n: '03',
@@ -37,6 +39,7 @@ const MODULES = [
     points: ['Email + wait steps in any order', 'Enroll straight from a list', 'Automatic suppression-list enforcement'],
     plate: <AnimatedSequenceMockup />,
     align: 'left',
+    station: 'sequence',
   },
   {
     n: '04',
@@ -47,6 +50,7 @@ const MODULES = [
     points: ['Full transaction history', 'Reserve → commit/refund accounting', 'Buy more credits any time'],
     plate: <AnimatedCreditLedgerMockup />,
     align: 'right',
+    station: 'ledger',
   },
 ];
 
@@ -54,6 +58,7 @@ export function Product() {
   return (
     <div className="min-h-screen">
       <StoryCover
+        station="mark"
         eyebrow="Product"
         narration="Four chapters, one workspace, one ledger underneath it all."
         sub="No bundled modules you'll never touch. Search, reveal, sequence, and pay for it all on one credit ledger."
@@ -72,7 +77,7 @@ export function Product() {
         <StoryChapter key={mod.n} {...mod} tone="deep" />
       ))}
 
-      <GiantCTA title="See it on your own data." />
+      <GiantCTA station="tunnel" title="See it on your own data." />
 
       <MarketingFooter />
     </div>

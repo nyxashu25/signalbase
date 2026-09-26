@@ -2,14 +2,21 @@ import { FadeIn } from './motion.jsx';
 
 /**
  * A bound document in the storybook: a short deep-toned cover strip with
- * the title, then the readable vellum page (story-surface) holding the
- * sections. Legal text stays a plain, quiet document — the 3D theatre is
- * for the story pages, not for terms people need to actually read.
+ * the title, then the readable page — a floating glass card over the Signal
+ * World's quiet drift — holding the sections. Legal text stays a plain,
+ * quiet document — the 3D theatre is for the story pages, not for terms
+ * people need to actually read.
  */
 export function LegalDoc({ title, updated, children }) {
   return (
     <>
-      <section data-chapter data-chapter-title={title} className="relative text-white">
+      <section
+        data-chapter
+        data-chapter-title={title}
+        data-station="drift"
+        data-station-side="0"
+        className="relative text-white"
+      >
         <div className="mx-auto max-w-[900px] px-6 pb-14 pt-20 sm:pt-24">
           <FadeIn as="p" whileInView={false} className="text-xs font-bold uppercase tracking-[0.22em] text-mauve-magic">
             Document
@@ -23,18 +30,20 @@ export function LegalDoc({ title, updated, children }) {
         </div>
       </section>
 
-      <section className="story-surface relative text-text">
-        <div className="mx-auto max-w-[900px] px-6 py-16 sm:py-20">
-          <p className="rounded-md border border-border bg-surface px-4 py-3 text-xs leading-relaxed text-text-muted">
-            This describes how DataPit actually handles data today, in plain language, and we keep
-            it current as the product changes. It hasn't been reviewed by outside counsel, so if you
-            need a formal legal review for your own compliance purposes,{' '}
-            <a href="/contact" className="font-medium text-primary hover:underline">
-              contact us
-            </a>{' '}
-            and we'll work with you directly.
-          </p>
-          <div className="mt-12 flex flex-col gap-12">{children}</div>
+      <section className="relative pb-16 text-text sm:pb-24">
+        <div className="mx-auto max-w-[948px] px-3 sm:px-6">
+          <div className="story-glass px-6 py-12 sm:px-10 sm:py-16">
+            <p className="rounded-md border border-border bg-surface px-4 py-3 text-xs leading-relaxed text-text-muted">
+              This describes how DataPit actually handles data today, in plain language, and we keep
+              it current as the product changes. It hasn't been reviewed by outside counsel, so if you
+              need a formal legal review for your own compliance purposes,{' '}
+              <a href="/contact" className="font-medium text-primary hover:underline">
+                contact us
+              </a>{' '}
+              and we'll work with you directly.
+            </p>
+            <div className="mt-12 flex flex-col gap-12">{children}</div>
+          </div>
         </div>
       </section>
     </>

@@ -48,6 +48,7 @@ export function Solutions() {
   return (
     <div className="min-h-screen">
       <StoryCover
+        station="crystals"
         eyebrow="Solutions"
         narration="Six readers, one book. Each opens it to a different page."
         sub="The same workspace, the same credit ledger — just a different reason to open it every morning."
@@ -62,32 +63,42 @@ export function Solutions() {
         ]}
       />
 
-      <section data-chapter data-chapter-title="Roles" className="story-surface relative text-text">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-0 h-64"
-          style={{ background: 'linear-gradient(180deg, rgba(231,179,255,0.2), transparent)' }}
-        />
-        <div className="relative mx-auto max-w-[1200px] px-6 py-24 sm:py-32">
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-primary">Chapter 01 — Who it's for</p>
-          <Stagger as="div" className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {ROLES.map((r) => (
-              <StaggerItem key={r.title} as="div">
-                <TiltCard className="h-full p-6">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-md bg-gradient-action text-white shadow-[0_8px_20px_rgba(148,0,222,0.35)]">
-                    <r.icon />
-                  </div>
-                  <h3 className="mt-4 text-base font-bold text-text">{r.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-text-muted">{r.desc}</p>
-                  <RoleAccent {...r.accent} />
-                </TiltCard>
-              </StaggerItem>
-            ))}
-          </Stagger>
+      <section
+        data-chapter
+        data-chapter-title="Roles"
+        data-station="city"
+        data-station-side="0"
+        className="relative py-6 sm:py-10"
+      >
+        <div className="mx-auto max-w-[1248px] px-3 sm:px-6">
+          <div className="story-glass relative overflow-hidden text-text">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 top-0 h-64"
+              style={{ background: 'linear-gradient(180deg, rgba(231,179,255,0.2), transparent)' }}
+            />
+            <div className="relative mx-auto max-w-[1200px] px-6 py-20 sm:py-28">
+              <p className="story-eyebrow text-xs font-bold uppercase tracking-[0.22em]">Chapter 01 — Who it's for</p>
+              <Stagger as="div" className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {ROLES.map((r) => (
+                  <StaggerItem key={r.title} as="div">
+                    <TiltCard className="h-full p-6">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-md bg-gradient-action text-white shadow-[0_8px_20px_rgba(148,0,222,0.35)]">
+                        <r.icon />
+                      </div>
+                      <h3 className="mt-4 text-base font-bold text-text">{r.title}</h3>
+                      <p className="mt-2 text-sm leading-relaxed text-text-muted">{r.desc}</p>
+                      <RoleAccent {...r.accent} />
+                    </TiltCard>
+                  </StaggerItem>
+                ))}
+              </Stagger>
+            </div>
+          </div>
         </div>
       </section>
 
-      <GiantCTA title="Find out what it looks like for your role." />
+      <GiantCTA station="mark" title="Find out what it looks like for your role." />
 
       <MarketingFooter />
     </div>

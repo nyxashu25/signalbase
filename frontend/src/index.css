@@ -383,25 +383,88 @@ body {
    (components/marketing/Story*.jsx, SignalRiver.jsx, Hero3DMark.jsx).
 
    The whole public site is one deep-indigo canvas ("the pit", per
-   DESIGN_LANGUAGE.md's brand idea) with a flowing signal river drawn behind
-   the content. Sections declare a tone: `deep` sections are transparent so
-   the river shows through; `surface` sections are the readable "vellum"
-   pages — opaque white in light mode, and slightly translucent in dark mode
-   so the river stays continuous through the whole book.
+   DESIGN_LANGUAGE.md's brand idea): the WebGL Signal World flown through
+   behind the content (components/marketing/SignalWorld.jsx + world/), over
+   the CSS ground and 2D signal river that stand in for it when WebGL is
+   off. Sections declare a tone: `deep` sections are transparent so the
+   world shows through; readable pages are floating `story-glass` cards —
+   near-opaque in light mode, a smoked translucent pane in dark mode — inset
+   from the viewport edges so the world stays visible around them.
+   `story-surface` is the older full-bleed vellum page, kept for reuse.
+
+   The dark pane stays at ~0.78 so that even with a bloomed set piece right
+   behind it (the brightest end of the ramp, or white), muted body copy
+   keeps WCAG AA contrast. Eyebrows inside glass use `story-eyebrow`:
+   Royal Violet on the light pane, Mauve Magic on the dark one (Purple X11
+   falls to ~2–3:1 over a lit backdrop).
    ------------------------------------------------------------------------- */
 :root {
   --story-surface-alpha: 1;
+  --story-glass-alpha: 0.9;
+  --story-eyebrow: var(--dp-primary);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     --story-surface-alpha: 0.86;
+    --story-glass-alpha: 0.78;
+    --story-eyebrow: var(--dp-accent);
   }
 }
 [data-theme='dark'] {
   --story-surface-alpha: 0.86;
+  --story-glass-alpha: 0.78;
+  --story-eyebrow: var(--dp-accent);
+}
+.story-eyebrow {
+  color: var(--story-eyebrow);
 }
 .story-surface {
   background: rgb(var(--dp-bg-rgb) / var(--story-surface-alpha));
+}
+.story-glass {
+  border-radius: 28px;
+  border: 1px solid rgb(var(--dp-border-rgb));
+  background: rgb(var(--dp-bg-rgb) / var(--story-glass-alpha));
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  box-shadow: 0 30px 80px rgba(17, 0, 25, 0.45);
+}
+/* Without a backdrop blur, a translucent pane over a moving 3D scene is
+   hard to read — go (nearly) solid instead. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .story-glass {
+    background: rgb(var(--dp-bg-rgb) / 0.96);
+  }
+}
+/* The low world tier (SignalWorld stamps it on <html>) has the tightest GPU
+   budget: re-blurring near-viewport-sized panes over a canvas that repaints
+   every frame is the cost to cut, so the panes go near-solid instead. */
+html[data-world-quality='low'] .story-glass {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: rgb(var(--dp-bg-rgb) / 0.94);
+}
+
+/* Covers clip their overflow without becoming a scroll container, so the
+   sticky "Drag to spin" hint inside them still sticks to the viewport.
+   Browsers without overflow: clip keep the hidden fallback. */
+.story-cover-clip {
+  overflow: hidden;
+  overflow: clip;
+}
+
+/* The cover headline's character split: a word never breaks between its
+   characters (every character is its own inline-block). */
+.story-char-word {
+  white-space: nowrap;
+}
+
+/* Hero drag-to-spin (SignalWorld routes drags on [data-world-grab] into the
+   3D mark): hold the grabbing hand for the whole drag, wherever it goes. */
+html[data-world-grabbing],
+html[data-world-grabbing] * {
+  cursor: grabbing !important;
+  user-select: none;
 }
 
 /* Extruded chapter numerals: a hollow front face (transparent fill + violet
@@ -496,6 +559,20 @@ body {
 .story-pulse {
   animation: story-pulse 4s ease-in-out infinite;
 }
+/* IntroOverlay: the mark and narration settle in on the first frame. */
+@keyframes story-intro-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.story-intro-in {
+  animation: story-intro-in 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
 .preserve-3d {
   transform-style: preserve-3d;
 }
@@ -508,7 +585,8 @@ body {
   .story-orbit,
   .story-orbit-b,
   .story-float,
-  .story-pulse {
+  .story-pulse,
+  .story-intro-in {
     animation: none !important;
   }
 }

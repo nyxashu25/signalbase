@@ -23,6 +23,7 @@ export function About() {
   return (
     <div className="min-h-screen">
       <StoryCover
+        station="ledger"
         eyebrow="About DataPit"
         narration="This book started as a complaint. Then we built the ledger first."
         sub="DataPit started from a simple complaint: most sales intelligence tools charge you before they've actually found anything. We built the credit ledger first, and the search product around it — so the money only moves when the data does."
@@ -37,7 +38,13 @@ export function About() {
         ]}
       />
 
-      <section data-chapter data-chapter-title="What we believe" className="relative text-white">
+      <section
+        data-chapter
+        data-chapter-title="What we believe"
+        data-station="crystals"
+        data-station-side="1"
+        className="relative text-white"
+      >
         <div className="mx-auto max-w-[1100px] px-6 py-28 sm:py-36">
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-mauve-magic">Chapter 01 — What we actually believe</p>
           <Stagger as="div" className="mt-12 flex flex-col" staggerDelay={0.12}>
@@ -60,29 +67,39 @@ export function About() {
         </div>
       </section>
 
-      <section data-chapter data-chapter-title="Where we're headed" className="story-surface relative text-text">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-0 h-64"
-          style={{ background: 'linear-gradient(180deg, rgba(231,179,255,0.2), transparent)' }}
-        />
-        <div className="relative mx-auto max-w-[1100px] px-6 py-28 sm:py-36">
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-primary">Chapter 02 — Where we're headed</p>
-          <ScrubHeadline
-            as="h2"
-            className="mt-6 max-w-[900px] text-[clamp(1.9rem,4.6vw,4rem)] font-extrabold uppercase leading-[1.05] tracking-tight text-text"
-          >
-            The core is live today. The rest ships in the order our users ask for it.
-          </ScrubHeadline>
-          <FadeIn as="p" className="mt-8 max-w-[640px] text-base leading-relaxed text-text-muted">
-            DataPit is early. Search, verified reveal, sequences, and a credit ledger you can actually
-            audit are live now. CRM sync, a browser extension, and deeper intent data are next, in that
-            order, because that's the order our own users have asked for them.
-          </FadeIn>
+      <section
+        data-chapter
+        data-chapter-title="Where we're headed"
+        data-station="tunnel"
+        data-station-side="0"
+        className="relative py-6 sm:py-10"
+      >
+        <div className="mx-auto max-w-[1148px] px-3 sm:px-6">
+          <div className="story-glass relative overflow-hidden text-text">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 top-0 h-64"
+              style={{ background: 'linear-gradient(180deg, rgba(231,179,255,0.2), transparent)' }}
+            />
+            <div className="relative mx-auto max-w-[1100px] px-6 py-24 sm:py-32">
+              <p className="story-eyebrow text-xs font-bold uppercase tracking-[0.22em]">Chapter 02 — Where we're headed</p>
+              <ScrubHeadline
+                as="h2"
+                className="mt-6 max-w-[900px] text-[clamp(1.9rem,4.6vw,4rem)] font-extrabold uppercase leading-[1.05] tracking-tight text-text"
+              >
+                The core is live today. The rest ships in the order our users ask for it.
+              </ScrubHeadline>
+              <FadeIn as="p" className="mt-8 max-w-[640px] text-base leading-relaxed text-text-muted">
+                DataPit is early. Search, verified reveal, sequences, and a credit ledger you can actually
+                audit are live now. CRM sync, a browser extension, and deeper intent data are next, in that
+                order, because that's the order our own users have asked for them.
+              </FadeIn>
+            </div>
+          </div>
         </div>
       </section>
 
-      <GiantCTA title="Come see it for yourself." />
+      <GiantCTA station="mark" title="Come see it for yourself." />
 
       <MarketingFooter />
     </div>

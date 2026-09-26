@@ -21,6 +21,7 @@ export function Contact() {
   return (
     <div className="min-h-screen">
       <StoryCover
+        station="mark"
         eyebrow="Contact"
         narration="Write in the margins. We read every note."
         sub="Questions about a plan, a bulk credit package, or whether DataPit fits your workflow — tell us and we'll get back to you."
@@ -31,7 +32,13 @@ export function Contact() {
         ]}
       />
 
-      <section data-chapter data-chapter-title="Your note" className="relative text-white">
+      <section
+        data-chapter
+        data-chapter-title="Your note"
+        data-station="drift"
+        data-station-side="0"
+        className="relative text-white"
+      >
         <div className="mx-auto max-w-[900px] px-6 pb-28 pt-6 sm:pb-36">
           <FadeIn as="div" whileInView={false} delay={0.3} className="mx-auto max-w-[600px]">
             <Plate3D tilt={4}>

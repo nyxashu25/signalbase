@@ -13,6 +13,7 @@ import { StatCounter } from '../../components/marketing/StatCounter.jsx';
 import { ScrollSteps } from '../../components/marketing/ScrollSteps.jsx';
 import { Marquee } from '../../components/marketing/Marquee.jsx';
 import { GiantCTA } from '../../components/marketing/GiantCTA.jsx';
+import { Magnetic } from '../../components/marketing/Magnetic.jsx';
 import { FadeIn, Stagger, StaggerItem } from '../../components/marketing/motion.jsx';
 
 const MARQUEE_ITEMS = [
@@ -39,6 +40,7 @@ const CHAPTERS = [
     ],
     plate: <AnimatedRevealMockup />,
     align: 'left',
+    station: 'reveal',
   },
   {
     n: '02',
@@ -53,6 +55,7 @@ const CHAPTERS = [
     ],
     plate: <AnimatedSequenceMockup />,
     align: 'right',
+    station: 'sequence',
   },
   {
     n: '03',
@@ -67,6 +70,7 @@ const CHAPTERS = [
     ],
     plate: <AnimatedCreditLedgerMockup />,
     align: 'left',
+    station: 'ledger',
   },
 ];
 
@@ -131,18 +135,22 @@ export function Home() {
         ]}
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <Link
-            to="/login?mode=register"
-            className="rounded-md bg-gradient-action px-7 py-3.5 text-center text-sm font-bold text-white shadow-[0_14px_32px_rgba(148,0,222,0.45)] transition-transform duration-150 ease-brand hover:-translate-y-px"
-          >
-            Start free
-          </Link>
-          <Link
-            to="/pricing"
-            className="rounded-md border border-white/20 bg-white/5 px-7 py-3.5 text-center text-sm font-bold text-white backdrop-blur transition-colors duration-150 ease-brand hover:bg-white/10"
-          >
-            See pricing
-          </Link>
+          <Magnetic className="block">
+            <Link
+              to="/login?mode=register"
+              className="block rounded-md bg-gradient-action px-7 py-3.5 text-center text-sm font-bold text-white shadow-[0_14px_32px_rgba(148,0,222,0.45)] transition-transform duration-150 ease-brand hover:-translate-y-px"
+            >
+              Start free
+            </Link>
+          </Magnetic>
+          <Magnetic className="block">
+            <Link
+              to="/pricing"
+              className="block rounded-md border border-white/20 bg-white/5 px-7 py-3.5 text-center text-sm font-bold text-white backdrop-blur transition-colors duration-150 ease-brand hover:bg-white/10"
+            >
+              See pricing
+            </Link>
+          </Magnetic>
         </div>
         <div className="mt-12 flex items-center gap-4 text-[11px] font-bold uppercase tracking-[0.25em] text-ink-500">
           Turn the page
@@ -158,7 +166,13 @@ export function Home() {
       />
 
       {/* Prologue — one big scrubbed statement */}
-      <section data-chapter data-chapter-title="Prologue" className="relative text-white">
+      <section
+        data-chapter
+        data-chapter-title="Prologue"
+        data-station="tunnel"
+        data-station-side="0"
+        className="relative text-white"
+      >
         <div className="mx-auto max-w-[1200px] px-6 py-32 sm:py-44">
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-mauve-magic">Prologue — Why DataPit</p>
           <ScrubHeadline
@@ -177,7 +191,13 @@ export function Home() {
       ))}
 
       {/* Interlude — the live walkthrough */}
-      <section data-chapter data-chapter-title="Walkthrough" className="relative text-white">
+      <section
+        data-chapter
+        data-chapter-title="Walkthrough"
+        data-station="drift"
+        data-station-side="0"
+        className="relative text-white"
+      >
         <FadeIn as="div" className="mx-auto max-w-[1000px] px-6 py-24 sm:py-32">
           <p className="text-center text-xs font-bold uppercase tracking-[0.22em] text-mauve-magic">
             Interlude — Live product walkthrough
@@ -191,49 +211,65 @@ export function Home() {
         </FadeIn>
       </section>
 
-      {/* Act III begins — the world lightens toward the surface */}
-      <section data-chapter data-chapter-title="And the rest" className="story-surface relative overflow-hidden text-text">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-0 h-64"
-          style={{ background: 'linear-gradient(180deg, rgba(231,179,255,0.22), transparent)' }}
-        />
-        <div className="relative mx-auto max-w-[1200px] px-6 py-28 sm:py-36">
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:gap-10">
-            <span aria-hidden="true" className="story-numeral select-none text-[clamp(6rem,16vw,13rem)] font-extrabold leading-[0.8] tracking-tight">
-              04
-            </span>
-            <div className="pb-2">
-              <p className="text-xs font-bold uppercase tracking-[0.22em] text-primary">Chapter 04 — And the rest</p>
-              <p className="story-narration mt-3 max-w-[440px] text-lg text-text-muted">
-                Surfacing now: the everyday tools a go-to-market team leans on.
-              </p>
+      {/* Act III begins — a glass page floats up out of the pit */}
+      <section
+        data-chapter
+        data-chapter-title="And the rest"
+        data-station="drift"
+        data-station-side="0"
+        className="relative py-6 sm:py-10"
+      >
+        <div className="mx-auto max-w-[1248px] px-3 sm:px-6">
+          <div className="story-glass relative overflow-hidden text-text">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 top-0 h-64"
+              style={{ background: 'linear-gradient(180deg, rgba(231,179,255,0.22), transparent)' }}
+            />
+            <div className="relative mx-auto max-w-[1200px] px-6 py-24 sm:py-32">
+              <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:gap-10">
+                <span aria-hidden="true" className="story-numeral select-none text-[clamp(6rem,16vw,13rem)] font-extrabold leading-[0.8] tracking-tight">
+                  04
+                </span>
+                <div className="pb-2">
+                  <p className="story-eyebrow text-xs font-bold uppercase tracking-[0.22em]">Chapter 04 — And the rest</p>
+                  <p className="story-narration mt-3 max-w-[440px] text-lg text-text-muted">
+                    Surfacing now: the everyday tools a go-to-market team leans on.
+                  </p>
+                </div>
+              </div>
+              <ScrubHeadline
+                as="h2"
+                className="mt-10 max-w-[820px] text-[clamp(1.9rem,4.6vw,4rem)] font-extrabold uppercase leading-[1.05] tracking-tight text-text"
+              >
+                Everything else a go-to-market team needs
+              </ScrubHeadline>
+              <Stagger as="div" className="mt-14 grid grid-cols-1 gap-6 sm:grid-cols-3">
+                {SECONDARY_FEATURES.map((f) => (
+                  <StaggerItem key={f.title} as="div">
+                    <TiltCard className="h-full p-6">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-md bg-gradient-action text-white shadow-[0_8px_20px_rgba(148,0,222,0.35)]">
+                        <f.icon />
+                      </div>
+                      <h3 className="mt-4 text-base font-bold text-text">{f.title}</h3>
+                      <p className="mt-2 text-sm leading-relaxed text-text-muted">{f.desc}</p>
+                    </TiltCard>
+                  </StaggerItem>
+                ))}
+              </Stagger>
             </div>
           </div>
-          <ScrubHeadline
-            as="h2"
-            className="mt-10 max-w-[820px] text-[clamp(1.9rem,4.6vw,4rem)] font-extrabold uppercase leading-[1.05] tracking-tight text-text"
-          >
-            Everything else a go-to-market team needs
-          </ScrubHeadline>
-          <Stagger as="div" className="mt-14 grid grid-cols-1 gap-6 sm:grid-cols-3">
-            {SECONDARY_FEATURES.map((f) => (
-              <StaggerItem key={f.title} as="div">
-                <TiltCard className="h-full p-6">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-md bg-gradient-action text-white shadow-[0_8px_20px_rgba(148,0,222,0.35)]">
-                    <f.icon />
-                  </div>
-                  <h3 className="mt-4 text-base font-bold text-text">{f.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-text-muted">{f.desc}</p>
-                </TiltCard>
-              </StaggerItem>
-            ))}
-          </Stagger>
         </div>
       </section>
 
       {/* Numbers — every one true by construction, never a usage claim */}
-      <section data-chapter data-chapter-title="Numbers" className="relative text-white">
+      <section
+        data-chapter
+        data-chapter-title="Numbers"
+        data-station="city"
+        data-station-side="0"
+        className="relative text-white"
+      >
         <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-14 px-6 py-28 sm:grid-cols-3 sm:py-36">
           <div>
             <StatCounter value={2} className="block text-[clamp(3.5rem,8vw,7rem)] font-extrabold leading-none tabular-nums" />
@@ -250,9 +286,22 @@ export function Home() {
         </div>
       </section>
 
-      {/* How it works — scroll-pinned on desktop, plain grid elsewhere */}
-      <div data-chapter data-chapter-title="How it works" className="story-surface text-text">
-        <ScrollSteps eyebrow="How it works" steps={STEPS} />
+      {/* How it works — scroll-pinned on desktop, plain grid elsewhere. The
+          glass pane is a sibling behind ScrollSteps, never its ancestor:
+          backdrop-filter makes an element the containing block for
+          position: fixed descendants, which would break the GSAP pin. The
+          pane spans the whole pin range, so it stays under the pinned steps. */}
+      <div
+        data-chapter
+        data-chapter-title="How it works"
+        data-station="drift"
+        data-station-side="0"
+        className="relative text-text"
+      >
+        <div aria-hidden="true" className="story-glass pointer-events-none absolute inset-x-3 inset-y-0 mx-auto max-w-[1200px] sm:inset-x-6" />
+        <div className="relative">
+          <ScrollSteps eyebrow="How it works" steps={STEPS} />
+        </div>
       </div>
 
       <GiantCTA title="Start finding your next customers." />
