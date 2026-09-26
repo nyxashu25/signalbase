@@ -378,6 +378,141 @@ body {
   -webkit-text-stroke: 1.5px rgba(170, 0, 255, 0.45);
 }
 
+/* -------------------------------------------------------------------------
+   The Signal Book — the marketing site's storybook world
+   (components/marketing/Story*.jsx, SignalRiver.jsx, Hero3DMark.jsx).
+
+   The whole public site is one deep-indigo canvas ("the pit", per
+   DESIGN_LANGUAGE.md's brand idea) with a flowing signal river drawn behind
+   the content. Sections declare a tone: `deep` sections are transparent so
+   the river shows through; `surface` sections are the readable "vellum"
+   pages — opaque white in light mode, and slightly translucent in dark mode
+   so the river stays continuous through the whole book.
+   ------------------------------------------------------------------------- */
+:root {
+  --story-surface-alpha: 1;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --story-surface-alpha: 0.86;
+  }
+}
+[data-theme='dark'] {
+  --story-surface-alpha: 0.86;
+}
+.story-surface {
+  background: rgb(var(--dp-bg-rgb) / var(--story-surface-alpha));
+}
+
+/* Extruded chapter numerals: a hollow front face (transparent fill + violet
+   stroke) over a stack of offset shadows that reads as the block's depth.
+   text-shadow paints behind the glyph, so the extrusion shows through the
+   transparent fill. */
+.story-numeral {
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(207, 112, 255, 0.7);
+  text-shadow:
+    1px 1px 0 rgba(97, 0, 145, 0.95),
+    2px 2px 0 rgba(90, 0, 135, 0.9),
+    3px 3px 0 rgba(83, 0, 125, 0.85),
+    4px 4px 0 rgba(76, 0, 115, 0.8),
+    5px 5px 0 rgba(70, 0, 106, 0.75),
+    6px 6px 0 rgba(64, 0, 97, 0.7),
+    7px 7px 0 rgba(58, 0, 88, 0.65),
+    8px 8px 0 rgba(52, 0, 79, 0.6),
+    9px 9px 0 rgba(47, 0, 71, 0.55),
+    10px 10px 0 rgba(42, 0, 64, 0.5),
+    12px 14px 28px rgba(170, 0, 255, 0.28);
+}
+
+/* The narration voice of the book: Montserrat's italic 500 (already loaded in
+   index.html) against the bold uppercase chapter titles. */
+.story-narration {
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+/* Hero3DMark: the slow idle turn of the extruded mark, the orbit of the
+   signal nodes around it, and the float of the whole stage. All three stop
+   dead under reduced motion (the pointer parallax is skipped in JS). */
+@keyframes story-idle-turn {
+  0%,
+  100% {
+    transform: rotateY(-16deg) rotateX(6deg);
+  }
+  50% {
+    transform: rotateY(16deg) rotateX(-4deg);
+  }
+}
+@keyframes story-orbit {
+  from {
+    transform: rotateX(72deg) rotateZ(0deg);
+  }
+  to {
+    transform: rotateX(72deg) rotateZ(360deg);
+  }
+}
+@keyframes story-orbit-b {
+  from {
+    transform: rotateX(72deg) rotateY(28deg) rotateZ(0deg);
+  }
+  to {
+    transform: rotateX(72deg) rotateY(28deg) rotateZ(-360deg);
+  }
+}
+@keyframes story-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+@keyframes story-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.06);
+  }
+}
+.story-idle-turn {
+  animation: story-idle-turn 11s ease-in-out infinite;
+}
+.story-orbit {
+  animation: story-orbit 14s linear infinite;
+}
+.story-orbit-b {
+  animation: story-orbit-b 19s linear infinite;
+}
+.story-float {
+  animation: story-float 6s ease-in-out infinite;
+}
+.story-pulse {
+  animation: story-pulse 4s ease-in-out infinite;
+}
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .story-idle-turn,
+  .story-orbit,
+  .story-orbit-b,
+  .story-float,
+  .story-pulse {
+    animation: none !important;
+  }
+}
+
 /* Long-form copy inside the in-app Help page (pages/Help.jsx) — plain
    elements styled once here rather than a utility class on every <p>. */
 .help-prose p + p,

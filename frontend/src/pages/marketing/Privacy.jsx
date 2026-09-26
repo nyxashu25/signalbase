@@ -1,13 +1,11 @@
 import { useState } from 'react';
 import { usePrivacyOptOutMutation } from '../../api/privacyApi.js';
-import { MarketingNav } from '../../components/marketing/MarketingNav.jsx';
 import { MarketingFooter } from '../../components/marketing/MarketingFooter.jsx';
 import { LegalDoc, LegalSection } from '../../components/marketing/LegalDoc.jsx';
 
 export function Privacy() {
   return (
-    <div className="min-h-screen bg-bg">
-      <MarketingNav />
+    <div className="min-h-screen">
       <LegalDoc title="Privacy Policy" updated="August 19, 2026">
         <LegalSection title="1. What we collect">
           <p>

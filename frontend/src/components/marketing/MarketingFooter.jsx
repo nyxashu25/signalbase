@@ -27,14 +27,13 @@ const COLUMNS = [
 ];
 
 /**
- * Editorial dark footer: link columns up top, then the wordmark set at
- * display scale and cropped by the page edge — the signature closing move
- * of the reference sites this design borrows from. Always dark regardless
- * of theme, matching the GiantCTA band that precedes it on every page.
+ * The back cover: link columns, then the wordmark set at display scale and
+ * cropped by the page edge. Deep tone — transparent, so the signal river
+ * runs all the way to the last pixel of the book.
  */
 export function MarketingFooter() {
   return (
-    <footer className="overflow-hidden border-t border-white/10 bg-ink-950 text-white">
+    <footer className="relative overflow-hidden border-t border-white/10 text-white">
       <FadeIn as="div" className="mx-auto max-w-[1400px] px-6 pt-20">
         <div className="grid grid-cols-2 gap-10 sm:grid-cols-4">
           <div className="col-span-2 sm:col-span-1">
@@ -45,9 +44,7 @@ export function MarketingFooter() {
           </div>
           {COLUMNS.map((col) => (
             <div key={col.heading}>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-ink-500">
-                {col.heading}
-              </p>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-ink-500">{col.heading}</p>
               <ul className="mt-5 flex flex-col gap-3">
                 {col.links.map((link) => (
                   <li key={link.to}>

@@ -1,11 +1,9 @@
-import { MarketingNav } from '../../components/marketing/MarketingNav.jsx';
 import { MarketingFooter } from '../../components/marketing/MarketingFooter.jsx';
 import { LegalDoc, LegalSection } from '../../components/marketing/LegalDoc.jsx';
 
 export function Terms() {
   return (
-    <div className="min-h-screen bg-bg">
-      <MarketingNav />
+    <div className="min-h-screen">
       <LegalDoc title="Terms of Service" updated="August 19, 2026">
         <LegalSection title="1. Your account">
           <p>

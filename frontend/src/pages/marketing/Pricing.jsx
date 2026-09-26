@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { MarketingNav } from '../../components/marketing/MarketingNav.jsx';
 import { MarketingFooter } from '../../components/marketing/MarketingFooter.jsx';
 import { AnimatedCreditLedgerMockup } from '../../components/marketing/AnimatedCreditLedgerMockup.jsx';
-import { PageHero } from '../../components/marketing/PageHero.jsx';
+import { StoryCover } from '../../components/marketing/StoryCover.jsx';
+import { Plate3D } from '../../components/marketing/Plate3D.jsx';
+import { TiltCard } from '../../components/marketing/TiltCard.jsx';
 import { ScrubHeadline } from '../../components/marketing/ScrubHeadline.jsx';
 import { GiantCTA } from '../../components/marketing/GiantCTA.jsx';
-import { SmoothScroll } from '../../components/marketing/SmoothScroll.jsx';
-import { Parallax } from '../../components/marketing/Parallax.jsx';
 import { FadeIn, Stagger, StaggerItem } from '../../components/marketing/motion.jsx';
 import { PLANS, BILLING_INTERVALS, planTotalForInterval } from '../../data/plans.js';
 
@@ -69,160 +68,152 @@ export function Pricing() {
   const cadence = CADENCE_LABEL[billingIntervalChoice];
 
   return (
-    <div className="min-h-screen bg-bg">
-      <SmoothScroll />
-      <MarketingNav />
-
-      <PageHero
+    <div className="min-h-screen">
+      <StoryCover
         eyebrow="Pricing"
+        narration="Pay for the platform in seat blocks. Spend credits only when the data is real."
+        sub="Paid plans come in seat blocks — each block bundles paid seats plus bonus free seats, and every teammate earns their own monthly credits. Buy as many blocks as your team needs."
         lines={[
           { content: 'Simple, team-based' },
           {
-            content: (
-              <span className="bg-gradient-brand bg-clip-text text-transparent">pricing.</span>
-            ),
+            content: <span className="bg-gradient-brand bg-clip-text text-transparent">pricing.</span>,
             className: 'sm:ml-[6vw]',
           },
         ]}
-        sub="Paid plans come in seat blocks — each block bundles paid seats plus bonus free seats, and every teammate earns their own monthly credits. Buy as many blocks as your team needs."
       >
-        <div className="inline-flex rounded-md border border-white/15 bg-white/5 p-0.5">
+        <div className="inline-flex rounded-md border border-white/15 bg-white/5 p-0.5 backdrop-blur">
           {BILLING_INTERVALS.map((i) => (
             <button
               key={i.key}
               type="button"
               onClick={() => setBillingIntervalChoice(i.key)}
-              className={`rounded px-4 py-1.5 text-sm font-bold ${
-                billingIntervalChoice === i.key ? 'bg-gradient-action text-white' : 'text-ink-300'
+              className={`rounded px-4 py-1.5 text-sm font-bold transition-colors ${
+                billingIntervalChoice === i.key ? 'bg-gradient-action text-white' : 'text-ink-300 hover:text-white'
               }`}
             >
               {i.label}
               {i.discount > 0 && (
-                <span className="ml-1.5 text-[11px] font-medium opacity-80">
-                  −{Math.round(i.discount * 100)}%
-                </span>
+                <span className="ml-1.5 text-[11px] font-medium opacity-80">−{Math.round(i.discount * 100)}%</span>
               )}
             </button>
           ))}
         </div>
-      </PageHero>
+      </StoryCover>
 
-      <section className="mx-auto max-w-[1200px] px-6 py-20">
-        <Stagger as="div" className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4" staggerDelay={0.1}>
-          {PLANS.map((plan) => {
-            const displayPrice =
-              plan.key === 'FREE' ? 0 : planTotalForInterval(plan.key, billingIntervalChoice);
-            const unit =
-              plan.block &&
-              `block/${cadence} · ${plan.block.paidSeats} paid + ${plan.block.freeSeats} free seats`;
+      <section data-chapter data-chapter-title="Plans" className="story-surface relative text-text">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0 h-64"
+          style={{ background: 'linear-gradient(180deg, rgba(231,179,255,0.2), transparent)' }}
+        />
+        <div className="relative mx-auto max-w-[1240px] px-6 py-20 sm:py-24">
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-primary">Chapter 01 — The plans</p>
+          <Stagger as="div" className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4" staggerDelay={0.1}>
+            {PLANS.map((plan) => {
+              const displayPrice = plan.key === 'FREE' ? 0 : planTotalForInterval(plan.key, billingIntervalChoice);
+              const unit =
+                plan.block && `block/${cadence} · ${plan.block.paidSeats} paid + ${plan.block.freeSeats} free seats`;
 
-            return (
-              <StaggerItem
-                key={plan.key}
-                as="div"
-                className={`flex flex-col rounded-xl border p-7 ${
-                  plan.popular
-                    ? 'border-primary/40 bg-surface-elevated shadow-dp-md ring-2 ring-primary'
-                    : 'border-border bg-surface-elevated shadow-dp'
-                }`}
-              >
-                {plan.popular && (
-                  <span className="mb-3 inline-flex w-fit items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-primary">
-                    Most popular
-                  </span>
-                )}
-                <h3 className="text-lg font-bold text-text">{plan.name}</h3>
-                <p className="mt-1 text-sm text-text-muted">{plan.tagline}</p>
+              return (
+                <StaggerItem key={plan.key} as="div">
+                  <TiltCard featured={plan.popular} className="flex h-full flex-col p-7">
+                    <div className="flex h-full flex-col">
+                      {plan.popular && (
+                        <span className="mb-3 inline-flex w-fit items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-primary">
+                          Most popular
+                        </span>
+                      )}
+                      <h3 className="text-lg font-bold text-text">{plan.name}</h3>
+                      <p className="mt-1 text-sm text-text-muted">{plan.tagline}</p>
 
-                <div className="relative mt-6 flex items-baseline gap-1">
-                  <AnimatedPrice
-                    value={formatUsd(displayPrice)}
-                    className="text-4xl font-extrabold tracking-tight text-text"
-                  />
-                  {unit && <span className="text-sm text-text-muted">/{unit}</span>}
-                </div>
-                {!plan.block && <div className="mt-1 text-sm text-text-muted">forever</div>}
+                      <div className="relative mt-6 flex items-baseline gap-1">
+                        <AnimatedPrice value={formatUsd(displayPrice)} className="text-4xl font-extrabold tracking-tight text-text" />
+                        {unit && <span className="text-sm text-text-muted">/{unit}</span>}
+                      </div>
+                      {!plan.block && <div className="mt-1 text-sm text-text-muted">forever</div>}
 
-                <div className="mt-3 inline-flex w-fit rounded-full bg-surface px-3 py-1 text-xs font-bold text-text-muted">
-                  {plan.credits}
-                </div>
+                      <div className="mt-3 inline-flex w-fit rounded-full bg-surface px-3 py-1 text-xs font-bold text-text-muted">
+                        {plan.credits}
+                      </div>
 
-                <Link
-                  to={plan.key === 'ORGANIZATION' ? '/contact' : '/login?mode=register'}
-                  className={`mt-7 rounded-md px-4 py-2.5 text-center text-sm font-bold transition-transform duration-150 ease-brand hover:-translate-y-px ${
-                    plan.popular
-                      ? 'bg-gradient-action text-white shadow-[0_10px_24px_rgba(148,0,222,0.24)]'
-                      : 'border border-border bg-surface-elevated text-text'
-                  }`}
-                >
-                  {plan.key === 'ORGANIZATION' ? 'Talk to sales' : 'Start free'}
-                </Link>
+                      <Link
+                        to={plan.key === 'ORGANIZATION' ? '/contact' : '/login?mode=register'}
+                        className={`mt-7 rounded-md px-4 py-2.5 text-center text-sm font-bold transition-transform duration-150 ease-brand hover:-translate-y-px ${
+                          plan.popular
+                            ? 'bg-gradient-action text-white shadow-[0_10px_24px_rgba(148,0,222,0.24)]'
+                            : 'border border-border bg-surface-elevated text-text'
+                        }`}
+                      >
+                        {plan.key === 'ORGANIZATION' ? 'Talk to sales' : 'Start free'}
+                      </Link>
 
-                <ul className="mt-7 flex flex-1 flex-col gap-3 text-sm text-text-muted">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2">
-                      <CheckIcon />
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-              </StaggerItem>
-            );
-          })}
-        </Stagger>
-        <p className="mt-8 text-center text-xs text-text-muted">
-          Prices are per seat block — buy as many blocks as your team needs, with no seat limit.
-          Free seats never cost anything and still earn 1,500 credits a month. Every newly covered
-          teammate gets a one-time 1,500-credit welcome gift. Quarterly and annual billing come
-          with a 10% and 20% discount.
-        </p>
+                      <ul className="mt-7 flex flex-1 flex-col gap-3 text-sm text-text-muted">
+                        {plan.features.map((f) => (
+                          <li key={f} className="flex items-start gap-2">
+                            <CheckIcon />
+                            <span>{f}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </TiltCard>
+                </StaggerItem>
+              );
+            })}
+          </Stagger>
+          <p className="mt-8 text-center text-xs text-text-muted">
+            Prices are per seat block — buy as many blocks as your team needs, with no seat limit. Free
+            seats never cost anything and still earn 1,500 credits a month. Every newly covered teammate
+            gets a one-time 1,500-credit welcome gift. Quarterly and annual billing come with a 10% and
+            20% discount.
+          </p>
+        </div>
       </section>
 
-      <section className="border-t border-border bg-surface">
+      <section data-chapter data-chapter-title="How billing works" className="relative text-white">
         <div className="mx-auto max-w-[1200px] px-6 py-28 sm:py-36">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
-            How billing actually works
-          </p>
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-mauve-magic">Chapter 02 — How billing actually works</p>
           <ScrubHeadline
             as="h2"
-            className="mt-6 max-w-[820px] text-[clamp(1.9rem,4.6vw,4rem)] font-extrabold uppercase leading-[1.05] tracking-tight text-text"
+            className="mt-6 max-w-[820px] text-[clamp(1.9rem,4.6vw,4rem)] font-extrabold uppercase leading-[1.05] tracking-tight"
           >
             You only spend a credit when a reveal succeeds
           </ScrubHeadline>
           <div className="mt-14 grid grid-cols-1 items-center gap-14 lg:grid-cols-2">
-            <FadeIn as="p" className="text-base leading-relaxed text-text-muted">
-              Your plan price covers the platform and your whole team. Credits are the only thing
-              that moves when you actually use it &mdash; every grant, reveal, and top-up lands in
-              the same append-only ledger you can see in your workspace at any time.
+            <FadeIn as="p" className="text-base leading-relaxed text-ink-300">
+              Your plan price covers the platform and your whole team. Credits are the only thing that
+              moves when you actually use it &mdash; every grant, reveal, and top-up lands in the same
+              append-only ledger you can see in your workspace at any time.
             </FadeIn>
             <FadeIn as="div" delay={0.15}>
-              <Parallax amount={28}>
+              <Plate3D>
                 <AnimatedCreditLedgerMockup />
-              </Parallax>
+              </Plate3D>
             </FadeIn>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-[900px] px-6 py-28">
-        <ScrubHeadline
-          as="h2"
-          className="text-[clamp(1.9rem,4.6vw,4rem)] font-extrabold uppercase leading-[1.05] tracking-tight text-text"
-        >
-          Frequently asked questions
-        </ScrubHeadline>
-        <Stagger as="div" className="mt-12 flex flex-col gap-6" staggerDelay={0.08}>
-          {FAQS.map((item) => (
-            <StaggerItem
-              key={item.q}
-              as="div"
-              className="rounded-lg border border-border bg-surface-elevated p-6"
-            >
-              <h3 className="text-sm font-bold text-text">{item.q}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-text-muted">{item.a}</p>
-            </StaggerItem>
-          ))}
-        </Stagger>
+      <section data-chapter data-chapter-title="FAQ" className="story-surface relative text-text">
+        <div className="mx-auto max-w-[900px] px-6 py-24 sm:py-28">
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-primary">Chapter 03 — Questions</p>
+          <ScrubHeadline
+            as="h2"
+            className="mt-6 text-[clamp(1.9rem,4.6vw,4rem)] font-extrabold uppercase leading-[1.05] tracking-tight text-text"
+          >
+            Frequently asked questions
+          </ScrubHeadline>
+          <Stagger as="div" className="mt-12 flex flex-col gap-5" staggerDelay={0.08}>
+            {FAQS.map((item) => (
+              <StaggerItem key={item.q} as="div">
+                <TiltCard tilt={3} className="p-6">
+                  <h3 className="text-sm font-bold text-text">{item.q}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-text-muted">{item.a}</p>
+                </TiltCard>
+              </StaggerItem>
+            ))}
+          </Stagger>
+        </div>
       </section>
 
       <GiantCTA title="Start free. Upgrade when it pays for itself." />
@@ -234,15 +225,7 @@ export function Pricing() {
 
 function CheckIcon() {
   return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      className="mt-0.5 shrink-0 text-primary"
-    >
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mt-0.5 shrink-0 text-primary">
       <path d="M5 12.5l4.5 4.5L19 7" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );

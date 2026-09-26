@@ -1,9 +1,8 @@
-import { MarketingNav } from '../../components/marketing/MarketingNav.jsx';
 import { MarketingFooter } from '../../components/marketing/MarketingFooter.jsx';
 import { RoleAccent } from '../../components/marketing/RoleAccent.jsx';
-import { PageHero } from '../../components/marketing/PageHero.jsx';
+import { StoryCover } from '../../components/marketing/StoryCover.jsx';
+import { TiltCard } from '../../components/marketing/TiltCard.jsx';
 import { GiantCTA } from '../../components/marketing/GiantCTA.jsx';
-import { SmoothScroll } from '../../components/marketing/SmoothScroll.jsx';
 import { Stagger, StaggerItem } from '../../components/marketing/motion.jsx';
 
 const ROLES = [
@@ -47,43 +46,45 @@ const ROLES = [
 
 export function Solutions() {
   return (
-    <div className="min-h-screen bg-bg">
-      <SmoothScroll />
-      <MarketingNav />
-
-      <PageHero
+    <div className="min-h-screen">
+      <StoryCover
         eyebrow="Solutions"
+        narration="Six readers, one book. Each opens it to a different page."
+        sub="The same workspace, the same credit ledger — just a different reason to open it every morning."
         lines={[
           { content: "Built for whoever's" },
           {
             content: (
-              <span className="bg-gradient-brand bg-clip-text text-transparent">
-                chasing the number.
-              </span>
+              <span className="bg-gradient-brand bg-clip-text text-transparent">chasing the number.</span>
             ),
             className: 'sm:ml-[6vw]',
           },
         ]}
-        sub="The same workspace, the same credit ledger — just a different reason to open it every morning."
       />
 
-      <section className="mx-auto max-w-[1200px] px-6 py-24">
-        <Stagger as="div" className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {ROLES.map((r) => (
-            <StaggerItem
-              key={r.title}
-              as="div"
-              className="rounded-lg border border-border bg-surface-elevated p-6 shadow-dp transition-transform duration-150 ease-brand hover:-translate-y-0.5"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-gradient-action text-white">
-                <r.icon />
-              </div>
-              <h3 className="mt-4 text-base font-bold text-text">{r.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-text-muted">{r.desc}</p>
-              <RoleAccent {...r.accent} />
-            </StaggerItem>
-          ))}
-        </Stagger>
+      <section data-chapter data-chapter-title="Roles" className="story-surface relative text-text">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0 h-64"
+          style={{ background: 'linear-gradient(180deg, rgba(231,179,255,0.2), transparent)' }}
+        />
+        <div className="relative mx-auto max-w-[1200px] px-6 py-24 sm:py-32">
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-primary">Chapter 01 — Who it's for</p>
+          <Stagger as="div" className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {ROLES.map((r) => (
+              <StaggerItem key={r.title} as="div">
+                <TiltCard className="h-full p-6">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-md bg-gradient-action text-white shadow-[0_8px_20px_rgba(148,0,222,0.35)]">
+                    <r.icon />
+                  </div>
+                  <h3 className="mt-4 text-base font-bold text-text">{r.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-text-muted">{r.desc}</p>
+                  <RoleAccent {...r.accent} />
+                </TiltCard>
+              </StaggerItem>
+            ))}
+          </Stagger>
+        </div>
       </section>
 
       <GiantCTA title="Find out what it looks like for your role." />
@@ -95,28 +96,14 @@ export function Solutions() {
 
 function IconChart() {
   return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-    >
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
       <path d="M4 20V10M12 20V4M20 20v-7" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 function IconTarget() {
   return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-    >
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
       <circle cx="12" cy="12" r="8" />
       <circle cx="12" cy="12" r="4" />
       <circle cx="12" cy="12" r="0.5" fill="currentColor" />
@@ -125,28 +112,14 @@ function IconTarget() {
 }
 function IconSend() {
   return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-    >
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
       <path d="M21 3L3 10.5l7.5 3L14 21l7-18z" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 function IconGear() {
   return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-    >
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
       <circle cx="12" cy="12" r="3" />
       <path
         d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"
@@ -158,14 +131,7 @@ function IconGear() {
 }
 function IconMegaphone() {
   return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-    >
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
       <path d="M3 11v2a2 2 0 002 2h1l3 5V4L6 9H5a2 2 0 00-2 2z" strokeLinejoin="round" />
       <path d="M14 8a4 4 0 010 8M18 5a8 8 0 010 14" strokeLinecap="round" />
     </svg>
@@ -173,14 +139,7 @@ function IconMegaphone() {
 }
 function IconRocket() {
   return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-    >
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
       <path d="M12 2c2 2 4 6 4 10-1 1-2.5 2-4 2s-3-1-4-2c0-4 2-8 4-10z" strokeLinejoin="round" />
       <path d="M8 15l-3 3 2 2 3-3M16 15l3 3-2 2-3-3" strokeLinecap="round" strokeLinejoin="round" />
       <circle cx="12" cy="9" r="1.5" />

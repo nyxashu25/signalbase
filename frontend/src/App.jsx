@@ -11,6 +11,7 @@ import { ForgotPassword } from './pages/ForgotPassword.jsx';
 import { ResetPassword } from './pages/ResetPassword.jsx';
 import { AcceptInvite } from './pages/AcceptInvite.jsx';
 import { Unsubscribe } from './pages/Unsubscribe.jsx';
+import { MarketingLayout } from './components/marketing/MarketingLayout.jsx';
 import { authApi } from './api/authApi.js';
 import { setSession, clearSession } from './store/authSlice.js';
 
@@ -135,14 +136,19 @@ export function App() {
     <>
       <Suspense fallback={<RouteFallback />}>
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/pricing" element={<Pricing />} />
-          <Route path="/product" element={<Product />} />
-          <Route path="/solutions" element={<Solutions />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/terms" element={<Terms />} />
+          {/* The public storybook: one layout owns the smooth scroller, the
+              signal-river backdrop, the nav, and the 3D page turn between
+              these routes. */}
+          <Route element={<MarketingLayout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/product" element={<Product />} />
+            <Route path="/solutions" element={<Solutions />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
+          </Route>
           <Route path="/login" element={<Login />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />

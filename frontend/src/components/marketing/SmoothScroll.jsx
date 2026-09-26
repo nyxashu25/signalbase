@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import Lenis from 'lenis';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { smoothScrollStore } from './smoothScrollStore.js';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -9,7 +10,9 @@ gsap.registerPlugin(ScrollTrigger);
  * Inertial smooth scrolling for the marketing pages, driven by Lenis and
  * fed into GSAP's ticker so every ScrollTrigger (pins, scrubs, parallax)
  * reads the smoothed position instead of fighting the native one. Renders
- * nothing; mount it once per page that wants the effect.
+ * nothing; mounted once by MarketingLayout (not per page) so a route change
+ * never spins up a second instance mid-transition. The instance is published
+ * on smoothScrollStore for the bookmark rail and page-turn scroll reset.
  *
  * Skipped entirely under prefers-reduced-motion and on touch-primary
  * devices, where hijacking native scroll momentum feels worse than the
@@ -23,13 +26,14 @@ export function SmoothScroll() {
 
     let lenis;
     try {
-      lenis = new Lenis({ duration: 1.1, smoothWheel: true });
+      lenis = new Lenis({ duration: 1.15, smoothWheel: true });
     } catch {
       // jsdom (tests) lacks the layout APIs Lenis needs — page falls back
       // to native scrolling, which is also the no-JS behavior.
       return;
     }
 
+    smoothScrollStore.set(lenis);
     lenis.on('scroll', ScrollTrigger.update);
     const tick = (time) => lenis.raf(time * 1000);
     gsap.ticker.add(tick);
@@ -38,6 +42,7 @@ export function SmoothScroll() {
     return () => {
       gsap.ticker.remove(tick);
       lenis.destroy();
+      smoothScrollStore.set(null);
     };
   }, []);
 

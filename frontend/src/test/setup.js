@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest';
 // jsdom has no window.matchMedia. Existing reduced-motion checks in this
 // codebase use `window.matchMedia?.(...)` so they no-op safely without
 // this — but GSAP's ScrollTrigger (components/marketing/ScrollSteps.jsx,
-// Parallax.jsx) calls `window.matchMedia(...)` directly at
+// StoryChapter.jsx) calls `window.matchMedia(...)` directly at
 // gsap.registerPlugin() time, with no optional chaining, and throws
 // without a real implementation present.
 if (typeof globalThis.matchMedia === 'undefined') {
@@ -37,8 +37,7 @@ if (typeof globalThis.IntersectionObserver === 'undefined') {
   };
 }
 
-// Same story for ResizeObserver — used directly by AmbientCanvas and
-// internally by GSAP's ScrollTrigger (components/marketing/*.jsx).
+// Same story for ResizeObserver — used internally by GSAP's ScrollTrigger (components/marketing/*.jsx).
 if (typeof globalThis.ResizeObserver === 'undefined') {
   globalThis.ResizeObserver = class ResizeObserver {
     observe() {}
