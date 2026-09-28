@@ -119,9 +119,9 @@ export function About() {
                 The core is live today. The rest ships in the order our users ask for it.
               </ScrubHeadline>
               <FadeIn as="p" className="mt-8 max-w-[640px] text-base leading-relaxed text-text-muted">
-                DataPit is early. Search, reveal, sequences, the Chrome extension, and a credit ledger you
-                can actually audit are live now. CRM sync and deeper intent data are next, in that order,
-                because that's the order our own users have asked for them.
+                DataPit is early. Search, reveal, lists, the Chrome extension and a credit ledger you can
+                see are live now. CRM sync and intent data are next, in that order, because that's the
+                order our own users have asked for them.
               </FadeIn>
             </div>
           </div>

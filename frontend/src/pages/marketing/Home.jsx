@@ -16,12 +16,12 @@ import { GiantCTA } from '../../components/marketing/GiantCTA.jsx';
 import { Magnetic } from '../../components/marketing/Magnetic.jsx';
 import { FadeIn, Stagger, StaggerItem } from '../../components/marketing/motion.jsx';
 import { FREE_PLAN_MONTHLY_CREDITS } from '../../data/plans.js';
-import { formatCount } from '../../data/facts.js';
+import { DATAPIT_SUMMARY, formatCount } from '../../data/facts.js';
 
 // Answer-first: what DataPit is, in the cover's first paragraph — the
 // passage search snippets and AI answers lift. Kept to two sentences so the
 // cover's CTAs stay clear of the mark's drag hint on phones.
-const HOME_SUB = `DataPit is a B2B contact data platform: search people and companies, reveal work emails and phone numbers, and run outreach sequences from one workspace. Start free with ${formatCount(FREE_PLAN_MONTHLY_CREDITS)} credits a month.`;
+const HOME_SUB = `${DATAPIT_SUMMARY} Start free with ${formatCount(FREE_PLAN_MONTHLY_CREDITS)} credits a month.`;
 
 const MARQUEE_ITEMS = [
   'Verified reveals',

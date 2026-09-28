@@ -16,7 +16,7 @@ const FAQS = [
   },
   {
     q: "What's included in the Free plan?",
-    a: '800 personal credits every month, 1 seat, 1 saved list, and full people & company search — no credit card required.',
+    a: '800 personal credits every month, 1 seat, unlimited lists, and full people & company search — no credit card required.',
   },
   {
     q: 'What are the paid plans?',

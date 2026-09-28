@@ -49,5 +49,6 @@ export async function resetRedis() {
   keys.push(...(await redis.keys('idempotency:*')));
   keys.push(...(await redis.keys('ratelimit:*')));
   keys.push(...(await redis.keys('stripe:event:*')));
+  keys.push(...(await redis.keys('public:*')));
   if (keys.length) await redis.del(...keys);
 }

@@ -30,7 +30,7 @@ export const PLANS = [
       'People & company search',
       'Masked email results',
       '800 personal credits / month',
-      '1 saved list',
+      'Unlimited lists',
       'Solo workspace (1 seat)',
     ],
   },
@@ -46,7 +46,6 @@ export const PLANS = [
       'Per block: 5 paid + 1 free seat',
       '900 credits / paid seat / month',
       '1,500 credits / free seat / month',
-      'Unlimited lists',
       'Sequences with wait steps',
     ],
   },
@@ -63,8 +62,6 @@ export const PLANS = [
       'Per block: 5 paid + 3 free seats',
       '2,000 credits / paid seat / month',
       '+2,000 monthly owner bonus',
-      'Sequence pause/resume & analytics',
-      'API access',
     ],
   },
   {
@@ -79,7 +76,6 @@ export const PLANS = [
       'Per block: 14 paid + 5 free seats',
       '2,000 credits / paid seat / month',
       '+3,000 monthly owner bonus',
-      'Single sign-on (SSO)',
       'Dedicated onboarding',
     ],
   },
@@ -110,4 +106,16 @@ export function planTotalForInterval(planKey, intervalKey, blocks = 1) {
   const perBlock = blockPriceForInterval(planKey, intervalKey);
   if (perBlock == null) return null;
   return Math.round(perBlock * blocks * 100) / 100;
+}
+
+/**
+ * Blocks a team of `people` needs on a paid plan, and the monthly-billing
+ * cost: each block seats its paid plus free seats (the owner always takes a
+ * paid seat; anyone else can use a free one — see backend seatService.js).
+ */
+export function teamCost(planKey, people) {
+  const plan = findPlan(planKey);
+  if (!plan?.block) return null;
+  const blocks = Math.max(1, Math.ceil(people / (plan.block.paidSeats + plan.block.freeSeats)));
+  return { blocks, monthly: blocks * plan.price };
 }

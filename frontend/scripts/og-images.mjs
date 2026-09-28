@@ -17,9 +17,9 @@ const outDir = path.join(root, 'public', 'og');
 const IMAGES = [
   {
     name: 'home',
-    eyebrow: 'B2B sales intelligence',
-    lines: ['Find verified', 'contacts.'],
-    sub: 'Search, reveal and outreach on one credit ledger.',
+    eyebrow: 'B2B contact data',
+    lines: ['Find work', 'emails.'],
+    sub: 'Search people and companies, reveal contacts, build lists.',
   },
   {
     name: 'pricing',
@@ -31,7 +31,7 @@ const IMAGES = [
     name: 'product',
     eyebrow: 'Product',
     lines: ['Four things that', 'move pipeline.'],
-    sub: 'Search · Reveal · Sequences · Credit ledger',
+    sub: 'Search · Reveal · Lists · Credit ledger',
   },
   {
     name: 'solutions',
@@ -52,10 +52,40 @@ const IMAGES = [
     sub: 'Plans, bulk credits, or whether DataPit fits your workflow.',
   },
   {
+    name: 'compare',
+    eyebrow: 'Comparisons',
+    lines: ['Compare B2B', 'data tools.'],
+    sub: 'Prices, features and where each tool wins, side by side.',
+  },
+  {
+    name: 'features',
+    eyebrow: 'Features',
+    lines: ['Search, reveal,', 'prospect.'],
+    sub: 'One workspace and one credit ledger for B2B prospecting.',
+  },
+  {
+    name: 'extension',
+    eyebrow: 'Chrome extension',
+    lines: ['Find emails on', 'LinkedIn.'],
+    sub: 'Look up any profile against DataPit as you browse.',
+  },
+  {
+    name: 'tools',
+    eyebrow: 'Free tools',
+    lines: ['Free email', 'tools.'],
+    sub: 'Check an email address before you send. No sign-up.',
+  },
+  {
+    name: 'guide',
+    eyebrow: 'Guides',
+    lines: ['Prospecting', 'guides.'],
+    sub: 'Find work emails, build lists and write outreach that gets replies.',
+  },
+  {
     name: 'default',
     eyebrow: 'B2B contact data',
-    lines: ['Verified before', 'you pay.'],
-    sub: 'Search, reveal and outreach on one credit ledger.',
+    lines: ['Pay for the data', 'you use.'],
+    sub: 'Seat blocks from $29 a month. Start free with 800 credits.',
   },
 ];
 

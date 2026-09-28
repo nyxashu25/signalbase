@@ -20,8 +20,25 @@ import {
 export const EXTENSION_STORE_URL =
   'https://chromewebstore.google.com/detail/datapit-%E2%80%94-linkedin-lookup/mgkohbpdpfgdfnlbipfkhnjadbncdgnj';
 
-export const DATAPIT_SUMMARY =
-  'DataPit is a B2B contact data platform: search people and companies, reveal work emails and phone numbers, and run outreach sequences from one workspace.';
+// What is switched on in production today. Content pages and the facts below
+// read these, so when a capability goes live one flag flips every claim that
+// depends on it (and publishes the pages built around it). Checked against
+// production on 2026-09-28:
+//   database          - the full contact import. Today ~120 contacts; see DATABASE_CLAIM.
+//   emailVerification - EMAIL_VERIFIER_API_KEY set, so reveals are checked by a verifier.
+//   sequenceSending   - ESP_API_KEY + a verified sender set, so sequence emails are
+//                       really delivered (unset, sends are only simulated).
+//   phoneData         - imported records carry phone numbers (today none do).
+export const LIVE = {
+  database: false,
+  emailVerification: false,
+  sequenceSending: false,
+  phoneData: false,
+};
+
+export const DATAPIT_SUMMARY = LIVE.sequenceSending
+  ? 'DataPit is a B2B contact data platform: search people and companies, reveal work emails, and run outreach sequences from one workspace.'
+  : 'DataPit is a B2B contact data platform: search people and companies, reveal work email addresses and build prospect lists in one workspace.';
 
 // DataPit's database size, as one sentence shown on every comparison page
 // (the `dataCoverage` content block) and in llms-full.txt. Null until the
@@ -35,8 +52,13 @@ export const DATABASE_CLAIM = null;
 export const CREDIT_COSTS = {
   REVEAL: 2,
   EXTENSION_REVEAL: 4,
-  CSV_EXPORT: 20,
+  COMPANY_VIEW: 20, // the first time a workspace opens a company's detail page
+  CSV_EXPORT: 20, // per file, up to 5,000 rows
+  SEQUENCE_ENROLLMENT: 250, // per contact enrolled
 };
+
+// Self-serve checkout's block limit (backend planConfig.js).
+export const MAX_SELF_SERVE_BLOCKS = 200;
 
 export const formatCount = (n) => n.toLocaleString('en-US');
 
@@ -92,6 +114,16 @@ export function revealSummary() {
   );
 }
 
+/** What each paid action costs, in one sentence. */
+export function creditCostsSentence() {
+  return (
+    `A reveal costs ${CREDIT_COSTS.REVEAL} credits in the app or ${CREDIT_COSTS.EXTENSION_REVEAL} from the Chrome extension. ` +
+    `Opening a company's full profile costs ${CREDIT_COSTS.COMPANY_VIEW} the first time your workspace views it, ` +
+    `a CSV export costs ${CREDIT_COSTS.CSV_EXPORT} per file, and enrolling a contact in a sequence costs ${CREDIT_COSTS.SEQUENCE_ENROLLMENT}. ` +
+    'Searching and browsing masked results is free.'
+  );
+}
+
 /** The About page's "DataPit at a glance" list, also in llms-full.txt. */
 export function glanceFacts() {
   return [
@@ -100,17 +132,18 @@ export function glanceFacts() {
     { label: 'Credits', value: creditsSummary() },
     {
       label: 'What costs credits',
-      value: `Searching and browsing masked results is free. A reveal costs ${CREDIT_COSTS.REVEAL} credits in the app or ${CREDIT_COSTS.EXTENSION_REVEAL} from the Chrome extension, and a CSV export costs ${CREDIT_COSTS.CSV_EXPORT}. Every grant, spend and refund is a row in an append-only ledger each workspace can see.`,
+      value: `${creditCostsSentence()} Every credit your team spends is recorded in a ledger the workspace can see.`,
     },
     {
       label: 'Tools',
-      value:
-        'The web app, the DataPit — LinkedIn Lookup Chrome extension, email sequences on paid plans, and an API on the Professional and Organization plans.',
+      value: LIVE.sequenceSending
+        ? 'The web app, email sequences on paid plans, and the DataPit — LinkedIn Lookup Chrome extension.'
+        : 'The web app and the DataPit — LinkedIn Lookup Chrome extension, free on the Chrome Web Store.',
     },
     {
       label: 'Data rights',
       value:
-        'Anyone listed in DataPit can remove their details with the GDPR/CCPA opt-out form on the Privacy page. Matching records are redacted for every workspace and the address is blocked from future reveals.',
+        'Anyone listed in DataPit can ask for their details to be removed with the GDPR/CCPA opt-out form on the Privacy page.',
     },
     { label: 'Website', value: 'https://datapit.io' },
   ];

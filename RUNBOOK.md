@@ -309,6 +309,34 @@ codes per search/AI crawler from `/var/log/nginx/datapit.io.access.log*`
 (that log started 2026-09-28). Public pages should only ever show 200, 301 or
 304; anything else means a crawler is being turned away.
 
+**Content pages** (comparisons, features, personas, the extension page, free
+tools, guides) are plain data files under `frontend/src/content/pages/`
+(format: `src/content/schema.js`). `npm run content` indexes them into
+`src/content/registry.generated.js` — the build runs it too, and a test fails
+if the committed registry is stale. A page with `published: false` still
+renders at its URL but is noindex and off the sitemap and llms.txt.
+
+**What's live** — `LIVE` in `src/data/facts.js` records which capabilities
+production really has (full database import, email verification, sequence
+sending, phone data). Pages and FAQs read these flags, and pages built around
+an off capability are hidden. When you set `EMAIL_VERIFIER_API_KEY`, or
+`ESP_API_KEY` plus a verified sender, or the big import lands: flip the flag,
+set `DATABASE_CLAIM` for the import, rebuild and deploy. Competitor figures
+live in the page files (with sources) and `src/data/competitors.js`; re-check
+them at least quarterly.
+
+**Build on the server with `npm run build:prod`** (not `npm run build`): it
+sets `PRERENDER_API_URL=http://127.0.0.1:4000` so the prerender can fetch
+`/api/v1/public/email-formats` and write a page per company with at least 5
+addresses. The API must be running during the build; without it the build
+still succeeds and just skips those pages.
+
+**Public tools API** (`backend/src/routes/publicTools.js`, no auth, under
+`/api/v1/public`): the email verifier (DNS checks only, 20/hour per IP), the
+email finder (masked results, 10/day per IP) and email-format aggregates
+(cached 1 hour in Redis). Rate limits key on the client IP that nginx
+forwards; `trust proxy` only trusts loopback/private hops.
+
 After a deploy that changes marketing copy, ping IndexNow (Bing, and so
 ChatGPT search and Copilot) from `frontend/`: `npm run indexnow`. Share
 images live in `frontend/public/og/`; regenerate them with

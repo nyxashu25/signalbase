@@ -15,9 +15,15 @@ import { notFoundHandler, errorHandler } from './middleware/errorHandler.js';
 export function createApp() {
   const app = express();
 
-  // Trust exactly one hop (the load balancer / reverse proxy) so
-  // req.ip and req.protocol reflect the real client, not the proxy.
-  app.set('trust proxy', 1);
+  // Trust X-Forwarded-For / -Proto only from a proxy on this machine or a
+  // private network: nginx on the VPS proxies to 127.0.0.1:4000 and appends
+  // the client address, so req.ip is the real client. The API listens on
+  // every interface, though, and with a plain hop count (`1`) a request
+  // reaching :4000 directly from the internet could pick its own req.ip —
+  // and dodge every per-IP rate limit — with a forged X-Forwarded-For.
+  // Private ranges stay trusted so a proxy on a Docker bridge or LAN still
+  // works; a public source address never is.
+  app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
 
   app.use(
     pinoHttp({

@@ -16,6 +16,7 @@ import { dashboardRouter } from './dashboard.js';
 import { workspaceRouter } from './workspace.js';
 import { apiKeysRouter } from './apiKeys.js';
 import { extensionRouter } from './extension.js';
+import { publicToolsRouter } from './publicTools.js';
 
 export const apiRouter = Router();
 
@@ -40,6 +41,7 @@ apiRouter.use('/dashboard', dashboardRouter);
 apiRouter.use('/workspace', workspaceRouter);
 apiRouter.use('/api-keys', apiKeysRouter);
 apiRouter.use('/extension', extensionRouter);
+apiRouter.use('/public', publicToolsRouter);
 
 // CRM sync (Salesforce/HubSpot) is P2 / out of scope here — it needs a real
 // sandbox to integrate against.

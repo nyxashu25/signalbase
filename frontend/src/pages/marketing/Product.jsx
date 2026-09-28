@@ -63,7 +63,7 @@ export function Product() {
         station="mark"
         eyebrow="Product"
         narration="Four chapters, one workspace, one ledger underneath it all."
-        sub="DataPit puts four tools in one workspace: people and company search, a reveal that unlocks work emails and phone numbers for credits, multi-step email sequences, and an append-only credit ledger. No bundled modules you'll never touch."
+        sub="DataPit puts prospecting in one workspace: search people and companies, reveal work email addresses for credits, save prospects to lists and export them, and see every credit your team spends. No bundled modules you'll never touch."
         lines={[
           { content: 'One workspace,' },
           { content: 'four things that', className: 'sm:ml-[6vw]' },

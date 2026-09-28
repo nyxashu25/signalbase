@@ -13,6 +13,31 @@ export function maskEmail(email) {
 }
 
 /**
+ * "jane.doe@acme.com" -> "j***.d**@acme.com". For the public email finder,
+ * where the visitor already typed the domain: only the local part is
+ * masked. Each segment between separators keeps its first letter, and
+ * every segment gets at least two stars, so the result is never the real
+ * address — not even for a one-letter local part. Null for a stored value
+ * that isn't shaped like an address (no local part or no domain): "masking"
+ * that would echo most of it back as the "domain".
+ */
+export function maskEmailLocalPart(email) {
+  const at = email.lastIndexOf('@');
+  if (at < 1 || at === email.length - 1) return null;
+  const local = email.slice(0, at).toLowerCase();
+  const domain = email.slice(at + 1).toLowerCase();
+  const masked = local
+    .split(/([._-])/)
+    .map((part) =>
+      part === '' || /^[._-]$/.test(part)
+        ? part
+        : part[0] + '*'.repeat(Math.max(part.length - 1, 2)),
+    )
+    .join('');
+  return `${masked}@${domain}`;
+}
+
+/**
  * "+1 415 555 0132" -> "+1 415 *** **32". Keeps the leading country/area
  * prefix (up to the first 4 digits) and the last 2 digits so the user can
  * tell it's a real, region-plausible number, and masks everything in

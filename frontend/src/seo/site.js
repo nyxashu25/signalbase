@@ -25,7 +25,7 @@ export const SEO_ROUTES = [
     name: 'Home',
     title: 'DataPit: B2B Contact Database & Email Finder',
     description:
-      'Search a live B2B database, reveal verified emails and phone numbers, and run outreach sequences from one workspace. Start free with 800 credits a month.',
+      'Search people and companies, reveal work email addresses and build prospect lists in one workspace. Seat blocks from $29 a month; start free with 800 credits.',
     og: 'home',
     source: 'src/pages/marketing/Home.jsx',
     priority: '1.0',
@@ -45,9 +45,9 @@ export const SEO_ROUTES = [
   {
     path: '/product',
     name: 'Product',
-    title: 'Find Verified Emails & Phone Numbers | DataPit',
+    title: 'B2B People Search & Email Finder | DataPit',
     description:
-      'People and company search, verified email and phone reveal, multi-step outreach sequences, and an auditable credit ledger, all in one DataPit workspace.',
+      'People and company search, work email reveal, prospect lists, CSV export and a credit ledger your team can see, all in one DataPit workspace.',
     og: 'product',
     source: 'src/pages/marketing/Product.jsx',
     priority: '0.9',
@@ -58,7 +58,7 @@ export const SEO_ROUTES = [
     name: 'Solutions',
     title: 'B2B Prospecting for Sales Teams & Founders | DataPit',
     description:
-      'How sales leaders, account executives, SDRs, RevOps, marketers and founders use DataPit to find verified contacts and track buying signals.',
+      'How sales leaders, account executives, SDRs, RevOps, marketers and founders use DataPit to search people and companies and reveal work emails.',
     og: 'solutions',
     source: 'src/pages/marketing/Solutions.jsx',
     priority: '0.8',

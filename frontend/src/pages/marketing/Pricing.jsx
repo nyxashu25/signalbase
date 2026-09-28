@@ -16,7 +16,9 @@ import {
   FREE_SEAT_MONTHLY_CREDITS,
   PRICING_UPDATED_AT,
   planTotalForInterval,
+  teamCost,
 } from '../../data/plans.js';
+import { APOLLO, COMPETITOR_PRICES_CHECKED, ZOOMINFO } from '../../data/competitors.js';
 import { PRICING_FAQS } from '../../data/faqs.js';
 import { formatCount, pricingSummary } from '../../data/facts.js';
 import { FaqSection } from '../../components/marketing/FaqSection.jsx';
@@ -116,6 +118,75 @@ function PlanComparison() {
       </div>
       <p className="mt-4 text-xs text-text-muted">
         Prices last updated <time dateTime={PRICING_UPDATED_AT}>{formatDay(PRICING_UPDATED_AT)}</time>.
+      </p>
+      <TeamCosts />
+    </div>
+  );
+}
+
+const TEAM_SIZES = [5, 10, 25];
+const usd = (n) => `$${formatCount(n)}`;
+
+/**
+ * What a whole team pays per month on DataPit's seat blocks next to
+ * per-seat pricing — list prices only, from src/data/competitors.js.
+ */
+function TeamCosts() {
+  const head = 'px-3 py-3 align-bottom font-bold';
+  const cell = 'whitespace-nowrap px-3 py-3';
+  return (
+    <div className="mt-14">
+      <h3 className="text-lg font-bold text-text">What does a team pay each month?</h3>
+      <p className="mt-1 text-sm text-text-muted">
+        DataPit charges per seat block, not per seat, so the cost grows in steps as your team does.
+      </p>
+      <div className="mt-5 overflow-x-auto rounded-lg border border-border">
+        <table className="w-full min-w-[680px] text-left text-sm tabular-nums">
+          <thead className="bg-surface text-xs uppercase tracking-wide text-text-muted">
+            <tr>
+              <th scope="col" className={head}>Team size</th>
+              <th scope="col" className={head}>DataPit Basic</th>
+              <th scope="col" className={head}>DataPit Professional</th>
+              <th scope="col" className={head}>{APOLLO.name} Basic, billed monthly</th>
+              <th scope="col" className={head}>{APOLLO.name} Basic, billed annually</th>
+              <th scope="col" className={head}>{ZOOMINFO.name}</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border text-text">
+            {TEAM_SIZES.map((people) => {
+              const basic = teamCost('BASIC', people);
+              const pro = teamCost('PROFESSIONAL', people);
+              return (
+                <tr key={people}>
+                  <th scope="row" className={`${cell} font-bold`}>{people} people</th>
+                  <td className={cell}>
+                    {usd(basic.monthly)} <span className="text-text-muted">({basic.blocks} {basic.blocks === 1 ? 'block' : 'blocks'})</span>
+                  </td>
+                  <td className={cell}>
+                    {usd(pro.monthly)} <span className="text-text-muted">({pro.blocks} {pro.blocks === 1 ? 'block' : 'blocks'})</span>
+                  </td>
+                  <td className={cell}>{usd(APOLLO.basicMonthlyBilling * people)}</td>
+                  <td className={cell}>{usd(APOLLO.basicAnnualBilling * people)} a month</td>
+                  <td className={cell}>Quote only</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p className="mt-4 text-xs leading-relaxed text-text-muted">
+        List prices only; the plans don&rsquo;t include the same data or features. {APOLLO.name} Basic is ${APOLLO.basicMonthlyBilling} per
+        seat per month billed monthly, or ${APOLLO.basicAnnualBilling} billed annually, per{' '}
+        <a href={APOLLO.pricingUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline">
+          {APOLLO.name}&rsquo;s pricing page
+        </a>
+        ; {ZOOMINFO.name} publishes no prices for its paid plans (
+        <a href={ZOOMINFO.pricingUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline">
+          pricing page
+        </a>
+        ). Checked <time dateTime={COMPETITOR_PRICES_CHECKED}>{formatDay(COMPETITOR_PRICES_CHECKED)}</time>. Compare in
+        detail: <Link to="/alternatives/apollo" className="font-medium text-primary hover:underline">Apollo alternative</Link>,{' '}
+        <Link to="/alternatives/zoominfo" className="font-medium text-primary hover:underline">ZoomInfo alternative</Link>.
       </p>
     </div>
   );

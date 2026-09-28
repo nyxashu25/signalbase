@@ -145,13 +145,17 @@ describe('marketing: answer-first content', () => {
   it('Pricing compares every plan in one table, with the date prices last changed', () => {
     mockFetchRoutes([]);
     renderWithProviders(<Pricing />);
-    const table = screen.getByRole('table');
+    const [table, teamTable] = screen.getAllByRole('table');
     const rows = within(table).getAllByRole('row');
     expect(rows).toHaveLength(5); // header + Free, Basic, Professional, Organization
     const basic = within(table).getByRole('rowheader', { name: 'Basic' }).closest('tr');
     expect(within(basic).getByText('5 paid + 1 free')).toBeInTheDocument();
     expect(within(basic).getByText('$5.80')).toBeInTheDocument(); // $29 / 5 paid seats
     expect(screen.getByText('August 27, 2026')).toHaveAttribute('datetime', '2026-08-27');
+    // Team costs: 10 people = 2 Basic blocks ($58) vs 10 Apollo Basic seats ($65 each, monthly).
+    const ten = within(teamTable).getByRole('rowheader', { name: '10 people' }).closest('tr');
+    expect(ten).toHaveTextContent('$58 (2 blocks)');
+    expect(ten).toHaveTextContent('$650');
     expect(
       screen.getByRole('heading', { name: 'How much does DataPit cost?' }),
     ).toBeInTheDocument();

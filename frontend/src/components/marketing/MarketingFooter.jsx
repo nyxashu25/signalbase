@@ -8,6 +8,23 @@ const COLUMNS = [
       { label: 'Product', to: '/product' },
       { label: 'Solutions', to: '/solutions' },
       { label: 'Pricing', to: '/pricing' },
+      { label: 'Chrome extension', to: '/chrome-extension' },
+    ],
+  },
+  {
+    heading: 'Compare',
+    links: [
+      { label: 'Apollo alternative', to: '/alternatives/apollo' },
+      { label: 'ZoomInfo alternative', to: '/alternatives/zoominfo' },
+      { label: 'Lusha alternative', to: '/alternatives/lusha' },
+      { label: 'DataPit vs Apollo', to: '/compare/datapit-vs-apollo' },
+    ],
+  },
+  {
+    heading: 'Resources',
+    links: [
+      { label: 'Guides', to: '/blog' },
+      { label: 'Free email verifier', to: '/tools/email-verifier' },
     ],
   },
   {
@@ -35,8 +52,8 @@ export function MarketingFooter() {
   return (
     <footer className="relative overflow-hidden border-t border-white/10 text-white">
       <FadeIn as="div" className="mx-auto max-w-[1400px] px-6 pt-20">
-        <div className="grid grid-cols-2 gap-10 sm:grid-cols-4">
-          <div className="col-span-2 sm:col-span-1">
+        <div className="grid grid-cols-2 gap-10 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="col-span-2 sm:col-span-3 lg:col-span-1">
             <img src="/logos/datapit-logo-dark.svg" alt="DataPit" className="h-8" />
             <p className="mt-4 max-w-[220px] text-sm text-ink-300">
               The B2B contact data platform: search, reveal and outreach on one credit ledger.

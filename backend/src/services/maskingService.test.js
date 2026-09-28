@@ -1,7 +1,25 @@
 import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import { prisma } from '../config/db.js';
 import { resetDb } from '../test/dbHelpers.js';
-import { maskEmail, maskPhone, attachRevealStatus } from './maskingService.js';
+import { maskEmail, maskEmailLocalPart, maskPhone, attachRevealStatus } from './maskingService.js';
+
+describe('maskEmailLocalPart', () => {
+  it('masks each separated segment of the local part and keeps the domain', () => {
+    expect(maskEmailLocalPart('jane.doe@acme.com')).toBe('j***.d**@acme.com');
+    expect(maskEmailLocalPart('Mary_Ann-Lee@Acme.com')).toBe('m***_a**-l**@acme.com');
+  });
+
+  it('never returns the real address, even for one-letter segments', () => {
+    expect(maskEmailLocalPart('j@acme.com')).toBe('j**@acme.com');
+    expect(maskEmailLocalPart('j.d@acme.com')).toBe('j**.d**@acme.com');
+  });
+
+  it('returns null for a stored value that is not shaped like an address', () => {
+    expect(maskEmailLocalPart('janedoe')).toBeNull();
+    expect(maskEmailLocalPart('@acme.com')).toBeNull();
+    expect(maskEmailLocalPart('jane@')).toBeNull();
+  });
+});
 
 describe('maskEmail', () => {
   it('keeps the first character of local and domain, masks the rest', () => {

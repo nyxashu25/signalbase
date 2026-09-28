@@ -7,7 +7,7 @@
 //
 // The key is public by design: the engines fetch
 // https://datapit.io/<key>.txt and compare it with the key in the request.
-import { SEO_ROUTES, SITE_URL, absoluteUrl } from '../src/seo/site.js';
+import { PUBLIC_ROUTES, SITE_URL, absoluteUrl } from '../src/seo/site.js';
 
 const KEY = '0816f6fe997d457477d1b1baccfc314c';
 
@@ -15,7 +15,7 @@ const body = {
   host: new URL(SITE_URL).host,
   key: KEY,
   keyLocation: `${SITE_URL}/${KEY}.txt`,
-  urlList: SEO_ROUTES.map((r) => absoluteUrl(r.path)),
+  urlList: PUBLIC_ROUTES.map((r) => absoluteUrl(r.path)),
 };
 
 const res = await fetch('https://api.indexnow.org/indexnow', {
