@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
+import { isPrerenderHandoff } from '../../prerender/handoff.js';
 
 // Matches the CSS `ease-brand` cubic-bezier (see tailwind.config.js) used on
 // every hover/hand-written transition elsewhere on the marketing site — one
@@ -16,7 +18,8 @@ const fadeUpVariants = {
  * hero, which is already in view on load so there's nothing to "scroll
  * into"). Respects prefers-reduced-motion by rendering the plain tag with
  * no animation at all, same posture as the Animated*Mockup components in
- * this folder.
+ * this folder. A mount-time fade also starts settled when it takes over
+ * prerendered HTML (see prerender/handoff.js) — the block is already visible.
  */
 export function FadeIn({
   children,
@@ -27,6 +30,7 @@ export function FadeIn({
   ...props
 }) {
   const reduceMotion = useReducedMotion();
+  const [settled] = useState(() => !whileInView && isPrerenderHandoff());
   if (reduceMotion) {
     const Plain = as;
     return (
@@ -40,7 +44,7 @@ export function FadeIn({
   return (
     <MotionTag
       className={className}
-      initial="hidden"
+      initial={settled ? false : 'hidden'}
       variants={{
         hidden: fadeUpVariants.hidden,
         show: { ...fadeUpVariants.show, transition: { ...fadeUpVariants.show.transition, delay } },

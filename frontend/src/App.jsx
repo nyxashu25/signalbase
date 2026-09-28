@@ -16,6 +16,7 @@ import { authApi } from './api/authApi.js';
 import { setSession, clearSession } from './store/authSlice.js';
 import { RouteMeta } from './seo/RouteMeta.jsx';
 import { isPrivatePath } from './seo/site.js';
+import { endPrerenderHandoff } from './prerender/handoff.js';
 
 // Route-level code splitting (TODO.md): the marketing site (framer-motion,
 // GSAP, Lenis), the authenticated app (cmdk, Radix, lucide-heavy shell) and
@@ -149,6 +150,12 @@ export function App() {
   const status = useSelector((s) => s.auth.status);
   const location = useLocation();
   const showChatWidget = !location.pathname.startsWith('/control');
+
+  // The first commit has replaced any prerendered page; from here on,
+  // entrance animations play (prerender/handoff.js).
+  useEffect(() => {
+    endPrerenderHandoff();
+  }, []);
 
   // Silent-refresh-on-load: the access token lives only in memory (Redux),
   // so a page reload has none — but the httpOnly refresh cookie survives

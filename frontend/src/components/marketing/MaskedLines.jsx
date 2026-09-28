@@ -1,6 +1,7 @@
-import { Fragment, isValidElement, useLayoutEffect, useRef } from 'react';
+import { Fragment, isValidElement, useLayoutEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { SplitText } from 'gsap/SplitText';
+import { isPrerenderHandoff } from '../../prerender/handoff.js';
 
 gsap.registerPlugin(SplitText);
 
@@ -90,10 +91,13 @@ function paintGradientSlices(root, sourceImages) {
  * and the visual lines are aria-hidden whether split or not — never a name
  * hung on a generic span, which screen readers are free to ignore.
  *
- * Static under reduced motion. The split is reverted on unmount.
+ * Static under reduced motion, and when it takes over a prerendered page
+ * (the headline is already on screen; see prerender/handoff.js). The split
+ * is reverted on unmount.
  */
 export function MaskedLines({ as: Tag = 'h1', className, lines, delay = 0 }) {
   const ref = useRef(null);
+  const [settled] = useState(isPrerenderHandoff);
   const label = lines
     .map((line) => plainText(line.content).trim())
     .filter(Boolean)
@@ -103,7 +107,7 @@ export function MaskedLines({ as: Tag = 'h1', className, lines, delay = 0 }) {
     const el = ref.current;
     if (!el) return undefined;
     const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    if (reduceMotion) return undefined;
+    if (reduceMotion || settled) return undefined;
 
     const sourceImages = new Map();
     const repaint = () => paintGradientSlices(el, sourceImages);
@@ -161,7 +165,7 @@ export function MaskedLines({ as: Tag = 'h1', className, lines, delay = 0 }) {
       ctx.revert();
       split?.revert();
     };
-  }, [delay]);
+  }, [delay, settled]);
 
   return (
     <Tag ref={ref} className={className}>

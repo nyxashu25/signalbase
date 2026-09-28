@@ -6,10 +6,14 @@ import '@fontsource-variable/montserrat';
 import '@fontsource-variable/montserrat/wght-italic.css';
 import { store } from './store/index.js';
 import { App, preloadRoute } from './App.jsx';
+import { beginPrerenderHandoff } from './prerender/handoff.js';
 import './index.css';
 
+const root = document.getElementById('root');
+
 function start() {
-  ReactDOM.createRoot(document.getElementById('root')).render(
+  if (root.firstElementChild) beginPrerenderHandoff();
+  ReactDOM.createRoot(root).render(
     <React.StrictMode>
       <Provider store={store}>
         <BrowserRouter>
