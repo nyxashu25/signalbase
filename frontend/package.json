@@ -8,7 +8,9 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build && vite build --ssr src/prerender/entry-server.jsx --outDir dist-ssr && node scripts/prerender.mjs",
+    "build": "node scripts/content-index.mjs && vite build && vite build --ssr src/prerender/entry-server.jsx --outDir dist-ssr && node scripts/prerender.mjs",
+    "build:prod": "PRERENDER_API_URL=http://127.0.0.1:4000 npm run build",
+    "content": "node scripts/content-index.mjs",
     "preview": "vite preview",
     "lint": "eslint src",
     "format": "prettier --check .",

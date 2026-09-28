@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { headElements, metaForPath } from './site.js';
 
 const MARKER = 'data-seo';
+let firstRun = true;
 
 /**
  * Keeps <head> in step with client-side navigation: the title, description,
@@ -15,6 +16,13 @@ export function RouteMeta() {
   const { pathname } = useLocation();
 
   useEffect(() => {
+    // The first page arrived prerendered with its complete head — including
+    // structured data built from the page body, which the client doesn't
+    // hold for content pages. Keep it; only client-side navigations rewrite.
+    if (firstRun) {
+      firstRun = false;
+      if (document.head.querySelector(`[${MARKER}]`)) return;
+    }
     const meta = metaForPath(pathname);
     document.title = meta.title;
     document.head.querySelectorAll(`[${MARKER}]`).forEach((el) => el.remove());

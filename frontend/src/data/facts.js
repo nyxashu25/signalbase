@@ -23,6 +23,13 @@ export const EXTENSION_STORE_URL =
 export const DATAPIT_SUMMARY =
   'DataPit is a B2B contact data platform: search people and companies, reveal work emails and phone numbers, and run outreach sequences from one workspace.';
 
+// DataPit's database size, as one sentence shown on every comparison page
+// (the `dataCoverage` content block) and in llms-full.txt. Null until the
+// full contact import is live in production: the number must describe the
+// database a visitor can search today. Set it then, e.g.
+// 'DataPit's database covers more than 10 million B2B contacts.'
+export const DATABASE_CLAIM = null;
+
 // Mirrors backend/src/config/creditPricing.js CREDIT_COSTS — keep both in
 // sync by hand, same as plans.js mirrors planConfig.js.
 export const CREDIT_COSTS = {

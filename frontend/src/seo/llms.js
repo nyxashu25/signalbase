@@ -17,16 +17,36 @@ import {
   pricingSummary,
 } from '../data/facts.js';
 import { PRICING_FAQS, PRODUCT_FAQS } from '../data/faqs.js';
-import { SEO_ROUTES, SITE_URL, absoluteUrl } from './site.js';
+import { PUBLIC_ROUTES, SITE_URL, absoluteUrl } from './site.js';
 
-const MAIN_PAGES = ['/', '/product', '/pricing', '/solutions', '/about', '/contact'];
+const MAIN_PAGES = ['/', '/product', '/pricing', '/solutions', '/about', '/contact', '/blog'];
 const LEGAL_PAGES = ['/privacy', '/terms'];
+
+// Published content pages, grouped the way a reader looks for them.
+const CONTENT_GROUPS = [
+  { title: 'Comparisons', sections: ['alternatives', 'compare'] },
+  { title: 'Product pages', sections: ['features', 'solutions', 'extension'] },
+  { title: 'Free tools', sections: ['tools'] },
+  { title: 'Guides', sections: ['blog'] },
+];
+
+function link(r) {
+  return `- [${r.name}](${absoluteUrl(r.path)}): ${r.description}`;
+}
 
 function pageLinks(paths) {
   return paths
-    .map((path) => SEO_ROUTES.find((r) => r.path === path))
-    .map((r) => `- [${r.name}](${absoluteUrl(r.path)}): ${r.description}`)
+    .map((path) => PUBLIC_ROUTES.find((r) => r.path === path))
+    .filter(Boolean)
+    .map(link)
     .join('\n');
+}
+
+function contentSections() {
+  return CONTENT_GROUPS.map(({ title, sections }) => {
+    const routes = PUBLIC_ROUTES.filter((r) => sections.includes(r.section));
+    return routes.length ? `## ${title}\n\n${routes.map(link).join('\n')}\n\n` : '';
+  }).join('');
 }
 
 function plansTable() {
@@ -59,7 +79,7 @@ ${pricingSummary()} Credits are spent only when you use data, and every credit m
 
 ${pageLinks(MAIN_PAGES)}
 
-## Tools
+${contentSections()}## Chrome extension
 
 - [DataPit — LinkedIn Lookup (Chrome extension)](${EXTENSION_STORE_URL}): Looks up the LinkedIn profile you're viewing in DataPit, reveals its email and phone number, and queues missing people for sourcing.
 
@@ -101,5 +121,6 @@ ${faqList(PRODUCT_FAQS)}
 ## Pages
 
 ${pageLinks([...MAIN_PAGES, ...LEGAL_PAGES])}
-`;
+
+${contentSections()}`;
 }

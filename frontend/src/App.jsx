@@ -17,6 +17,7 @@ import { setSession, clearSession } from './store/authSlice.js';
 import { RouteMeta } from './seo/RouteMeta.jsx';
 import { isPrivatePath } from './seo/site.js';
 import { endPrerenderHandoff } from './prerender/handoff.js';
+import { contentComponent, isContentPath } from './content/loaders.js';
 
 // Route-level code splitting (TODO.md): the marketing site (framer-motion,
 // GSAP, Lenis), the authenticated app (cmdk, Radix, lucide-heavy shell) and
@@ -51,6 +52,15 @@ const Contact = lazyNamed(() => import('./pages/marketing/Contact.jsx'), 'Contac
 const Privacy = lazyNamed(() => import('./pages/marketing/Privacy.jsx'), 'Privacy');
 const Terms = lazyNamed(() => import('./pages/marketing/Terms.jsx'), 'Terms');
 const NotFound = lazyNamed(() => import('./pages/marketing/NotFound.jsx'), 'NotFound');
+const BlogIndex = lazyNamed(() => import('./pages/marketing/BlogIndex.jsx'), 'BlogIndex');
+const EmailFormatIndex = lazyNamed(
+  () => import('./pages/marketing/emailFormat/EmailFormatIndex.jsx'),
+  'EmailFormatIndex',
+);
+const EmailFormatPage = lazyNamed(
+  () => import('./pages/marketing/emailFormat/EmailFormatPage.jsx'),
+  'EmailFormatPage',
+);
 
 const MARKETING_PAGES = {
   '/': Home,
@@ -61,7 +71,28 @@ const MARKETING_PAGES = {
   '/contact': Contact,
   '/privacy': Privacy,
   '/terms': Terms,
+  '/blog': BlogIndex,
+  '/email-format': EmailFormatIndex,
 };
+
+const EMAIL_FORMAT_PAGE = /^\/email-format\/[a-z0-9.-]+$/;
+
+/**
+ * The marketing page for a path no fixed route claims: a content page from
+ * the registry (comparisons, features, guides, tools — content/loaders.js),
+ * a company's email-format page, or the 404 page.
+ */
+function pageForPath(path) {
+  if (isContentPath(path)) return contentComponent(path);
+  if (EMAIL_FORMAT_PAGE.test(path)) return EmailFormatPage;
+  return NotFound;
+}
+
+function ContentOrNotFound() {
+  const { pathname } = useLocation();
+  const Page = pageForPath(pathname);
+  return <Page />;
+}
 
 /**
  * Fetch the chunk for the marketing page at `pathname` (the 404 page for an
@@ -70,7 +101,7 @@ const MARKETING_PAGES = {
  */
 export function preloadRoute(pathname) {
   const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
-  const page = MARKETING_PAGES[path] ?? (isPrivatePath(path) ? null : NotFound);
+  const page = MARKETING_PAGES[path] ?? (isPrivatePath(path) ? null : pageForPath(path));
   return page ? page.preload().then(() => undefined) : Promise.resolve();
 }
 
@@ -196,7 +227,9 @@ export function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
-            <Route path="*" element={<NotFound />} />
+            <Route path="/blog" element={<BlogIndex />} />
+            <Route path="/email-format" element={<EmailFormatIndex />} />
+            <Route path="*" element={<ContentOrNotFound />} />
           </Route>
           <Route path="/login" element={<Login />} />
           <Route path="/verify-email" element={<VerifyEmail />} />

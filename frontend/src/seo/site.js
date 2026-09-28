@@ -5,6 +5,8 @@
 import { PLANS, PRICING_UPDATED_AT } from '../data/plans.js';
 import { DATAPIT_SUMMARY } from '../data/facts.js';
 import { PRICING_FAQS, PRODUCT_FAQS } from '../data/faqs.js';
+import { CONTENT_PAGES } from '../content/registry.generated.js';
+import { SECTIONS } from '../content/schema.js';
 
 export const SITE_URL = 'https://datapit.io';
 export const SITE_NAME = 'DataPit';
@@ -106,7 +108,58 @@ export const SEO_ROUTES = [
     priority: '0.3',
     changefreq: 'yearly',
   },
+  {
+    path: '/blog',
+    name: 'Guides',
+    title: 'B2B Prospecting Guides | DataPit',
+    description:
+      'Practical guides to B2B prospecting: finding and checking work email addresses, building contact lists and running outreach that gets replies.',
+    og: 'guide',
+    source: 'src/pages/marketing/BlogIndex.jsx',
+    priority: '0.6',
+    changefreq: 'weekly',
+  },
 ];
+
+// Content pages (src/content/pages/, indexed into registry.generated.js):
+// comparisons, features, personas, the extension page, tools and guides.
+// Unpublished ones still render at their URL but stay noindex and off the
+// sitemap and llms.txt.
+const CONTENT_ROUTES = CONTENT_PAGES.map((p) => ({
+  ...p,
+  noindex: !p.published,
+  priority: p.section === 'blog' ? '0.6' : '0.7',
+  changefreq: 'monthly',
+}));
+
+/** Every indexable page: the sitemap, llms.txt and IndexNow list. */
+export const PUBLIC_ROUTES = [...SEO_ROUTES, ...CONTENT_ROUTES.filter((r) => !r.noindex)];
+
+// Company email-format pages exist only for companies with enough data; the
+// prerender marks the index indexable once there are any (see prerender.mjs).
+export const EMAIL_FORMAT_INDEX_META = {
+  path: '/email-format',
+  name: 'Email formats',
+  section: 'email-format',
+  title: 'Company Email Formats | DataPit',
+  description:
+    'The email address formats companies use, measured from the work addresses in DataPit: first.last, flast, first and more, with how common each one is.',
+  og: 'tools',
+  noindex: true,
+};
+
+export function emailFormatMeta(domain, company) {
+  const name = company?.name || domain;
+  return {
+    path: `/email-format/${domain}`,
+    name: `${name} email format`,
+    section: 'email-format',
+    title: `${name} Email Format | DataPit`.slice(0, 60),
+    description: `The email address format ${name} (${domain}) uses, and how common each pattern is, measured from the work addresses in DataPit.`,
+    og: 'tools',
+    updated: company?.updated ?? null,
+  };
+}
 
 export const NOT_FOUND_META = {
   path: null,
@@ -149,8 +202,11 @@ function normalizePath(pathname) {
 /** The metadata for any pathname: a public page, a private screen, or 404. */
 export function metaForPath(pathname) {
   const path = normalizePath(pathname || '/');
-  const route = SEO_ROUTES.find((r) => r.path === path);
+  const route = SEO_ROUTES.find((r) => r.path === path) ?? CONTENT_ROUTES.find((r) => r.path === path);
   if (route) return route;
+  if (path === EMAIL_FORMAT_INDEX_META.path) return EMAIL_FORMAT_INDEX_META;
+  const format = /^\/email-format\/([a-z0-9.-]+)$/.exec(path);
+  if (format) return emailFormatMeta(format[1]);
   if (isPrivatePath(path)) return PRIVATE_META;
   return NOT_FOUND_META;
 }
@@ -195,14 +251,58 @@ function softwareApplication() {
   };
 }
 
+// Sections with an index page of their own sit between Home and the page.
+const SECTION_INDEX = { blog: '/blog', 'email-format': '/email-format' };
+
 function breadcrumbs(route) {
+  const trail = [{ name: 'Home', path: '/' }];
+  const index = SECTION_INDEX[route.section];
+  if (index && index !== route.path) trail.push({ name: SECTIONS[route.section].label, path: index });
+  trail.push({ name: route.name, path: route.path });
   return {
     '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: absoluteUrl('/') },
-      { '@type': 'ListItem', position: 2, name: route.name, item: absoluteUrl(route.path) },
-    ],
+    itemListElement: trail.map((t, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: t.name,
+      item: absoluteUrl(t.path),
+    })),
   };
+}
+
+const PUBLISHER = { '@type': 'Organization', name: SITE_NAME, url: `${SITE_URL}/` };
+
+/** The main node for a content page: a guide, a free tool, or a web page. */
+function contentNode(meta) {
+  const url = absoluteUrl(meta.path);
+  if (meta.section === 'blog') {
+    return {
+      '@type': 'BlogPosting',
+      headline: meta.title.replace(/ \| DataPit$/, ''),
+      description: meta.description,
+      datePublished: meta.updated,
+      dateModified: meta.updated,
+      author: PUBLISHER,
+      publisher: PUBLISHER,
+      mainEntityOfPage: url,
+      image: ogImageUrl(meta),
+    };
+  }
+  if (meta.section === 'tools') {
+    return {
+      '@type': 'WebApplication',
+      name: meta.name,
+      url,
+      description: meta.description,
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Web',
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      publisher: PUBLISHER,
+    };
+  }
+  const node = { '@type': 'WebPage', url, name: meta.title, description: meta.description };
+  if (meta.updated) node.dateModified = meta.updated;
+  return node;
 }
 
 // Question-and-answer pages: the same items the page renders.
@@ -219,8 +319,12 @@ function faqPage(items) {
   };
 }
 
-/** The JSON-LD graph for a page, or null when it carries none. */
-export function structuredData(meta) {
+/**
+ * The JSON-LD graph for a page, or null when it carries none. `body` is a
+ * content page's full object (src/content/pages/…) — the prerender passes it
+ * so the page's FAQ blocks become FAQPage markup.
+ */
+export function structuredData(meta, body) {
   if (!meta.path) return null;
   const graph = [];
   if (meta.path === '/') {
@@ -242,9 +346,13 @@ export function structuredData(meta) {
         dateModified: PRICING_UPDATED_AT,
       });
     }
+    if (meta.section) graph.push(contentNode(meta));
     graph.push(breadcrumbs(meta));
   }
-  if (PAGE_FAQS[meta.path]) graph.push(faqPage(PAGE_FAQS[meta.path]));
+  const faqs =
+    PAGE_FAQS[meta.path] ??
+    (body?.blocks ?? []).filter((b) => b.type === 'faq').flatMap((b) => b.items);
+  if (faqs.length) graph.push(faqPage(faqs));
   return { '@context': 'https://schema.org', '@graph': graph };
 }
 
@@ -253,7 +361,7 @@ export function structuredData(meta) {
  * prerender (string output) and RouteMeta (DOM output) turn into tags. The
  * <title> is handled separately by each.
  */
-export function headElements(meta) {
+export function headElements(meta, body) {
   const canonical = meta.path ? absoluteUrl(meta.path) : null;
   const image = ogImageUrl(meta);
   const els = [
@@ -268,7 +376,10 @@ export function headElements(meta) {
   ];
   if (canonical) els.push({ tag: 'link', attrs: { rel: 'canonical', href: canonical } });
   els.push(
-    { tag: 'meta', attrs: { property: 'og:type', content: 'website' } },
+    {
+      tag: 'meta',
+      attrs: { property: 'og:type', content: meta.section === 'blog' ? 'article' : 'website' },
+    },
     { tag: 'meta', attrs: { property: 'og:site_name', content: SITE_NAME } },
     { tag: 'meta', attrs: { property: 'og:locale', content: 'en_US' } },
     { tag: 'meta', attrs: { property: 'og:title', content: meta.title } },
@@ -285,7 +396,7 @@ export function headElements(meta) {
     { tag: 'meta', attrs: { name: 'twitter:description', content: meta.description } },
     { tag: 'meta', attrs: { name: 'twitter:image', content: image } },
   );
-  const data = structuredData(meta);
+  const data = structuredData(meta, body);
   if (data)
     els.push({ tag: 'script', attrs: { type: 'application/ld+json' }, text: JSON.stringify(data) });
   return els;
