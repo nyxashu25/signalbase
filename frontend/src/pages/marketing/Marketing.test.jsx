@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { describe, it, expect } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -8,7 +10,13 @@ import { Privacy } from './Privacy.jsx';
 import { Terms } from './Terms.jsx';
 import { About } from './About.jsx';
 import { Product } from './Product.jsx';
+import { Press } from './Press.jsx';
 import { renderWithProviders, mockFetchRoutes } from '../../test/testUtils.jsx';
+import { BOILERPLATE_MEDIUM, BOILERPLATE_SHORT, DATAPIT_SUMMARY } from '../../data/facts.js';
+import tailwindConfig from '../../../tailwind.config.js';
+
+// frontend/public — vitest runs from frontend/.
+const PUBLIC_DIR = path.resolve('public');
 
 describe('marketing: Home', () => {
   it('renders the hero and sends "Start free" into register mode', () => {
@@ -176,5 +184,44 @@ describe('marketing: answer-first content', () => {
     expect(screen.getByRole('heading', { name: 'DataPit at a glance' })).toBeInTheDocument();
     expect(screen.getByText('What it is')).toBeInTheDocument();
     expect(screen.getByText('Data rights')).toBeInTheDocument();
+  });
+});
+
+describe('marketing: Press', () => {
+  it('gives the description in three lengths, the facts, the downloads and a contact', () => {
+    mockFetchRoutes([]);
+    renderWithProviders(<Press />);
+    expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
+    // The one-liner is also the first "at a glance" fact.
+    expect(screen.getAllByText(DATAPIT_SUMMARY).length).toBeGreaterThan(0);
+    expect(screen.getByText(BOILERPLATE_SHORT)).toBeInTheDocument();
+    expect(screen.getByText(BOILERPLATE_MEDIUM)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'DataPit at a glance' })).toBeInTheDocument();
+    expect(screen.getByText('Data rights')).toBeInTheDocument();
+    expect(screen.getByText(/profiles on other sites will be listed here/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'contact page' })).toHaveAttribute('href', '/contact');
+  });
+
+  it('links only to logo and image files that exist, each under 400 kB', () => {
+    mockFetchRoutes([]);
+    renderWithProviders(<Press />);
+    const downloads = screen.getAllByRole('link', { name: /^Download / });
+    expect(downloads.length).toBeGreaterThanOrEqual(10);
+    for (const link of downloads) {
+      const href = link.getAttribute('href');
+      expect(href).toMatch(/^\/(press|logos)\/[a-z0-9-]+\.(png|svg)$/);
+      const file = path.join(PUBLIC_DIR, href);
+      expect(fs.existsSync(file), href).toBe(true);
+      expect(fs.statSync(file).size, href).toBeLessThan(400 * 1024);
+    }
+  });
+
+  it('shows brand colors that match the Tailwind palette', () => {
+    mockFetchRoutes([]);
+    renderWithProviders(<Press />);
+    const palette = JSON.stringify(tailwindConfig.theme.extend.colors).toLowerCase();
+    const hexes = screen.getAllByText(/^#[0-9A-F]{6}$/).map((el) => el.textContent.toLowerCase());
+    expect(hexes.length).toBeGreaterThanOrEqual(6);
+    for (const hex of hexes) expect(palette, hex).toContain(`"${hex}"`);
   });
 });

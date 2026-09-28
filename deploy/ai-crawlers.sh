@@ -8,10 +8,18 @@
 # weeks). Anything other than 200/301/304 on a public page means a crawler is
 # being turned away: check robots.txt, nginx and rate limits. User agents can
 # be spoofed, so treat the counts as a health check, not an audit.
+#
+#   SINCE=2026-09-21 ai-crawlers.sh   only count requests on or after that day
+#                                     (the weekly SEO report uses this)
 set -euo pipefail
 
 LOG_DIR=${LOG_DIR:-/var/log/nginx}
 BASE=datapit.io.access.log
+SINCE=${SINCE:-}
+case "$SINCE" in
+  ''|[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) ;;
+  *) echo "SINCE must be YYYY-MM-DD, got: $SINCE" >&2; exit 2 ;;
+esac
 BOTS='Googlebot|bingbot|GPTBot|OAI-SearchBot|ChatGPT-User|ClaudeBot|Claude-User|Claude-SearchBot|PerplexityBot|Perplexity-User|Applebot|DuckAssistBot|meta-externalagent|YandexBot'
 
 shopt -s nullglob
@@ -21,10 +29,18 @@ if [ ${#logs[@]} -eq 0 ]; then
   exit 1
 fi
 
-# Combined log format split on double quotes: $2 = request line,
+# Combined log format split on double quotes: $1 ends with the
+# "[28/Sep/2026:07:00:00 +0000]" timestamp, $2 = request line,
 # $3 = " status bytes ", $6 = user agent.
-zcat -f "${logs[@]}" | awk -F'"' -v bots="$BOTS" '
+zcat -f "${logs[@]}" | awk -F'"' -v bots="$BOTS" -v since="${SINCE//-/}" '
   BEGIN { n = split(bots, list, "|") }
+  since != "" {
+    t = index($1, "[")
+    if (!t) next
+    d = substr($1, t + 1, 11)                      # 28/Sep/2026
+    m = (index("JanFebMarAprMayJunJulAugSepOctNovDec", substr(d, 4, 3)) + 2) / 3
+    if (substr(d, 8, 4) sprintf("%02d", m) substr(d, 1, 2) < since) next
+  }
   {
     ua = tolower($6)
     split($3, st, " ")

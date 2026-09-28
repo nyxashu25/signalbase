@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { SEO_ROUTES, headElements, isPrivatePath, metaForPath, structuredData } from './site.js';
+import {
+  SEO_ROUTES,
+  headElements,
+  isPrivatePath,
+  metaForPath,
+  organization,
+  structuredData,
+} from './site.js';
+import { PROFILES } from '../data/facts.js';
 
 describe('seo: metaForPath', () => {
   it('finds each public page, ignoring a trailing slash', () => {
@@ -54,5 +62,30 @@ describe('seo: page metadata', () => {
     expect(graph.some((n) => n['@type'] === 'Organization')).toBe(true);
     const crumbs = structuredData(metaForPath('/about'))['@graph'][0];
     expect(crumbs['@type']).toBe('BreadcrumbList');
+  });
+});
+
+describe('seo: Organization profiles', () => {
+  it("lists DataPit's own profiles as sameAs once there are any", () => {
+    expect(organization([])).not.toHaveProperty('sameAs');
+    const profiles = [
+      { name: 'LinkedIn', url: 'https://www.linkedin.com/company/datapit' },
+      { name: 'Crunchbase', url: 'https://www.crunchbase.com/organization/datapit' },
+    ];
+    expect(organization(profiles).sameAs).toEqual(profiles.map((p) => p.url));
+  });
+
+  it('puts PROFILES on the home page Organization', () => {
+    const org = structuredData(metaForPath('/'))['@graph'].find((n) => n['@type'] === 'Organization');
+    expect(org.sameAs ?? []).toEqual(PROFILES.map((p) => p.url));
+  });
+
+  it('indexes the press kit', () => {
+    const press = metaForPath('/press');
+    expect(press.path).toBe('/press');
+    expect(press.noindex).toBeFalsy();
+    expect(headElements(press).find((e) => e.attrs.rel === 'canonical').attrs.href).toBe(
+      'https://datapit.io/press',
+    );
   });
 });

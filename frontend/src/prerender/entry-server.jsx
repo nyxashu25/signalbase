@@ -18,6 +18,7 @@ import { Pricing } from '../pages/marketing/Pricing.jsx';
 import { Product } from '../pages/marketing/Product.jsx';
 import { Solutions } from '../pages/marketing/Solutions.jsx';
 import { About } from '../pages/marketing/About.jsx';
+import { Press } from '../pages/marketing/Press.jsx';
 import { Contact } from '../pages/marketing/Contact.jsx';
 import { Privacy } from '../pages/marketing/Privacy.jsx';
 import { Terms } from '../pages/marketing/Terms.jsx';
@@ -56,6 +57,7 @@ const PAGES = {
   '/product': Product,
   '/solutions': Solutions,
   '/about': About,
+  '/press': Press,
   '/contact': Contact,
   '/privacy': Privacy,
   '/terms': Terms,

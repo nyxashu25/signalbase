@@ -307,7 +307,8 @@ Crawler health, once a month on the VPS:
 `/var/www/datapit.io/app/deploy/ai-crawlers.sh` counts requests and status
 codes per search/AI crawler from `/var/log/nginx/datapit.io.access.log*`
 (that log started 2026-09-28). Public pages should only ever show 200, 301 or
-304; anything else means a crawler is being turned away.
+304; anything else means a crawler is being turned away. `SINCE=YYYY-MM-DD`
+limits it to recent days; the weekly SEO report below includes the last 7.
 
 **Content pages** (comparisons, features, personas, the extension page, free
 tools, guides) are plain data files under `frontend/src/content/pages/`
@@ -341,3 +342,67 @@ After a deploy that changes marketing copy, ping IndexNow (Bing, and so
 ChatGPT search and Copilot) from `frontend/`: `npm run indexnow`. Share
 images live in `frontend/public/og/`; regenerate them with
 `npm run og-images` (needs local Chrome or Edge) when a page headline changes.
+
+**Press kit** (`/press`): the logo PNGs and the two gallery images in
+`frontend/public/press/` are committed; regenerate them with
+`npm run press-assets` (local Chrome or Edge) after a logo, price or credit
+cost changes. DataPit's own profiles on other sites (LinkedIn, Crunchbase,
+G2, Product Hunt, X) go in `PROFILES` in `frontend/src/data/facts.js`; one
+entry adds it to the Organization `sameAs`, the /press Profiles section and
+llms.txt on the next build.
+
+## Weekly SEO report (`deploy/seo-report.sh`)
+
+`datapit-seo-report.timer`, **Mondays 07:00** server time (`Persistent=true`,
+so a missed Monday runs at next boot). Emails one report through Resend, to
+`help.datapit@gmail.com` (override with `ALERT_TO=`, comma-separated for
+several), subject `datapit.io SEO weekly: N issues` or `… all clear`:
+
+- every `<loc>` in `sitemap.xml`: 200 with no redirect, canonical pointing at
+  itself, not noindex (meta or `X-Robots-Tag`), a `<title>` that exists, is
+  unique and is at most 60 characters. Every page's status, response time,
+  title, robots and canonical are in the attached CSV.
+- `robots.txt` (and its `Sitemap:` line), `llms.txt` and `llms-full.txt`
+  (200, `text/plain`, non-empty), `www` → bare domain and `http` → `https`
+  (301, one hop), `/pricing/` and `/pricing.html` → `/pricing`, and a real
+  404 for a made-up URL.
+- stale competitor facts: the visible "Last updated" date on `/alternatives/`
+  and `/compare/` pages, and the competitor-prices "Checked" date on
+  `/pricing`, older than 90 days (`STALE_DAYS=`). Re-check the figures, then
+  bump `meta.updated` in the page file or `COMPETITOR_PRICES_CHECKED` in
+  `src/data/competitors.js`. Dates within 14 days of going stale are listed
+  as "due soon".
+- the `ai-crawlers.sh` summary for the last 7 days (`SINCE=`); a crawler
+  getting 403, 429 or 5xx on a public page is also listed as an issue.
+
+Install (the unit runs the copy in `/usr/local/bin`, so re-run the `install`
+line after changing the script; it finds `ai-crawlers.sh` in the repo):
+
+```
+cd /var/www/datapit.io/app
+install -m 755 deploy/seo-report.sh /usr/local/bin/datapit-seo-report.sh
+cp deploy/systemd/datapit-seo-report.service deploy/systemd/datapit-seo-report.timer /etc/systemd/system/
+systemctl daemon-reload && systemctl enable --now datapit-seo-report.timer
+```
+
+Test / run now / check:
+
+```
+datapit-seo-report.sh --test          # print the report, send nothing (--dry-run is the same)
+datapit-seo-report.sh --test --html > /tmp/seo.html   # the email as it will look
+systemctl start datapit-seo-report.service && journalctl -u datapit-seo-report -n 30   # sends it
+systemctl list-timers datapit-seo-report.timer
+```
+
+Disable:
+
+```
+systemctl disable --now datapit-seo-report.timer
+```
+
+The unit only fails when the report couldn't be mailed (no `RESEND_API_KEY`
+in `backend/.env`, or Resend refused it); issues in the report itself leave
+it green. `--test`, `--dry-run` and `--html` never send anything. Page checks
+stop after 18 minutes (`PAGE_BUDGET=` seconds) so a slow site still gets its
+report inside the unit's 30-minute limit; the pages left over show up as a
+"not checked" issue.

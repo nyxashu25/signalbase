@@ -17,6 +17,7 @@
     "format:fix": "prettier --write .",
     "test": "vitest run",
     "og-images": "node scripts/og-images.mjs",
+    "press-assets": "node scripts/press-assets.mjs",
     "indexnow": "node scripts/indexnow.mjs"
   },
   "dependencies": {

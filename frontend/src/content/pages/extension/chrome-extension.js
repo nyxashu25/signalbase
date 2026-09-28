@@ -1,4 +1,7 @@
-import { CREDIT_COSTS, EXTENSION_STORE_URL } from '../../../data/facts.js';
+import { CREDIT_COSTS, EXTENSION_STORE_URL, LIVE } from '../../../data/facts.js';
+
+// Phones only once imported records carry them (LIVE in facts.js; today none do).
+const PHONE = LIVE.phoneData ? ' and phone number' : '';
 
 export default {
   meta: {
@@ -6,7 +9,7 @@ export default {
     section: 'extension',
     name: 'Chrome extension',
     title: 'LinkedIn Email Finder Chrome Extension | DataPit',
-    description: `DataPit's free Chrome extension checks the LinkedIn profile you're viewing against DataPit and reveals the email and phone for ${CREDIT_COSTS.EXTENSION_REVEAL} credits.`,
+    description: `DataPit's free Chrome extension checks the LinkedIn profile you're viewing against DataPit and reveals the work email${PHONE} for ${CREDIT_COSTS.EXTENSION_REVEAL} credits.`,
     updated: '2026-09-28',
     published: true,
     station: 'reveal',
@@ -14,7 +17,7 @@ export default {
   hero: {
     eyebrow: 'Chrome extension',
     lines: ['Find emails on', 'LinkedIn profiles'],
-    sub: `DataPit — LinkedIn Lookup is a free Chrome extension. Open a LinkedIn profile and it checks the person against DataPit. If they're in the database, you can reveal their work email and phone number for ${CREDIT_COSTS.EXTENSION_REVEAL} credits, or for free if your team already has.`,
+    sub: `DataPit — LinkedIn Lookup is a free Chrome extension. Open a LinkedIn profile and it checks the person against DataPit. If they're in the database, you can reveal their work email${PHONE} for ${CREDIT_COSTS.EXTENSION_REVEAL} credits, or for free if your team already has.`,
     primary: { label: 'Add to Chrome', to: EXTENSION_STORE_URL },
     secondary: { label: 'Start free', to: '/login?mode=register' },
   },
@@ -42,7 +45,7 @@ export default {
         },
         {
           title: 'Reveal the contact',
-          text: `If the person is in DataPit, reveal their email and phone number for ${CREDIT_COSTS.EXTENSION_REVEAL} credits. Contacts anyone on your team has already revealed are free.`,
+          text: `If the person is in DataPit, reveal their work email${PHONE} for ${CREDIT_COSTS.EXTENSION_REVEAL} credits. Contacts anyone on your team has already revealed are free.`,
         },
       ],
     },
@@ -62,7 +65,7 @@ export default {
       head: ['Action', 'Credits'],
       rows: [
         ['Look up a profile', 'Free'],
-        ['Reveal email and phone', String(CREDIT_COSTS.EXTENSION_REVEAL)],
+        [LIVE.phoneData ? 'Reveal email and phone' : 'Reveal the work email', String(CREDIT_COSTS.EXTENSION_REVEAL)],
         ['Reveal a contact your team already revealed', 'Free'],
         ['Reveal the same contact in the DataPit web app', String(CREDIT_COSTS.REVEAL)],
       ],

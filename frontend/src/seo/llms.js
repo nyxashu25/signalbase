@@ -12,6 +12,8 @@ import {
 import {
   DATAPIT_SUMMARY,
   EXTENSION_STORE_URL,
+  LIVE,
+  PROFILES,
   formatCount,
   glanceFacts,
   pricingSummary,
@@ -19,7 +21,7 @@ import {
 import { PRICING_FAQS, PRODUCT_FAQS } from '../data/faqs.js';
 import { PUBLIC_ROUTES, SITE_URL, absoluteUrl } from './site.js';
 
-const MAIN_PAGES = ['/', '/product', '/pricing', '/solutions', '/about', '/contact', '/blog'];
+const MAIN_PAGES = ['/', '/product', '/pricing', '/solutions', '/about', '/press', '/contact', '/blog'];
 const LEGAL_PAGES = ['/privacy', '/terms'];
 
 // Published content pages, grouped the way a reader looks for them.
@@ -49,6 +51,12 @@ function contentSections() {
   }).join('');
 }
 
+// DataPit's own profiles on other sites (data/facts.js), once there are any.
+function profilesSection(profiles) {
+  if (!profiles.length) return '';
+  return `## Profiles\n\n${profiles.map((p) => `- [${p.name}](${p.url})`).join('\n')}\n\n`;
+}
+
 function plansTable() {
   const rows = PLANS.map((p) => {
     if (!p.block) {
@@ -68,12 +76,13 @@ function faqList(items) {
   return items.map(({ q, a }) => `### ${q}\n\n${a}`).join('\n\n');
 }
 
-export function llmsTxt() {
+/** `profiles` defaults to PROFILES; tests pass their own. */
+export function llmsTxt({ profiles = PROFILES } = {}) {
   return `# DataPit
 
 > ${DATAPIT_SUMMARY}
 
-${pricingSummary()} Credits are spent only when you use data, and every credit movement is recorded in an append-only ledger each workspace can audit.
+${pricingSummary()} Credits are spent only when you use data, and every credit your team spends is recorded in a ledger the workspace can see.
 
 ## Pages
 
@@ -81,9 +90,9 @@ ${pageLinks(MAIN_PAGES)}
 
 ${contentSections()}## Chrome extension
 
-- [DataPit — LinkedIn Lookup (Chrome extension)](${EXTENSION_STORE_URL}): Looks up the LinkedIn profile you're viewing in DataPit, reveals its email and phone number, and queues missing people for sourcing.
+- [DataPit — LinkedIn Lookup (Chrome extension)](${EXTENSION_STORE_URL}): Looks up the LinkedIn profile you're viewing in DataPit, reveals its work email${LIVE.phoneData ? ' and phone number' : ''}, and queues missing people for sourcing.
 
-## Optional
+${profilesSection(profiles)}## Optional
 
 ${pageLinks(LEGAL_PAGES)}
 - [Full reference for AI assistants](${SITE_URL}/llms-full.txt): Plans, credits, product details and answers to common questions in one file.

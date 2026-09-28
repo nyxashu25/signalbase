@@ -138,7 +138,7 @@ export const CONTENT_PAGES = [
     "section": "extension",
     "name": "Chrome extension",
     "title": "LinkedIn Email Finder Chrome Extension | DataPit",
-    "description": "DataPit's free Chrome extension checks the LinkedIn profile you're viewing against DataPit and reveals the email and phone for 4 credits.",
+    "description": "DataPit's free Chrome extension checks the LinkedIn profile you're viewing against DataPit and reveals the work email for 4 credits.",
     "updated": "2026-09-28",
     "published": true,
     "station": "reveal",

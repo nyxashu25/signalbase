@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the DataPit SEO report every Monday morning
+
+[Timer]
+# Mondays 07:00 server time (UTC, like the backup timer).
+OnCalendar=Mon *-*-* 07:00:00
+# If the box was off/rebooting then, run on next boot instead of skipping a week.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

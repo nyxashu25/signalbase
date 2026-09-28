@@ -44,7 +44,7 @@ export const PRODUCT_FAQS = [
   { q: 'What does a reveal include, and what does it cost?', a: revealSummary() },
   {
     q: 'Is there a Chrome extension?',
-    a: "Yes. DataPit — LinkedIn Lookup, free on the Chrome Web Store, checks the LinkedIn profile you're viewing against DataPit, reveals the email and phone number, and queues people DataPit doesn't have yet for sourcing.",
+    a: `Yes. DataPit — LinkedIn Lookup, free on the Chrome Web Store, checks the LinkedIn profile you're viewing against DataPit, reveals the work email${LIVE.phoneData ? ' and phone number' : ''}, and queues people DataPit doesn't have yet for sourcing.`,
   },
   // Only while sending is live: until ESP_API_KEY is set, sequences run
   // without delivering email (see LIVE in facts.js).

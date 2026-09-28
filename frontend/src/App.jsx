@@ -48,6 +48,7 @@ const Pricing = lazyNamed(() => import('./pages/marketing/Pricing.jsx'), 'Pricin
 const Product = lazyNamed(() => import('./pages/marketing/Product.jsx'), 'Product');
 const Solutions = lazyNamed(() => import('./pages/marketing/Solutions.jsx'), 'Solutions');
 const About = lazyNamed(() => import('./pages/marketing/About.jsx'), 'About');
+const Press = lazyNamed(() => import('./pages/marketing/Press.jsx'), 'Press');
 const Contact = lazyNamed(() => import('./pages/marketing/Contact.jsx'), 'Contact');
 const Privacy = lazyNamed(() => import('./pages/marketing/Privacy.jsx'), 'Privacy');
 const Terms = lazyNamed(() => import('./pages/marketing/Terms.jsx'), 'Terms');
@@ -68,6 +69,7 @@ const MARKETING_PAGES = {
   '/product': Product,
   '/solutions': Solutions,
   '/about': About,
+  '/press': Press,
   '/contact': Contact,
   '/privacy': Privacy,
   '/terms': Terms,
@@ -224,6 +226,7 @@ export function App() {
             <Route path="/product" element={<Product />} />
             <Route path="/solutions" element={<Solutions />} />
             <Route path="/about" element={<About />} />
+            <Route path="/press" element={<Press />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />

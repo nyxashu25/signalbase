@@ -1,5 +1,11 @@
 import { Link } from 'react-router-dom';
 import { FadeIn } from './motion.jsx';
+import { LIVE } from '../../data/facts.js';
+
+// "Outreach" only once sequence emails are really delivered (LIVE in facts.js).
+const TAGLINE = LIVE.sequenceSending
+  ? 'The B2B contact data platform: search, reveal and outreach on one credit ledger.'
+  : 'The B2B contact data platform: search, reveal and build lists on one credit ledger.';
 
 const COLUMNS = [
   {
@@ -31,6 +37,7 @@ const COLUMNS = [
     heading: 'Company',
     links: [
       { label: 'About', to: '/about' },
+      { label: 'Press', to: '/press' },
       { label: 'Contact', to: '/contact' },
     ],
   },
@@ -55,9 +62,7 @@ export function MarketingFooter() {
         <div className="grid grid-cols-2 gap-10 sm:grid-cols-3 lg:grid-cols-6">
           <div className="col-span-2 sm:col-span-3 lg:col-span-1">
             <img src="/logos/datapit-logo-dark.svg" alt="DataPit" className="h-8" />
-            <p className="mt-4 max-w-[220px] text-sm text-ink-300">
-              The B2B contact data platform: search, reveal and outreach on one credit ledger.
-            </p>
+            <p className="mt-4 max-w-[220px] text-sm text-ink-300">{TAGLINE}</p>
           </div>
           {COLUMNS.map((col) => (
             <div key={col.heading}>

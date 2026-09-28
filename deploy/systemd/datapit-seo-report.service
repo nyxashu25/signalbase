@@ -1,0 +1,13 @@
+[Unit]
+Description=DataPit weekly SEO report (sitemap pages, robots/llms.txt, redirects, stale competitor dates, crawlers)
+Documentation=file:/var/www/datapit.io/app/RUNBOOK.md
+# Persistent=true on the timer can start this at boot, before the network is up.
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/datapit-seo-report.sh
+# One request per sitemap URL, 20s cap each; stop a wedged run well before next week.
+TimeoutStartSec=30min
+Nice=10

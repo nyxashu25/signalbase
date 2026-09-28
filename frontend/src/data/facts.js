@@ -20,6 +20,16 @@ import {
 export const EXTENSION_STORE_URL =
   'https://chromewebstore.google.com/detail/datapit-%E2%80%94-linkedin-lookup/mgkohbpdpfgdfnlbipfkhnjadbncdgnj';
 
+// DataPit's official profiles on other sites, as { name, url } — e.g.
+// { name: 'LinkedIn', url: 'https://www.linkedin.com/company/…' }, then
+// Crunchbase, G2, Product Hunt, X. Empty until the owner creates them. This
+// one list feeds the Organization structured data's `sameAs` (seo/site.js),
+// the Profiles section of the /press page and the Profiles group in llms.txt
+// (seo/llms.js), so a profile added here shows up in all three on the next
+// build. Only profiles DataPit itself controls belong here: the Chrome Web
+// Store listing is a product page (EXTENSION_STORE_URL), not a profile.
+export const PROFILES = [];
+
 // What is switched on in production today. Content pages and the facts below
 // read these, so when a capability goes live one flag flips every claim that
 // depends on it (and publishes the pages built around it). Checked against
@@ -75,6 +85,29 @@ export function seatBlockSentence() {
       `${p.name} is $${p.price} a month for ${p.block.paidSeats} paid seats plus ${p.block.freeSeats} free`,
   ).join(', ');
 }
+
+// The company description in two longer lengths, for the /press page and for
+// the "About" fields of DataPit's profiles (PROFILES) — paste these rather than
+// writing a new one, so every site describes DataPit the same way. The
+// one-line version is DATAPIT_SUMMARY itself; both start with it.
+const LOWEST_PLAN = PAID_PLANS[0];
+const HIGHEST_PLAN = PAID_PLANS[PAID_PLANS.length - 1];
+
+/** About 50 words. */
+export const BOILERPLATE_SHORT =
+  `${DATAPIT_SUMMARY} Paid seat blocks start at $${LOWEST_PLAN.price} a month for ` +
+  `${LOWEST_PLAN.block.paidSeats} paid seats plus ${LOWEST_PLAN.block.freeSeats} free, and the free plan includes ` +
+  `${formatCount(FREE_PLAN_MONTHLY_CREDITS)} credits a month. A contact revealed once is free for the whole workspace.`;
+
+/** About 100 words. */
+export const BOILERPLATE_MEDIUM =
+  `${DATAPIT_SUMMARY} Each seat earns its own monthly credits, and a contact revealed once is free for ` +
+  'everyone in the workspace. Lists export to CSV, and a credit ledger records what each credit was spent on. ' +
+  `Paid plans are sold in seat blocks, from $${LOWEST_PLAN.price} a month for ${LOWEST_PLAN.block.paidSeats} paid ` +
+  `seats plus ${LOWEST_PLAN.block.freeSeats} free to $${HIGHEST_PLAN.price} for ${HIGHEST_PLAN.block.paidSeats} paid ` +
+  `plus ${HIGHEST_PLAN.block.freeSeats} free, and the free plan includes ${formatCount(FREE_PLAN_MONTHLY_CREDITS)} ` +
+  'credits a month. DataPit also offers a free Chrome extension and a free email verifier.' +
+  (DATABASE_CLAIM ? ` ${DATABASE_CLAIM}` : '');
 
 export function pricingSummary() {
   return (

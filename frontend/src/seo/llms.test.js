@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import manifestText from '../../public/site.webmanifest?raw';
 import { llmsFullTxt, llmsTxt } from './llms.js';
 import { SEO_ROUTES, metaForPath, structuredData } from './site.js';
-import { DATAPIT_SUMMARY } from '../data/facts.js';
+import { DATAPIT_SUMMARY, LIVE } from '../data/facts.js';
 import { PRICING_FAQS, PRODUCT_FAQS } from '../data/faqs.js';
 
 describe('llms.txt', () => {
@@ -14,6 +14,22 @@ describe('llms.txt', () => {
       expect(txt).toContain(`(${url})`);
     }
     expect(txt).toContain('https://datapit.io/llms-full.txt');
+  });
+
+  it("doesn't promise phone numbers before any are live, or an append-only ledger", () => {
+    const txt = llmsTxt();
+    if (!LIVE.phoneData) expect(txt).not.toMatch(/phone/i);
+    expect(txt).not.toMatch(/append-only/i);
+  });
+
+  it('adds a Profiles group only when DataPit has profiles', () => {
+    expect(llmsTxt({ profiles: [] })).not.toContain('## Profiles');
+    const txt = llmsTxt({
+      profiles: [{ name: 'LinkedIn', url: 'https://www.linkedin.com/company/datapit' }],
+    });
+    expect(txt).toContain(
+      '## Profiles\n\n- [LinkedIn](https://www.linkedin.com/company/datapit)\n',
+    );
   });
 
   it('carries the plan table and every answer in the full reference', () => {

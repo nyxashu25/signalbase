@@ -3,7 +3,7 @@
 // head updates on navigation (RouteMeta.jsx). Titles stay at or under 60
 // characters and descriptions near 155, the lengths Google shows in results.
 import { PLANS, PRICING_UPDATED_AT } from '../data/plans.js';
-import { DATAPIT_SUMMARY } from '../data/facts.js';
+import { DATAPIT_SUMMARY, PROFILES } from '../data/facts.js';
 import { PRICING_FAQS, PRODUCT_FAQS } from '../data/faqs.js';
 import { CONTENT_PAGES } from '../content/registry.generated.js';
 import { SECTIONS } from '../content/schema.js';
@@ -73,6 +73,17 @@ export const SEO_ROUTES = [
     og: 'about',
     source: 'src/pages/marketing/About.jsx',
     priority: '0.6',
+    changefreq: 'monthly',
+  },
+  {
+    path: '/press',
+    name: 'Press',
+    title: 'DataPit Press Kit: Logos, Facts and Boilerplate',
+    description:
+      'Logos, product images, brand colors, key facts and a company description in three lengths, for anyone writing about DataPit. Free to use in coverage.',
+    og: 'default',
+    source: 'src/pages/marketing/Press.jsx',
+    priority: '0.4',
     changefreq: 'monthly',
   },
   {
@@ -219,14 +230,25 @@ function ogImageUrl(meta) {
   return `${SITE_URL}/og/${meta.og || 'default'}.png`;
 }
 
-const ORGANIZATION = {
-  '@type': 'Organization',
-  '@id': `${SITE_URL}/#organization`,
-  name: SITE_NAME,
-  url: `${SITE_URL}/`,
-  logo: `${SITE_URL}/favicons/favicon-512x512.png`,
-  description: DEFAULT_DESCRIPTION,
-};
+const ORGANIZATION_ID = `${SITE_URL}/#organization`;
+
+/**
+ * The Organization node. `sameAs` lists DataPit's own profiles on other
+ * sites (PROFILES in data/facts.js) once there are any — it's how search
+ * engines tie those profiles to this site.
+ */
+export function organization(profiles = PROFILES) {
+  const node = {
+    '@type': 'Organization',
+    '@id': ORGANIZATION_ID,
+    name: SITE_NAME,
+    url: `${SITE_URL}/`,
+    logo: `${SITE_URL}/favicons/favicon-512x512.png`,
+    description: DEFAULT_DESCRIPTION,
+  };
+  if (profiles.length) node.sameAs = profiles.map((p) => p.url);
+  return node;
+}
 
 function softwareApplication() {
   return {
@@ -237,7 +259,7 @@ function softwareApplication() {
     applicationCategory: 'BusinessApplication',
     operatingSystem: 'Web',
     description: DEFAULT_DESCRIPTION,
-    publisher: { '@id': ORGANIZATION['@id'] },
+    publisher: { '@id': ORGANIZATION_ID },
     offers: PLANS.map((plan) => ({
       '@type': 'Offer',
       name: plan.name,
@@ -328,12 +350,12 @@ export function structuredData(meta, body) {
   if (!meta.path) return null;
   const graph = [];
   if (meta.path === '/') {
-    graph.push(ORGANIZATION, {
+    graph.push(organization(), {
       '@type': 'WebSite',
       '@id': `${SITE_URL}/#website`,
       name: SITE_NAME,
       url: `${SITE_URL}/`,
-      publisher: { '@id': ORGANIZATION['@id'] },
+      publisher: { '@id': ORGANIZATION_ID },
     });
     graph.push(softwareApplication());
   } else {
