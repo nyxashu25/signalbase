@@ -73,7 +73,10 @@ const DISCOUNTS = BILLING_INTERVALS.filter((i) => i.discount > 0)
  * engines) scan when comparing plans, independent of the interval toggle.
  */
 function PlanComparison() {
-  const cell = 'whitespace-nowrap px-4 py-3';
+  // Numbers stay on one line; the headers wrap, so the table fits the page
+  // on desktop and only scrolls sideways on narrow screens.
+  const head = 'px-3 py-3 align-bottom font-bold';
+  const cell = 'whitespace-nowrap px-3 py-3';
   return (
     <div className="mt-16">
       <h3 className="text-lg font-bold text-text">Plans at a glance</h3>
@@ -81,16 +84,16 @@ function PlanComparison() {
         Monthly prices per seat block. Saves {DISCOUNTS}.
       </p>
       <div className="mt-5 overflow-x-auto rounded-lg border border-border">
-        <table className="w-full min-w-[760px] text-left text-sm tabular-nums">
+        <table className="w-full min-w-[680px] text-left text-sm tabular-nums">
           <thead className="bg-surface text-xs uppercase tracking-wide text-text-muted">
             <tr>
-              <th scope="col" className={`${cell} font-bold`}>Plan</th>
-              <th scope="col" className={`${cell} font-bold`}>Price / month</th>
-              <th scope="col" className={`${cell} font-bold`}>Seats per block</th>
-              <th scope="col" className={`${cell} font-bold`}>Credits / paid seat / month</th>
-              <th scope="col" className={`${cell} font-bold`}>Credits / free seat / month</th>
-              <th scope="col" className={`${cell} font-bold`}>Owner bonus / month</th>
-              <th scope="col" className={`${cell} font-bold`}>Price per paid seat</th>
+              <th scope="col" className={head}>Plan</th>
+              <th scope="col" className={head}>Price / month</th>
+              <th scope="col" className={head}>Seats per block</th>
+              <th scope="col" className={head}>Credits / paid seat / month</th>
+              <th scope="col" className={head}>Credits / free seat / month</th>
+              <th scope="col" className={head}>Owner bonus / month</th>
+              <th scope="col" className={head}>Price per paid seat</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border text-text">
