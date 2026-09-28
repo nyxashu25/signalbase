@@ -44,7 +44,7 @@ export const PRODUCT_FAQS = [
   { q: 'What does a reveal include, and what does it cost?', a: revealSummary() },
   {
     q: 'Is there a Chrome extension?',
-    a: `Yes. DataPit — LinkedIn Lookup, free on the Chrome Web Store, checks the LinkedIn profile you're viewing against DataPit, reveals the work email${LIVE.phoneData ? ' and phone number' : ''}, and queues people DataPit doesn't have yet for sourcing.`,
+    a: `Yes. DataPit — LinkedIn Lookup is free on the Chrome Web Store. It checks the LinkedIn profile you're viewing against DataPit and reveals the work email${LIVE.phoneData ? ' and phone number' : ''} for ${CREDIT_COSTS.EXTENSION_REVEAL} credits. People DataPit doesn't have yet are queued for sourcing.`,
   },
   // Only while sending is live: until ESP_API_KEY is set, sequences run
   // without delivering email (see LIVE in facts.js).
@@ -52,7 +52,7 @@ export const PRODUCT_FAQS = [
     ? [
         {
           q: 'Can I send cold email sequences from DataPit?',
-          a: `Yes, on paid plans. Sequences chain email and wait steps and enroll a saved list in one click. Enrolling a contact costs ${CREDIT_COSTS.SEQUENCE_ENROLLMENT} credits.`,
+          a: `Yes, on paid plans. A sequence chains email and wait steps, and you enroll contacts from a saved list. Enrolling a contact costs ${CREDIT_COSTS.SEQUENCE_ENROLLMENT} credits, charged up front.`,
         },
       ]
     : []),

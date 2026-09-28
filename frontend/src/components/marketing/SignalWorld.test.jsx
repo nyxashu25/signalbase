@@ -27,6 +27,7 @@ import { Contact } from '../../pages/marketing/Contact.jsx';
 import { Privacy } from '../../pages/marketing/Privacy.jsx';
 import { Terms } from '../../pages/marketing/Terms.jsx';
 import { renderWithProviders, mockFetchRoutes } from '../../test/testUtils.jsx';
+import { LIVE } from '../../data/facts.js';
 
 const KNOWN_STATIONS = ['mark', 'tunnel', 'reveal', 'sequence', 'ledger', 'lens', 'crystals', 'city', 'blocks', 'drift'];
 
@@ -273,6 +274,76 @@ describe('SignalWorld', () => {
     }
   });
 
+  it('waits for the first interaction on touch screens before loading the engine', async () => {
+    resetWorldCapabilityCache();
+    window.WebGL2RenderingContext = function WebGL2RenderingContext() {};
+    vi.spyOn(window, 'matchMedia').mockImplementation((query) => ({
+      media: query,
+      matches: query === '(pointer: coarse)',
+      addEventListener() {},
+      removeEventListener() {},
+      addListener() {},
+      removeListener() {},
+    }));
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      getExtension: () => ({ loseContext() {} }),
+    });
+    const world = mockWorld();
+    const createSignalWorld = vi.fn(async () => world);
+    const load = vi.spyOn(engineLoader, 'load').mockResolvedValue({ createSignalWorld });
+
+    try {
+      const { unmount } = render(<SignalWorld pathname="/" />);
+      // The host is up (the covers know the world is coming)...
+      expect(getSnapshot().active).toBe(true);
+      // ...but nothing loads while the reader has yet to touch the page.
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      expect(load).not.toHaveBeenCalled();
+
+      act(() => {
+        window.dispatchEvent(new Event('scroll'));
+      });
+      await waitFor(() => expect(createSignalWorld).toHaveBeenCalledTimes(1));
+      expect(createSignalWorld.mock.calls[0][0].quality).toBe('low');
+      await waitFor(() => expect(getSnapshot().ready).toBe(true));
+
+      // Later interactions don't boot a second engine.
+      act(() => {
+        window.dispatchEvent(new Event('pointerdown'));
+      });
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      expect(createSignalWorld).toHaveBeenCalledTimes(1);
+      unmount();
+    } finally {
+      delete window.WebGL2RenderingContext;
+      resetWorldCapabilityCache();
+    }
+  });
+
+  it('stops waiting for an interaction once unmounted', async () => {
+    resetWorldCapabilityCache();
+    window.WebGL2RenderingContext = function WebGL2RenderingContext() {};
+    vi.spyOn(window, 'matchMedia').mockImplementation((query) => ({
+      media: query,
+      matches: query === '(pointer: coarse)',
+      addEventListener() {},
+      removeEventListener() {},
+      addListener() {},
+      removeListener() {},
+    }));
+    const load = vi.spyOn(engineLoader, 'load');
+    try {
+      const { unmount } = render(<SignalWorld pathname="/" />);
+      unmount();
+      window.dispatchEvent(new Event('pointerdown'));
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      expect(load).not.toHaveBeenCalled();
+    } finally {
+      delete window.WebGL2RenderingContext;
+      resetWorldCapabilityCache();
+    }
+  });
+
   it('tears down to the CSS fallback when reduced motion is switched on mid-visit', async () => {
     resetWorldCapabilityCache();
     window.WebGL2RenderingContext = function WebGL2RenderingContext() {};
@@ -316,6 +387,26 @@ describe('IntroOverlay', () => {
     expect(screen.queryByRole('progressbar')).toBeNull();
   });
 
+  it('never plays on touch screens, where the world boots after the first interaction', () => {
+    window.sessionStorage.removeItem('dp-intro-seen');
+    vi.spyOn(window, 'matchMedia').mockImplementation((query) => ({
+      media: query,
+      matches: query === '(pointer: coarse)',
+      addEventListener() {},
+      removeEventListener() {},
+      addListener() {},
+      removeListener() {},
+    }));
+    const intro = vi.fn();
+    setWorldHandle({ intro });
+    const { container } = render(<IntroOverlay />);
+    act(() => setWorldState({ active: true }));
+    expect(container).toBeEmptyDOMElement();
+    act(() => setWorldState({ ready: true }));
+    expect(container).toBeEmptyDOMElement();
+    expect(intro).not.toHaveBeenCalled();
+  });
+
   it('plays once per session: loads, then descends via world.intro() when ready', async () => {
     window.sessionStorage.removeItem('dp-intro-seen');
     const intro = vi.fn();
@@ -330,10 +421,11 @@ describe('IntroOverlay', () => {
     await waitFor(() => expect(intro).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(container).toBeEmptyDOMElement(), { timeout: 2000 });
   });
+
 });
 
 describe('StoryCover', () => {
-  const lines = [{ content: 'Find verified' }];
+  const lines = [{ content: 'Find work' }];
 
   it('renders the CSS 3D mark fallback while the world is inactive', () => {
     const { container } = render(<StoryCover eyebrow="Test" lines={lines} />);
@@ -342,7 +434,7 @@ describe('StoryCover', () => {
     expect(section).toHaveAttribute('data-station-side', '1');
     expect(container.querySelector('linearGradient[id^="dp-mark-gradient"]')).not.toBeNull();
     expect(container.querySelector('[data-world-grab]')).toBeNull();
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Find verified');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Find work');
   });
 
   it('names the split headline with one plain-text copy and hides the visual lines', () => {
@@ -350,12 +442,12 @@ describe('StoryCover', () => {
       <StoryCover
         eyebrow="Test"
         lines={[
-          { content: 'Find verified' },
-          { content: <span className="bg-gradient-brand bg-clip-text text-transparent">contacts.</span> },
+          { content: 'Find work' },
+          { content: <span className="bg-gradient-brand bg-clip-text text-transparent">emails.</span> },
         ]}
       />,
     );
-    expect(screen.getByRole('heading', { level: 1, name: 'Find verified contacts.' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Find work emails.' })).toBeInTheDocument();
     const h1 = container.querySelector('h1');
     expect(h1.querySelectorAll('[aria-label]')).toHaveLength(0);
     for (const line of h1.querySelectorAll('[data-line]')) {
@@ -377,6 +469,47 @@ describe('StoryCover', () => {
     expect(container.querySelector('[data-world-grab]')).not.toBeNull();
     expect(screen.getByText('Drag to spin')).toBeInTheDocument();
     expect(container.querySelector('linearGradient[id^="dp-mark-gradient"]')).toBeNull();
+  });
+
+  it('hangs the hint under the CTAs on portrait screens, never over them', () => {
+    setWorldState({ active: true, ready: true });
+    // jsdom's matchMedia matches nothing: a portrait, narrow viewport.
+    const { container } = render(
+      <StoryCover eyebrow="Test" lines={lines}>
+        <a href="/login">Start free</a>
+      </StoryCover>,
+    );
+    const hint = screen.getByText('Drag to spin');
+    const column = container.querySelector('h1').parentElement;
+    // Inside the text column, after the CTAs, in a zero-height anchor that
+    // scrolls with them — not the viewport-sticky band that slid over them.
+    expect(column.contains(hint)).toBe(true);
+    expect(
+      screen.getByRole('link', { name: 'Start free' }).compareDocumentPosition(hint) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(hint.closest('.sticky')).toBeNull();
+    expect(hint.parentElement).toHaveClass('h-0');
+  });
+
+  it('keeps the hint by the mark, sticky in the lower band, on landscape screens', () => {
+    setWorldState({ active: true, ready: true });
+    vi.spyOn(window, 'matchMedia').mockImplementation((query) => ({
+      media: query,
+      matches: query === '(min-aspect-ratio: 1/1)',
+      addEventListener() {},
+      removeEventListener() {},
+      addListener() {},
+      removeListener() {},
+    }));
+    const { container } = render(
+      <StoryCover eyebrow="Test" lines={lines}>
+        <a href="/login">Start free</a>
+      </StoryCover>,
+    );
+    const hint = screen.getByText('Drag to spin');
+    expect(container.querySelector('h1').parentElement.contains(hint)).toBe(false);
+    expect(hint.style.left).toBe('71%');
   });
 
   it('gives other cover stations a same-size spacer without the grab area', () => {
@@ -409,9 +542,13 @@ describe('page stations', () => {
     return Array.from(container.querySelectorAll('[data-chapter]')).map((el) => el.dataset.station);
   }
 
+  // The sequence chapters render only while sequence sending is live
+  // (data/facts.js LIVE.sequenceSending — false today).
+  const sequence = LIVE.sequenceSending ? ['sequence'] : [];
+
   it.each([
-    ['Home', Home, ['mark', 'tunnel', 'reveal', 'sequence', 'ledger', 'drift', 'drift', 'city', 'drift', 'mark']],
-    ['Product', Product, ['mark', 'lens', 'reveal', 'sequence', 'ledger', 'drift', 'tunnel']],
+    ['Home', Home, ['mark', 'tunnel', 'reveal', ...sequence, 'ledger', 'drift', 'drift', 'city', 'drift', 'mark']],
+    ['Product', Product, ['mark', 'lens', 'reveal', ...sequence, 'ledger', 'drift', 'tunnel']],
     ['Solutions', Solutions, ['crystals', 'city', 'mark']],
     ['Pricing', Pricing, ['blocks', 'drift', 'ledger', 'drift', 'mark']],
     ['About', About, ['ledger', 'crystals', 'drift', 'tunnel', 'mark']],
@@ -435,8 +572,8 @@ describe('page stations', () => {
     const steps = container.querySelector('[data-chapter-title="How it works"]');
     expect(steps).not.toBeNull();
     expect(steps.querySelector('.story-glass')).not.toBeNull();
-    expect(steps).toHaveTextContent('Find verified contacts');
+    expect(steps).toHaveTextContent('Find the right people');
     expect(steps).toHaveTextContent('Reveal what you need');
-    expect(steps).toHaveTextContent('Track buying signals');
+    expect(steps).toHaveTextContent('Build your list');
   });
 });

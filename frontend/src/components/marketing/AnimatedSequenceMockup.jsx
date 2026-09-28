@@ -1,40 +1,24 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
+import { useStepLoop } from './onScreen.js';
 
 const STEPS = [
-  { label: 'Intro email', detail: 'Sent · 68% open rate' },
+  { label: 'Intro email', detail: 'Sent · day 1' },
   { label: 'Wait 3 days', detail: null },
   { label: 'Follow-up', detail: 'Scheduled' },
 ];
 
 const ACTIVE_MS = 1400;
 const IDLE_MS = 900;
+// Loop step k shows step k - 1 as active: an idle beat (none active), then
+// each step in turn.
+const DURATIONS = [IDLE_MS, ...STEPS.map(() => ACTIVE_MS)];
 
 export function AnimatedSequenceMockup({ className = '' }) {
-  const [active, setActive] = useState(-1);
-  const reducedMotion = useRef(false);
-
-  useEffect(() => {
-    reducedMotion.current = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    if (reducedMotion.current) {
-      setActive(STEPS.length - 1);
-      return;
-    }
-    let timer;
-    let i = -1;
-    const step = () => {
-      setActive(i);
-      const ms = i === -1 ? IDLE_MS : ACTIVE_MS;
-      timer = setTimeout(() => {
-        i = i + 1 >= STEPS.length ? -1 : i + 1;
-        step();
-      }, ms);
-    };
-    step();
-    return () => clearTimeout(timer);
-  }, []);
+  const rootRef = useRef(null);
+  const active = useStepLoop(rootRef, DURATIONS, STEPS.length) - 1;
 
   return (
-    <div className={`[perspective:1400px] ${className}`}>
+    <div ref={rootRef} className={`[perspective:1400px] ${className}`}>
       <div className="overflow-hidden rounded-xl border border-white/10 bg-ink-900 shadow-dp-md animate-[ambient-tilt_10s_ease-in-out_infinite]">
         <div className="flex items-center gap-2 border-b border-white/10 bg-ink-950 px-4 py-3">
           <span className="h-2.5 w-2.5 rounded-full bg-red-400/70" />

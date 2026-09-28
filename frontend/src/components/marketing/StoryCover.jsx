@@ -48,15 +48,44 @@ function documentTop(el) {
   return top;
 }
 
+const HINT_TEXT =
+  'flex items-center gap-2 whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.25em] text-ink-300/80';
+
+function DragIcon() {
+  return (
+    <svg width="16" height="10" viewBox="0 0 16 10" fill="none" stroke="currentColor" strokeWidth="1.75">
+      <path d="M4 1L1 5l3 4M12 1l3 4-3 4M1 5h14" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 /**
- * "Drag to spin", kept next to the 3D mark. Below it (`top` null): a
- * zero-height box sticky to the viewport's lower band while the cover
- * scrolls — the mark holds its spot for the first stretch of scroll too —
- * so it never changes the layout. Above it (a cover that ends before the
- * mark does): pinned at `top` px inside the cover, level with the viewport's
- * upper fifth at load.
+ * "Drag to spin" on portrait screens, where the mark sits centered behind
+ * the text and the cover's buttons share its middle band: a zero-height
+ * anchor at the end of the text column, the hint hanging just under the last
+ * line of it (the CTAs) in the gap before the mark's stage — so it never
+ * covers a button and never changes the layout.
  */
-function DragHint({ top, landscape }) {
+function InlineDragHint() {
+  return (
+    <div aria-hidden="true" className="pointer-events-none relative h-0">
+      <p className={`absolute left-0 top-5 ${HINT_TEXT}`}>
+        <DragIcon />
+        Drag to spin
+      </p>
+    </div>
+  );
+}
+
+/**
+ * "Drag to spin", kept next to the 3D mark on landscape screens (the mark
+ * off to the right of the text). Below it (`top` null): a zero-height box
+ * sticky to the viewport's lower band while the cover scrolls — the mark
+ * holds its spot for the first stretch of scroll too — so it never changes
+ * the layout. Above it (a cover that ends before the mark does): pinned at
+ * `top` px inside the cover, level with the viewport's upper fifth at load.
+ */
+function DragHint({ top }) {
   const below = top == null;
   return (
     <div
@@ -65,14 +94,10 @@ function DragHint({ top, landscape }) {
       style={below ? undefined : { top }}
     >
       <p
-        className={`absolute flex -translate-x-1/2 items-center gap-2 whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.25em] text-ink-300/80 ${
-          below ? 'bottom-0' : 'top-0'
-        }`}
-        style={{ left: landscape ? '71%' : '50%' }}
+        className={`absolute -translate-x-1/2 ${HINT_TEXT} ${below ? 'bottom-0' : 'top-0'}`}
+        style={{ left: '71%' }}
       >
-        <svg width="16" height="10" viewBox="0 0 16 10" fill="none" stroke="currentColor" strokeWidth="1.75">
-          <path d="M4 1L1 5l3 4M12 1l3 4-3 4M1 5h14" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        <DragIcon />
         Drag to spin
       </p>
     </div>
@@ -140,7 +165,7 @@ export function StoryCover({
   // height at load; a cover that ends above ~92% puts the hint over the top.
   useLayoutEffect(() => {
     const section = sectionRef.current;
-    if (!grab || !section) return undefined;
+    if (!grab || !landscape || !section) return undefined;
     const measure = () => {
       const top = documentTop(section);
       const vh = window.innerHeight;
@@ -154,7 +179,7 @@ export function StoryCover({
       ro?.disconnect();
       window.removeEventListener('resize', measure);
     };
-  }, [grab]);
+  }, [grab, landscape]);
 
   const tall = size === 'lg';
   const stageSize = STAGE_SIZE[tall ? 'lg' : 'md'];
@@ -207,6 +232,7 @@ export function StoryCover({
               {children}
             </FadeIn>
           )}
+          {grab && !landscape && <InlineDragHint />}
         </div>
 
         {mark && (
@@ -238,7 +264,7 @@ export function StoryCover({
           style={{ touchAction: 'pan-y pinch-zoom' }}
         />
       )}
-      {grab && <DragHint top={hintTop} landscape={landscape} />}
+      {grab && landscape && <DragHint top={hintTop} />}
     </section>
   );
 }

@@ -1,11 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
+import { useOnScreen } from './onScreen.js';
 
 const CYCLE_MS = 2600;
 const HOLD_MS = 1400;
 
-function useLoopProgress() {
+// Re-renders every frame while it runs, so it runs only on screen: offscreen
+// it stops, and it starts a fresh cycle when it scrolls back into view.
+function useLoopProgress(ref) {
   const [t, setT] = useState(0); // 0 -> 1 -> hold -> reset
   const reducedMotion = useRef(false);
+  const onScreen = useOnScreen(ref);
 
   useEffect(() => {
     reducedMotion.current = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -13,6 +17,7 @@ function useLoopProgress() {
       setT(1);
       return;
     }
+    if (!onScreen) return;
     let raf;
     let timeout;
     const runCycle = () => {
@@ -36,17 +41,18 @@ function useLoopProgress() {
       cancelAnimationFrame(raf);
       clearTimeout(timeout);
     };
-  }, []);
+  }, [onScreen]);
 
   return t;
 }
 
 export function RoleAccent({ type, label, value, suffix = '' }) {
-  const t = useLoopProgress();
+  const rootRef = useRef(null);
+  const t = useLoopProgress(rootRef);
   const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
 
   return (
-    <div className="mt-5 rounded-lg border border-white/10 bg-ink-950/60 p-4">
+    <div ref={rootRef} className="mt-5 rounded-lg border border-white/10 bg-ink-950/60 p-4">
       <p className="text-[10px] font-bold uppercase tracking-wide text-ink-300">{label}</p>
       <div className="mt-3">
         {type === 'bars' && <BarsViz progress={eased} />}

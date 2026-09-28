@@ -8,25 +8,27 @@ const RAMP = [
   [197, 82, 255],
   [221, 153, 255],
 ];
+// The same tones as fill styles; each particle's alpha goes on globalAlpha,
+// so no color string is built (and parsed) per particle per frame.
+const RAMP_FILL = RAMP.map(([r, g, b]) => `rgb(${r},${g},${b})`);
 
-function cubicAt(p0, p1, p2, p3, t) {
+// Both write into `out` (reused every frame) instead of allocating.
+function cubicAt(p0, p1, p2, p3, t, out) {
   const mt = 1 - t;
   const a = mt * mt * mt;
   const b = 3 * mt * mt * t;
   const c = 3 * mt * t * t;
   const d = t * t * t;
-  return {
-    x: a * p0.x + b * p1.x + c * p2.x + d * p3.x,
-    y: a * p0.y + b * p1.y + c * p2.y + d * p3.y,
-  };
+  out.x = a * p0.x + b * p1.x + c * p2.x + d * p3.x;
+  out.y = a * p0.y + b * p1.y + c * p2.y + d * p3.y;
+  return out;
 }
 
-function cubicTangent(p0, p1, p2, p3, t) {
+function cubicTangent(p0, p1, p2, p3, t, out) {
   const mt = 1 - t;
-  return {
-    x: 3 * mt * mt * (p1.x - p0.x) + 6 * mt * t * (p2.x - p1.x) + 3 * t * t * (p3.x - p2.x),
-    y: 3 * mt * mt * (p1.y - p0.y) + 6 * mt * t * (p2.y - p1.y) + 3 * t * t * (p3.y - p2.y),
-  };
+  out.x = 3 * mt * mt * (p1.x - p0.x) + 6 * mt * t * (p2.x - p1.x) + 3 * t * t * (p3.x - p2.x);
+  out.y = 3 * mt * mt * (p1.y - p0.y) + 6 * mt * t * (p2.y - p1.y) + 3 * t * t * (p3.y - p2.y);
+  return out;
 }
 
 /**
@@ -67,6 +69,22 @@ export function SignalRiver({ className = '' }) {
     let lastScrollY = window.scrollY;
     let lastTime = 0;
     let velocity = 0; // px per ms, smoothed
+    const pt = { x: 0, y: 0 };
+    const tg = { x: 0, y: 0 };
+
+    // Scroll position and page height, kept current by a scroll listener and
+    // a resize observer rather than read every frame: reading them from the
+    // frame loop forced a style and layout pass whenever anything on the
+    // page had changed since the last frame.
+    let scrollY = window.scrollY;
+    let docHeight = document.documentElement.scrollHeight;
+    const onScroll = () => {
+      scrollY = window.scrollY;
+    };
+    const measureDoc = () => {
+      docHeight = document.documentElement.scrollHeight;
+    };
+    const docObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measureDoc) : null;
 
     function makeParticle() {
       return {
@@ -105,9 +123,7 @@ export function SignalRiver({ className = '' }) {
     }
 
     function draw(time) {
-      const doc = document.documentElement;
-      const maxScroll = Math.max(1, doc.scrollHeight - height);
-      const scrollY = window.scrollY;
+      const maxScroll = Math.max(1, docHeight - height);
       const progress = Math.min(1, Math.max(0, scrollY / maxScroll));
       const dt = lastTime ? Math.min(48, time - lastTime) : 16;
       lastTime = time;
@@ -142,8 +158,8 @@ export function SignalRiver({ className = '' }) {
           if (p.u > 1) p.u -= 1;
           if (p.u < 0) p.u += 1;
         }
-        const pt = cubicAt(p0, p1, p2, p3, p.u);
-        const tg = cubicTangent(p0, p1, p2, p3, p.u);
+        cubicAt(p0, p1, p2, p3, p.u, pt);
+        cubicTangent(p0, p1, p2, p3, p.u, tg);
         const len = Math.hypot(tg.x, tg.y) || 1;
         const nx = -tg.y / len;
         const ny = tg.x / len;
@@ -152,12 +168,13 @@ export function SignalRiver({ className = '' }) {
         const y = pt.y + ny * p.offset * spread;
         const twinkle = reduceMotion ? 0.8 : 0.55 + 0.45 * Math.sin(time * 0.002 + p.twinkle);
         const alpha = (0.28 + energy * 0.5) * twinkle * (1 - Math.abs(p.offset) * 0.45);
-        const c = RAMP[p.tone];
         ctx.beginPath();
-        ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${alpha})`;
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = RAMP_FILL[p.tone];
         ctx.arc(x, y, p.size * (1 + energy * 0.6), 0, Math.PI * 2);
         ctx.fill();
       }
+      ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'source-over';
     }
 
@@ -185,11 +202,15 @@ export function SignalRiver({ className = '' }) {
     draw(0);
     if (!reduceMotion) start();
     window.addEventListener('resize', resize);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    docObserver?.observe(document.documentElement);
     document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
       stop();
       window.removeEventListener('resize', resize);
+      window.removeEventListener('scroll', onScroll);
+      docObserver?.disconnect();
       document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, []);

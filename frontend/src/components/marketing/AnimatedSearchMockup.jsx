@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
+import { useStepLoop } from './onScreen.js';
 
 const QUERY = 'Marketing';
 const ROWS = [
@@ -18,29 +19,12 @@ function buildSteps() {
   return steps;
 }
 const STEPS = buildSteps();
+const DURATIONS = STEPS.map((s) => s.ms);
+const REDUCED_STEP = STEPS.length - 2; // filtered + held
 
 export function AnimatedSearchMockup({ className = '' }) {
-  const [stepIndex, setStepIndex] = useState(0);
-  const reducedMotion = useRef(false);
-
-  useEffect(() => {
-    reducedMotion.current = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    if (reducedMotion.current) {
-      setStepIndex(STEPS.length - 2); // filtered + held
-      return;
-    }
-    let timer;
-    let i = 0;
-    const step = () => {
-      setStepIndex(i);
-      timer = setTimeout(() => {
-        i = (i + 1) % STEPS.length;
-        step();
-      }, STEPS[i].ms);
-    };
-    step();
-    return () => clearTimeout(timer);
-  }, []);
+  const rootRef = useRef(null);
+  const stepIndex = useStepLoop(rootRef, DURATIONS, REDUCED_STEP);
 
   const query = STEPS[stepIndex].text;
   const filtered = query
@@ -48,7 +32,7 @@ export function AnimatedSearchMockup({ className = '' }) {
     : ROWS;
 
   return (
-    <div className={`[perspective:1400px] ${className}`}>
+    <div ref={rootRef} className={`[perspective:1400px] ${className}`}>
       <div className="overflow-hidden rounded-xl border border-white/10 bg-ink-900 shadow-dp-md animate-[ambient-tilt_10s_ease-in-out_infinite]">
         <div className="flex items-center gap-2 border-b border-white/10 bg-ink-950 px-4 py-3">
           <span className="h-2.5 w-2.5 rounded-full bg-red-400/70" />

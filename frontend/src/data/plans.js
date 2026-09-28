@@ -9,6 +9,8 @@
 // credits by the seat they occupy — paid seats at the plan rate, free seats
 // at a flat 1,500 — plus a flat monthly bonus to the workspace owner and a
 // one-time 1,500 welcome gift when a member is first covered by payment.
+import { LIVE } from './live.js';
+
 export const FREE_SEAT_MONTHLY_CREDITS = 1500;
 export const WELCOME_GIFT_CREDITS = 1500;
 export const FREE_PLAN_MONTHLY_CREDITS = 800;
@@ -40,13 +42,15 @@ export const PLANS = [
     price: 29,
     block: { paidSeats: 5, freeSeats: 1, paidSeatCredits: 900, ownerBonus: 0 },
     credits: '900 credits / paid seat / month',
-    tagline: 'Take prospecting and outreach further.',
+    tagline: 'Bring your team into one workspace.',
     features: [
       'Everything in Free',
       'Per block: 5 paid + 1 free seat',
       '900 credits / paid seat / month',
       '1,500 credits / free seat / month',
-      'Sequences with wait steps',
+      'Team invites and roles',
+      // Until sending is live the builder runs but no email is delivered.
+      LIVE.sequenceSending ? 'Email sequences with wait steps' : 'Sequence builder (email sending not live yet)',
     ],
   },
   {
@@ -55,7 +59,7 @@ export const PLANS = [
     price: 59,
     block: { paidSeats: 5, freeSeats: 3, paidSeatCredits: 2000, ownerBonus: 2000 },
     credits: '2,000 credits / paid seat / month',
-    tagline: 'Multi-touch outreach with room to scale a team.',
+    tagline: 'More credits per seat, plus a monthly owner bonus.',
     popular: true,
     features: [
       'Everything in Basic',
@@ -70,13 +74,12 @@ export const PLANS = [
     price: 99,
     block: { paidSeats: 14, freeSeats: 5, paidSeatCredits: 2000, ownerBonus: 3000 },
     credits: '2,000 credits / paid seat / month',
-    tagline: 'Advanced controls for larger go-to-market teams.',
+    tagline: 'The most seats per block, for larger teams.',
     features: [
       'Everything in Professional',
       'Per block: 14 paid + 5 free seats',
       '2,000 credits / paid seat / month',
       '+3,000 monthly owner bonus',
-      'Dedicated onboarding',
     ],
   },
 ];

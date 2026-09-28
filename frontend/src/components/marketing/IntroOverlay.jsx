@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getWorldHandle, useWorldState } from './worldStore.js';
 import { smoothScrollStore } from './smoothScrollStore.js';
+import { bootsOnInteraction } from './SignalWorld.jsx';
 
 const STORAGE_KEY = 'dp-intro-seen';
 const SAFETY_MS = 7000; // dismiss no matter what, even if the world never readies
@@ -31,7 +32,8 @@ function markIntroSeen() {
 
 /**
  * The first-visit descent. On a reader's first marketing page per browser
- * session — and only when the Signal World is actually running — a
+ * session — and only when the Signal World is actually running and boots
+ * with the page (not on touch screens, which boot it later) — a
  * full-screen ink overlay holds the DataPit mark, the narration line, and a
  * thin progress bar that eases toward 90% while the engine loads. When the
  * world has drawn its first frame the bar completes, the camera starts its
@@ -89,9 +91,16 @@ export function IntroOverlay() {
     [later, setPhase],
   );
 
-  // Start: the first active world of the session.
+  // Start: the first active world of the session. Touch screens boot the
+  // world only once the reader is already scrolling or tapping
+  // (SignalWorld.jsx, bootsOnInteraction): there's no load to cover, and an
+  // overlay that holds the page still would get in their way.
   useEffect(() => {
     if (phaseRef.current !== 'idle' || !active) return;
+    if (bootsOnInteraction()) {
+      setPhase('done');
+      return;
+    }
     if (hasSeenIntro()) {
       setPhase('done');
       return;

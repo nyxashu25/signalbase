@@ -1,17 +1,9 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { Loader2 } from 'lucide-react';
-import { ChatWidget } from './components/ChatWidget.jsx';
 import { RequireAuth } from './components/RequireAuth.jsx';
 import { RequireSuperAdmin } from './components/RequireSuperAdmin.jsx';
-import { Login } from './pages/Login.jsx';
-import { VerifyEmail } from './pages/VerifyEmail.jsx';
-import { ForgotPassword } from './pages/ForgotPassword.jsx';
-import { ResetPassword } from './pages/ResetPassword.jsx';
-import { AcceptInvite } from './pages/AcceptInvite.jsx';
-import { Unsubscribe } from './pages/Unsubscribe.jsx';
-import { MarketingLayout } from './components/marketing/MarketingLayout.jsx';
 import { authApi } from './api/authApi.js';
 import { setSession, clearSession } from './store/authSlice.js';
 import { RouteMeta } from './seo/RouteMeta.jsx';
@@ -22,9 +14,12 @@ import { contentComponent, isContentPath } from './content/loaders.js';
 // Route-level code splitting (TODO.md): the marketing site (framer-motion,
 // GSAP, Lenis), the authenticated app (cmdk, Radix, lucide-heavy shell) and
 // the admin panel are three different audiences — each now downloads only
-// its own routes. Vite hoists whatever they share into common chunks.
-// Login/verify/unsubscribe stay eager: they're tiny and are the landing
-// points for every emailed link.
+// its own routes. Vite hoists whatever they share into common chunks. The
+// marketing shell (MarketingLayout, which brings framer-motion, GSAP and
+// Lenis) is split the same way, so the entry chunk holds only what every
+// route needs; the auth screens too, which are the landing points for every
+// emailed link — preloadRoute fetches the one at hand before the first
+// render, so they still open without a loading flash.
 //
 // `preload()` fetches a route's chunk ahead of render. Once it has arrived the
 // lazy component resolves synchronously (a thenable that calls back at once),
@@ -43,6 +38,10 @@ function lazyNamed(loader, name) {
 }
 
 // Marketing
+const MarketingLayout = lazyNamed(
+  () => import('./components/marketing/MarketingLayout.jsx'),
+  'MarketingLayout',
+);
 const Home = lazyNamed(() => import('./pages/marketing/Home.jsx'), 'Home');
 const Pricing = lazyNamed(() => import('./pages/marketing/Pricing.jsx'), 'Pricing');
 const Product = lazyNamed(() => import('./pages/marketing/Product.jsx'), 'Product');
@@ -96,15 +95,68 @@ function ContentOrNotFound() {
   return <Page />;
 }
 
+// Auth screens (see the note at the top).
+const Login = lazyNamed(() => import('./pages/Login.jsx'), 'Login');
+const VerifyEmail = lazyNamed(() => import('./pages/VerifyEmail.jsx'), 'VerifyEmail');
+const ForgotPassword = lazyNamed(() => import('./pages/ForgotPassword.jsx'), 'ForgotPassword');
+const ResetPassword = lazyNamed(() => import('./pages/ResetPassword.jsx'), 'ResetPassword');
+const AcceptInvite = lazyNamed(() => import('./pages/AcceptInvite.jsx'), 'AcceptInvite');
+const Unsubscribe = lazyNamed(() => import('./pages/Unsubscribe.jsx'), 'Unsubscribe');
+
+const AUTH_PAGES = {
+  '/login': Login,
+  '/verify-email': VerifyEmail,
+  '/forgot-password': ForgotPassword,
+  '/reset-password': ResetPassword,
+  '/accept-invite': AcceptInvite,
+  '/unsubscribe': Unsubscribe,
+};
+
 /**
- * Fetch the chunk for the marketing page at `pathname` (the 404 page for an
- * unknown path) before the first render. Resolves immediately for app, admin
- * and auth routes, which have no prerendered HTML to hand over from.
+ * Fetch the chunks for the page at `pathname` before the first render: a
+ * marketing page (the 404 page for an unknown path) together with the
+ * marketing shell, or an auth screen. Resolves immediately for app and admin
+ * routes, which have no prerendered HTML to hand over from and show their
+ * own loading state.
  */
 export function preloadRoute(pathname) {
   const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
+  if (AUTH_PAGES[path]) return AUTH_PAGES[path].preload().then(() => undefined);
+  // An /app visit bounces to /login when the session check fails; fetch the
+  // screen alongside so the redirect lands without a spinner. Not awaited.
+  if (path === '/app' || path.startsWith('/app/')) Login.preload().catch(() => {});
   const page = MARKETING_PAGES[path] ?? (isPrivatePath(path) ? null : pageForPath(path));
-  return page ? page.preload().then(() => undefined) : Promise.resolve();
+  if (!page) return Promise.resolve();
+  return Promise.all([MarketingLayout.preload(), page.preload()]).then(() => undefined);
+}
+
+// The support chat: not part of any page's first view, so its chunk loads
+// once the page has settled — the first idle moment or the reader's first
+// interaction, whichever comes first.
+const ChatWidget = lazyNamed(() => import('./components/ChatWidget.jsx'), 'ChatWidget');
+const SETTLED_EVENTS = ['pointerdown', 'keydown', 'touchstart', 'scroll', 'wheel'];
+
+function useAfterSettle() {
+  const [settled, setSettled] = useState(false);
+  useEffect(() => {
+    if (settled) return undefined;
+    const opts = { capture: true, passive: true };
+    let idleId = 0;
+    let timerId = 0;
+    const done = () => setSettled(true);
+    SETTLED_EVENTS.forEach((type) => window.addEventListener(type, done, opts));
+    if (typeof window.requestIdleCallback === 'function') {
+      idleId = window.requestIdleCallback(done, { timeout: 4000 });
+    } else {
+      timerId = window.setTimeout(done, 1500);
+    }
+    return () => {
+      SETTLED_EVENTS.forEach((type) => window.removeEventListener(type, done, opts));
+      if (idleId) window.cancelIdleCallback?.(idleId);
+      window.clearTimeout(timerId);
+    };
+  }, [settled]);
+  return settled;
 }
 
 // Authenticated app
@@ -182,7 +234,14 @@ export function App() {
   const dispatch = useDispatch();
   const status = useSelector((s) => s.auth.status);
   const location = useLocation();
-  const showChatWidget = !location.pathname.startsWith('/control');
+  const settled = useAfterSettle();
+  const showChatWidget = settled && !location.pathname.startsWith('/control');
+
+  // Every "Start free" and "Log in" leads to /login: have its chunk in hand
+  // by the time the reader taps one.
+  useEffect(() => {
+    if (settled) Login.preload().catch(() => {});
+  }, [settled]);
 
   // The first commit has replaced any prerendered page; from here on,
   // entrance animations play (prerender/handoff.js).
@@ -292,7 +351,11 @@ export function App() {
           </Route>
         </Routes>
       </Suspense>
-      {showChatWidget && <ChatWidget />}
+      {showChatWidget && (
+        <Suspense fallback={null}>
+          <ChatWidget />
+        </Suspense>
+      )}
     </>
   );
 }

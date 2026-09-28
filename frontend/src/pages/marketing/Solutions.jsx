@@ -4,43 +4,54 @@ import { StoryCover } from '../../components/marketing/StoryCover.jsx';
 import { TiltCard } from '../../components/marketing/TiltCard.jsx';
 import { GiantCTA } from '../../components/marketing/GiantCTA.jsx';
 import { Stagger, StaggerItem } from '../../components/marketing/motion.jsx';
+import { BILLING_INTERVALS, FREE_PLAN_MONTHLY_CREDITS } from '../../data/plans.js';
+import { CREDIT_COSTS, LIVE, formatCount } from '../../data/facts.js';
+
+// Each card's accent is a small illustration: the counters and rings show
+// values that are true by construction (prices and rules from data/), never
+// usage or results; the bars are a decorative sketch with no numbers.
+const ANNUAL_DISCOUNT = Math.round(BILLING_INTERVALS.find((i) => i.key === 'YEAR').discount * 100);
 
 const ROLES = [
   {
     title: 'Sales leaders',
-    desc: "See where pipeline is actually coming from. Every reveal and every sequence send rolls up to a workspace-wide credit ledger, so you can see what your team is spending and what it's producing without asking for a spreadsheet.",
+    desc: 'Sales leaders get one workspace and one bill for the whole team. On paid plans, admins see what each teammate spent credits on and can export it to CSV.',
     icon: IconChart,
-    accent: { type: 'bars', label: 'Team credit spend this week' },
+    accent: { type: 'bars', label: 'Credit spend by teammate' },
   },
   {
     title: 'Account executives',
-    desc: 'Stop losing an afternoon to finding the right contact. Search by title and seniority, reveal only the people worth a real conversation, and drop them straight into a sequence.',
+    desc: `Account executives can find the right contact without losing an afternoon. Search by title and seniority, then reveal only the people worth a real conversation${
+      LIVE.sequenceSending ? ' and drop them straight into a sequence' : ' and save them to a list'
+    }.`,
     icon: IconTarget,
-    accent: { type: 'counter', label: 'Contacts revealed today', value: 12 },
+    accent: { type: 'counter', label: 'Credits per reveal in the app', value: CREDIT_COSTS.REVEAL },
   },
   {
     title: 'Sales development',
-    desc: 'Build a list, enroll it, and let wait steps handle the timing between touches. Suppression is enforced automatically, so you never have to manually track who unsubscribed.',
+    desc: LIVE.sequenceSending
+      ? `SDRs can build a list, enroll it in a sequence and let wait steps handle the timing between touches. Enrollment costs ${formatCount(CREDIT_COSTS.SEQUENCE_ENROLLMENT)} credits per contact.`
+      : 'SDRs can build prospect lists quickly: filter people, reveal the ones you want and save them to a named list. A contact one teammate reveals is free for the rest.',
     icon: IconSend,
-    accent: { type: 'ring', label: 'Sequence completion', value: 76 },
+    accent: { type: 'ring', label: 'Teammates who can see a reveal', value: 100 },
   },
   {
     title: 'Revenue operations',
-    desc: 'One append-only ledger for every credit movement means reconciliation is a query, not a project. Role-based access keeps every workspace scoped to its own org.',
+    desc: 'RevOps gets a credit ledger with a row for each grant and charge, so reconciling is a read, not a project. Owner, Admin and Member roles keep access in check.',
     icon: IconGear,
-    accent: { type: 'counter', label: 'Ledger entries this month', value: 248 },
+    accent: { type: 'counter', label: 'Workspace roles', value: 3 },
   },
   {
     title: 'Marketers',
-    desc: 'Firmographic and technographic filters narrow a total-addressable-market list to the accounts that actually match your ideal customer profile, before a single credit is spent.',
+    desc: `Marketers can see how big a list is before spending a credit. Filter companies by industry, headcount and location, then export the list for ${CREDIT_COSTS.CSV_EXPORT} credits a file.`,
     icon: IconMegaphone,
-    accent: { type: 'ring', label: 'ICP match rate', value: 82 },
+    accent: { type: 'counter', label: 'Credits per CSV export', value: CREDIT_COSTS.CSV_EXPORT },
   },
   {
     title: 'Founders',
-    desc: "Start on the free plan, reveal your first real prospects the same day, and upgrade only once you're actually running out of credits — not before.",
+    desc: `Founders can start on the free plan with ${formatCount(FREE_PLAN_MONTHLY_CREDITS)} credits a month and reveal their first prospects the same day. Upgrade once you need a team, not before.`,
     icon: IconRocket,
-    accent: { type: 'counter', label: 'Minutes to first reveal', value: 4 },
+    accent: { type: 'ring', label: 'Off with annual billing', value: ANNUAL_DISCOUNT },
   },
 ];
 
@@ -50,8 +61,8 @@ export function Solutions() {
       <StoryCover
         station="crystals"
         eyebrow="Solutions"
-        narration="Six readers, one book. Each opens it to a different page."
-        sub="The same workspace, the same credit ledger — just a different reason to open it every morning."
+        narration="DataPit serves six roles on a sales team, from founders to RevOps. Each opens the book to a different page."
+        sub="Here is how each role uses the same DataPit workspace to find people and reveal work emails. Same search, same credits, a different reason to open it."
         lines={[
           { content: "Built for whoever's" },
           {

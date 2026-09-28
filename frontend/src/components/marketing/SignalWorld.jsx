@@ -157,6 +157,39 @@ function scheduleIdle(fn) {
   return () => window.clearTimeout(id);
 }
 
+/**
+ * Touch-primary screens (phones, tablets) boot the world on the reader's
+ * first interaction instead of during the page load. The engine is a large
+ * chunk with shader compiles and first frames that take whole seconds of a
+ * phone's main thread — work that, at load, lands exactly when the reader
+ * wants the hero and its buttons to respond. Until then the CSS mark and
+ * the 2D river hold the stage, as they do wherever the world is off. With
+ * no load left to cover, IntroOverlay skips its first-visit descent here.
+ */
+export function bootsOnInteraction() {
+  if (typeof window === 'undefined') return false;
+  return Boolean(window.matchMedia?.('(pointer: coarse)').matches);
+}
+
+// A scroll (touch or programmatic), a touch or click, a wheel turn, a key.
+const FIRST_INTERACTION = ['pointerdown', 'touchstart', 'wheel', 'keydown', 'scroll'];
+
+/** Run `fn` once, on the first interaction; returns a cancel for both. */
+function afterFirstInteraction(fn) {
+  const opts = { capture: true, passive: true };
+  let cancelInner = null;
+  const stopListening = () => FIRST_INTERACTION.forEach((type) => window.removeEventListener(type, fire, opts));
+  function fire() {
+    stopListening();
+    cancelInner = fn();
+  }
+  FIRST_INTERACTION.forEach((type) => window.addEventListener(type, fire, opts));
+  return () => {
+    stopListening();
+    cancelInner?.();
+  };
+}
+
 function nowMs() {
   return typeof performance !== 'undefined' ? performance.now() : Date.now();
 }
@@ -186,7 +219,8 @@ function spreadCollapsed(mids) {
 /**
  * The React host of the Signal World (see world/README.md): one persistent
  * WebGL canvas fixed behind every marketing page. It gates on capability,
- * lazy-loads the engine after first paint, and feeds it everything it needs
+ * lazy-loads the engine after first paint (on touch screens, after the first
+ * interaction — see bootsOnInteraction), and feeds it everything it needs
  * from the DOM — the page's stations (one per [data-chapter], keyed by
  * data-station / data-station-side), a continuous scroll coordinate, the
  * pointer, hero drags on [data-world-grab] areas, viewport size, tab
@@ -569,11 +603,11 @@ export function SignalWorld({ pathname }) {
       }
     }
 
-    const cancelIdle = scheduleIdle(boot);
+    const cancelBoot = coarse ? afterFirstInteraction(() => scheduleIdle(boot)) : scheduleIdle(boot);
 
     return () => {
       cancelled = true;
-      cancelIdle();
+      cancelBoot();
       window.clearTimeout(freezeTimer);
       bodyRO?.disconnect();
       hostRO?.disconnect();

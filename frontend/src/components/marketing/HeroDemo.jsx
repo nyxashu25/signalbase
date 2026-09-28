@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
+import { LIVE } from '../../data/facts.js';
+import { useStepLoop } from './onScreen.js';
 
 // A looping, scripted product tour: sign in -> open People -> reveal a
 // contact -> save it to a list -> browse Companies and filter by industry ->
@@ -8,6 +10,17 @@ import { useEffect, useRef, useState } from 'react';
 // data — the list name ("Q3 outbound — Marketing leaders") is the same
 // string across the People and Sequences screens on purpose, so the tour
 // reads as one continuous workflow rather than four disconnected demos.
+//
+// The Sequences screen shows only once sequence sending is live in
+// production (data/facts.js LIVE), so the tour never shows an email
+// sequence running while sends are only simulated.
+const SEQUENCE_PHASES = LIVE.sequenceSending
+  ? [
+      { name: 'to-sequences', ms: 400, screen: null },
+      { name: 'sequences', ms: 1900, screen: 'sequences' },
+    ]
+  : [];
+
 const PHASES = [
   { name: 'login', ms: 1800, screen: 'login' },
   { name: 'login-click', ms: 450, screen: 'login' },
@@ -23,8 +36,7 @@ const PHASES = [
   { name: 'move-to-facet', ms: 800, screen: 'companies' },
   { name: 'click-facet', ms: 450, screen: 'companies' },
   { name: 'filtered', ms: 1700, screen: 'companies' },
-  { name: 'to-sequences', ms: 400, screen: null },
-  { name: 'sequences', ms: 1900, screen: 'sequences' },
+  ...SEQUENCE_PHASES,
   { name: 'to-credits', ms: 400, screen: null },
   { name: 'credits', ms: 1900, screen: 'credits' },
   { name: 'fade-out', ms: 600, screen: null },
@@ -48,32 +60,13 @@ const CURSOR_POS = {
   filtered: { left: '78%', top: '30%' },
 };
 
+const DURATIONS = PHASES.map((p) => p.ms);
+const REDUCED_PHASE = 5; // land on "revealed" and stay there
+
 export function HeroDemo({ className = '' }) {
-  const [phaseIndex, setPhaseIndex] = useState(0);
-  const reducedMotion = useRef(false);
-
-  useEffect(() => {
-    reducedMotion.current =
-      typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-
-    if (reducedMotion.current) {
-      setPhaseIndex(5); // land on "revealed" and stay there
-      return;
-    }
-
-    let timer;
-    let i = 0;
-    const step = () => {
-      setPhaseIndex(i);
-      timer = setTimeout(() => {
-        i = (i + 1) % PHASES.length;
-        step();
-      }, PHASES[i].ms);
-    };
-    step();
-    return () => clearTimeout(timer);
-  }, []);
+  const rootRef = useRef(null);
+  // Plays only while on screen (useStepLoop), resuming where it paused.
+  const phaseIndex = useStepLoop(rootRef, DURATIONS, REDUCED_PHASE);
 
   const phase = PHASES[phaseIndex].name;
   const screen = PHASES[phaseIndex].screen;
@@ -104,7 +97,7 @@ export function HeroDemo({ className = '' }) {
             : 'people';
 
   return (
-    <div className={`[perspective:1400px] ${className}`}>
+    <div ref={rootRef} className={`[perspective:1400px] ${className}`}>
       <div
         className="relative h-[520px] overflow-hidden rounded-xl border border-white/10 bg-ink-900 shadow-[0_30px_80px_rgba(148,0,222,0.35)] animate-[ambient-tilt_9s_ease-in-out_infinite]"
         style={{ transformStyle: 'preserve-3d' }}
@@ -245,32 +238,34 @@ export function HeroDemo({ className = '' }) {
             </div>
           </ScreenFade>
 
-          <ScreenFade active={screen === 'sequences'}>
-            <div className="p-5">
-              <p className="text-xs font-bold text-white">Q3 outbound &mdash; Marketing leaders</p>
-              <p className="mt-0.5 text-[11px] text-ink-300">41 enrolled &middot; Active</p>
-              <div className="mt-6 flex flex-col">
-                {[
-                  { label: 'Intro email', detail: 'Sent · 68% open rate' },
-                  { label: 'Wait 3 days', detail: null },
-                  { label: 'Follow-up', detail: 'Scheduled' },
-                ].map((step, i) => (
-                  <div key={step.label} className="flex gap-3">
-                    <div className="flex flex-col items-center">
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-action text-[11px] font-bold text-white">
-                        {i + 1}
-                      </span>
-                      {i < 2 && <span className="my-1 h-9 w-px bg-white/10" />}
+          {LIVE.sequenceSending && (
+            <ScreenFade active={screen === 'sequences'}>
+              <div className="p-5">
+                <p className="text-xs font-bold text-white">Q3 outbound &mdash; Marketing leaders</p>
+                <p className="mt-0.5 text-[11px] text-ink-300">41 enrolled &middot; Active</p>
+                <div className="mt-6 flex flex-col">
+                  {[
+                    { label: 'Intro email', detail: 'Email · day 1' },
+                    { label: 'Wait 3 days', detail: null },
+                    { label: 'Follow-up', detail: 'Email · day 4' },
+                  ].map((step, i) => (
+                    <div key={step.label} className="flex gap-3">
+                      <div className="flex flex-col items-center">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-action text-[11px] font-bold text-white">
+                          {i + 1}
+                        </span>
+                        {i < 2 && <span className="my-1 h-9 w-px bg-white/10" />}
+                      </div>
+                      <div className="pb-7">
+                        <p className="text-xs font-semibold text-white">{step.label}</p>
+                        {step.detail && <p className="text-[11px] text-ink-300">{step.detail}</p>}
+                      </div>
                     </div>
-                    <div className="pb-7">
-                      <p className="text-xs font-semibold text-white">{step.label}</p>
-                      {step.detail && <p className="text-[11px] text-ink-300">{step.detail}</p>}
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          </ScreenFade>
+            </ScreenFade>
+          )}
 
           <ScreenFade active={screen === 'credits'}>
             <div className="p-5">

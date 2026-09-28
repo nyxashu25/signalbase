@@ -8,53 +8,72 @@ import { StoryChapter } from '../../components/marketing/StoryChapter.jsx';
 import { GiantCTA } from '../../components/marketing/GiantCTA.jsx';
 import { FaqSection } from '../../components/marketing/FaqSection.jsx';
 import { PRODUCT_FAQS } from '../../data/faqs.js';
+import { FREE_PLAN_MONTHLY_CREDITS } from '../../data/plans.js';
+import { CREDIT_COSTS, LIVE, formatCount } from '../../data/facts.js';
 
+// What a reveal gives back when a contact has no email on file: a
+// first.last@domain guess, checked only when a verifier is configured.
+const GUESS_SENTENCE = LIVE.emailVerification
+  ? 'When no email is on file, DataPit checks a first.last guess, and a guess the verifier rejects costs nothing.'
+  : 'When no email is on file, you get a first.last guess, charged like any reveal.';
+
+// The sequences chapter renders only once sequence sending is live in
+// production (data/facts.js LIVE). Numbers and sides are assigned after the
+// filter, so the remaining chapters still count 01, 02… and alternate.
 const MODULES = [
   {
-    n: '01',
     eyebrow: 'Search',
-    narration: 'The first page of every deal: a question, and a database that answers it live.',
-    title: 'A live database, not a stale export',
-    desc: 'Filter people by title, seniority, and department, or companies by industry, headcount, and tech stack. Facet counts update as you narrow the query, so you always know how big your list is before you spend a credit on it.',
-    points: ['Faceted people & company search', 'Masked results until reveal', 'Facet counts update live'],
+    narration: 'Search people and companies for free, and watch the counts change as you filter. Every deal starts with a question.',
+    title: 'Narrow the list before you spend a credit',
+    desc: 'Filter people by job title, seniority and department, or companies by industry, headcount and location. Facet counts update as you narrow the query. Searching is free, so you know how big your list is before you reveal anyone.',
+    points: ['Faceted people and company search', 'Masked results until you reveal', 'Facet counts update as you filter'],
     plate: <AnimatedSearchMockup />,
-    align: 'left',
     station: 'lens',
   },
   {
-    n: '02',
     eyebrow: 'Reveal',
-    narration: 'The credit only leaves your balance once there is something real behind it.',
-    title: 'Pay for contacts, not guesses',
-    desc: "Pattern-based email finding runs automatically, verification confirms deliverability, and the credit only leaves your balance once there's a usable result. Reveal once and it's visible to your whole workspace from then on.",
-    points: ["Verified before you're charged", 'Atomic reserve-then-commit — no double charges', 'Shared across the workspace, not per-seat'],
+    narration: `Reveal a contact's work email for ${CREDIT_COSTS.REVEAL} credits. Nothing leaves your balance until you choose who.`,
+    title: 'Reveal a contact once for the whole team',
+    desc: `A reveal shows the work email DataPit holds for a contact, for ${CREDIT_COSTS.REVEAL} credits in the app or ${CREDIT_COSTS.EXTENSION_REVEAL} from the Chrome extension. ${GUESS_SENTENCE} Reveal once and your whole workspace sees it from then on.`,
+    points: [
+      'Credits are held first, then charged when the reveal completes',
+      'No double charge when two teammates reveal at once',
+      'Shared across the workspace, not per seat',
+    ],
     plate: <AnimatedRevealMockup />,
-    align: 'right',
     station: 'reveal',
   },
-  {
-    n: '03',
+  LIVE.sequenceSending && {
     eyebrow: 'Sequences',
-    narration: 'Between one touch and the next, the engine keeps the timing.',
+    narration: 'Sequences email your enrolled contacts on the schedule you set. Between one touch and the next, the engine keeps the timing.',
     title: 'Outreach that runs itself between touches',
-    desc: "Chain email and wait steps into a cadence, enroll a saved list in one click, and let the engine handle timing. Pause and resume without losing a contact's place, and suppression is enforced automatically on every send.",
-    points: ['Email + wait steps in any order', 'Enroll straight from a list', 'Automatic suppression-list enforcement'],
+    desc: `Chain email and wait steps into a sequence, then enroll contacts from a saved list for ${formatCount(CREDIT_COSTS.SEQUENCE_ENROLLMENT)} credits each. The engine sends each step when it's due. Pause and resume a contact without losing their place.`,
+    points: ['Email and wait steps in any order', 'Enroll straight from a list', 'Pause and resume each contact'],
     plate: <AnimatedSequenceMockup />,
-    align: 'left',
     station: 'sequence',
   },
   {
-    n: '04',
     eyebrow: 'Credits & billing',
-    narration: 'Reconciliation is a query, not a project.',
-    title: 'A ledger you can actually reconcile',
-    desc: 'Every credit movement — monthly grants, reveals, top-ups — is an append-only ledger entry. Reserve-then-commit accounting means concurrent reveals can never push a balance negative, and a failed reveal auto-refunds.',
-    points: ['Full transaction history', 'Reserve → commit/refund accounting', 'Buy more credits any time'],
+    narration: 'Your credit history shows each grant and charge as its own row. Reconciling becomes a read, not a project.',
+    title: 'A credit ledger you can see, row by row',
+    desc: 'Each monthly grant, reveal, company view, export and top-up is a row in your credit history. Admins on paid plans see spend for each teammate and can export it to CSV. Credits are held before a reveal runs, so concurrent reveals can never push a balance below zero.',
+    points: ['Full transaction history', 'Held credits come back if a reveal fails', 'Buy more credits any time'],
     plate: <AnimatedCreditLedgerMockup />,
-    align: 'right',
     station: 'ledger',
   },
-];
+]
+  .filter(Boolean)
+  .map((mod, i) => ({
+    ...mod,
+    n: String(i + 1).padStart(2, '0'),
+    align: i % 2 === 0 ? 'left' : 'right',
+  }));
+
+const COVER_NARRATION = LIVE.sequenceSending
+  ? 'Search, reveal, sequences and a credit ledger, in one workspace. Turn the page for each chapter.'
+  : 'Search, reveal and a credit ledger, in one workspace. Turn the page for each chapter.';
+
+const COUNT_WORDS = { 2: 'two', 3: 'three', 4: 'four', 5: 'five' };
 
 export function Product() {
   return (
@@ -62,11 +81,12 @@ export function Product() {
       <StoryCover
         station="mark"
         eyebrow="Product"
-        narration="Four chapters, one workspace, one ledger underneath it all."
-        sub="DataPit puts prospecting in one workspace: search people and companies, reveal work email addresses for credits, save prospects to lists and export them, and see every credit your team spends. No bundled modules you'll never touch."
+        narration={COVER_NARRATION}
+        sub="DataPit puts prospecting in one workspace. Search people and companies, reveal work email addresses for credits, and save prospects to lists you can export. A ledger you can see tracks your credits. No bundled modules you'll never touch."
         lines={[
           { content: 'One workspace,' },
-          { content: 'four things that', className: 'sm:ml-[6vw]' },
+          // The chapter count changes with LIVE flags (sequences are gated).
+          { content: `${COUNT_WORDS[MODULES.length] ?? MODULES.length} things that`, className: 'sm:ml-[6vw]' },
           {
             content: (
               <span className="bg-gradient-brand bg-clip-text text-transparent">move pipeline.</span>
@@ -81,7 +101,7 @@ export function Product() {
 
       <FaqSection eyebrow="Questions" items={PRODUCT_FAQS} />
 
-      <GiantCTA station="tunnel" title="See it on your own data." />
+      <GiantCTA station="tunnel" title={`Try it with ${formatCount(FREE_PLAN_MONTHLY_CREDITS)} free credits.`} />
 
       <MarketingFooter />
     </div>

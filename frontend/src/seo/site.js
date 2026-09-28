@@ -23,7 +23,7 @@ export const SEO_ROUTES = [
   {
     path: '/',
     name: 'Home',
-    title: 'DataPit: B2B Contact Database & Email Finder',
+    title: 'DataPit: B2B Contact Data & Email Finder',
     description:
       'Search people and companies, reveal work email addresses and build prospect lists in one workspace. Seat blocks from $29 a month; start free with 800 credits.',
     og: 'home',
@@ -69,7 +69,7 @@ export const SEO_ROUTES = [
     name: 'About',
     title: 'About DataPit: The B2B Contact Data Platform',
     description:
-      "DataPit started from one complaint: sales intelligence tools charge before they find anything. So we built the credit ledger first. Here's our story.",
+      "DataPit started from one complaint: sales data tools make it hard to see what you paid for. So we built the credit ledger first. Here's our story.",
     og: 'about',
     source: 'src/pages/marketing/About.jsx',
     priority: '0.6',

@@ -86,6 +86,18 @@ export const CONTENT_PAGES = [
     "source": "src/content/pages/alternatives/zoominfo.js"
   },
   {
+    "path": "/blog/cold-email-deliverability",
+    "section": "blog",
+    "name": "Cold email deliverability",
+    "title": "Cold Email Deliverability: SPF, DKIM, DMARC Guide | DataPit",
+    "description": "Keep cold email out of spam: what SPF, DKIM and DMARC do, Gmail and Yahoo sender requirements with dates, warm-up guidance and Postmaster Tools.",
+    "updated": "2026-09-28",
+    "published": true,
+    "station": "crystals",
+    "og": "guide",
+    "source": "src/content/pages/blog/cold-email-deliverability.js"
+  },
+  {
     "path": "/blog/cold-email-follow-ups",
     "section": "blog",
     "name": "Cold email follow-ups",
@@ -108,6 +120,42 @@ export const CONTENT_PAGES = [
     "station": "crystals",
     "og": "guide",
     "source": "src/content/pages/blog/cold-email-templates.js"
+  },
+  {
+    "path": "/blog/email-bounce-rate",
+    "section": "blog",
+    "name": "Email bounce rate",
+    "title": "Email Bounce Rate: What’s Good and How to Lower It | DataPit",
+    "description": "What a good email bounce rate is, how to calculate it, hard vs soft bounces, what pushes bounces up and how to lower yours with checks and list hygiene.",
+    "updated": "2026-09-28",
+    "published": true,
+    "station": "crystals",
+    "og": "guide",
+    "source": "src/content/pages/blog/email-bounce-rate.js"
+  },
+  {
+    "path": "/blog/how-to-build-a-b2b-prospect-list",
+    "section": "blog",
+    "name": "How to build a B2B prospect list",
+    "title": "How to Build a B2B Prospect List in 8 Steps | DataPit",
+    "description": "Build a B2B prospect list step by step: define your ICP, choose filters, pick sources, size and segment the list, check emails and follow GDPR and CAN-SPAM.",
+    "updated": "2026-09-28",
+    "published": true,
+    "station": "crystals",
+    "og": "guide",
+    "source": "src/content/pages/blog/how-to-build-a-b2b-prospect-list.js"
+  },
+  {
+    "path": "/blog/how-to-choose-a-b2b-data-provider",
+    "section": "blog",
+    "name": "How to choose a B2B data provider",
+    "title": "How to Choose a B2B Data Provider: 9 Checks | DataPit",
+    "description": "A fair checklist for choosing a B2B data provider: test coverage on your own sample, ask how accuracy is measured, compare pricing and check data rights.",
+    "updated": "2026-09-28",
+    "published": true,
+    "station": "crystals",
+    "og": "guide",
+    "source": "src/content/pages/blog/how-to-choose-a-b2b-data-provider.js"
   },
   {
     "path": "/blog/how-to-find-someones-email-address",
@@ -144,6 +192,18 @@ export const CONTENT_PAGES = [
     "station": "reveal",
     "og": "extension",
     "source": "src/content/pages/extension/chrome-extension.js"
+  },
+  {
+    "path": "/chrome-extension/privacy",
+    "section": "extension",
+    "name": "Extension privacy notice",
+    "title": "Chrome Extension Privacy Notice | DataPit",
+    "description": "What the DataPit — LinkedIn Lookup Chrome extension reads, sends and stores, why it needs each permission, and how to disconnect or remove it.",
+    "updated": "2026-09-28",
+    "published": true,
+    "station": "reveal",
+    "og": "extension",
+    "source": "src/content/pages/extension/privacy.js"
   },
   {
     "path": "/compare/datapit-vs-apollo",

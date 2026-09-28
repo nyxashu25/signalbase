@@ -4,6 +4,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
 import { Plate3D } from './Plate3D.jsx';
+import { whenNear } from './onScreen.js';
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
@@ -54,61 +55,65 @@ export function StoryChapter({
     if (!section) return undefined;
     const dir = align === 'right' ? 1 : -1;
 
-    const ctx = gsap.context(() => {
-      const split = new SplitText(titleRef.current, { type: 'words', wordsClass: 'story-word' });
-      gsap.set(split.words, { display: 'inline-block' });
+    // Built as the chapter nears the screen, not in the page's first render
+    // (onScreen.js whenNear): its turn starts only as it scrolls in anyway.
+    return whenNear(section, () => {
+      const ctx = gsap.context(() => {
+        const split = new SplitText(titleRef.current, { type: 'words', wordsClass: 'story-word' });
+        gsap.set(split.words, { display: 'inline-block' });
 
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: section,
-          start: 'top 96%',
-          end: 'bottom 6%',
-          scrub: 0.9,
-        },
-      });
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: 'top 96%',
+            end: 'bottom 6%',
+            scrub: 0.9,
+          },
+        });
 
-      // 0 → 0.24: the page turns in from depth.
-      tl.fromTo(
-        pageRef.current,
-        { rotateX: 22, y: 150, z: -380, opacity: 0, transformPerspective: 1500 },
-        { rotateX: 0, y: 0, z: 0, opacity: 1, duration: 0.24, ease: 'power2.out' },
-        0,
-      )
-        .fromTo(
-          numeralRef.current,
-          { x: 70 * dir, opacity: 0 },
-          { x: 0, opacity: 1, duration: 0.2, ease: 'power2.out' },
-          0.03,
-        )
-        .fromTo(
-          split.words,
-          { opacity: 0.06, y: 28, rotateX: -40, transformPerspective: 600 },
-          { opacity: 1, y: 0, rotateX: 0, stagger: 0.012, duration: 0.18, ease: 'power2.out' },
-          0.08,
-        )
-        .fromTo(
-          copyRef.current,
-          { y: 44, opacity: 0 },
-          { y: 0, opacity: 1, duration: 0.18, ease: 'power2.out' },
-          0.14,
-        )
-        .fromTo(
-          plateRef.current,
-          { y: 140, rotateY: -26 * dir, opacity: 0, transformPerspective: 1400 },
-          { y: 0, rotateY: 0, opacity: 1, duration: 0.22, ease: 'power2.out' },
-          0.1,
-        )
-        // 0.24 → 0.76: settled. The plate keeps drifting for parallax depth.
-        .to(plateRef.current, { y: -48, duration: 0.52, ease: 'none' }, 0.24)
-        // 0.76 → 1: the page tips forward and recedes.
-        .to(
+        // 0 → 0.24: the page turns in from depth.
+        tl.fromTo(
           pageRef.current,
-          { rotateX: -16, y: -130, z: -320, opacity: 0.08, duration: 0.24, ease: 'power2.in' },
-          0.76,
-        );
-    }, section);
+          { rotateX: 22, y: 150, z: -380, opacity: 0, transformPerspective: 1500 },
+          { rotateX: 0, y: 0, z: 0, opacity: 1, duration: 0.24, ease: 'power2.out' },
+          0,
+        )
+          .fromTo(
+            numeralRef.current,
+            { x: 70 * dir, opacity: 0 },
+            { x: 0, opacity: 1, duration: 0.2, ease: 'power2.out' },
+            0.03,
+          )
+          .fromTo(
+            split.words,
+            { opacity: 0.06, y: 28, rotateX: -40, transformPerspective: 600 },
+            { opacity: 1, y: 0, rotateX: 0, stagger: 0.012, duration: 0.18, ease: 'power2.out' },
+            0.08,
+          )
+          .fromTo(
+            copyRef.current,
+            { y: 44, opacity: 0 },
+            { y: 0, opacity: 1, duration: 0.18, ease: 'power2.out' },
+            0.14,
+          )
+          .fromTo(
+            plateRef.current,
+            { y: 140, rotateY: -26 * dir, opacity: 0, transformPerspective: 1400 },
+            { y: 0, rotateY: 0, opacity: 1, duration: 0.22, ease: 'power2.out' },
+            0.1,
+          )
+          // 0.24 → 0.76: settled. The plate keeps drifting for parallax depth.
+          .to(plateRef.current, { y: -48, duration: 0.52, ease: 'none' }, 0.24)
+          // 0.76 → 1: the page tips forward and recedes.
+          .to(
+            pageRef.current,
+            { rotateX: -16, y: -130, z: -320, opacity: 0.08, duration: 0.24, ease: 'power2.in' },
+            0.76,
+          );
+      }, section);
 
-    return () => ctx.revert();
+      return () => ctx.revert();
+    });
   }, [reduceMotion, align]);
 
   const plateFirst = align === 'right';

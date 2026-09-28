@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, within, act } from '@testing-library/react';
 import { HeroDemo } from './HeroDemo.jsx';
+import { LIVE } from '../../data/facts.js';
 
 // The demo advances on real setTimeout chains driven by each phase's own
 // duration (not a fixed interval), so fake timers + advanceTimersByTime is
@@ -70,13 +71,28 @@ describe('HeroDemo', () => {
     expect(screen.getByText('Added to “Q3 outbound — Marketing leaders”')).toBeInTheDocument();
   });
 
-  it('reaches the sequences screen using the same list name shown on the people screen', () => {
+  // The Sequences screen is in the tour only once sequence sending is live
+  // (data/facts.js LIVE).
+  it.runIf(LIVE.sequenceSending)(
+    'reaches the sequences screen using the same list name shown on the people screen',
+    () => {
+      render(<HeroDemo />);
+      // Full path through companies/filtered to the start of "sequences":
+      // companies-start(9400) + companies(1300) + move-to-facet(800) +
+      // click-facet(450) + filtered(1700) + to-sequences(400) = 14050.
+      advanceBy(14050 + 10);
+      expect(screen.getByText('Q3 outbound — Marketing leaders')).toBeInTheDocument();
+      expect(screen.getByText('41 enrolled · Active')).toBeInTheDocument();
+    },
+  );
+
+  it.skipIf(LIVE.sequenceSending)('goes from companies straight to the credit ledger while sending is off', () => {
     render(<HeroDemo />);
-    // Full path through companies/filtered to the start of "sequences":
+    expect(screen.queryByText('41 enrolled · Active')).not.toBeInTheDocument();
     // companies-start(9400) + companies(1300) + move-to-facet(800) +
-    // click-facet(450) + filtered(1700) + to-sequences(400) = 14050.
+    // click-facet(450) + filtered(1700) + to-credits(400) = 14050 is the
+    // start of "credits"; +10 lands inside it.
     advanceBy(14050 + 10);
-    expect(screen.getByText('Q3 outbound — Marketing leaders')).toBeInTheDocument();
-    expect(screen.getByText('41 enrolled · Active')).toBeInTheDocument();
+    expect(screen.getByText('app.datapit.io/billing')).toBeInTheDocument();
   });
 });

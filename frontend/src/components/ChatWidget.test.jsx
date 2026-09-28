@@ -21,9 +21,7 @@ describe('ChatWidget', () => {
     await user.click(screen.getByRole('button', { name: 'Open chat' }));
     await user.click(screen.getByRole('button', { name: /what does a reveal cost/i }));
 
-    expect(
-      screen.getByText(/Revealing a contact's verified email costs 2 credits/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/A reveal costs 2 credits in the app/)).toBeInTheDocument();
   });
 
   it('lets the user go back from an answer to the question menu', async () => {

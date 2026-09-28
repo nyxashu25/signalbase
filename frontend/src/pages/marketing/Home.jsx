@@ -16,7 +16,7 @@ import { GiantCTA } from '../../components/marketing/GiantCTA.jsx';
 import { Magnetic } from '../../components/marketing/Magnetic.jsx';
 import { FadeIn, Stagger, StaggerItem } from '../../components/marketing/motion.jsx';
 import { FREE_PLAN_MONTHLY_CREDITS } from '../../data/plans.js';
-import { DATAPIT_SUMMARY, formatCount } from '../../data/facts.js';
+import { CREDIT_COSTS, DATAPIT_SUMMARY, LIVE, formatCount } from '../../data/facts.js';
 
 // Answer-first: what DataPit is, in the cover's first paragraph — the
 // passage search snippets and AI answers lift. Kept to two sentences so the
@@ -24,77 +24,95 @@ import { DATAPIT_SUMMARY, formatCount } from '../../data/facts.js';
 const HOME_SUB = `${DATAPIT_SUMMARY} Start free with ${formatCount(FREE_PLAN_MONTHLY_CREDITS)} credits a month.`;
 
 const MARQUEE_ITEMS = [
-  'Verified reveals',
-  'Atomic credit ledger',
-  'Multi-step sequences',
+  'Work email reveals',
+  'Credit ledger',
+  LIVE.sequenceSending ? 'Multi-step sequences' : 'Chrome extension',
   'Company search',
   'Saved lists',
   'CSV export',
   'Workspace roles',
 ];
 
+// What a reveal gives back when a contact has no email on file: a
+// first.last@domain guess, checked only when a verifier is configured.
+const GUESS_POINT = LIVE.emailVerification
+  ? 'No email on file? A guess the verifier rejects costs nothing'
+  : 'No email on file? You get a first.last guess, charged like any reveal';
+
+// Chapters that describe sending email render only once sequence sending is
+// live in production (data/facts.js LIVE), so the page never promises
+// delivery that is only simulated. Numbers and sides are assigned after the
+// filter, so the remaining chapters still count 01, 02… and alternate.
 const CHAPTERS = [
   {
-    n: '01',
     eyebrow: 'Search & reveal',
-    narration: 'Where the digging starts: a live database, and nothing charged for looking.',
-    title: 'Every contact, verified before you spend a credit',
-    desc: 'Filter by title, seniority, department, and company signal across a live database. Results stay masked until you reveal them — so you never pay for a guess, and once anyone on your team reveals a contact, the whole workspace can see it for free.',
+    narration: 'Search people for free, then pay credits to see a work email. Nothing is charged for looking.',
+    title: 'Search for free. Reveal the contacts you want.',
+    desc: `Search people by job title, seniority, department and company at no cost. Results stay masked until you reveal one for ${CREDIT_COSTS.REVEAL} credits. Once anyone on your team reveals a contact, the whole workspace sees it for free.`,
     points: [
-      'Pattern-based email finding plus verification',
-      'Atomic credit ledger — never double-charged, even under load',
-      'Workspace-wide reveals, not per-seat',
+      GUESS_POINT,
+      'No double charge when two teammates reveal at once',
+      'Workspace-wide reveals, not per seat',
     ],
     plate: <AnimatedRevealMockup />,
-    align: 'left',
     station: 'reveal',
   },
-  {
-    n: '02',
+  LIVE.sequenceSending && {
     eyebrow: 'Outreach',
-    narration: 'The signal keeps moving after the first email — so does the sequence.',
+    narration: 'Sequences email your contacts on a schedule you set. The signal keeps moving after the first touch.',
     title: 'Sequences that keep working after the first email',
-    desc: "Build multi-step cadences with wait steps, enroll a list in one click, and pause or resume without losing a contact's place in the sequence.",
+    desc: `Build a sequence of email and wait steps, then enroll contacts from a saved list. Enrollment costs ${formatCount(CREDIT_COSTS.SEQUENCE_ENROLLMENT)} credits per contact, charged up front. Pause or resume a contact without losing their place.`,
     points: [
       'Email and wait steps in any order',
       'Enroll straight from a saved list',
-      'Suppression list enforced automatically on every send',
+      'Pause or resume each contact',
     ],
     plate: <AnimatedSequenceMockup />,
-    align: 'right',
     station: 'sequence',
   },
   {
-    n: '03',
     eyebrow: 'Credits & billing',
-    narration: 'Every credit leaves a trace. The ledger is the truth, not a number we can edit.',
-    title: 'A credit ledger you can actually audit',
-    desc: 'Every credit movement is an append-only ledger entry — monthly grants, reveals, and top-ups. Reserve-then-commit accounting means a burst of concurrent reveals can never push your balance negative.',
+    narration: 'The ledger shows where your credits went. Every charge leaves a trace.',
+    title: 'See where every credit went',
+    desc: 'Your credit history lists each grant, reveal, company view, export and top-up as its own row. Admins on paid plans can see what each teammate spent. Credits are held before a reveal runs, so a burst of reveals can never push your balance below zero.',
     points: [
       'Full transaction history, not just a balance',
-      'Buy more credits any time from your profile',
-      'Auto-refund on a failed or expired reveal',
+      'Top up credits any time from the Billing page',
+      'Held credits come back if a reveal fails',
     ],
     plate: <AnimatedCreditLedgerMockup />,
-    align: 'left',
     station: 'ledger',
   },
-];
+]
+  .filter(Boolean)
+  .map((chapter, i) => ({
+    ...chapter,
+    n: String(i + 1).padStart(2, '0'),
+    align: i % 2 === 0 ? 'left' : 'right',
+  }));
+
+// The "And the rest" spread continues the chapter count.
+const REST_NUMERAL = String(CHAPTERS.length + 1).padStart(2, '0');
+
+// Follows HeroDemo's tour, which shows a sequence only once sending is live.
+const WALKTHROUGH_NARRATION = LIVE.sequenceSending
+  ? 'Watch one pass through the app: reveal a contact, save it to a list, filter companies, start a sequence and check your credits.'
+  : 'Watch one pass through the app: reveal a contact, save it to a list, filter companies and check your credits.';
 
 const SECONDARY_FEATURES = [
   {
     title: 'Company search',
-    desc: 'Firmographic and technographic filtering with live facet counts, so you narrow a list of thousands down to the accounts that matter.',
+    desc: `Filter companies by industry, headcount and location, with facet counts that update as you filter. Opening a company's full profile costs ${CREDIT_COSTS.COMPANY_VIEW} credits the first time your workspace views it.`,
     icon: IconBuilding,
   },
   {
     title: 'Lists',
-    desc: 'Save contacts and companies into named lists you can build sequences and exports from.',
+    desc: `Save contacts and companies into named lists. Export a list to CSV for ${CREDIT_COSTS.CSV_EXPORT} credits a file; contacts you haven't revealed stay masked.`,
     icon: IconList,
   },
   {
     title: 'Role-based access',
-    desc: 'Owner, Admin, and Member roles per workspace, with every query scoped to your org — no cross-tenant leakage.',
+    desc: 'Invite your team on a paid plan and give each person an Owner, Admin or Member role. Every query is scoped to your own workspace.',
     icon: IconShield,
   },
 ];
@@ -102,20 +120,22 @@ const SECONDARY_FEATURES = [
 const STEPS = [
   {
     n: '01',
-    title: 'Find verified contacts',
-    desc: 'Search by role, seniority, and company signal until you have a list worth pursuing.',
+    title: 'Find the right people',
+    desc: 'Search by role, seniority and company until you have a list worth pursuing. Searching costs nothing.',
     icon: StepFindGraphic,
   },
   {
     n: '02',
     title: 'Reveal what you need',
-    desc: 'Spend a credit only on the contacts you actually want to reach — nothing is charged up front.',
+    desc: `Pay ${CREDIT_COSTS.REVEAL} credits to reveal each contact you want to reach. Your whole team can see it after that.`,
     icon: StepRevealGraphic,
   },
   {
     n: '03',
-    title: 'Track buying signals',
-    desc: 'Enroll into a sequence, keep lists organized, and watch replies come back into one workspace.',
+    title: 'Build your list',
+    desc: LIVE.sequenceSending
+      ? 'Save contacts to named lists, export them to CSV or enroll them in a sequence.'
+      : `Save contacts to named lists and export them to CSV for ${CREDIT_COSTS.CSV_EXPORT} credits a file.`,
     icon: StepSignalsGraphic,
   },
 ];
@@ -126,19 +146,19 @@ export function Home() {
       {/* Act I — the cover. */}
       <StoryCover
         size="lg"
-        eyebrow="B2B sales intelligence"
-        narration="Every market is noise until you find the signal. This is where the digging starts."
+        eyebrow="B2B contact data"
+        narration="Search for the people you want to reach, then reveal their work email. The digging starts here."
         sub={HOME_SUB}
         lines={[
-          { content: 'Find verified' },
+          { content: 'Find work' },
           {
             content: (
-              <span className="bg-gradient-brand bg-clip-text text-transparent">contacts.</span>
+              <span className="bg-gradient-brand bg-clip-text text-transparent">emails.</span>
             ),
             className: 'sm:ml-[6vw]',
           },
-          { content: 'Track buying' },
-          { content: <span className="text-outline">signals.</span>, className: 'sm:ml-[12vw]' },
+          { content: 'Build prospect' },
+          { content: <span className="text-outline">lists.</span>, className: 'sm:ml-[12vw]' },
         ]}
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -186,8 +206,8 @@ export function Home() {
             as="h2"
             className="mt-8 max-w-[1000px] text-[clamp(1.9rem,4.6vw,4rem)] font-extrabold uppercase leading-[1.05] tracking-tight"
           >
-            Most sales tools charge you before they've found anything. Here, the money only moves
-            when the data does.
+            Searching and filtering cost nothing. You spend credits when you reveal a contact, open
+            a company or export a list.
           </ScrubHeadline>
         </div>
       </section>
@@ -210,7 +230,7 @@ export function Home() {
             Interlude — Live product walkthrough
           </p>
           <p className="story-narration mx-auto mt-4 max-w-[520px] text-center text-lg text-mauve-2/90">
-            Sign in, find a contact, reveal, save, enroll — one workflow, one ledger.
+            {WALKTHROUGH_NARRATION}
           </p>
           <Plate3D className="mx-auto mt-12 max-w-[760px]" tilt={5}>
             <HeroDemo />
@@ -236,12 +256,12 @@ export function Home() {
             <div className="relative mx-auto max-w-[1200px] px-6 py-24 sm:py-32">
               <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:gap-10">
                 <span aria-hidden="true" className="story-numeral select-none text-[clamp(6rem,16vw,13rem)] font-extrabold leading-[0.8] tracking-tight">
-                  04
+                  {REST_NUMERAL}
                 </span>
                 <div className="pb-2">
-                  <p className="story-eyebrow text-xs font-bold uppercase tracking-[0.22em]">Chapter 04 — And the rest</p>
+                  <p className="story-eyebrow text-xs font-bold uppercase tracking-[0.22em]">Chapter {REST_NUMERAL} — And the rest</p>
                   <p className="story-narration mt-3 max-w-[440px] text-lg text-text-muted">
-                    Surfacing now: the everyday tools a go-to-market team leans on.
+                    Three more tools surface now: company search, lists and team roles.
                   </p>
                 </div>
               </div>
@@ -249,7 +269,7 @@ export function Home() {
                 as="h2"
                 className="mt-10 max-w-[820px] text-[clamp(1.9rem,4.6vw,4rem)] font-extrabold uppercase leading-[1.05] tracking-tight text-text"
               >
-                Everything else a go-to-market team needs
+                The rest of the prospecting workspace
               </ScrubHeadline>
               <Stagger as="div" className="mt-14 grid grid-cols-1 gap-6 sm:grid-cols-3">
                 {SECONDARY_FEATURES.map((f) => (
@@ -279,11 +299,11 @@ export function Home() {
       >
         <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-14 px-6 py-28 sm:grid-cols-3 sm:py-36">
           <div>
-            <StatCounter value={2} className="block text-[clamp(3.5rem,8vw,7rem)] font-extrabold leading-none tabular-nums" />
-            <p className="mt-4 text-sm font-bold uppercase tracking-[0.2em] text-ink-300">Credits per verified reveal</p>
+            <StatCounter value={CREDIT_COSTS.REVEAL} className="block text-[clamp(3.5rem,8vw,7rem)] font-extrabold leading-none tabular-nums" />
+            <p className="mt-4 text-sm font-bold uppercase tracking-[0.2em] text-ink-300">Credits per reveal in the app</p>
           </div>
           <div>
-            <StatCounter value={800} className="block text-[clamp(3.5rem,8vw,7rem)] font-extrabold leading-none tabular-nums" />
+            <StatCounter value={FREE_PLAN_MONTHLY_CREDITS} className="block text-[clamp(3.5rem,8vw,7rem)] font-extrabold leading-none tabular-nums" />
             <p className="mt-4 text-sm font-bold uppercase tracking-[0.2em] text-ink-300">Free credits every month</p>
           </div>
           <div>
@@ -311,7 +331,7 @@ export function Home() {
         </div>
       </div>
 
-      <GiantCTA title="Start finding your next customers." />
+      <GiantCTA title="Start finding work emails." />
 
       <MarketingFooter />
     </div>

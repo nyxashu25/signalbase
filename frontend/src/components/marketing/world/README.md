@@ -5,6 +5,9 @@ One persistent Three.js scene lives behind every marketing page (the
 content chapter; each station hosts a 3D **set piece**. Route changes play a
 **warp** (particles streak, camera punches forward) and lay out the new page's
 stations. First visit in a session plays an **intro descent** into the pit.
+Touch screens (`pointer: coarse`) load the engine on the reader's first
+interaction (scroll, touch, key) rather than during the page load, and skip the
+intro; the CSS mark and 2D river hold the stage until then.
 
 Inspired by the fixed-world fly-through of qaima.online (CSS 3D stations along
 -Z), the lit hero object of a24.raviklaassens.com, and the one-set-piece-per-
@@ -21,7 +24,7 @@ section gallery of amix-design.com — rendered in the DataPit Design Language
 | `field.js` | `createSignalField()` — the global GPU particle field that fills the whole flight path (always on; drives the warp streak). |
 | `pieces/index.js` | `PIECES` registry: station key → piece factory. |
 | `pieces/<key>.js` | One set piece each (see keys below). |
-| `../SignalWorld.jsx` | React host: capability check, lazy import of `engine.js`, canvas, feeds scroll/pointer/stations, fallback, `worldStore`. |
+| `../SignalWorld.jsx` | React host: capability check, lazy import of `engine.js` (after idle; on touch screens after the first interaction), canvas, feeds scroll/pointer/stations, fallback, `worldStore`. |
 | `../worldStore.js` | Tiny external store: `{ active, ready }` + `useWorldActive()`. |
 
 **Nothing outside `world/` and `SignalWorld.jsx` may import `three`.** The

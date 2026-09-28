@@ -23,8 +23,8 @@ export function Contact() {
       <StoryCover
         station="mark"
         eyebrow="Contact"
-        narration="Write in the margins. We read every note."
-        sub="Questions about a plan, a bulk credit package, or whether DataPit fits your workflow — tell us and we'll get back to you."
+        narration="Ask us about plans, credits or fit. Write in the margins; we read every note."
+        sub="Use this form to ask about a plan, a bulk credit package, or whether DataPit fits your workflow. We'll reply by email."
         lines={[
           {
             content: <span className="bg-gradient-brand bg-clip-text text-transparent">Talk to us.</span>,

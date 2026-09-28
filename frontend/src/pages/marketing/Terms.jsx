@@ -4,7 +4,7 @@ import { LegalDoc, LegalSection } from '../../components/marketing/LegalDoc.jsx'
 export function Terms() {
   return (
     <div className="min-h-screen">
-      <LegalDoc title="Terms of Service" updated="August 19, 2026">
+      <LegalDoc title="Terms of Service" updated="September 28, 2026">
         <LegalSection title="1. Your account">
           <p>
             You're responsible for the activity that happens under your workspace, including actions
@@ -14,10 +14,10 @@ export function Terms() {
         </LegalSection>
         <LegalSection title="2. Credits">
           <p>
-            Credits are granted monthly per your plan and can be purchased in addition. A credit is
-            spent only when a reveal succeeds — search itself is always free, and a failed or
-            expired reveal is automatically refunded. Credits do not roll over between billing
-            cycles and have no cash value.
+            Credits are granted monthly per your plan and can be purchased in addition. Searching
+            is free; credits are spent on reveals, company profile views, CSV exports and sequence
+            enrollments, at the rates shown in the product, and credits held for a reveal that fails
+            are returned. Credits do not roll over between billing cycles and have no cash value.
           </p>
         </LegalSection>
         <LegalSection title="3. Acceptable use">

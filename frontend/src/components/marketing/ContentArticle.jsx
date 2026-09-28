@@ -331,7 +331,7 @@ export function ContentArticle({ page }) {
         </div>
       </section>
 
-      <GiantCTA station="mark" title="Start free. Upgrade when it pays for itself." />
+      <GiantCTA station="mark" title="Start free. Upgrade when you need a team." />
       <MarketingFooter />
     </div>
   );

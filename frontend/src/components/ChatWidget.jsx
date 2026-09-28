@@ -1,31 +1,39 @@
 import { useState } from 'react';
 import { useSubmitContactRequestMutation } from '../api/marketingApi.js';
 import { RabbitAvatar } from './RabbitAvatar.jsx';
+import { FREE_PLAN_MONTHLY_CREDITS } from '../data/plans.js';
+import {
+  DATAPIT_SUMMARY,
+  creditCostsSentence,
+  creditsSummary,
+  formatCount,
+  pricingSummary,
+} from '../data/facts.js';
+import { PRICING_FAQS } from '../data/faqs.js';
 
-// Answers pulled verbatim from the real Pricing page copy (pages/marketing/
-// Pricing.jsx) so this never drifts out of sync with what the pricing page
-// itself says.
+// Answers built from the same facts as the Pricing and Product pages
+// (data/facts.js, data/plans.js, data/faqs.js), so this never drifts out of
+// sync with what those pages say or claims more than production does.
+const PLAN_CHANGES = PRICING_FAQS.find((f) => f.q === 'Can I change plans later?');
+
 const FAQS = [
   {
     q: 'What does DataPit do?',
-    a: 'DataPit is a B2B sales intelligence platform — search verified contacts and companies, reveal emails on credit, and run outreach sequences, all on one credit ledger.',
+    a: `${DATAPIT_SUMMARY} Every credit your team spends is recorded in a ledger you can see.`,
   },
   {
     q: "What's a credit, and what does a reveal cost?",
-    a: "Revealing a contact's verified email costs 2 credits. Search and masked results never cost a credit — only the reveal action does. Once any teammate reveals a contact, the whole workspace can see it for free going forward.",
+    a: `${creditCostsSentence()} Once any teammate reveals a contact, the whole workspace can see it for free.`,
   },
   {
     q: "What's included in the Free plan?",
-    a: '800 personal credits every month, 1 seat, unlimited lists, and full people & company search — no credit card required.',
+    a: `${formatCount(FREE_PLAN_MONTHLY_CREDITS)} personal credits every month, 1 seat, unlimited lists, and full people and company search. No credit card required.`,
   },
   {
     q: 'What are the paid plans?',
-    a: 'Paid plans come in seat blocks — buy as many as you need. Basic is $29/mo per block (5 paid + 1 free seat; paid seats earn 900 credits/mo each). Professional is $59/mo per block (5 paid + 3 free; 2,000 credits per paid seat + a 2,000 owner bonus) — our most popular. Organization is $99/mo per block (14 paid + 5 free; 2,000 per paid seat + a 3,000 owner bonus). Free bonus seats always earn 1,500/mo, and every newly covered teammate gets a one-time 1,500-credit gift.',
+    a: `${pricingSummary()} ${creditsSummary()}`,
   },
-  {
-    q: 'Do unused credits roll over?',
-    a: 'No — credits reset each billing cycle and don’t roll over. You can upgrade, downgrade, or cancel from your workspace billing page at any time.',
-  },
+  { q: PLAN_CHANGES.q, a: PLAN_CHANGES.a },
 ];
 
 const emptyForm = { name: '', email: '', message: '' };
@@ -92,7 +100,7 @@ export function ChatWidget() {
             {view === 'menu' && (
               <div className="flex flex-col gap-4">
                 <p className="text-sm text-text-muted">
-                  Hi! Pick a question below, or reach a real person if you'd rather talk to us
+                  Hi. Pick a question below, or reach a real person if you'd rather talk to us
                   directly.
                 </p>
                 <div className="flex flex-col gap-2">

@@ -13,6 +13,7 @@ import {
   PLANS,
   WELCOME_GIFT_CREDITS,
 } from './plans.js';
+import { LIVE } from './live.js';
 
 // Live Chrome Web Store listing — the one-click "Add to Chrome" path for end
 // users (re-exported by hooks/useExtensionInstalled.js). Kept here, free of
@@ -30,21 +31,10 @@ export const EXTENSION_STORE_URL =
 // Store listing is a product page (EXTENSION_STORE_URL), not a profile.
 export const PROFILES = [];
 
-// What is switched on in production today. Content pages and the facts below
-// read these, so when a capability goes live one flag flips every claim that
-// depends on it (and publishes the pages built around it). Checked against
-// production on 2026-09-28:
-//   database          - the full contact import. Today ~120 contacts; see DATABASE_CLAIM.
-//   emailVerification - EMAIL_VERIFIER_API_KEY set, so reveals are checked by a verifier.
-//   sequenceSending   - ESP_API_KEY + a verified sender set, so sequence emails are
-//                       really delivered (unset, sends are only simulated).
-//   phoneData         - imported records carry phone numbers (today none do).
-export const LIVE = {
-  database: false,
-  emailVerification: false,
-  sequenceSending: false,
-  phoneData: false,
-};
+// What is switched on in production today (see live.js). Defined in its own
+// module so plans.js can read it too without an import cycle; re-exported
+// here, where pages and content files import it from.
+export { LIVE };
 
 export const DATAPIT_SUMMARY = LIVE.sequenceSending
   ? 'DataPit is a B2B contact data platform: search people and companies, reveal work emails, and run outreach sequences from one workspace.'
@@ -70,7 +60,10 @@ export const CREDIT_COSTS = {
 // Self-serve checkout's block limit (backend planConfig.js).
 export const MAX_SELF_SERVE_BLOCKS = 200;
 
-export const formatCount = (n) => n.toLocaleString('en-US');
+// One formatter for every count on the site: `toLocaleString('en-US')` builds
+// a fresh one per call, and the pages make hundreds of calls while they load.
+const COUNT_FORMAT = new Intl.NumberFormat('en-US');
+export const formatCount = (n) => COUNT_FORMAT.format(n);
 
 const PAID_PLANS = PLANS.filter((p) => p.block);
 
@@ -112,8 +105,11 @@ export const BOILERPLATE_MEDIUM =
 export function pricingSummary() {
   return (
     `DataPit is free for one user with ${formatCount(FREE_PLAN_MONTHLY_CREDITS)} credits a month. ` +
-    `Paid plans are sold in seat blocks: ${seatBlockSentence()}. ` +
-    `Billing quarterly saves ${discount('QUARTER')}% and annually ${discount('YEAR')}%.`
+    'Paid plans are sold in seat blocks. ' +
+    PAID_PLANS.map(
+      (p) => `${p.name} is $${p.price} a month for ${p.block.paidSeats} paid seats plus ${p.block.freeSeats} free.`,
+    ).join(' ') +
+    ` Billing quarterly saves ${discount('QUARTER')}% and annually ${discount('YEAR')}%.`
   );
 }
 
@@ -135,15 +131,21 @@ export function creditsSummary() {
     .join(' and ');
   return (
     `Each paid seat earns ${paidSeats}. Free seats earn ${formatCount(FREE_SEAT_MONTHLY_CREDITS)} a month on every paid plan. ` +
-    `Workspace owners also get a monthly bonus of ${bonuses}, and each newly covered teammate gets a one-time ${formatCount(WELCOME_GIFT_CREDITS)}-credit welcome gift.`
+    `Workspace owners also get a monthly bonus of ${bonuses}. ` +
+    `Each newly covered teammate gets a one-time ${formatCount(WELCOME_GIFT_CREDITS)}-credit welcome gift.`
   );
 }
 
 export function revealSummary() {
   return (
-    `One reveal unlocks everything DataPit holds on a contact: the work email and, where the record has one, a phone number. ` +
-    `It costs ${CREDIT_COSTS.REVEAL} credits in the app or ${CREDIT_COSTS.EXTENSION_REVEAL} from the Chrome extension, ` +
-    `and once anyone on your team reveals a contact it's free for the whole workspace.`
+    (LIVE.phoneData
+      ? 'One reveal unlocks everything DataPit holds on a contact: the work email and, where the record has one, a phone number. '
+      : 'A reveal unlocks the work email DataPit holds on a contact. ') +
+    (LIVE.emailVerification
+      ? 'With no email on file, DataPit checks a first.last guess, and a guess the verifier rejects costs nothing. '
+      : 'With no email on file, you get a first.last guess, charged like any reveal. ') +
+    `A reveal costs ${CREDIT_COSTS.REVEAL} credits in the app or ${CREDIT_COSTS.EXTENSION_REVEAL} from the Chrome extension. ` +
+    "Once anyone on your team reveals a contact, it's free for the whole workspace."
   );
 }
 
@@ -151,8 +153,8 @@ export function revealSummary() {
 export function creditCostsSentence() {
   return (
     `A reveal costs ${CREDIT_COSTS.REVEAL} credits in the app or ${CREDIT_COSTS.EXTENSION_REVEAL} from the Chrome extension. ` +
-    `Opening a company's full profile costs ${CREDIT_COSTS.COMPANY_VIEW} the first time your workspace views it, ` +
-    `a CSV export costs ${CREDIT_COSTS.CSV_EXPORT} per file, and enrolling a contact in a sequence costs ${CREDIT_COSTS.SEQUENCE_ENROLLMENT}. ` +
+    `Opening a company's full profile costs ${CREDIT_COSTS.COMPANY_VIEW} the first time your workspace views it. ` +
+    `A CSV export costs ${CREDIT_COSTS.CSV_EXPORT} per file, and enrolling a contact in a sequence costs ${CREDIT_COSTS.SEQUENCE_ENROLLMENT}. ` +
     'Searching and browsing masked results is free.'
   );
 }

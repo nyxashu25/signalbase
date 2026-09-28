@@ -3,20 +3,20 @@ import { StoryCover } from '../../components/marketing/StoryCover.jsx';
 import { ScrubHeadline } from '../../components/marketing/ScrubHeadline.jsx';
 import { GiantCTA } from '../../components/marketing/GiantCTA.jsx';
 import { FadeIn, Stagger, StaggerItem } from '../../components/marketing/motion.jsx';
-import { glanceFacts } from '../../data/facts.js';
+import { LIVE, glanceFacts } from '../../data/facts.js';
 
 const PRINCIPLES = [
   {
-    title: 'Pay for outcomes, not access',
-    desc: "A credit is spent when a contact is actually found and verified — never up front for the privilege of searching. If we can't find it, you don't pay for it.",
+    title: 'Look before you pay',
+    desc: 'Searching and filtering cost nothing, and results stay masked until you choose to reveal one. Reveals, company views and exports each cost a fixed number of credits.',
   },
   {
     title: 'One reveal, one workspace',
-    desc: "The first person on your team to reveal a contact makes it visible to everyone else on that workspace, permanently. We're not going to charge five people to unlock the same email.",
+    desc: "The first person on your team to reveal a contact makes it visible to everyone else in your workspace. We're not going to charge five people to unlock the same email.",
   },
   {
-    title: 'The ledger is the truth',
-    desc: 'Every credit movement is a row in an append-only ledger, not a number we can quietly edit. If something looks wrong, you can trace exactly why.',
+    title: 'Every charge leaves a row',
+    desc: 'Each credit grant and charge is a row in a ledger you can see. If a balance looks wrong, you can trace which action moved it.',
   },
 ];
 
@@ -26,13 +26,13 @@ export function About() {
       <StoryCover
         station="ledger"
         eyebrow="About DataPit"
-        narration="This book started as a complaint. Then we built the ledger first."
-        sub="DataPit started from a simple complaint: most sales intelligence tools charge you before they've actually found anything. We built the credit ledger first, and the search product around it — so the money only moves when the data does."
+        narration="DataPit is a prospecting workspace built around a credit ledger. This book started as a complaint."
+        sub="DataPit started from a simple complaint: sales data tools make it hard to see what you paid for. We built the credit ledger first and the search product around it, so every charge is a row you can read."
         lines={[
           { content: 'We got tired of' },
           {
             content: (
-              <span className="bg-gradient-brand bg-clip-text text-transparent">paying for stale lists.</span>
+              <span className="bg-gradient-brand bg-clip-text text-transparent">guessing what we paid for.</span>
             ),
             className: 'sm:ml-[6vw]',
           },
@@ -119,9 +119,12 @@ export function About() {
                 The core is live today. The rest ships in the order our users ask for it.
               </ScrubHeadline>
               <FadeIn as="p" className="mt-8 max-w-[640px] text-base leading-relaxed text-text-muted">
-                DataPit is early. Search, reveal, lists, the Chrome extension and a credit ledger you can
-                see are live now. CRM sync and intent data are next, in that order, because that's the
-                order our own users have asked for them.
+                DataPit is early. Search, reveal, lists, CSV export, the Chrome extension and a credit
+                ledger you can see are live now.{' '}
+                {LIVE.sequenceSending
+                  ? 'Email sequences are live on paid plans too.'
+                  : 'The sequence builder is in place, and sending switches on once email delivery is set up.'}{' '}
+                CRM sync is on the roadmap.
               </FadeIn>
             </div>
           </div>

@@ -15,12 +15,13 @@ import {
   FREE_PLAN_MONTHLY_CREDITS,
   FREE_SEAT_MONTHLY_CREDITS,
   PRICING_UPDATED_AT,
+  WELCOME_GIFT_CREDITS,
   planTotalForInterval,
   teamCost,
 } from '../../data/plans.js';
 import { APOLLO, COMPETITOR_PRICES_CHECKED, ZOOMINFO } from '../../data/competitors.js';
 import { PRICING_FAQS } from '../../data/faqs.js';
-import { formatCount, pricingSummary } from '../../data/facts.js';
+import { CREDIT_COSTS, MAX_SELF_SERVE_BLOCKS, formatCount, pricingSummary } from '../../data/facts.js';
 import { FaqSection } from '../../components/marketing/FaqSection.jsx';
 
 const CADENCE_LABEL = { MONTH: 'month', QUARTER: 'quarter', YEAR: 'year' };
@@ -66,9 +67,7 @@ function formatDay(isoDay) {
   });
 }
 
-const DISCOUNTS = BILLING_INTERVALS.filter((i) => i.discount > 0)
-  .map((i) => `${i.label.toLowerCase()} billing ${Math.round(i.discount * 100)}%`)
-  .join(' and ');
+const discountPercent = (key) => Math.round(BILLING_INTERVALS.find((i) => i.key === key).discount * 100);
 
 /**
  * Every plan's numbers side by side, monthly — the table readers (and answer
@@ -83,7 +82,8 @@ function PlanComparison() {
     <div className="mt-16">
       <h3 className="text-lg font-bold text-text">Plans at a glance</h3>
       <p className="mt-1 text-sm text-text-muted">
-        Monthly prices per seat block. Saves {DISCOUNTS}.
+        Monthly prices per seat block. Quarterly billing saves {discountPercent('QUARTER')}% and annual
+        billing saves {discountPercent('YEAR')}%.
       </p>
       <div className="mt-5 overflow-x-auto rounded-lg border border-border">
         <table className="w-full min-w-[680px] text-left text-sm tabular-nums">
@@ -180,7 +180,7 @@ function TeamCosts() {
         <a href={APOLLO.pricingUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline">
           {APOLLO.name}&rsquo;s pricing page
         </a>
-        ; {ZOOMINFO.name} publishes no prices for its paid plans (
+        . {ZOOMINFO.name} publishes no prices for its paid plans (
         <a href={ZOOMINFO.pricingUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline">
           pricing page
         </a>
@@ -201,7 +201,7 @@ export function Pricing() {
       <StoryCover
         station="blocks"
         eyebrow="Pricing"
-        narration="Pay for the platform in seat blocks. Spend credits only when the data is real."
+        narration="Paid plans come in seat blocks, and every seat earns monthly credits. Spend them as you dig."
         sub={pricingSummary()}
         lines={[
           { content: 'Simple, team-based' },
@@ -258,7 +258,7 @@ export function Pricing() {
                         <div className="flex h-full flex-col">
                           {plan.popular && (
                             <span className="mb-3 inline-flex w-fit items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-primary">
-                              Most popular
+                              Recommended
                             </span>
                           )}
                           <h3 className="text-lg font-bold text-text">{plan.name}</h3>
@@ -300,10 +300,11 @@ export function Pricing() {
                 })}
               </Stagger>
               <p className="mt-8 text-center text-xs text-text-muted">
-                Prices are per seat block — buy as many blocks as your team needs, with no seat limit. Free
-                seats never cost anything and still earn 1,500 credits a month. Every newly covered teammate
-                gets a one-time 1,500-credit welcome gift. Quarterly and annual billing come with a 10% and
-                20% discount.
+                Prices are per seat block. Buy up to {MAX_SELF_SERVE_BLOCKS} blocks at checkout; larger teams
+                can talk to sales. Free seats never cost anything and still earn{' '}
+                {formatCount(FREE_SEAT_MONTHLY_CREDITS)} credits a month. Every newly covered teammate gets a
+                one-time {formatCount(WELCOME_GIFT_CREDITS)}-credit welcome gift. Quarterly billing saves{' '}
+                {discountPercent('QUARTER')}% and annual billing saves {discountPercent('YEAR')}%.
               </p>
               <PlanComparison />
             </div>
@@ -324,13 +325,16 @@ export function Pricing() {
             as="h2"
             className="mt-6 max-w-[820px] text-[clamp(1.9rem,4.6vw,4rem)] font-extrabold uppercase leading-[1.05] tracking-tight"
           >
-            You only spend a credit when a reveal succeeds
+            Your plan pays for seats. Credits pay for the data you use.
           </ScrubHeadline>
           <div className="mt-14 grid grid-cols-1 items-center gap-14 lg:grid-cols-2">
             <FadeIn as="p" className="text-base leading-relaxed text-ink-300">
-              Your plan price covers the platform and your whole team. Credits are the only thing that
-              moves when you actually use it &mdash; every grant, reveal, and top-up lands in the same
-              append-only ledger you can see in your workspace at any time.
+              Your seat blocks set the monthly price, and each seat earns its own credits. A reveal costs{' '}
+              {CREDIT_COSTS.REVEAL} credits in the app or {CREDIT_COSTS.EXTENSION_REVEAL} from the Chrome
+              extension. Opening a company&rsquo;s profile costs {CREDIT_COSTS.COMPANY_VIEW} the first time
+              your workspace views it. A CSV export costs {CREDIT_COSTS.CSV_EXPORT} per file, and enrolling a
+              contact in a sequence costs {CREDIT_COSTS.SEQUENCE_ENROLLMENT}. Searching is free. Every grant and
+              charge is a row in a credit ledger you can see.
             </FadeIn>
             <FadeIn as="div" delay={0.15}>
               <Plate3D>
@@ -343,7 +347,7 @@ export function Pricing() {
 
       <FaqSection eyebrow="Chapter 03 — Questions" items={PRICING_FAQS} />
 
-      <GiantCTA station="mark" title="Start free. Upgrade when it pays for itself." />
+      <GiantCTA station="mark" title="Start free. Upgrade when you need a team." />
 
       <MarketingFooter />
     </div>

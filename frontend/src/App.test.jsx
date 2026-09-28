@@ -74,9 +74,30 @@ describe('App', () => {
   });
 });
 
+describe('chat widget', () => {
+  it('loads after the page settles (its first interaction here), not with the page', async () => {
+    renderApp({ authenticated: false, path: '/' });
+    await screen.findByRole('heading', { level: 1 }, { timeout: 5000 });
+    // A lazy chunk that isn't part of the page's first render.
+    window.dispatchEvent(new Event('pointerdown'));
+    // Generous timeout: the widget is a lazy chunk, slow under parallel test load.
+    expect(
+      await screen.findByRole('button', { name: 'Open chat' }, { timeout: 5000 }),
+    ).toBeInTheDocument();
+  });
+
+  it('stays off the admin panel', async () => {
+    renderApp({ authenticated: false, path: '/control/login' });
+    window.dispatchEvent(new Event('pointerdown'));
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(screen.queryByRole('button', { name: 'Open chat' })).toBeNull();
+  });
+});
+
 describe('preloadRoute', () => {
   it('loads a marketing page chunk and resolves at once for app routes', async () => {
     await expect(preloadRoute('/pricing')).resolves.toBeUndefined();
+    await expect(preloadRoute('/login')).resolves.toBeUndefined();
     await expect(preloadRoute('/app/people')).resolves.toBeUndefined();
     await expect(preloadRoute('/not-a-page')).resolves.toBeUndefined();
   });

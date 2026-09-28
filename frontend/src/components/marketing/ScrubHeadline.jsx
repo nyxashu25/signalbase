@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
+import { whenNear } from './onScreen.js';
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
@@ -21,28 +22,32 @@ export function ScrubHeadline({ as: Tag = 'h2', className, children }) {
     const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     if (reduceMotion) return;
 
-    const ctx = gsap.context(() => {
-      const split = new SplitText(el, { type: 'words', wordsClass: 'split-word' });
-      gsap.set(split.words, { display: 'inline-block' });
-      gsap.fromTo(
-        split.words,
-        { opacity: 0.12, y: 30 },
-        {
-          opacity: 1,
-          y: 0,
-          ease: 'none',
-          stagger: 0.08,
-          scrollTrigger: {
-            trigger: el,
-            start: 'top 85%',
-            end: 'top 40%',
-            scrub: 0.5,
+    // Split and wired up as the headline nears the screen (onScreen.js
+    // whenNear), not in the page's first render.
+    return whenNear(el, () => {
+      const ctx = gsap.context(() => {
+        const split = new SplitText(el, { type: 'words', wordsClass: 'split-word' });
+        gsap.set(split.words, { display: 'inline-block' });
+        gsap.fromTo(
+          split.words,
+          { opacity: 0.12, y: 30 },
+          {
+            opacity: 1,
+            y: 0,
+            ease: 'none',
+            stagger: 0.08,
+            scrollTrigger: {
+              trigger: el,
+              start: 'top 85%',
+              end: 'top 40%',
+              scrub: 0.5,
+            },
           },
-        },
-      );
-    }, el);
+        );
+      }, el);
 
-    return () => ctx.revert();
+      return () => ctx.revert();
+    });
   }, []);
 
   return (

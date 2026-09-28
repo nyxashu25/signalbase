@@ -1,43 +1,26 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
+import { useStepLoop } from './onScreen.js';
 
 const ENTRIES = [
   { label: 'Monthly grant', delta: '+100', tone: 'text-emerald-400', balance: 100 },
   { label: 'Reveal · Avery Bennett', delta: '−2', tone: 'text-ink-300', balance: 98 },
-  { label: 'Reveal · Casey Ortiz', delta: '−2', tone: 'text-ink-300', balance: 96 },
-  { label: 'Reveal · Jordan Price', delta: '−2', tone: 'text-ink-300', balance: 94 },
+  { label: 'Company view · Beacon Labs', delta: '−20', tone: 'text-ink-300', balance: 78 },
+  { label: 'Reveal · Jordan Price', delta: '−2', tone: 'text-ink-300', balance: 76 },
 ];
 
 const STEP_MS = 750;
 const HOLD_MS = 1900;
+// Loop step k shows the first k + 1 entries; the full ledger holds longer.
+const DURATIONS = ENTRIES.map((_, i) => (i === ENTRIES.length - 1 ? HOLD_MS : STEP_MS));
 
 export function AnimatedCreditLedgerMockup({ className = '' }) {
-  const [visibleCount, setVisibleCount] = useState(1);
-  const reducedMotion = useRef(false);
-
-  useEffect(() => {
-    reducedMotion.current = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    if (reducedMotion.current) {
-      setVisibleCount(ENTRIES.length);
-      return;
-    }
-    let timer;
-    let n = 1;
-    const step = () => {
-      setVisibleCount(n);
-      const ms = n >= ENTRIES.length ? HOLD_MS : STEP_MS;
-      timer = setTimeout(() => {
-        n = n >= ENTRIES.length ? 1 : n + 1;
-        step();
-      }, ms);
-    };
-    step();
-    return () => clearTimeout(timer);
-  }, []);
+  const rootRef = useRef(null);
+  const visibleCount = useStepLoop(rootRef, DURATIONS, ENTRIES.length - 1) + 1;
 
   const balance = ENTRIES[visibleCount - 1]?.balance ?? ENTRIES[0].balance;
 
   return (
-    <div className={`[perspective:1400px] ${className}`}>
+    <div ref={rootRef} className={`[perspective:1400px] ${className}`}>
       <div className="overflow-hidden rounded-xl border border-white/10 bg-ink-900 shadow-dp-md animate-[ambient-tilt_10s_ease-in-out_infinite]">
         <div className="flex items-center gap-2 border-b border-white/10 bg-ink-950 px-4 py-3">
           <span className="h-2.5 w-2.5 rounded-full bg-red-400/70" />

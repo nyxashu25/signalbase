@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
+import { useStepLoop } from './onScreen.js';
 
 const STEPS = [
   { name: 'idle', ms: 1000 },
@@ -7,29 +8,12 @@ const STEPS = [
   { name: 'revealed', ms: 2400 },
   { name: 'reset', ms: 600 },
 ];
+const DURATIONS = STEPS.map((s) => s.ms);
+const REDUCED_STEP = 3; // revealed
 
 export function AnimatedRevealMockup({ className = '' }) {
-  const [stepIndex, setStepIndex] = useState(0);
-  const reducedMotion = useRef(false);
-
-  useEffect(() => {
-    reducedMotion.current = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    if (reducedMotion.current) {
-      setStepIndex(3); // revealed
-      return;
-    }
-    let timer;
-    let i = 0;
-    const step = () => {
-      setStepIndex(i);
-      timer = setTimeout(() => {
-        i = (i + 1) % STEPS.length;
-        step();
-      }, STEPS[i].ms);
-    };
-    step();
-    return () => clearTimeout(timer);
-  }, []);
+  const rootRef = useRef(null);
+  const stepIndex = useStepLoop(rootRef, DURATIONS, REDUCED_STEP);
 
   const name = STEPS[stepIndex].name;
   const revealed = name === 'revealed';
@@ -38,7 +22,7 @@ export function AnimatedRevealMockup({ className = '' }) {
   const cursorTop = clicking || revealed ? '78%' : '55%';
 
   return (
-    <div className={`[perspective:1400px] ${className}`}>
+    <div ref={rootRef} className={`[perspective:1400px] ${className}`}>
       <div className="relative overflow-hidden rounded-xl border border-white/10 bg-ink-900 shadow-dp-md animate-[ambient-tilt_10s_ease-in-out_infinite]">
         <div className="flex items-center gap-2 border-b border-white/10 bg-ink-950 px-4 py-3">
           <span className="h-2.5 w-2.5 rounded-full bg-red-400/70" />
@@ -73,7 +57,7 @@ export function AnimatedRevealMockup({ className = '' }) {
             <div className="mt-3 flex items-center justify-between">
               {revealed ? (
                 <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-[10px] font-bold text-emerald-400">
-                  Verified
+                  Unlocked
                 </span>
               ) : (
                 <span

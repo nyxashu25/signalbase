@@ -317,7 +317,7 @@ tools, guides) are plain data files under `frontend/src/content/pages/`
 if the committed registry is stale. A page with `published: false` still
 renders at its URL but is noindex and off the sitemap and llms.txt.
 
-**What's live** — `LIVE` in `src/data/facts.js` records which capabilities
+**What's live** — `LIVE` in `src/data/live.js` (re-exported by `facts.js`) records which capabilities
 production really has (full database import, email verification, sequence
 sending, phone data). Pages and FAQs read these flags, and pages built around
 an off capability are hidden. When you set `EMAIL_VERIFIER_API_KEY`, or
