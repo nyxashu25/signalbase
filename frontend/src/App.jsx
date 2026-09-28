@@ -14,6 +14,8 @@ import { Unsubscribe } from './pages/Unsubscribe.jsx';
 import { MarketingLayout } from './components/marketing/MarketingLayout.jsx';
 import { authApi } from './api/authApi.js';
 import { setSession, clearSession } from './store/authSlice.js';
+import { RouteMeta } from './seo/RouteMeta.jsx';
+import { isPrivatePath } from './seo/site.js';
 
 // Route-level code splitting (TODO.md): the marketing site (framer-motion,
 // GSAP, Lenis), the authenticated app (cmdk, Radix, lucide-heavy shell) and
@@ -21,7 +23,22 @@ import { setSession, clearSession } from './store/authSlice.js';
 // its own routes. Vite hoists whatever they share into common chunks.
 // Login/verify/unsubscribe stay eager: they're tiny and are the landing
 // points for every emailed link.
-const lazyNamed = (loader, name) => lazy(() => loader().then((m) => ({ default: m[name] })));
+//
+// `preload()` fetches a route's chunk ahead of render. Once it has arrived the
+// lazy component resolves synchronously (a thenable that calls back at once),
+// so the first commit already holds the page — main.jsx relies on that to
+// swap the prerendered HTML for the live page without a blank frame between.
+function lazyNamed(loader, name) {
+  let loaded = null;
+  const load = () =>
+    loader().then((m) => {
+      loaded = { default: m[name] };
+      return loaded;
+    });
+  const Component = lazy(() => (loaded ? { then: (resolve) => resolve(loaded) } : load()));
+  Component.preload = load;
+  return Component;
+}
 
 // Marketing
 const Home = lazyNamed(() => import('./pages/marketing/Home.jsx'), 'Home');
@@ -32,6 +49,29 @@ const About = lazyNamed(() => import('./pages/marketing/About.jsx'), 'About');
 const Contact = lazyNamed(() => import('./pages/marketing/Contact.jsx'), 'Contact');
 const Privacy = lazyNamed(() => import('./pages/marketing/Privacy.jsx'), 'Privacy');
 const Terms = lazyNamed(() => import('./pages/marketing/Terms.jsx'), 'Terms');
+const NotFound = lazyNamed(() => import('./pages/marketing/NotFound.jsx'), 'NotFound');
+
+const MARKETING_PAGES = {
+  '/': Home,
+  '/pricing': Pricing,
+  '/product': Product,
+  '/solutions': Solutions,
+  '/about': About,
+  '/contact': Contact,
+  '/privacy': Privacy,
+  '/terms': Terms,
+};
+
+/**
+ * Fetch the chunk for the marketing page at `pathname` (the 404 page for an
+ * unknown path) before the first render. Resolves immediately for app, admin
+ * and auth routes, which have no prerendered HTML to hand over from.
+ */
+export function preloadRoute(pathname) {
+  const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
+  const page = MARKETING_PAGES[path] ?? (isPrivatePath(path) ? null : NotFound);
+  return page ? page.preload().then(() => undefined) : Promise.resolve();
+}
 
 // Authenticated app
 const AppLayout = lazyNamed(() => import('./layouts/AppLayout.jsx'), 'AppLayout');
@@ -134,6 +174,7 @@ export function App() {
 
   return (
     <>
+      <RouteMeta />
       <Suspense fallback={<RouteFallback />}>
         <Routes>
           {/* The public storybook: one layout owns the smooth scroller, the
@@ -148,6 +189,7 @@ export function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
+            <Route path="*" element={<NotFound />} />
           </Route>
           <Route path="/login" element={<Login />} />
           <Route path="/verify-email" element={<VerifyEmail />} />

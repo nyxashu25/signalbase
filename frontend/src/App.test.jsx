@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import { createAppStore } from './store/index.js';
-import { App } from './App.jsx';
+import { App, preloadRoute } from './App.jsx';
 
 function renderApp({ authenticated, path = '/app' }) {
   const store = createAppStore({
@@ -60,5 +60,24 @@ describe('App', () => {
   it('renders the public pricing page at /pricing without requiring auth', async () => {
     renderApp({ authenticated: false, path: '/pricing' });
     expect(await screen.findByRole('heading', { name: 'Professional' })).toBeInTheDocument();
+  });
+
+  it('shows the 404 page, noindexed, for a URL no route claims', async () => {
+    renderApp({ authenticated: false, path: '/no-such-page' });
+    expect(
+      await screen.findByRole('heading', { level: 1, name: /Page not found/ }, { timeout: 5000 }),
+    ).toBeInTheDocument();
+    expect(document.title).toBe('Page Not Found | DataPit');
+    expect(document.head.querySelector('meta[name="robots"]').getAttribute('content')).toMatch(
+      /^noindex/,
+    );
+  });
+});
+
+describe('preloadRoute', () => {
+  it('loads a marketing page chunk and resolves at once for app routes', async () => {
+    await expect(preloadRoute('/pricing')).resolves.toBeUndefined();
+    await expect(preloadRoute('/app/people')).resolves.toBeUndefined();
+    await expect(preloadRoute('/not-a-page')).resolves.toBeUndefined();
   });
 });

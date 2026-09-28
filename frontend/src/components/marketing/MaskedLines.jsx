@@ -1,4 +1,4 @@
-import { isValidElement, useLayoutEffect, useRef } from 'react';
+import { Fragment, isValidElement, useLayoutEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { SplitText } from 'gsap/SplitText';
 
@@ -167,11 +167,16 @@ export function MaskedLines({ as: Tag = 'h1', className, lines, delay = 0 }) {
     <Tag ref={ref} className={className}>
       <span className="sr-only">{label}</span>
       {lines.map((line, i) => (
-        <span key={i} aria-hidden="true" className={`block ${line.className ?? ''}`}>
-          <span data-line className="block" style={{ perspective: '900px' }}>
-            {line.content}
+        <Fragment key={i}>
+          {/* A space before each block line: invisible in layout, but it
+              keeps the words apart when the heading is read as plain text
+              (search snippets, crawlers of the prerendered HTML). */}{' '}
+          <span aria-hidden="true" className={`block ${line.className ?? ''}`}>
+            <span data-line className="block" style={{ perspective: '900px' }}>
+              {line.content}
+            </span>
           </span>
-        </span>
+        </Fragment>
       ))}
     </Tag>
   );

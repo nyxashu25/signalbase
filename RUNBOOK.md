@@ -272,3 +272,30 @@ remove that line: the project name anchors the data volume names
 (`titans7-signalbase_postgres_data` etc.), and losing it would point a
 `docker compose up` at fresh, empty volumes.
 
+
+## Search: prerendered pages, nginx, sitemap (`deploy/nginx/datapit.io.conf`)
+
+`npm run build` in `frontend/` now does three things: the client build, an SSR
+build of `src/prerender/entry-server.jsx`, and `scripts/prerender.mjs`, which
+writes `dist/index.html`, `dist/<page>.html` for each public page,
+`dist/404.html`, `dist/app.html` (the noindex shell for `/app`, `/control`
+and the auth screens) and `dist/sitemap.xml`. Titles, descriptions,
+canonicals, Open Graph tags and JSON-LD all come from `src/seo/site.js` —
+add a new public page there and in `entry-server.jsx`, and add its path to
+the `.html` redirect list in the nginx config.
+
+nginx serves those files directly (no SPA fallback any more): unknown URLs get
+`404.html` with a real 404 status, and `www.datapit.io` 301s to
+`datapit.io`. The tracked copy is `deploy/nginx/datapit.io.conf`; to change
+it:
+
+```
+cp /etc/nginx/sites-available/datapit.io /root/datapit.io.nginx.bak
+cp /var/www/datapit.io/app/deploy/nginx/datapit.io.conf /etc/nginx/sites-available/datapit.io
+nginx -t && systemctl reload nginx     # on failure: restore the .bak
+```
+
+After a deploy that changes marketing copy, ping IndexNow (Bing, and so
+ChatGPT search and Copilot) from `frontend/`: `npm run indexnow`. Share
+images live in `frontend/public/og/`; regenerate them with
+`npm run og-images` (needs local Chrome or Edge) when a page headline changes.

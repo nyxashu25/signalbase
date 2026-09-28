@@ -4,7 +4,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Montserrat', 'Avenir Next', 'Arial', 'sans-serif'],
+        sans: ['Montserrat Variable', 'Montserrat', 'Avenir Next', 'Arial', 'sans-serif'],
       },
       colors: {
         indigo: {

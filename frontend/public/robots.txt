@@ -1,2 +1,10 @@
+# DataPit — https://datapit.io
+# Public marketing pages are open to every crawler, AI search included.
+# The app, admin panel and API are private.
 User-agent: *
+Allow: /
+Disallow: /app
 Disallow: /control
+Disallow: /api/
+
+Sitemap: https://datapit.io/sitemap.xml

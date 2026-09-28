@@ -243,7 +243,7 @@
 }
 
 body {
-  font-family: 'Montserrat', 'Avenir Next', Arial, sans-serif;
+  font-family: 'Montserrat Variable', 'Montserrat', 'Avenir Next', Arial, sans-serif;
   background: var(--dp-bg);
   color: var(--dp-text);
 }
@@ -488,8 +488,8 @@ html[data-world-grabbing] * {
     12px 14px 28px rgba(170, 0, 255, 0.28);
 }
 
-/* The narration voice of the book: Montserrat's italic 500 (already loaded in
-   index.html) against the bold uppercase chapter titles. */
+/* The narration voice of the book: Montserrat's italic 500 (self-hosted, see
+   main.jsx) against the bold uppercase chapter titles. */
 .story-narration {
   font-style: italic;
   font-weight: 500;
