@@ -8,10 +8,10 @@ export const EXTENSION_VERSION = '0.5.0';
 export const EXTENSION_DOWNLOAD_URL = '/downloads/datapit-extension.zip';
 
 // Live Chrome Web Store listing — the one-click "Add to Chrome" path for
-// end users. The .zip download above stays as a manual fallback (other
-// Chromium browsers, or loading unpacked for development).
-export const EXTENSION_STORE_URL =
-  'https://chromewebstore.google.com/detail/datapit-%E2%80%94-linkedin-lookup/mgkohbpdpfgdfnlbipfkhnjadbncdgnj';
+// end users (defined with the rest of the public facts in data/facts.js).
+// The .zip download above stays as a manual fallback (other Chromium
+// browsers, or loading unpacked for development).
+export { EXTENSION_STORE_URL } from '../data/facts.js';
 
 // How the extension announces itself: its content script (announce.js) sets
 // this attribute on <html> and fires this event. Detection is therefore

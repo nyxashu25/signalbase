@@ -1,7 +1,7 @@
 {
   "name": "DataPit",
   "short_name": "DataPit",
-  "description": "B2B contact data platform: search people and companies, reveal verified emails and phone numbers, and run outreach sequences.",
+  "description": "B2B contact data platform: search people and companies, reveal work emails and phone numbers, and run outreach sequences from one workspace.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#110019",

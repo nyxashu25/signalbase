@@ -411,10 +411,10 @@ describe('page stations', () => {
 
   it.each([
     ['Home', Home, ['mark', 'tunnel', 'reveal', 'sequence', 'ledger', 'drift', 'drift', 'city', 'drift', 'mark']],
-    ['Product', Product, ['mark', 'lens', 'reveal', 'sequence', 'ledger', 'tunnel']],
+    ['Product', Product, ['mark', 'lens', 'reveal', 'sequence', 'ledger', 'drift', 'tunnel']],
     ['Solutions', Solutions, ['crystals', 'city', 'mark']],
     ['Pricing', Pricing, ['blocks', 'drift', 'ledger', 'drift', 'mark']],
-    ['About', About, ['ledger', 'crystals', 'tunnel', 'mark']],
+    ['About', About, ['ledger', 'crystals', 'drift', 'tunnel', 'mark']],
     ['Contact', Contact, ['mark', 'drift']],
     ['Privacy', Privacy, ['drift']],
     ['Terms', Terms, ['drift']],

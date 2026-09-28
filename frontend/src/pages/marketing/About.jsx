@@ -3,6 +3,7 @@ import { StoryCover } from '../../components/marketing/StoryCover.jsx';
 import { ScrubHeadline } from '../../components/marketing/ScrubHeadline.jsx';
 import { GiantCTA } from '../../components/marketing/GiantCTA.jsx';
 import { FadeIn, Stagger, StaggerItem } from '../../components/marketing/motion.jsx';
+import { glanceFacts } from '../../data/facts.js';
 
 const PRINCIPLES = [
   {
@@ -69,6 +70,34 @@ export function About() {
 
       <section
         data-chapter
+        data-chapter-title="At a glance"
+        data-station="drift"
+        data-station-side="0"
+        className="relative py-6 sm:py-10"
+      >
+        <div className="mx-auto max-w-[1148px] px-3 sm:px-6">
+          <div className="story-glass relative overflow-hidden text-text">
+            <div className="relative mx-auto max-w-[1100px] px-6 py-20 sm:py-24">
+              <p className="story-eyebrow text-xs font-bold uppercase tracking-[0.22em]">Chapter 02 — The facts</p>
+              <h2 className="mt-6 text-[clamp(1.9rem,4.6vw,4rem)] font-extrabold uppercase leading-[1.05] tracking-tight text-text">
+                DataPit at a glance
+              </h2>
+              {/* The same facts, word for word, as llms-full.txt (data/facts.js). */}
+              <dl className="mt-10 divide-y divide-border border-y border-border">
+                {glanceFacts().map((fact) => (
+                  <div key={fact.label} className="grid grid-cols-1 gap-2 py-5 sm:grid-cols-[200px_1fr] sm:gap-8">
+                    <dt className="text-xs font-bold uppercase tracking-[0.16em] text-text-muted">{fact.label}</dt>
+                    <dd className="text-base leading-relaxed">{fact.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        data-chapter
         data-chapter-title="Where we're headed"
         data-station="tunnel"
         data-station-side="0"
@@ -82,7 +111,7 @@ export function About() {
               style={{ background: 'linear-gradient(180deg, rgba(231,179,255,0.2), transparent)' }}
             />
             <div className="relative mx-auto max-w-[1100px] px-6 py-24 sm:py-32">
-              <p className="story-eyebrow text-xs font-bold uppercase tracking-[0.22em]">Chapter 02 — Where we're headed</p>
+              <p className="story-eyebrow text-xs font-bold uppercase tracking-[0.22em]">Chapter 03 — Where we're headed</p>
               <ScrubHeadline
                 as="h2"
                 className="mt-6 max-w-[900px] text-[clamp(1.9rem,4.6vw,4rem)] font-extrabold uppercase leading-[1.05] tracking-tight text-text"
@@ -90,9 +119,9 @@ export function About() {
                 The core is live today. The rest ships in the order our users ask for it.
               </ScrubHeadline>
               <FadeIn as="p" className="mt-8 max-w-[640px] text-base leading-relaxed text-text-muted">
-                DataPit is early. Search, verified reveal, sequences, and a credit ledger you can actually
-                audit are live now. CRM sync, a browser extension, and deeper intent data are next, in that
-                order, because that's the order our own users have asked for them.
+                DataPit is early. Search, reveal, sequences, the Chrome extension, and a credit ledger you
+                can actually audit are live now. CRM sync and deeper intent data are next, in that order,
+                because that's the order our own users have asked for them.
               </FadeIn>
             </div>
           </div>

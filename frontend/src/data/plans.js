@@ -13,6 +13,11 @@ export const FREE_SEAT_MONTHLY_CREDITS = 1500;
 export const WELCOME_GIFT_CREDITS = 1500;
 export const FREE_PLAN_MONTHLY_CREDITS = 800;
 
+// When any price, seat count or credit amount in this file last changed
+// (YYYY-MM-DD). Shown as "Prices last updated" on the Pricing page and sent as
+// its dateModified — bump it with every pricing change.
+export const PRICING_UPDATED_AT = '2026-08-27';
+
 export const PLANS = [
   {
     key: 'FREE',

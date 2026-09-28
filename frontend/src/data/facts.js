@@ -1,0 +1,110 @@
+// The facts DataPit states about itself, in one place: the one-line summary
+// used as the site's default description, in the web manifest, in the
+// Organization structured data and at the top of llms.txt — so search
+// engines and AI assistants see the same wording everywhere — plus the
+// "DataPit at a glance" block on the About page and in llms-full.txt.
+//
+// Only put facts here that the product actually does today; AI answers quote
+// this text verbatim.
+import {
+  BILLING_INTERVALS,
+  FREE_PLAN_MONTHLY_CREDITS,
+  FREE_SEAT_MONTHLY_CREDITS,
+  PLANS,
+  WELCOME_GIFT_CREDITS,
+} from './plans.js';
+
+// Live Chrome Web Store listing — the one-click "Add to Chrome" path for end
+// users (re-exported by hooks/useExtensionInstalled.js). Kept here, free of
+// React imports, so Node scripts can load the facts directly.
+export const EXTENSION_STORE_URL =
+  'https://chromewebstore.google.com/detail/datapit-%E2%80%94-linkedin-lookup/mgkohbpdpfgdfnlbipfkhnjadbncdgnj';
+
+export const DATAPIT_SUMMARY =
+  'DataPit is a B2B contact data platform: search people and companies, reveal work emails and phone numbers, and run outreach sequences from one workspace.';
+
+// Mirrors backend/src/config/creditPricing.js CREDIT_COSTS — keep both in
+// sync by hand, same as plans.js mirrors planConfig.js.
+export const CREDIT_COSTS = {
+  REVEAL: 2,
+  EXTENSION_REVEAL: 4,
+  CSV_EXPORT: 20,
+};
+
+export const formatCount = (n) => n.toLocaleString('en-US');
+
+const PAID_PLANS = PLANS.filter((p) => p.block);
+
+function discount(key) {
+  return Math.round(BILLING_INTERVALS.find((i) => i.key === key).discount * 100);
+}
+
+/** "Basic is $29 a month for 5 paid seats plus 1 free, ..." */
+export function seatBlockSentence() {
+  return PAID_PLANS.map(
+    (p) =>
+      `${p.name} is $${p.price} a month for ${p.block.paidSeats} paid seats plus ${p.block.freeSeats} free`,
+  ).join(', ');
+}
+
+export function pricingSummary() {
+  return (
+    `DataPit is free for one user with ${formatCount(FREE_PLAN_MONTHLY_CREDITS)} credits a month. ` +
+    `Paid plans are sold in seat blocks: ${seatBlockSentence()}. ` +
+    `Billing quarterly saves ${discount('QUARTER')}% and annually ${discount('YEAR')}%.`
+  );
+}
+
+export function creditsSummary() {
+  const byCredits = new Map();
+  for (const p of PAID_PLANS) {
+    const list = byCredits.get(p.block.paidSeatCredits) ?? [];
+    list.push(p.name);
+    byCredits.set(p.block.paidSeatCredits, list);
+  }
+  const paidSeats = [...byCredits]
+    .map(
+      ([credits, names], i) =>
+        `${formatCount(credits)}${i === 0 ? ' credits a month' : ''} on ${names.join(' and ')}`,
+    )
+    .join(' and ');
+  const bonuses = PAID_PLANS.filter((p) => p.block.ownerBonus > 0)
+    .map((p) => `${formatCount(p.block.ownerBonus)} on ${p.name}`)
+    .join(' and ');
+  return (
+    `Each paid seat earns ${paidSeats}. Free seats earn ${formatCount(FREE_SEAT_MONTHLY_CREDITS)} a month on every paid plan. ` +
+    `Workspace owners also get a monthly bonus of ${bonuses}, and each newly covered teammate gets a one-time ${formatCount(WELCOME_GIFT_CREDITS)}-credit welcome gift.`
+  );
+}
+
+export function revealSummary() {
+  return (
+    `One reveal unlocks everything DataPit holds on a contact: the work email and, where the record has one, a phone number. ` +
+    `It costs ${CREDIT_COSTS.REVEAL} credits in the app or ${CREDIT_COSTS.EXTENSION_REVEAL} from the Chrome extension, ` +
+    `and once anyone on your team reveals a contact it's free for the whole workspace.`
+  );
+}
+
+/** The About page's "DataPit at a glance" list, also in llms-full.txt. */
+export function glanceFacts() {
+  return [
+    { label: 'What it is', value: DATAPIT_SUMMARY },
+    { label: 'Pricing', value: pricingSummary() },
+    { label: 'Credits', value: creditsSummary() },
+    {
+      label: 'What costs credits',
+      value: `Searching and browsing masked results is free. A reveal costs ${CREDIT_COSTS.REVEAL} credits in the app or ${CREDIT_COSTS.EXTENSION_REVEAL} from the Chrome extension, and a CSV export costs ${CREDIT_COSTS.CSV_EXPORT}. Every grant, spend and refund is a row in an append-only ledger each workspace can see.`,
+    },
+    {
+      label: 'Tools',
+      value:
+        'The web app, the DataPit — LinkedIn Lookup Chrome extension, email sequences on paid plans, and an API on the Professional and Organization plans.',
+    },
+    {
+      label: 'Data rights',
+      value:
+        'Anyone listed in DataPit can remove their details with the GDPR/CCPA opt-out form on the Privacy page. Matching records are redacted for every workspace and the address is blocked from future reveals.',
+    },
+    { label: 'Website', value: 'https://datapit.io' },
+  ];
+}

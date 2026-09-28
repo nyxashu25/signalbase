@@ -24,6 +24,7 @@ import { Terms } from '../pages/marketing/Terms.jsx';
 import { NotFound } from '../pages/marketing/NotFound.jsx';
 
 export { SEO_ROUTES, NOT_FOUND_META, PRIVATE_META, headElements } from '../seo/site.js';
+export { llmsTxt, llmsFullTxt } from '../seo/llms.js';
 
 const PAGES = {
   '/': Home,

@@ -9,6 +9,7 @@
 //   dist/404.html          any unknown URL, with a 404 status
 //   dist/app.html          /app, /control and the auth screens (noindex)
 //   dist/sitemap.xml
+//   dist/llms.txt, dist/llms-full.txt   summaries for AI assistants (src/seo/llms.js)
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -22,9 +23,8 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dist = path.join(root, 'dist');
 const ssrEntry = path.join(root, 'dist-ssr', 'entry-server.js');
 
-const { render, SEO_ROUTES, NOT_FOUND_META, PRIVATE_META, headElements } = await import(
-  pathToFileURL(ssrEntry).href
-);
+const { render, SEO_ROUTES, NOT_FOUND_META, PRIVATE_META, headElements, llmsTxt, llmsFullTxt } =
+  await import(pathToFileURL(ssrEntry).href);
 
 const SITE_URL = 'https://datapit.io';
 const SLOTS = ['<!--app-head-->', '<!--app-html-->'];
@@ -131,3 +131,6 @@ write(
   'sitemap.xml',
   `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`,
 );
+
+write('llms.txt', llmsTxt());
+write('llms-full.txt', llmsFullTxt());

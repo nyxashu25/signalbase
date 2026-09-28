@@ -6,6 +6,8 @@ import { AnimatedCreditLedgerMockup } from '../../components/marketing/AnimatedC
 import { StoryCover } from '../../components/marketing/StoryCover.jsx';
 import { StoryChapter } from '../../components/marketing/StoryChapter.jsx';
 import { GiantCTA } from '../../components/marketing/GiantCTA.jsx';
+import { FaqSection } from '../../components/marketing/FaqSection.jsx';
+import { PRODUCT_FAQS } from '../../data/faqs.js';
 
 const MODULES = [
   {
@@ -61,7 +63,7 @@ export function Product() {
         station="mark"
         eyebrow="Product"
         narration="Four chapters, one workspace, one ledger underneath it all."
-        sub="No bundled modules you'll never touch. Search, reveal, sequence, and pay for it all on one credit ledger."
+        sub="DataPit puts four tools in one workspace: people and company search, a reveal that unlocks work emails and phone numbers for credits, multi-step email sequences, and an append-only credit ledger. No bundled modules you'll never touch."
         lines={[
           { content: 'One workspace,' },
           { content: 'four things that', className: 'sm:ml-[6vw]' },
@@ -76,6 +78,8 @@ export function Product() {
       {MODULES.map((mod) => (
         <StoryChapter key={mod.n} {...mod} tone="deep" />
       ))}
+
+      <FaqSection eyebrow="Questions" items={PRODUCT_FAQS} />
 
       <GiantCTA station="tunnel" title="See it on your own data." />
 

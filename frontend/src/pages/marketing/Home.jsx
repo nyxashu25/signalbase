@@ -15,6 +15,13 @@ import { Marquee } from '../../components/marketing/Marquee.jsx';
 import { GiantCTA } from '../../components/marketing/GiantCTA.jsx';
 import { Magnetic } from '../../components/marketing/Magnetic.jsx';
 import { FadeIn, Stagger, StaggerItem } from '../../components/marketing/motion.jsx';
+import { FREE_PLAN_MONTHLY_CREDITS, findPlan } from '../../data/plans.js';
+import { formatCount } from '../../data/facts.js';
+
+// Answer-first: what DataPit is and what it costs, in the cover's first
+// paragraph — the passage search snippets and AI answers lift.
+const BASIC = findPlan('BASIC');
+const HOME_SUB = `DataPit is a B2B contact data platform. Search people and companies, reveal work emails and phone numbers for credits, and run outreach sequences from one workspace. Start free with ${formatCount(FREE_PLAN_MONTHLY_CREDITS)} credits a month, or from $${BASIC.price} a month for ${BASIC.block.paidSeats} paid seats plus ${BASIC.block.freeSeats} free.`;
 
 const MARQUEE_ITEMS = [
   'Verified reveals',
@@ -121,7 +128,7 @@ export function Home() {
         size="lg"
         eyebrow="B2B sales intelligence"
         narration="Every market is noise until you find the signal. This is where the digging starts."
-        sub="DataPit is the search, reveal, and outreach platform for teams who'd rather spend credits on real contacts than guess at spreadsheets."
+        sub={HOME_SUB}
         lines={[
           { content: 'Find verified' },
           {

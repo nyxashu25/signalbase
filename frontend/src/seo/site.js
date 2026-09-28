@@ -2,13 +2,14 @@
 // prerendered <head> (scripts/prerender.mjs), the sitemap, and the client-side
 // head updates on navigation (RouteMeta.jsx). Titles stay at or under 60
 // characters and descriptions near 155, the lengths Google shows in results.
-import { PLANS } from '../data/plans.js';
+import { PLANS, PRICING_UPDATED_AT } from '../data/plans.js';
+import { DATAPIT_SUMMARY } from '../data/facts.js';
+import { PRICING_FAQS, PRODUCT_FAQS } from '../data/faqs.js';
 
 export const SITE_URL = 'https://datapit.io';
 export const SITE_NAME = 'DataPit';
 export const DEFAULT_TITLE = 'DataPit';
-export const DEFAULT_DESCRIPTION =
-  'DataPit is a B2B contact data platform: search people and companies, reveal verified emails and phone numbers, and run outreach sequences.';
+export const DEFAULT_DESCRIPTION = DATAPIT_SUMMARY;
 export const OG_IMAGE_SIZE = { width: 1200, height: 630 };
 
 /**
@@ -204,6 +205,20 @@ function breadcrumbs(route) {
   };
 }
 
+// Question-and-answer pages: the same items the page renders.
+const PAGE_FAQS = { '/pricing': PRICING_FAQS, '/product': PRODUCT_FAQS };
+
+function faqPage(items) {
+  return {
+    '@type': 'FAQPage',
+    mainEntity: items.map(({ q, a }) => ({
+      '@type': 'Question',
+      name: q,
+      acceptedAnswer: { '@type': 'Answer', text: a },
+    })),
+  };
+}
+
 /** The JSON-LD graph for a page, or null when it carries none. */
 export function structuredData(meta) {
   if (!meta.path) return null;
@@ -218,9 +233,18 @@ export function structuredData(meta) {
     });
     graph.push(softwareApplication());
   } else {
-    if (meta.path === '/pricing') graph.push(softwareApplication());
+    if (meta.path === '/pricing') {
+      graph.push(softwareApplication(), {
+        '@type': 'WebPage',
+        '@id': `${absoluteUrl(meta.path)}#webpage`,
+        url: absoluteUrl(meta.path),
+        name: meta.title,
+        dateModified: PRICING_UPDATED_AT,
+      });
+    }
     graph.push(breadcrumbs(meta));
   }
+  if (PAGE_FAQS[meta.path]) graph.push(faqPage(PAGE_FAQS[meta.path]));
   return { '@context': 'https://schema.org', '@graph': graph };
 }
 

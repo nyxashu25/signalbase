@@ -9,7 +9,17 @@ import { TiltCard } from '../../components/marketing/TiltCard.jsx';
 import { ScrubHeadline } from '../../components/marketing/ScrubHeadline.jsx';
 import { GiantCTA } from '../../components/marketing/GiantCTA.jsx';
 import { FadeIn, Stagger, StaggerItem } from '../../components/marketing/motion.jsx';
-import { PLANS, BILLING_INTERVALS, planTotalForInterval } from '../../data/plans.js';
+import {
+  PLANS,
+  BILLING_INTERVALS,
+  FREE_PLAN_MONTHLY_CREDITS,
+  FREE_SEAT_MONTHLY_CREDITS,
+  PRICING_UPDATED_AT,
+  planTotalForInterval,
+} from '../../data/plans.js';
+import { PRICING_FAQS } from '../../data/faqs.js';
+import { formatCount, pricingSummary } from '../../data/facts.js';
+import { FaqSection } from '../../components/marketing/FaqSection.jsx';
 
 const CADENCE_LABEL = { MONTH: 'month', QUARTER: 'quarter', YEAR: 'year' };
 
@@ -44,24 +54,69 @@ function AnimatedPrice({ value, className }) {
   );
 }
 
-const FAQS = [
-  {
-    q: 'What is a credit?',
-    a: "Revealing a contact's verified email costs 2 credits. Search and masked results never cost a credit — only the reveal action does, and it's reserved atomically so concurrent requests can never over-spend your balance.",
-  },
-  {
-    q: 'Do unused credits roll over?',
-    a: 'Monthly credits reset each billing cycle and do not roll over. Once any teammate in your workspace reveals a contact, the whole workspace can see it for free going forward.',
-  },
-  {
-    q: 'Can I change plans later?',
-    a: 'Yes — upgrade, downgrade, or cancel from your workspace billing page at any time. Changes take effect at your next billing cycle.',
-  },
-  {
-    q: 'Is there a free trial on paid plans?',
-    a: 'The Free plan itself is a real, permanently free workspace — search and reveal against live data, no card required, no trial clock.',
-  },
-];
+// "August 27, 2026" — fixed to UTC so the server render and the browser agree.
+function formatDay(isoDay) {
+  return new Date(`${isoDay}T00:00:00Z`).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
+const DISCOUNTS = BILLING_INTERVALS.filter((i) => i.discount > 0)
+  .map((i) => `${i.label.toLowerCase()} billing ${Math.round(i.discount * 100)}%`)
+  .join(' and ');
+
+/**
+ * Every plan's numbers side by side, monthly — the table readers (and answer
+ * engines) scan when comparing plans, independent of the interval toggle.
+ */
+function PlanComparison() {
+  const cell = 'whitespace-nowrap px-4 py-3';
+  return (
+    <div className="mt-16">
+      <h3 className="text-lg font-bold text-text">Plans at a glance</h3>
+      <p className="mt-1 text-sm text-text-muted">
+        Monthly prices per seat block. Saves {DISCOUNTS}.
+      </p>
+      <div className="mt-5 overflow-x-auto rounded-lg border border-border">
+        <table className="w-full min-w-[760px] text-left text-sm tabular-nums">
+          <thead className="bg-surface text-xs uppercase tracking-wide text-text-muted">
+            <tr>
+              <th scope="col" className={`${cell} font-bold`}>Plan</th>
+              <th scope="col" className={`${cell} font-bold`}>Price / month</th>
+              <th scope="col" className={`${cell} font-bold`}>Seats per block</th>
+              <th scope="col" className={`${cell} font-bold`}>Credits / paid seat / month</th>
+              <th scope="col" className={`${cell} font-bold`}>Credits / free seat / month</th>
+              <th scope="col" className={`${cell} font-bold`}>Owner bonus / month</th>
+              <th scope="col" className={`${cell} font-bold`}>Price per paid seat</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border text-text">
+            {PLANS.map((plan) => {
+              const b = plan.block;
+              return (
+                <tr key={plan.key}>
+                  <th scope="row" className={`${cell} font-bold`}>{plan.name}</th>
+                  <td className={cell}>{b ? `$${plan.price} per block` : '$0'}</td>
+                  <td className={cell}>{b ? `${b.paidSeats} paid + ${b.freeSeats} free` : '1 seat'}</td>
+                  <td className={cell}>{formatCount(b ? b.paidSeatCredits : FREE_PLAN_MONTHLY_CREDITS)}</td>
+                  <td className={cell}>{b ? formatCount(FREE_SEAT_MONTHLY_CREDITS) : '—'}</td>
+                  <td className={cell}>{b && b.ownerBonus ? formatCount(b.ownerBonus) : '—'}</td>
+                  <td className={cell}>{b ? formatUsd(Math.round((plan.price / b.paidSeats) * 100) / 100) : '$0'}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p className="mt-4 text-xs text-text-muted">
+        Prices last updated <time dateTime={PRICING_UPDATED_AT}>{formatDay(PRICING_UPDATED_AT)}</time>.
+      </p>
+    </div>
+  );
+}
 
 export function Pricing() {
   const [billingIntervalChoice, setBillingIntervalChoice] = useState('MONTH');
@@ -73,7 +128,7 @@ export function Pricing() {
         station="blocks"
         eyebrow="Pricing"
         narration="Pay for the platform in seat blocks. Spend credits only when the data is real."
-        sub="Paid plans come in seat blocks — each block bundles paid seats plus bonus free seats, and every teammate earns their own monthly credits. Buy as many blocks as your team needs."
+        sub={pricingSummary()}
         lines={[
           { content: 'Simple, team-based' },
           {
@@ -176,6 +231,7 @@ export function Pricing() {
                 gets a one-time 1,500-credit welcome gift. Quarterly and annual billing come with a 10% and
                 20% discount.
               </p>
+              <PlanComparison />
             </div>
           </div>
         </div>
@@ -211,37 +267,7 @@ export function Pricing() {
         </div>
       </section>
 
-      <section
-        data-chapter
-        data-chapter-title="FAQ"
-        data-station="drift"
-        data-station-side="0"
-        className="relative py-6 sm:py-10"
-      >
-        <div className="mx-auto max-w-[948px] px-3 sm:px-6">
-          <div className="story-glass relative overflow-hidden text-text">
-            <div className="mx-auto max-w-[900px] px-6 py-20 sm:py-24">
-              <p className="story-eyebrow text-xs font-bold uppercase tracking-[0.22em]">Chapter 03 — Questions</p>
-              <ScrubHeadline
-                as="h2"
-                className="mt-6 text-[clamp(1.9rem,4.6vw,4rem)] font-extrabold uppercase leading-[1.05] tracking-tight text-text"
-              >
-                Frequently asked questions
-              </ScrubHeadline>
-              <Stagger as="div" className="mt-12 flex flex-col gap-5" staggerDelay={0.08}>
-                {FAQS.map((item) => (
-                  <StaggerItem key={item.q} as="div">
-                    <TiltCard tilt={3} className="p-6">
-                      <h3 className="text-sm font-bold text-text">{item.q}</h3>
-                      <p className="mt-2 text-sm leading-relaxed text-text-muted">{item.a}</p>
-                    </TiltCard>
-                  </StaggerItem>
-                ))}
-              </Stagger>
-            </div>
-          </div>
-        </div>
-      </section>
+      <FaqSection eyebrow="Chapter 03 — Questions" items={PRICING_FAQS} />
 
       <GiantCTA station="mark" title="Start free. Upgrade when it pays for itself." />
 

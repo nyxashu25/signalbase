@@ -1,7 +1,34 @@
 # DataPit — https://datapit.io
 # Public marketing pages are open to every crawler, AI search included.
 # The app, admin panel and API are private.
+#
+# A crawler follows only the most specific group that names it, so each
+# group below repeats the same private-path rules.
+
 User-agent: *
+Allow: /
+Disallow: /app
+Disallow: /control
+Disallow: /api/
+
+# Search engines, AI search and AI assistants: explicitly welcome.
+# (Google-Extended and Applebot-Extended are opt-in tokens for Gemini and
+# Apple Intelligence rather than separate crawlers.)
+User-agent: Googlebot
+User-agent: Bingbot
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-User
+User-agent: Claude-SearchBot
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Google-Extended
+User-agent: Applebot
+User-agent: Applebot-Extended
+User-agent: DuckAssistBot
+User-agent: meta-externalagent
 Allow: /
 Disallow: /app
 Disallow: /control

@@ -39,7 +39,7 @@ export function MarketingFooter() {
           <div className="col-span-2 sm:col-span-1">
             <img src="/logos/datapit-logo-dark.svg" alt="DataPit" className="h-8" />
             <p className="mt-4 max-w-[220px] text-sm text-ink-300">
-              Search, reveal, and outreach on one credit ledger.
+              The B2B contact data platform: search, reveal and outreach on one credit ledger.
             </p>
           </div>
           {COLUMNS.map((col) => (

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Home } from './Home.jsx';
 import { Pricing } from './Pricing.jsx';
@@ -7,6 +7,7 @@ import { Contact } from './Contact.jsx';
 import { Privacy } from './Privacy.jsx';
 import { Terms } from './Terms.jsx';
 import { About } from './About.jsx';
+import { Product } from './Product.jsx';
 import { renderWithProviders, mockFetchRoutes } from '../../test/testUtils.jsx';
 
 describe('marketing: Home', () => {
@@ -68,12 +69,20 @@ describe('marketing: Contact', () => {
     await user.type(screen.getByLabelText('Name'), 'Ada Lovelace');
     await user.type(screen.getByLabelText('Work email'), 'ada@acme.test');
     await user.type(screen.getByLabelText('Company'), 'Acme');
-    await user.type(screen.getByLabelText(/Message|How can we help/), 'Tell me about bulk credits.');
+    await user.type(
+      screen.getByLabelText(/Message|How can we help/),
+      'Tell me about bulk credits.',
+    );
     await user.click(screen.getByRole('button', { name: /Send/ }));
 
     expect(await screen.findByText('Message sent')).toBeInTheDocument();
     expect(calls).toEqual([
-      { name: 'Ada Lovelace', email: 'ada@acme.test', company: 'Acme', message: 'Tell me about bulk credits.' },
+      {
+        name: 'Ada Lovelace',
+        email: 'ada@acme.test',
+        company: 'Acme',
+        message: 'Tell me about bulk credits.',
+      },
     ]);
   });
 });
@@ -129,5 +138,39 @@ describe('marketing: legal + about render', () => {
     unmount();
     renderWithProviders(<About />);
     expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
+  });
+});
+
+describe('marketing: answer-first content', () => {
+  it('Pricing compares every plan in one table, with the date prices last changed', () => {
+    mockFetchRoutes([]);
+    renderWithProviders(<Pricing />);
+    const table = screen.getByRole('table');
+    const rows = within(table).getAllByRole('row');
+    expect(rows).toHaveLength(5); // header + Free, Basic, Professional, Organization
+    const basic = within(table).getByRole('rowheader', { name: 'Basic' }).closest('tr');
+    expect(within(basic).getByText('5 paid + 1 free')).toBeInTheDocument();
+    expect(within(basic).getByText('$5.80')).toBeInTheDocument(); // $29 / 5 paid seats
+    expect(screen.getByText('August 27, 2026')).toHaveAttribute('datetime', '2026-08-27');
+    expect(
+      screen.getByRole('heading', { name: 'How much does DataPit cost?' }),
+    ).toBeInTheDocument();
+  });
+
+  it('Product answers its common questions as headings', () => {
+    mockFetchRoutes([]);
+    renderWithProviders(<Product />);
+    expect(screen.getByRole('heading', { name: 'What is DataPit?' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Is there a Chrome extension?' }),
+    ).toBeInTheDocument();
+  });
+
+  it('About lists DataPit at a glance', () => {
+    mockFetchRoutes([]);
+    renderWithProviders(<About />);
+    expect(screen.getByRole('heading', { name: 'DataPit at a glance' })).toBeInTheDocument();
+    expect(screen.getByText('What it is')).toBeInTheDocument();
+    expect(screen.getByText('Data rights')).toBeInTheDocument();
   });
 });

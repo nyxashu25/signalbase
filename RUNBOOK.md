@@ -295,6 +295,20 @@ cp /var/www/datapit.io/app/deploy/nginx/datapit.io.conf /etc/nginx/sites-availab
 nginx -t && systemctl reload nginx     # on failure: restore the .bak
 ```
 
+The same build writes `dist/llms.txt` and `dist/llms-full.txt` (summaries for
+AI assistants, from `src/seo/llms.js`). They, the pages' FAQ sections, their
+FAQPage structured data and the About page's "At a glance" list all come from
+`src/data/facts.js`, `src/data/faqs.js` and `src/data/plans.js` — change a
+price or a product fact there, never in page copy. Bump `PRICING_UPDATED_AT`
+in `plans.js` with any pricing change; it's the Pricing page's visible
+"Prices last updated" date.
+
+Crawler health, once a month on the VPS:
+`/var/www/datapit.io/app/deploy/ai-crawlers.sh` counts requests and status
+codes per search/AI crawler from `/var/log/nginx/datapit.io.access.log*`
+(that log started 2026-09-28). Public pages should only ever show 200, 301 or
+304; anything else means a crawler is being turned away.
+
 After a deploy that changes marketing copy, ping IndexNow (Bing, and so
 ChatGPT search and Copilot) from `frontend/`: `npm run indexnow`. Share
 images live in `frontend/public/og/`; regenerate them with
