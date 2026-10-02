@@ -95,7 +95,8 @@ function requireContactNames(row) {
 }
 
 async function insertContact(row, firstName, lastName, companyId, batchId) {
-  const email = row['Email ID']?.trim() || null;
+  // Lowercase: addresses are matched exactly (extension lookups by email).
+  const email = row['Email ID']?.trim().toLowerCase() || null;
   const linkedinUrl = row['Prospect Linkedin profile Link']?.trim() || null;
   const linkedinSlug = linkedinSlugFromUrl(linkedinUrl);
   const contact = await prisma.contact.create({

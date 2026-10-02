@@ -137,8 +137,9 @@ export function SettingsApi() {
               </Button>
             }
           >
-            Create a key and paste it into the DataPit Chrome extension — it looks up every LinkedIn
-            profile you visit and reveals emails and phone numbers for 4 credits.
+            Create a key and paste it into the DataPit Chrome extension. It looks people up on
+            LinkedIn, Sales Navigator, company websites, Gmail, Google Calendar, HubSpot and
+            Salesforce, and reveals work emails for 4 credits.
           </EmptyState>
         ) : (
           <TableFrame className="-mx-5 -my-4 rounded-none border-0">
@@ -207,7 +208,7 @@ function ExtensionSection() {
   return (
     <SettingsSection
       title="Chrome extension"
-      description="Look up any LinkedIn profile against DataPit as you browse."
+      description="Look people up against DataPit on LinkedIn, Gmail, Google Calendar, your CRM and company websites."
       footer={
         <div className="flex flex-wrap items-center gap-2">
           <a className="text-xs font-semibold text-text-muted hover:text-text" href={EXTENSION_DOWNLOAD_URL} download>
@@ -247,7 +248,7 @@ function ExtensionSection() {
         <li>
           Click <strong className="text-text">Add to Chrome</strong> (below) to install from the Chrome Web Store.
         </li>
-        <li>Click the extension icon, paste the key, and open any LinkedIn profile.</li>
+        <li>Click the extension icon, paste the key, and open a LinkedIn profile, an email thread or a CRM record.</li>
       </ol>
       <p className="mt-3 text-sm text-text-muted">
         Found profiles reveal their email and phone for <strong className="text-text">4 credits</strong> —

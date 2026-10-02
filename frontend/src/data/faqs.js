@@ -6,7 +6,10 @@
 import {
   CREDIT_COSTS,
   DATAPIT_SUMMARY,
+  EXTENSION_NAME,
+  EXTENSION_SURFACES,
   LIVE,
+  extensionStoreNote,
   MAX_SELF_SERVE_BLOCKS,
   creditCostsSentence,
   creditsSummary,
@@ -44,7 +47,7 @@ export const PRODUCT_FAQS = [
   { q: 'What does a reveal include, and what does it cost?', a: revealSummary() },
   {
     q: 'Is there a Chrome extension?',
-    a: `Yes. DataPit — LinkedIn Lookup is free on the Chrome Web Store. It checks the LinkedIn profile you're viewing against DataPit and reveals the work email${LIVE.phoneData ? ' and phone number' : ''} for ${CREDIT_COSTS.EXTENSION_REVEAL} credits. People DataPit doesn't have yet are queued for sourcing.`,
+    a: `Yes. ${EXTENSION_NAME} is free to install and works on ${EXTENSION_SURFACES}. It shows who on the page is in DataPit, and reveals a work email${LIVE.phoneData ? ' and phone number' : ''} for ${CREDIT_COSTS.EXTENSION_REVEAL} credits.${extensionStoreNote() ? ' ' + extensionStoreNote() : ''}`,
   },
   // Only while sending is live: until ESP_API_KEY is set, sequences run
   // without delivering email (see LIVE in facts.js).

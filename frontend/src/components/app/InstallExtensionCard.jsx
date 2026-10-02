@@ -51,8 +51,8 @@ export function InstallExtensionCard() {
           dismissKey="install-extension"
           className="mb-5"
         >
-          Look up any LinkedIn profile without leaving the page — reveal an email and phone for 4
-          credits, right from your browser.
+          Look people up on LinkedIn, Sales Navigator, Gmail, Google Calendar, HubSpot, Salesforce
+          and company websites without leaving the page, and reveal a work email for 4 credits.
         </Banner>
       )}
 

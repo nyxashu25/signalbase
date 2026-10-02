@@ -1,4 +1,10 @@
-import { CREDIT_COSTS, EXTENSION_STORE_URL, LIVE, formatCount } from '../../../data/facts.js';
+import {
+  CREDIT_COSTS,
+  EXTENSION_NAME,
+  EXTENSION_STORE_URL,
+  LIVE,
+  formatCount,
+} from '../../../data/facts.js';
 import { FREE_PLAN_MONTHLY_CREDITS, PLANS } from '../../../data/plans.js';
 
 const BASIC_PRICE = PLANS.find((p) => p.key === 'BASIC').price;
@@ -163,7 +169,7 @@ export default {
         },
         {
           q: 'Can I look someone up from their LinkedIn profile?',
-          a: `Yes, with the free [DataPit — LinkedIn Lookup](${EXTENSION_STORE_URL}) Chrome extension. It checks the profile you’re viewing against DataPit. If the person is in DataPit, you can reveal them for ${CREDIT_COSTS.EXTENSION_REVEAL} credits.`,
+          a: `Yes, with the free [${EXTENSION_NAME}](${EXTENSION_STORE_URL}) Chrome extension. It checks the LinkedIn or Sales Navigator profile you’re viewing against DataPit, and also works on company websites, Gmail, Google Calendar, HubSpot and Salesforce. If the person is in DataPit, you can reveal them for ${CREDIT_COSTS.EXTENSION_REVEAL} credits.`,
         },
         {
           q: 'How can someone be removed from DataPit?',

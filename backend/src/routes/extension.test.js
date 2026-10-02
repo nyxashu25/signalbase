@@ -349,3 +349,131 @@ describe('extension: observe + reveal', () => {
     expect(seenByB.body.cost).toBe(4);
   });
 });
+
+describe('extension: lookups by email and by company website', () => {
+  beforeEach(async () => {
+    await resetDb();
+    await resetRedis();
+  });
+
+  const lookup = (apiKey, emails) =>
+    request(app)
+      .post('/api/v1/extension/lookup')
+      .set('Authorization', `Bearer ${apiKey}`)
+      .send({ emails });
+  const company = (apiKey, domain) =>
+    request(app)
+      .get('/api/v1/extension/company')
+      .query(domain === undefined ? {} : { domain })
+      .set('Authorization', `Bearer ${apiKey}`);
+
+  it('finds people by address, case-insensitively, masked until revealed', async () => {
+    const org = await registerOrgWithKey('Acme', 'owner@acme.test');
+    await seedContact();
+    const res = await lookup(org.apiKey, ['Jordan.Bennett@NovaSystems.com', 'nobody@example.com']);
+    expect(res.status).toBe(200);
+    expect(res.body.results).toHaveLength(2);
+    const [found, missing] = res.body.results;
+    expect(found).toMatchObject({ email: 'jordan.bennett@novasystems.com', status: 'found', cost: 4 });
+    expect(found.contact).toMatchObject({ firstName: 'Jordan', title: 'VP Engineering', revealed: false });
+    expect(found.contact.phone).not.toBe('+1 415 555 0132'); // masked
+    expect(missing).toEqual({ email: 'nobody@example.com', status: 'not_found' });
+  });
+
+  it('dedupes, drops non-addresses, and reports revealed contacts as free', async () => {
+    const org = await registerOrgWithKey('Acme', 'owner@acme.test');
+    const contact = await seedContact();
+    await extReveal(org.apiKey, contact.id);
+    const res = await lookup(org.apiKey, [
+      'jordan.bennett@novasystems.com',
+      'JORDAN.BENNETT@novasystems.com',
+      'not-an-address',
+    ]);
+    expect(res.body.results).toHaveLength(1);
+    expect(res.body.results[0]).toMatchObject({ status: 'found', cost: 0 });
+    expect(res.body.results[0].contact).toMatchObject({ revealed: true, phone: '+1 415 555 0132' });
+  });
+
+  it('never returns erased or not-yet-approved contacts', async () => {
+    const org = await registerOrgWithKey('Acme', 'owner@acme.test');
+    await seedContact({ redactedAt: new Date() });
+    const res = await lookup(org.apiKey, ['jordan.bennett@novasystems.com']);
+    expect(res.body.results[0].status).toBe('not_found');
+  });
+
+  it('rejects an empty or oversized batch', async () => {
+    const org = await registerOrgWithKey('Acme', 'owner@acme.test');
+    expect((await lookup(org.apiKey, [])).status).toBe(400);
+    const many = Array.from({ length: 26 }, (_, i) => `p${i}@example.com`);
+    expect((await lookup(org.apiKey, many)).status).toBe(400);
+  });
+
+  it('finds the company for a website, including its subdomains, with masked people', async () => {
+    const org = await registerOrgWithKey('Acme', 'owner@acme.test');
+    await seedContact();
+    const res = await company(org.apiKey, 'https://blog.novasystems.com/post/1');
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      status: 'found',
+      total: 1,
+      company: { name: 'Nova Systems', domain: 'novasystems.com' },
+    });
+    expect(res.body.contacts[0]).toMatchObject({ firstName: 'Jordan', revealed: false, cost: 4 });
+    expect(res.body.contacts[0].email).not.toBe('jordan.bennett@novasystems.com');
+  });
+
+  it('answers not_found for an unknown site and 400/422 for a bad address', async () => {
+    const org = await registerOrgWithKey('Acme', 'owner@acme.test');
+    expect((await company(org.apiKey, 'example.org')).body).toEqual({
+      status: 'not_found',
+      domain: 'example.org',
+    });
+    expect((await company(org.apiKey, undefined)).status).toBe(400);
+    expect((await company(org.apiKey, 'localhost')).status).toBe(422);
+  });
+
+  it('takes API keys only', async () => {
+    const org = await registerOrgWithKey('Acme', 'owner@acme.test');
+    const res = await request(app)
+      .post('/api/v1/extension/lookup')
+      .set('Authorization', `Bearer ${org.accessToken}`)
+      .send({ emails: ['a@b.com'] });
+    expect(res.status).toBe(401);
+  });
+});
+
+describe('extension: Sales Navigator lookup by name and company', () => {
+  beforeEach(async () => {
+    await resetDb();
+    await resetRedis();
+  });
+
+  const person = (apiKey, body) =>
+    request(app)
+      .post('/api/v1/extension/person')
+      .set('Authorization', `Bearer ${apiKey}`)
+      .send(body);
+
+  it('matches first + last name and the company on the page', async () => {
+    const org = await registerOrgWithKey('Acme', 'owner@acme.test');
+    await seedContact();
+    const res = await person(org.apiKey, { name: 'jordan  BENNETT', companyName: 'Nova' });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ status: 'found', cost: 4, contact: { lastName: 'Bennett' } });
+  });
+
+  it("won't guess between namesakes without a company, or across companies", async () => {
+    const org = await registerOrgWithKey('Acme', 'owner@acme.test');
+    const first = await seedContact();
+    const other = await prisma.company.create({ data: { name: 'Other Co', domain: 'other.co' } });
+    await prisma.contact.create({
+      data: { companyId: other.id, firstName: 'Jordan', lastName: 'Bennett', email: 'jb@other.co' },
+    });
+    expect((await person(org.apiKey, { name: 'Jordan Bennett' })).body.status).toBe('not_found');
+    expect((await person(org.apiKey, { name: 'Jordan Bennett', companyName: 'Acme' })).body.status).toBe(
+      'not_found',
+    );
+    const nova = await person(org.apiKey, { name: 'Jordan Bennett', companyName: 'Nova Systems' });
+    expect(nova.body.contact.id).toBe(first.id);
+  });
+});

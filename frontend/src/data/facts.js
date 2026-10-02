@@ -21,6 +21,22 @@ import { LIVE } from './live.js';
 export const EXTENSION_STORE_URL =
   'https://chromewebstore.google.com/detail/datapit-%E2%80%94-linkedin-lookup/mgkohbpdpfgdfnlbipfkhnjadbncdgnj';
 
+// The Chrome extension. EXTENSION_VERSION is extension/manifest.json's
+// version (the download on the site); EXTENSION_STORE_VERSION is the one the
+// Chrome Web Store serves. Bump the store version once Google approves an
+// upload — until then, pages note that the newest surfaces are download-only.
+export const EXTENSION_NAME = 'DataPit — Contact Lookup';
+export const EXTENSION_VERSION = '0.6.0';
+export const EXTENSION_STORE_VERSION = '0.5.0';
+export const EXTENSION_SURFACES =
+  'LinkedIn, Sales Navigator, company websites, Gmail, Google Calendar, HubSpot and Salesforce';
+
+/** One sentence when the store lags the download, else ''. */
+export function extensionStoreNote() {
+  if (EXTENSION_STORE_VERSION === EXTENSION_VERSION) return '';
+  return `Version ${EXTENSION_VERSION}, which adds Sales Navigator, company websites, Gmail, Google Calendar, HubSpot and Salesforce, is available to download from DataPit now and reaches the Chrome Web Store once Google approves the update.`;
+}
+
 // DataPit's official profiles on other sites, as { name, url } — e.g.
 // { name: 'LinkedIn', url: 'https://www.linkedin.com/company/…' }, then
 // Crunchbase, G2, Product Hunt, X. Empty until the owner creates them. This
@@ -172,8 +188,8 @@ export function glanceFacts() {
     {
       label: 'Tools',
       value: LIVE.sequenceSending
-        ? 'The web app, email sequences on paid plans, and the DataPit — LinkedIn Lookup Chrome extension.'
-        : 'The web app and the DataPit — LinkedIn Lookup Chrome extension, free on the Chrome Web Store.',
+        ? `The web app, email sequences on paid plans, and the free ${EXTENSION_NAME} Chrome extension for ${EXTENSION_SURFACES}.`
+        : `The web app and the free ${EXTENSION_NAME} Chrome extension, which works on ${EXTENSION_SURFACES}.`,
     },
     {
       label: 'Data rights',

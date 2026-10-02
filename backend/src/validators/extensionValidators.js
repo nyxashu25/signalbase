@@ -18,3 +18,19 @@ export const observeSchema = z.object({
   // client sending multi-MB payloads is broken or abusive, not unlucky.
   domText: z.string().max(DOM_TEXT_MAX_CHARS * 2).nullish(),
 });
+
+// Gmail / Calendar / CRM pages: the addresses visible on the page.
+export const lookupSchema = z.object({
+  emails: z.array(z.string().trim().min(3).max(254)).min(1).max(25),
+});
+
+// Any website: GET /extension/company?domain=…
+export const companyQuerySchema = z.object({
+  domain: z.string().trim().min(3).max(2048),
+});
+
+// Sales Navigator leads without a public profile URL on the page.
+export const personSchema = z.object({
+  name: z.string().trim().min(3).max(300),
+  companyName: z.string().trim().max(300).nullish(),
+});

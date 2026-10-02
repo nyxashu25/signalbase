@@ -2,11 +2,11 @@ import { Router } from 'express';
 import * as extensionController from '../controllers/extensionController.js';
 import { requireApiKey } from '../middleware/apiKeyAuth.js';
 import { validateBody } from '../middleware/validate.js';
-import { observeSchema } from '../validators/extensionValidators.js';
+import { lookupSchema, observeSchema, personSchema } from '../validators/extensionValidators.js';
 import { idempotent } from '../middleware/idempotency.js';
 import { skipIfAlreadyRevealed } from '../middleware/skipIfAlreadyRevealed.js';
 import { reserveCredits, releaseOnError } from '../middleware/reserveCredits.js';
-import { rateLimit, byWorkspace } from '../middleware/rateLimit.js';
+import { rateLimit, byUser, byWorkspace } from '../middleware/rateLimit.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { CREDIT_COSTS } from '../config/creditPricing.js';
 
@@ -35,7 +35,33 @@ const revealLimiter = rateLimit({
   keyFn: byWorkspace,
 });
 
+// Gmail, Calendar, CRM and company-website lookups. Each is one request per
+// page the person opens (a batch of up to 25 addresses), so 300 an hour per
+// user is generous for real use and a ceiling on enumeration.
+const lookupLimiter = rateLimit({
+  limit: 300,
+  windowSeconds: 60 * 60,
+  prefix: 'ext-lookup',
+  keyFn: byUser,
+});
+
 extensionRouter.get('/me', asyncHandler(extensionController.status));
+
+extensionRouter.post(
+  '/lookup',
+  lookupLimiter,
+  validateBody(lookupSchema),
+  asyncHandler(extensionController.lookup),
+);
+
+extensionRouter.get('/company', lookupLimiter, asyncHandler(extensionController.company));
+
+extensionRouter.post(
+  '/person',
+  lookupLimiter,
+  validateBody(personSchema),
+  asyncHandler(extensionController.person),
+);
 
 extensionRouter.post(
   '/observe',

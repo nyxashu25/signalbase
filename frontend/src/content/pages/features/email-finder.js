@@ -1,4 +1,10 @@
-import { CREDIT_COSTS, EXTENSION_STORE_URL, LIVE, formatCount } from '../../../data/facts.js';
+import {
+  CREDIT_COSTS,
+  EXTENSION_NAME,
+  EXTENSION_STORE_URL,
+  LIVE,
+  formatCount,
+} from '../../../data/facts.js';
 import { FREE_PLAN_MONTHLY_CREDITS, PLANS } from '../../../data/plans.js';
 
 const BASIC_PRICE = PLANS.find((p) => p.key === 'BASIC').price;
@@ -151,7 +157,7 @@ export default {
     { type: 'h2', text: 'Can you find an email from a LinkedIn profile?' },
     {
       type: 'p',
-      text: `Yes, with the free [DataPit — LinkedIn Lookup](${EXTENSION_STORE_URL}) Chrome extension. Open a linkedin.com/in/ profile and it checks the person against DataPit. If they’re in the database, reveal their email for ${CREDIT_COSTS.EXTENSION_REVEAL} credits, or for free if your team already has.`,
+      text: `Yes, with the free [${EXTENSION_NAME}](${EXTENSION_STORE_URL}) Chrome extension. Open a linkedin.com/in/ profile or a Sales Navigator lead and it checks the person against DataPit. It also works on company websites, Gmail, Google Calendar, HubSpot and Salesforce. If they’re in the database, reveal their email for ${CREDIT_COSTS.EXTENSION_REVEAL} credits, or for free if your team already has.`,
     },
     {
       type: 'p',

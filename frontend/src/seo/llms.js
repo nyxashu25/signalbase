@@ -11,7 +11,10 @@ import {
 } from '../data/plans.js';
 import {
   DATAPIT_SUMMARY,
+  EXTENSION_NAME,
   EXTENSION_STORE_URL,
+  EXTENSION_SURFACES,
+  extensionStoreNote,
   LIVE,
   PROFILES,
   formatCount,
@@ -90,7 +93,7 @@ ${pageLinks(MAIN_PAGES)}
 
 ${contentSections()}## Chrome extension
 
-- [DataPit — LinkedIn Lookup (Chrome extension)](${EXTENSION_STORE_URL}): Looks up the LinkedIn profile you're viewing in DataPit, reveals its work email${LIVE.phoneData ? ' and phone number' : ''}, and queues missing people for sourcing.
+- [${EXTENSION_NAME} (Chrome extension)](${EXTENSION_STORE_URL}): Free to install. Shows who is in DataPit on ${EXTENSION_SURFACES}, and reveals work emails${LIVE.phoneData ? ' and phone numbers' : ''}.${extensionStoreNote() ? ' ' + extensionStoreNote() : ''}
 
 ${profilesSection(profiles)}## Optional
 

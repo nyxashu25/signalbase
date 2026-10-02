@@ -4,6 +4,8 @@ import { linkedinSlugFromUrl } from '../utils/linkedin.js';
 import { attachRevealStatus } from './maskingService.js';
 import { getBalance } from './creditService.js';
 import { CREDIT_COSTS } from '../config/creditPricing.js';
+import { normalizeDomain } from '../utils/domain.js';
+import { sizeLabel } from './emailFormatService.js';
 
 // domText is the profile page's visible text, kept so an admin can
 // hand-extract what the extension's parser missed. Cap it — a LinkedIn
@@ -204,4 +206,139 @@ export async function extensionStatus(auth) {
     balance,
     revealCost: CREDIT_COSTS.EXTENSION_REVEAL,
   };
+}
+
+// Rows a lookup may return: not erased on request, not staged in an import
+// still awaiting admin approval.
+const LIVE_CONTACT = { redactedAt: null, importBatchId: null };
+const COMPANY_FIELDS = { id: true, name: true, domain: true, location: true };
+
+export const MAX_LOOKUP_EMAILS = 25;
+export const MAX_COMPANY_CONTACTS = 25;
+
+const EMAILISH = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * Gmail, Google Calendar and CRM pages: which of these addresses are people
+ * in DataPit? One result per distinct address, in the order asked. Found
+ * contacts come back exactly as search shows them — masked until the
+ * workspace reveals them — so a lookup never discloses more than search does.
+ */
+export async function lookupEmails(auth, emails) {
+  const wanted = [
+    ...new Set(emails.map((e) => String(e).trim().toLowerCase()).filter((e) => EMAILISH.test(e))),
+  ].slice(0, MAX_LOOKUP_EMAILS);
+  if (wanted.length === 0) return { results: [] };
+
+  const rows = await prisma.contact.findMany({
+    where: { ...LIVE_CONTACT, email: { in: wanted } },
+    include: { company: { select: COMPANY_FIELDS } },
+    orderBy: { createdAt: 'asc' },
+  });
+  // Several rows can share an address (re-imports); the oldest wins, as in observe.
+  const byEmail = new Map();
+  for (const row of rows) if (!byEmail.has(row.email)) byEmail.set(row.email, row);
+
+  const masked = await attachRevealStatus(auth.workspaceId, [...byEmail.values()].map(serializeContact));
+  const maskedById = new Map(masked.map((c) => [c.id, c]));
+
+  return {
+    results: wanted.map((email) => {
+      const row = byEmail.get(email);
+      if (!row) return { email, status: 'not_found' };
+      const contact = maskedById.get(row.id);
+      return {
+        email,
+        status: 'found',
+        contact,
+        cost: contact.revealed ? 0 : CREDIT_COSTS.EXTENSION_REVEAL,
+      };
+    }),
+  };
+}
+
+// "blog.acme.co.uk" -> ["blog.acme.co.uk", "acme.co.uk"]: a company's own
+// subdomains (app., blog., docs.) should still find the company.
+function domainCandidates(domain) {
+  const labels = domain.split('.');
+  const out = [];
+  for (let i = 0; i <= labels.length - 2; i += 1) out.push(labels.slice(i).join('.'));
+  return out;
+}
+
+/**
+ * Any company website: the company DataPit holds for this domain, and the
+ * first people at it (masked, like search). Free, like search — reveals are
+ * charged per contact as usual.
+ */
+export async function lookupCompany(auth, domainInput) {
+  const domain = normalizeDomain(domainInput);
+  if (!domain) throw new ApiError(422, 'Not a recognizable website address');
+
+  const candidates = domainCandidates(domain);
+  const companies = await prisma.company.findMany({
+    where: { domain: { in: candidates }, importBatchId: null },
+    select: { ...COMPANY_FIELDS, industry: true, headcountMin: true, headcountMax: true },
+  });
+  // The most specific match: app.acme.com's own row beats acme.com's.
+  const company = candidates.map((d) => companies.find((c) => c.domain === d)).find(Boolean);
+  if (!company) return { status: 'not_found', domain };
+
+  const where = { ...LIVE_CONTACT, companyId: company.id };
+  const [total, rows] = await Promise.all([
+    prisma.contact.count({ where }),
+    prisma.contact.findMany({
+      where,
+      include: { company: { select: COMPANY_FIELDS } },
+      orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+      take: MAX_COMPANY_CONTACTS,
+    }),
+  ]);
+  const contacts = await attachRevealStatus(auth.workspaceId, rows.map(serializeContact));
+
+  return {
+    status: 'found',
+    domain,
+    company: {
+      id: company.id,
+      name: company.name,
+      domain: company.domain,
+      industry: company.industry,
+      size: sizeLabel(company.headcountMin, company.headcountMax),
+      location: company.location,
+    },
+    total,
+    contacts: contacts.map((c) => ({ ...c, cost: c.revealed ? 0 : CREDIT_COSTS.EXTENSION_REVEAL })),
+  };
+}
+
+/**
+ * Sales Navigator lead pages don't always expose the public /in/ URL, so a
+ * lead can also be matched by name and current company. Exact first + last
+ * name (case-insensitive) and, when given, a company whose name contains the
+ * one on the page. Several matches (common names) only count as found when
+ * the company narrows them to one.
+ */
+export async function lookupPerson(auth, { name, companyName }) {
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length < 2) return { status: 'not_found' };
+  const firstName = parts[0];
+  const lastName = parts[parts.length - 1];
+  const company = String(companyName || '').trim();
+
+  const rows = await prisma.contact.findMany({
+    where: {
+      ...LIVE_CONTACT,
+      firstName: { equals: firstName, mode: 'insensitive' },
+      lastName: { equals: lastName, mode: 'insensitive' },
+      ...(company ? { company: { name: { contains: company, mode: 'insensitive' } } } : {}),
+    },
+    include: { company: { select: COMPANY_FIELDS } },
+    orderBy: { createdAt: 'asc' },
+    take: 5,
+  });
+  if (rows.length === 0 || (rows.length > 1 && !company)) return { status: 'not_found' };
+  const row = rows.find((r) => r.email) ?? rows[0];
+  const [contact] = await attachRevealStatus(auth.workspaceId, [serializeContact(row)]);
+  return { status: 'found', contact, cost: contact.revealed ? 0 : CREDIT_COSTS.EXTENSION_REVEAL };
 }

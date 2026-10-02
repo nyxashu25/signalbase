@@ -92,6 +92,21 @@ const handlers = {
     });
   },
 
+  // Sales Navigator leads with no public profile URL on the page.
+  async person({ name, companyName }) {
+    return api('/extension/person', { method: 'POST', body: { name, companyName: companyName || null } });
+  },
+
+  // Gmail, Google Calendar and CRM pages: the addresses visible on the page.
+  async lookupEmails({ emails }) {
+    return api('/extension/lookup', { method: 'POST', body: { emails } });
+  },
+
+  // Any website (from the popup): the company behind the site's domain.
+  async company({ domain }) {
+    return api(`/extension/company?domain=${encodeURIComponent(domain)}`);
+  },
+
   async setApiBase({ apiBase }) {
     await chrome.storage.local.set({ apiBase: apiBase || DEFAULT_API_BASE });
     return { ok: true };

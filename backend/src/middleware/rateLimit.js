@@ -28,3 +28,4 @@ export function rateLimit({ limit, windowSeconds, prefix, keyFn }) {
 
 export const byIp = (req) => req.ip;
 export const byWorkspace = (req) => req.auth?.workspaceId ?? req.ip;
+export const byUser = (req) => req.auth?.userId ?? req.ip;

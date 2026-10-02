@@ -1,13 +1,22 @@
-# DataPit Chrome extension
+# DataPit Chrome extension — DataPit — Contact Lookup
 
-Looks up every LinkedIn profile you open against DataPit:
+Free to install. Shows who is in DataPit on:
 
-- **Found** → shows the match; *Reveal email & phone* costs **4 credits**
-  (free if your workspace already revealed that contact).
-- **Not found** → the profile is queued for the data team ("Pending
-  peoples" in the admin control panel).
-- **Found, but the job title changed** → the change is reported ("Childs
-  found" in the admin control panel); everything else works as normal.
+- **LinkedIn profiles** (`linkedin.com/in/…`) and **Sales Navigator leads**
+  (`linkedin.com/sales/lead/…`): looked up automatically when the page opens.
+  - **Found** → shows the match; *Reveal* costs **4 credits** (free if your
+    workspace already revealed that contact).
+  - **Not found** (profiles) → queued for the data team ("Pending peoples").
+  - **Found, but the job title changed** → reported ("Childs found").
+  - A Sales Navigator lead with no public profile link is matched by name and
+    company, and isn't queued when missing.
+- **Gmail, Google Calendar, HubSpot and Salesforce** (`apps.js`): the launcher
+  counts the email addresses of the people in the open thread, draft, event
+  or CRM record; opening the card looks them up (up to 10) and lists who is
+  in DataPit, with a reveal for each. Only addresses are read, never message
+  text.
+- **Any company website**: click the toolbar icon — the popup looks up the
+  site's domain (via `activeTab`) and lists the company and its people.
 
 Plain Manifest V3, no build step — this folder loads as-is.
 
@@ -40,10 +49,13 @@ API base to `http://localhost:4000/api/v1`. (The dev origin is already in
 
 - `background.js` — the only code that talks to the API; holds the key in
   `chrome.storage.local` (never visible to LinkedIn page scripts).
-- `content.js` — SPA-aware profile detection (URL watcher), a best-effort
-  top-card parser (with a tab-title fallback that survives LinkedIn markup
-  changes), and the shadow-DOM result panel.
-- `popup.html/js` — connect/disconnect a key, see your credit balance.
+- `ui.js` — the shared shadow-DOM launcher and card every content script uses.
+- `content.js` — LinkedIn: SPA-aware profile and Sales Navigator lead
+  detection, the best-effort top-card parser (with a tab-title fallback).
+- `apps.js` — Gmail, Google Calendar, HubSpot and Salesforce: per-app address
+  collectors and the multi-person card.
+- `popup.html/js` — connect/disconnect a key, see your credit balance, and
+  look up the company behind the current website.
 - `options.html/js` — API base override for local dev.
 
 ## What it captures

@@ -437,6 +437,9 @@ model Contact {
   @@index([lastName, firstName])
   @@index([importBatchId])
   @@index([linkedinSlug])
+  // Extension lookups by address (stored lowercase — see
+  // migrations/20261002090000_contact_email_lookup).
+  @@index([email])
 }
 
 // ---------------------------------------------------------------------------

@@ -1,9 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "DataPit — LinkedIn Lookup",
-  "version": "0.5.0",
-  "description": "Look up LinkedIn profiles against DataPit as you browse: reveal emails and phone numbers, and queue missing people for sourcing.",
-  "permissions": ["storage"],
+  "name": "DataPit — Contact Lookup",
+  "version": "0.6.0",
+  "description": "Find and reveal work emails on LinkedIn, Sales Navigator, company websites, Gmail, Google Calendar, HubSpot and Salesforce.",
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
   "host_permissions": [
     "https://datapit.io/*",
     "http://localhost:4000/*"
@@ -13,13 +16,39 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://www.linkedin.com/*", "https://*.linkedin.com/*"],
-      "js": ["content.js"],
+      "matches": [
+        "https://www.linkedin.com/*",
+        "https://*.linkedin.com/*"
+      ],
+      "js": [
+        "ui.js",
+        "content.js"
+      ],
       "run_at": "document_idle"
     },
     {
-      "matches": ["https://datapit.io/*", "http://localhost:5173/*"],
-      "js": ["announce.js"],
+      "matches": [
+        "https://mail.google.com/*",
+        "https://calendar.google.com/*",
+        "https://app.hubspot.com/*",
+        "https://app-eu1.hubspot.com/*",
+        "https://*.lightning.force.com/*",
+        "https://*.my.salesforce.com/*"
+      ],
+      "js": [
+        "ui.js",
+        "apps.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://datapit.io/*",
+        "http://localhost:5173/*"
+      ],
+      "js": [
+        "announce.js"
+      ],
       "run_at": "document_start"
     }
   ],

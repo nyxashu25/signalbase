@@ -45,7 +45,7 @@ const COMPANY_SELECT = {
 };
 
 /** Same wording as the app's Companies table: "51–200", "5,001+". */
-function sizeLabel(min, max) {
+export function sizeLabel(min, max) {
   if (!min && !max) return null;
   if (min && max) return `${min.toLocaleString('en-US')}–${max.toLocaleString('en-US')}`;
   return `${(min ?? max).toLocaleString('en-US')}+`;
