@@ -23,7 +23,7 @@ const { getNodeAutoInstrumentations } = autoInstrumentationsPkg;
 const { PrismaInstrumentation } = prismaInstrumentationPkg;
 const { OTLPTraceExporter } = otlpExporterPkg;
 const { ConsoleSpanExporter } = sdkTraceNodePkg;
-const { Resource } = resourcesPkg;
+const { resourceFromAttributes } = resourcesPkg;
 const { ATTR_SERVICE_NAME } = semanticConventionsPkg;
 
 // Real deployments set OTEL_EXPORTER_OTLP_ENDPOINT to point at a collector
@@ -36,7 +36,7 @@ const exporter = process.env.OTEL_EXPORTER_OTLP_ENDPOINT
   : new ConsoleSpanExporter();
 
 const sdk = new NodeSDK({
-  resource: new Resource({
+  resource: resourceFromAttributes({
     [ATTR_SERVICE_NAME]: process.env.OTEL_SERVICE_NAME || 'datapit-backend',
   }),
   traceExporter: exporter,
