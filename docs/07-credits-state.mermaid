@@ -1,7 +1,7 @@
 stateDiagram-v2
     [*] --> Available: monthlyCreditGrant granted at signup<br/>(initializeBalance, Redis SETNX)
 
-    Available --> Reserved: reserveCredits middleware<br/>Lua script: atomic check-and-decrement<br/>(balance -= amount, ZADD to pending zset, TTL 7min)
+    Available --> Reserved: reserveCredits middleware<br/>Lua script, atomic check-and-decrement<br/>(balance -= amount, ZADD to pending zset, TTL 7min)
 
     Reserved --> Available: insufficient balance<br/>[reserveCreditScript returns -1]<br/>402 Insufficient credits -- no state change happens
 
@@ -13,7 +13,7 @@ stateDiagram-v2
     }
 
     Committing --> Committed: resolveReservationForCommit<br/>clears Redis reservation key + pending-zset entry<br/>(balance stays decremented -- already spent at reserve time)
-    Committed --> Ledgered: Postgres TRANSACTION:<br/>CreditLedgerEntry(delta: -amount, reason)<br/>+ the domain row (EmailReveal / CompanyDetailView / SequenceEnrollment)
+    Committed --> Ledgered: Postgres TRANSACTION<br/>CreditLedgerEntry(delta = -amount, reason)<br/>+ the domain row (EmailReveal / CompanyDetailView / SequenceEnrollment)
 
     Ledgered --> [*]: charge final
     Ledgered --> Refunded: unique-constraint race (P2002) --<br/>a concurrent identical request already committed --<br/>refundAmount() direct balance credit (no double charge)
