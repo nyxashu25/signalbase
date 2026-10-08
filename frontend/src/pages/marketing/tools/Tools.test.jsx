@@ -255,7 +255,9 @@ describe('EmailVerifierTool', () => {
     expect(input).toHaveAccessibleDescription(/needs a name, an @ and a domain/);
 
     await user.clear(input);
-    await user.type(input, `${'a'.repeat(250)}@acme.com`);
+    // Paste, don't type: 259 keystrokes took ~4s, close enough to vitest's 5s
+    // default timeout to flake on a slower runner.
+    await user.paste(`${'a'.repeat(250)}@acme.com`);
     await user.click(screen.getByRole('button', { name: 'Check email' }));
     expect(screen.getByText(/can be at most 254/)).toBeInTheDocument();
 
