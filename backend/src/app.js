@@ -41,7 +41,9 @@ export function createApp() {
     cors({
       origin: [
         env.CORS_ORIGIN,
-        ...env.EXTENSION_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean),
+        ...env.EXTENSION_ORIGINS.split(',')
+          .map((o) => o.trim())
+          .filter(Boolean),
       ],
       credentials: true,
     }),

@@ -3,7 +3,11 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AdminPendingPeoples } from './AdminPendingPeoples.jsx';
 import { AdminChildsFound } from './AdminChildsFound.jsx';
-import { renderWithProviders, authenticatedAdminState, mockFetchRoutes } from '../../test/testUtils.jsx';
+import {
+  renderWithProviders,
+  authenticatedAdminState,
+  mockFetchRoutes,
+} from '../../test/testUtils.jsx';
 
 const missingPerson = {
   id: 'mp1',

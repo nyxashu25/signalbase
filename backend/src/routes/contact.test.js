@@ -9,7 +9,12 @@ import * as notificationService from '../services/notificationService.js';
 const app = createApp();
 
 async function registerOrg(orgName, email) {
-  return registerAndVerify(app, { email, password: 'correct-horse-battery', name: 'Owner', orgName });
+  return registerAndVerify(app, {
+    email,
+    password: 'correct-horse-battery',
+    name: 'Owner',
+    orgName,
+  });
 }
 
 describe('POST /contact', () => {
@@ -89,7 +94,11 @@ describe('POST /contact', () => {
 
     expect(res.status).toBe(204);
     expect(spy).toHaveBeenCalledWith(
-      expect.objectContaining({ name: 'Prospect', email: 'prospect@example.com', company: 'Acme Co' }),
+      expect.objectContaining({
+        name: 'Prospect',
+        email: 'prospect@example.com',
+        company: 'Acme Co',
+      }),
     );
 
     spy.mockRestore();

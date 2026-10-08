@@ -22,7 +22,13 @@ export function SplitHeadline({ as: Tag = 'h1', className, children, delay = 0 }
 
     const ctx = gsap.context(() => {
       const split = new SplitText(el, { type: 'words', wordsClass: 'split-word' });
-      gsap.set(split.words, { display: 'inline-block', opacity: 0, y: 44, rotateX: -35, transformOrigin: '50% 100%' });
+      gsap.set(split.words, {
+        display: 'inline-block',
+        opacity: 0,
+        y: 44,
+        rotateX: -35,
+        transformOrigin: '50% 100%',
+      });
       gsap.to(split.words, {
         opacity: 1,
         y: 0,

@@ -50,7 +50,9 @@ export const PLANS = [
       '1,500 credits / free seat / month',
       'Team invites and roles',
       // Until sending is live the builder runs but no email is delivered.
-      LIVE.sequenceSending ? 'Email sequences with wait steps' : 'Sequence builder (email sending not live yet)',
+      LIVE.sequenceSending
+        ? 'Email sequences with wait steps'
+        : 'Sequence builder (email sending not live yet)',
     ],
   },
   {

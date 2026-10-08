@@ -21,7 +21,8 @@ export const PRICING_FAQS = [
   { q: 'How much does DataPit cost?', a: pricingSummary() },
   {
     q: 'What is a seat block?',
-    a: 'A seat block is how paid plans are bought: one price covers a bundle of paid seats plus bonus free seats. Buy as many blocks as your team needs, up to ' +
+    a:
+      'A seat block is how paid plans are bought: one price covers a bundle of paid seats plus bonus free seats. Buy as many blocks as your team needs, up to ' +
       `${MAX_SELF_SERVE_BLOCKS} at checkout (contact us for more). Free seats never cost anything.`,
   },
   { q: 'How many credits does each seat get?', a: creditsSummary() },

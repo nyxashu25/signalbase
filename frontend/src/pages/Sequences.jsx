@@ -1,11 +1,27 @@
 import { Link, useSearchParams } from 'react-router-dom';
-import { Plus, Sparkles, Send, MailOpen, MousePointerClick, Reply, AlertOctagon, Users } from 'lucide-react';
+import {
+  Plus,
+  Sparkles,
+  Send,
+  MailOpen,
+  MousePointerClick,
+  Reply,
+  AlertOctagon,
+  Users,
+} from 'lucide-react';
 import { useListSequencesQuery, useGetSequencesAnalyticsQuery } from '../api/sequencesApi.js';
 import { useGetBillingSummaryQuery } from '../api/billingApi.js';
 import { PageHeader } from '../components/ui/PageHeader.jsx';
 import { Button } from '../components/ui/Button.jsx';
 import { Banner } from '../components/ui/Banner.jsx';
-import { Card, TableFrame, thClass, tdClass, tdMutedClass, trClass } from '../components/ui/Card.jsx';
+import {
+  Card,
+  TableFrame,
+  thClass,
+  tdClass,
+  tdMutedClass,
+  trClass,
+} from '../components/ui/Card.jsx';
 import { StatusPill } from '../components/ui/StatusPill.jsx';
 import { EmptyState } from '../components/ui/EmptyState.jsx';
 import { SkeletonRows, Skeleton } from '../components/ui/Skeleton.jsx';
@@ -91,7 +107,10 @@ export function Sequences() {
             learnMore={
               <>
                 Each enrollment costs credits —{' '}
-                <Link to="/app/help#sequences" className="font-semibold text-primary hover:underline">
+                <Link
+                  to="/app/help#sequences"
+                  className="font-semibold text-primary hover:underline"
+                >
                   how sequences work
                 </Link>
                 .
@@ -131,9 +150,7 @@ export function Sequences() {
                     </StatusPill>
                   </td>
                   <td className={`${tdMutedClass} tabular-nums`}>{seq._count?.steps ?? 0}</td>
-                  <td className={`${tdMutedClass} tabular-nums`}>
-                    {seq._count?.enrollments ?? 0}
-                  </td>
+                  <td className={`${tdMutedClass} tabular-nums`}>{seq._count?.enrollments ?? 0}</td>
                 </tr>
               ))}
             </tbody>
@@ -145,11 +162,40 @@ export function Sequences() {
 }
 
 const KPIS = [
-  { key: 'SENT', label: 'Sent', icon: Send, hint: 'Emails handed to the sending provider across every sequence.' },
-  { key: 'OPENED', label: 'Opened', icon: MailOpen, rate: 'openRate', hint: 'Unique open events. Rate is opens ÷ sent.' },
-  { key: 'CLICKED', label: 'Clicked', icon: MousePointerClick, rate: 'clickRate', hint: 'Link clicks inside sent emails. Rate is clicks ÷ sent.' },
-  { key: 'REPLIED', label: 'Replied', icon: Reply, rate: 'replyRate', hint: 'Replies detected by the sending provider. Rate is replies ÷ sent.' },
-  { key: 'BOUNCED', label: 'Bounced', icon: AlertOctagon, rate: 'bounceRate', hint: 'Hard and soft bounces. Bounced addresses are suppressed automatically.' },
+  {
+    key: 'SENT',
+    label: 'Sent',
+    icon: Send,
+    hint: 'Emails handed to the sending provider across every sequence.',
+  },
+  {
+    key: 'OPENED',
+    label: 'Opened',
+    icon: MailOpen,
+    rate: 'openRate',
+    hint: 'Unique open events. Rate is opens ÷ sent.',
+  },
+  {
+    key: 'CLICKED',
+    label: 'Clicked',
+    icon: MousePointerClick,
+    rate: 'clickRate',
+    hint: 'Link clicks inside sent emails. Rate is clicks ÷ sent.',
+  },
+  {
+    key: 'REPLIED',
+    label: 'Replied',
+    icon: Reply,
+    rate: 'replyRate',
+    hint: 'Replies detected by the sending provider. Rate is replies ÷ sent.',
+  },
+  {
+    key: 'BOUNCED',
+    label: 'Bounced',
+    icon: AlertOctagon,
+    rate: 'bounceRate',
+    hint: 'Hard and soft bounces. Bounced addresses are suppressed automatically.',
+  },
 ];
 
 function pct(value) {
@@ -190,15 +236,17 @@ function SequencesAnalytics() {
               {analytics.totals[key] ?? 0}
             </p>
             {rate && (
-              <p className="mt-0.5 text-xs tabular-nums text-text-muted">{pct(analytics.rates[rate])} of sent</p>
+              <p className="mt-0.5 text-xs tabular-nums text-text-muted">
+                {pct(analytics.rates[rate])} of sent
+              </p>
             )}
           </Card>
         ))}
       </div>
 
       <p className="mt-3 text-xs text-text-muted">
-        {analytics.enrollments.total} {analytics.enrollments.total === 1 ? 'contact' : 'contacts'} enrolled
-        across all sequences · {analytics.enrollments.active} active right now.
+        {analytics.enrollments.total} {analytics.enrollments.total === 1 ? 'contact' : 'contacts'}{' '}
+        enrolled across all sequences · {analytics.enrollments.active} active right now.
       </p>
 
       <div className="mt-6">
@@ -221,7 +269,10 @@ function SequencesAnalytics() {
               {analytics.sequences.map((s) => (
                 <tr key={s.id} className={trClass}>
                   <td className={tdClass}>
-                    <Link to={`/app/sequences/${s.id}`} className="font-semibold hover:text-primary hover:underline">
+                    <Link
+                      to={`/app/sequences/${s.id}`}
+                      className="font-semibold hover:text-primary hover:underline"
+                    >
                       {s.name}
                     </Link>
                   </td>
@@ -240,9 +291,13 @@ function SequencesAnalytics() {
               {analytics.sequences.length === 0 && (
                 <tr>
                   <td colSpan={8}>
-                    <EmptyState compact illustration={<Illustration.Activity />} title="Nothing to measure yet">
-                      Create a sequence, activate it and enroll a contact — every send, open, click and reply
-                      lands here.
+                    <EmptyState
+                      compact
+                      illustration={<Illustration.Activity />}
+                      title="Nothing to measure yet"
+                    >
+                      Create a sequence, activate it and enroll a contact — every send, open, click
+                      and reply lands here.
                     </EmptyState>
                   </td>
                 </tr>

@@ -84,7 +84,9 @@ export async function listAuditLog({ page, pageSize, userId }) {
       metadata: e.metadata,
       createdAt: e.createdAt,
       superAdmin: e.superAdmin,
-      targetUser: e.targetUserId ? (targetById.get(e.targetUserId) ?? { id: e.targetUserId }) : null,
+      targetUser: e.targetUserId
+        ? (targetById.get(e.targetUserId) ?? { id: e.targetUserId })
+        : null,
     })),
     total,
     page,
@@ -250,7 +252,11 @@ export async function suspendUser(userId, actorAdminId) {
     where: { id: userId },
     data: { suspendedAt: new Date() },
   });
-  await recordAuditLog({ superAdminId: actorAdminId, action: 'SUSPEND_USER', targetUserId: userId });
+  await recordAuditLog({
+    superAdminId: actorAdminId,
+    action: 'SUSPEND_USER',
+    targetUserId: userId,
+  });
   return user;
 }
 
@@ -259,7 +265,11 @@ export async function unsuspendUser(userId, actorAdminId) {
     where: { id: userId },
     data: { suspendedAt: null },
   });
-  await recordAuditLog({ superAdminId: actorAdminId, action: 'UNSUSPEND_USER', targetUserId: userId });
+  await recordAuditLog({
+    superAdminId: actorAdminId,
+    action: 'UNSUSPEND_USER',
+    targetUserId: userId,
+  });
   return user;
 }
 
@@ -383,7 +393,11 @@ export async function restoreUser(userId, actorAdminId) {
     where: { id: userId },
     data: { deletedAt: null },
   });
-  await recordAuditLog({ superAdminId: actorAdminId, action: 'RESTORE_USER', targetUserId: userId });
+  await recordAuditLog({
+    superAdminId: actorAdminId,
+    action: 'RESTORE_USER',
+    targetUserId: userId,
+  });
   return user;
 }
 

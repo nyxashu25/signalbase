@@ -37,7 +37,13 @@ function People() {
       <circle cx="52" cy="46" r="10" />
       <path d="M34 76c2-10 9-16 18-16s16 6 18 16" />
       <path d="M78 40h44M78 52h32M78 64h38" />
-      <circle cx="124" cy="26" r="9" className={cn(accent, 'fill-primary/10')} stroke="currentColor" />
+      <circle
+        cx="124"
+        cy="26"
+        r="9"
+        className={cn(accent, 'fill-primary/10')}
+        stroke="currentColor"
+      />
       <path d="M120.5 26l2.5 2.5 4.5-5" className={accent} />
     </Frame>
   );
@@ -92,9 +98,15 @@ function Sequences() {
 function Tickets() {
   return (
     <Frame label="Tickets illustration">
-      <path d="M38 26h60a6 6 0 0 1 6 6v24a6 6 0 0 1-6 6H60l-12 10V62h-10a6 6 0 0 1-6-6V32a6 6 0 0 1 6-6z" className={tile} />
+      <path
+        d="M38 26h60a6 6 0 0 1 6 6v24a6 6 0 0 1-6 6H60l-12 10V62h-10a6 6 0 0 1-6-6V32a6 6 0 0 1 6-6z"
+        className={tile}
+      />
       <path d="M48 40h40M48 50h26" />
-      <path d="M90 46h28a6 6 0 0 1 6 6v20a6 6 0 0 1-6 6h-6v9l-11-9H90a6 6 0 0 1-6-6V52" className={cn(accent, 'fill-primary/10')} />
+      <path
+        d="M90 46h28a6 6 0 0 1 6 6v20a6 6 0 0 1-6 6h-6v9l-11-9H90a6 6 0 0 1-6-6V52"
+        className={cn(accent, 'fill-primary/10')}
+      />
       <path d="M96 60h20M96 68h12" className={accent} />
     </Frame>
   );

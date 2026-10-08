@@ -64,8 +64,11 @@ export function OnboardingCard({ collapsed = false }) {
         {data.creditsEarned < data.creditsAvailable && (
           <>
             {' '}
-            · <span className="font-semibold text-text">+{data.creditsAvailable - data.creditsEarned} credits</span> to
-            earn
+            ·{' '}
+            <span className="font-semibold text-text">
+              +{data.creditsAvailable - data.creditsEarned} credits
+            </span>{' '}
+            to earn
           </>
         )}
       </p>

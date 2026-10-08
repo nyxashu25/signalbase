@@ -17,7 +17,11 @@ export function AcceptInvite() {
   const token = new URLSearchParams(location.search).get('token');
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { data: info, isLoading, error: infoError } = useGetInviteInfoQuery(token, { skip: !token });
+  const {
+    data: info,
+    isLoading,
+    error: infoError,
+  } = useGetInviteInfoQuery(token, { skip: !token });
   const [acceptInvite, acceptState] = useAcceptInviteMutation();
   const [form, setForm] = useState({ name: '', password: '' });
 
@@ -51,7 +55,10 @@ export function AcceptInvite() {
                 Invites expire after 7 days and can be revoked — ask the person who invited you to
                 send a fresh one.
               </p>
-              <Link to="/login" className="mt-4 block text-sm font-medium text-primary hover:underline">
+              <Link
+                to="/login"
+                className="mt-4 block text-sm font-medium text-primary hover:underline"
+              >
                 Back to sign in
               </Link>
             </>
@@ -113,7 +120,9 @@ export function AcceptInvite() {
                   {acceptState.error && <p className="text-sm text-red-600">{error}</p>}
                   <button
                     type="submit"
-                    disabled={acceptState.isLoading || !form.name || form.password.length < MIN_LENGTH}
+                    disabled={
+                      acceptState.isLoading || !form.name || form.password.length < MIN_LENGTH
+                    }
                     className="mt-2 rounded-md bg-gradient-action px-4 py-2.5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(148,0,222,0.24)] transition-transform duration-150 ease-brand hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {acceptState.isLoading ? 'Creating your account…' : 'Create account & join'}

@@ -23,6 +23,11 @@ export async function show(req, res) {
 
 export async function reply(req, res) {
   const { workspaceId, userId } = req.auth;
-  const ticket = await ticketService.addUserReply(workspaceId, req.params.id, userId, req.body.body);
+  const ticket = await ticketService.addUserReply(
+    workspaceId,
+    req.params.id,
+    userId,
+    req.body.body,
+  );
   res.json(ticket);
 }

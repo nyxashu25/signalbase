@@ -22,7 +22,9 @@ const adminCreds = { email: 'root@datapit.io', password: 'super-secret-admin-pw'
 
 async function seedAdmin() {
   const passwordHash = await hashPassword(adminCreds.password);
-  await prisma.superAdmin.create({ data: { email: adminCreds.email, passwordHash, name: 'Root Admin' } });
+  await prisma.superAdmin.create({
+    data: { email: adminCreds.email, passwordHash, name: 'Root Admin' },
+  });
   const login = await request(app).post('/api/v1/admin/auth/login').send(adminCreds);
   return login.body.accessToken;
 }

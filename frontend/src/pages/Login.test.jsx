@@ -194,7 +194,9 @@ describe('Login (password flow + recovery)', () => {
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
 
     expect(await screen.findByText('Invalid email or password')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Resend verification email' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Resend verification email' }),
+    ).not.toBeInTheDocument();
   });
 
   it('links to the forgot-password flow from sign-in mode only', async () => {

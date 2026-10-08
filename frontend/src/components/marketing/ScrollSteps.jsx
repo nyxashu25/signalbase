@@ -138,7 +138,10 @@ export function ScrollSteps({ eyebrow, steps }) {
               ))}
             </div>
           )}
-          <span ref={numberRef} className="block text-base font-extrabold tabular-nums text-primary">
+          <span
+            ref={numberRef}
+            className="block text-base font-extrabold tabular-nums text-primary"
+          >
             {steps[0].n}
           </span>
           <h3

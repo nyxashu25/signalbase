@@ -27,7 +27,12 @@ function viewportOrigin() {
 // make this wrapper the containing block for position: fixed descendants and
 // break GSAP pins (ScrollSteps).
 const depthVariants = {
-  initial: () => ({ opacity: 0, scale: 1.05, filter: 'blur(8px)', transformOrigin: viewportOrigin() }),
+  initial: () => ({
+    opacity: 0,
+    scale: 1.05,
+    filter: 'blur(8px)',
+    transformOrigin: viewportOrigin(),
+  }),
   enter: {
     opacity: 1,
     scale: 1,

@@ -75,7 +75,10 @@ adminRouter.put(
 );
 
 // Workspace lifecycle + the "Deleted" section.
-adminRouter.post('/workspaces/:workspaceId/suspend', asyncHandler(adminController.suspendWorkspace));
+adminRouter.post(
+  '/workspaces/:workspaceId/suspend',
+  asyncHandler(adminController.suspendWorkspace),
+);
 adminRouter.post(
   '/workspaces/:workspaceId/unsuspend',
   asyncHandler(adminController.unsuspendWorkspace),

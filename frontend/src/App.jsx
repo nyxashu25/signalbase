@@ -176,14 +176,26 @@ const Tickets = lazyNamed(() => import('./pages/Tickets.jsx'), 'Tickets');
 const NewTicket = lazyNamed(() => import('./pages/NewTicket.jsx'), 'NewTicket');
 const TicketDetail = lazyNamed(() => import('./pages/TicketDetail.jsx'), 'TicketDetail');
 const Help = lazyNamed(() => import('./pages/Help.jsx'), 'Help');
-const SettingsLayout = lazyNamed(() => import('./pages/settings/SettingsLayout.jsx'), 'SettingsLayout');
-const SettingsProfile = lazyNamed(() => import('./pages/settings/SettingsProfile.jsx'), 'SettingsProfile');
+const SettingsLayout = lazyNamed(
+  () => import('./pages/settings/SettingsLayout.jsx'),
+  'SettingsLayout',
+);
+const SettingsProfile = lazyNamed(
+  () => import('./pages/settings/SettingsProfile.jsx'),
+  'SettingsProfile',
+);
 const SettingsWorkspace = lazyNamed(
   () => import('./pages/settings/SettingsWorkspace.jsx'),
   'SettingsWorkspace',
 );
-const SettingsMembers = lazyNamed(() => import('./pages/settings/SettingsMembers.jsx'), 'SettingsMembers');
-const SettingsSecurity = lazyNamed(() => import('./pages/settings/SettingsSecurity.jsx'), 'SettingsSecurity');
+const SettingsMembers = lazyNamed(
+  () => import('./pages/settings/SettingsMembers.jsx'),
+  'SettingsMembers',
+);
+const SettingsSecurity = lazyNamed(
+  () => import('./pages/settings/SettingsSecurity.jsx'),
+  'SettingsSecurity',
+);
 const SettingsNotifications = lazyNamed(
   () => import('./pages/settings/SettingsNotifications.jsx'),
   'SettingsNotifications',
@@ -197,9 +209,15 @@ const SettingsApi = lazyNamed(() => import('./pages/settings/SettingsApi.jsx'), 
 // Admin panel
 const AdminLayout = lazyNamed(() => import('./layouts/AdminLayout.jsx'), 'AdminLayout');
 const AdminLogin = lazyNamed(() => import('./pages/admin/AdminLogin.jsx'), 'AdminLogin');
-const AdminDashboard = lazyNamed(() => import('./pages/admin/AdminDashboard.jsx'), 'AdminDashboard');
+const AdminDashboard = lazyNamed(
+  () => import('./pages/admin/AdminDashboard.jsx'),
+  'AdminDashboard',
+);
 const AdminUsers = lazyNamed(() => import('./pages/admin/AdminUsers.jsx'), 'AdminUsers');
-const AdminUserDetail = lazyNamed(() => import('./pages/admin/AdminUserDetail.jsx'), 'AdminUserDetail');
+const AdminUserDetail = lazyNamed(
+  () => import('./pages/admin/AdminUserDetail.jsx'),
+  'AdminUserDetail',
+);
 const AdminBilling = lazyNamed(() => import('./pages/admin/AdminBilling.jsx'), 'AdminBilling');
 const AdminSettings = lazyNamed(() => import('./pages/admin/AdminSettings.jsx'), 'AdminSettings');
 const AdminPendingPeoples = lazyNamed(
@@ -224,7 +242,11 @@ const AdminTicketDetail = lazyNamed(
 
 function RouteFallback() {
   return (
-    <div className="flex min-h-screen items-center justify-center" role="status" aria-label="Loading">
+    <div
+      className="flex min-h-screen items-center justify-center"
+      role="status"
+      aria-label="Loading"
+    >
       <Loader2 className="h-5 w-5 animate-spin text-text-muted" aria-hidden="true" />
     </div>
   );

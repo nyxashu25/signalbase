@@ -50,7 +50,10 @@ export default {
         ['Seniority and department', 'Shows whether they decide, influence or use.'],
         ['Industry, headcount, location', 'The company facts your segments depend on.'],
         ['Work email and status', 'Whether the address is confirmed, guessed or bounced.'],
-        ['Source and date added', 'Where the record came from and how old it is, in case someone asks.'],
+        [
+          'Source and date added',
+          'Where the record came from and how old it is, in case someone asks.',
+        ],
         ['Segment and reason', 'Which message they get, and why now.'],
       ],
     },
@@ -119,12 +122,36 @@ export default {
       type: 'table',
       head: ['Filter', 'Use it to', 'Watch out for'],
       rows: [
-        ['Job title', 'Find the exact roles you sell to.', 'One job has many titles, such as “RevOps” and “Revenue Operations”.'],
-        ['Seniority', 'Reach decision makers, or the people who feel the problem.', 'Titles inflate at small firms. A VP there may run a team of two.'],
-        ['Department', 'Stay within the function you serve.', 'Small companies often have no separate team.'],
-        ['Industry', 'Match sectors where you have customer stories.', 'Labels are broad and differ between data sources.'],
-        ['Headcount', 'Match company size to your price.', 'Ranges are estimates, and fast-growing firms outgrow them.'],
-        ['Location', 'Match time zones, languages and laws.', 'A person may not work from the company’s head office.'],
+        [
+          'Job title',
+          'Find the exact roles you sell to.',
+          'One job has many titles, such as “RevOps” and “Revenue Operations”.',
+        ],
+        [
+          'Seniority',
+          'Reach decision makers, or the people who feel the problem.',
+          'Titles inflate at small firms. A VP there may run a team of two.',
+        ],
+        [
+          'Department',
+          'Stay within the function you serve.',
+          'Small companies often have no separate team.',
+        ],
+        [
+          'Industry',
+          'Match sectors where you have customer stories.',
+          'Labels are broad and differ between data sources.',
+        ],
+        [
+          'Headcount',
+          'Match company size to your price.',
+          'Ranges are estimates, and fast-growing firms outgrow them.',
+        ],
+        [
+          'Location',
+          'Match time zones, languages and laws.',
+          'A person may not work from the company’s head office.',
+        ],
       ],
     },
 
@@ -322,7 +349,8 @@ export default {
           checked: CHECKED,
         },
         {
-          label: 'ICO: Organisations using marketing services of data brokers: what you need to know',
+          label:
+            'ICO: Organisations using marketing services of data brokers: what you need to know',
           url: 'https://ico.org.uk/for-organisations/direct-marketing-and-privacy-and-electronic-communications/organisations-using-marketing-services-of-data-brokers/',
           checked: CHECKED,
         },
@@ -337,7 +365,8 @@ export default {
           checked: CHECKED,
         },
         {
-          label: 'European Commission: What happens if someone objects to my company processing their personal data?',
+          label:
+            'European Commission: What happens if someone objects to my company processing their personal data?',
           url: 'https://commission.europa.eu/law/law-topic/data-protection/information-business-and-organisations/dealing-requests-individuals/what-happens-if-someone-objects-my-company-processing-their-personal-data_en',
           checked: CHECKED,
         },

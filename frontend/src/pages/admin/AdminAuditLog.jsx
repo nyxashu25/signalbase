@@ -13,14 +13,16 @@ const ACTION_LABELS = {
 function describeMetadata(action, metadata) {
   if (!metadata) return null;
   if (action === 'UPDATE_PLAN') return `${metadata.from} → ${metadata.to}`;
-  if (action === 'ADD_CREDITS') return `${metadata.amount > 0 ? '+' : ''}${metadata.amount} credits`;
+  if (action === 'ADD_CREDITS')
+    return `${metadata.amount > 0 ? '+' : ''}${metadata.amount} credits`;
   if (action === 'SAVE_STRIPE_SETTINGS') {
     return metadata.fields?.length ? `set: ${metadata.fields.join(', ')}` : 'no fields changed';
   }
   if (action === 'APPROVE_IMPORT') {
     return `${metadata.filename ?? metadata.batchId} — ${metadata.insertedContacts ?? 0} contacts, ${metadata.insertedCompanies ?? 0} companies`;
   }
-  if (action === 'SEND_PROMOTION') return `“${metadata.subject}” → ${metadata.recipientCount} recipients`;
+  if (action === 'SEND_PROMOTION')
+    return `“${metadata.subject}” → ${metadata.recipientCount} recipients`;
   return null;
 }
 
@@ -31,8 +33,9 @@ export function AdminAuditLog() {
     <div>
       <h1 className="text-xl font-semibold text-white">Audit log</h1>
       <p className="mt-1 text-sm text-ink-300">
-        Every sensitive admin action — suspend/unsuspend, plan changes, admin-granted credits, Stripe
-        settings saves, import approvals and promotional broadcasts — with who did it and when.
+        Every sensitive admin action — suspend/unsuspend, plan changes, admin-granted credits,
+        Stripe settings saves, import approvals and promotional broadcasts — with who did it and
+        when.
       </p>
 
       <div className="mt-6 overflow-x-auto rounded-lg border border-white/10 bg-ink-900">

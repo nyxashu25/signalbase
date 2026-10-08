@@ -2,10 +2,7 @@ import { cn } from './cn.js';
 
 export function Card({ className, children, ...rest }) {
   return (
-    <div
-      className={cn('rounded-lg border border-border bg-surface-elevated', className)}
-      {...rest}
-    >
+    <div className={cn('rounded-lg border border-border bg-surface-elevated', className)} {...rest}>
       {children}
     </div>
   );
@@ -16,7 +13,12 @@ export function Card({ className, children, ...rest }) {
 // scroll from.
 export function TableFrame({ className, children }) {
   return (
-    <div className={cn('overflow-hidden rounded-lg border border-border bg-surface-elevated', className)}>
+    <div
+      className={cn(
+        'overflow-hidden rounded-lg border border-border bg-surface-elevated',
+        className,
+      )}
+    >
       <div className="overflow-x-auto">{children}</div>
     </div>
   );

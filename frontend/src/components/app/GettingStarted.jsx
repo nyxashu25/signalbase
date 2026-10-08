@@ -42,9 +42,13 @@ export function GettingStarted({ progress, isLoading }) {
                 <Sparkles className="h-5 w-5 text-primary" aria-hidden="true" />
               )}
               <h2 className="text-base font-bold text-text">
-                {done ? 'You’re all set' : `${progress.completedCount} of ${progress.totalCount} done`}
+                {done
+                  ? 'You’re all set'
+                  : `${progress.completedCount} of ${progress.totalCount} done`}
               </h2>
-              <span className="text-sm font-semibold tabular-nums text-text-muted">{progress.percent}%</span>
+              <span className="text-sm font-semibold tabular-nums text-text-muted">
+                {progress.percent}%
+              </span>
             </div>
             <div
               role="progressbar"
@@ -62,8 +66,9 @@ export function GettingStarted({ progress, isLoading }) {
             <p className="mt-2 text-sm text-text-muted">
               {done ? (
                 <>
-                  You earned <span className="font-semibold text-text">{progress.creditsEarned} credits</span> along
-                  the way. Switch to Overview for your workspace at a glance.
+                  You earned{' '}
+                  <span className="font-semibold text-text">{progress.creditsEarned} credits</span>{' '}
+                  along the way. Switch to Overview for your workspace at a glance.
                 </>
               ) : (
                 <>
@@ -141,7 +146,9 @@ function GroupCard({ group, nextTaskKey }) {
               ...openTasks.map((task) => (
                 <TaskRow key={task.key} task={task} isNext={task.key === nextTaskKey} />
               )),
-              ...(showDone ? completedTasks.map((task) => <TaskRow key={task.key} task={task} compact />) : []),
+              ...(showDone
+                ? completedTasks.map((task) => <TaskRow key={task.key} task={task} compact />)
+                : []),
             ]}
       </ul>
 
@@ -152,7 +159,10 @@ function GroupCard({ group, nextTaskKey }) {
           aria-expanded={showDone}
           className="mt-2 inline-flex items-center gap-1 self-start text-xs font-semibold text-text-muted hover:text-text"
         >
-          <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', showDone && 'rotate-180')} aria-hidden="true" />
+          <ChevronDown
+            className={cn('h-3.5 w-3.5 transition-transform', showDone && 'rotate-180')}
+            aria-hidden="true"
+          />
           {showDone ? 'Hide' : 'Show'} {completedTasks.length} completed
         </button>
       )}
@@ -181,7 +191,12 @@ function TaskRow({ task, isNext = false, compact = false }) {
     >
       <Icon className={cn('h-4 w-4 shrink-0', iconClass)} aria-hidden="true" />
       <div className="min-w-0 flex-1">
-        <p className={cn('text-sm font-medium', task.completed ? 'text-text-muted line-through decoration-border' : 'text-text')}>
+        <p
+          className={cn(
+            'text-sm font-medium',
+            task.completed ? 'text-text-muted line-through decoration-border' : 'text-text',
+          )}
+        >
           {task.label}
         </p>
         {!compact && <p className="text-xs text-text-muted">{task.description}</p>}

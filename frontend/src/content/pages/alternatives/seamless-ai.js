@@ -255,10 +255,26 @@ export default {
     {
       type: 'related',
       items: [
-        { label: 'Apollo alternative', to: '/alternatives/apollo', text: 'How DataPit compares with Apollo on price and features.' },
-        { label: 'ZoomInfo alternative', to: '/alternatives/zoominfo', text: 'How DataPit compares with ZoomInfo on price and features.' },
-        { label: 'RocketReach alternative', to: '/alternatives/rocketreach', text: 'How DataPit compares with RocketReach on price and features.' },
-        { label: 'Pricing', to: '/pricing', text: `Seat blocks from $${BASIC.price} a month, and a free plan.` },
+        {
+          label: 'Apollo alternative',
+          to: '/alternatives/apollo',
+          text: 'How DataPit compares with Apollo on price and features.',
+        },
+        {
+          label: 'ZoomInfo alternative',
+          to: '/alternatives/zoominfo',
+          text: 'How DataPit compares with ZoomInfo on price and features.',
+        },
+        {
+          label: 'RocketReach alternative',
+          to: '/alternatives/rocketreach',
+          text: 'How DataPit compares with RocketReach on price and features.',
+        },
+        {
+          label: 'Pricing',
+          to: '/pricing',
+          text: `Seat blocks from $${BASIC.price} a month, and a free plan.`,
+        },
       ],
     },
     {
@@ -270,8 +286,16 @@ export default {
           url: 'https://seamless.ai/customers/education/articles/seamless-ai-credit-and-license-types',
           checked: CHECKED,
         },
-        { label: 'Seamless.AI Prospector page (database figures)', url: 'https://seamless.ai/products/prospector', checked: CHECKED },
-        { label: 'Seamless.AI homepage (database figures, credit refunds)', url: 'https://seamless.ai/', checked: CHECKED },
+        {
+          label: 'Seamless.AI Prospector page (database figures)',
+          url: 'https://seamless.ai/products/prospector',
+          checked: CHECKED,
+        },
+        {
+          label: 'Seamless.AI homepage (database figures, credit refunds)',
+          url: 'https://seamless.ai/',
+          checked: CHECKED,
+        },
         {
           label: 'Seamless.AI Email Finder page',
           url: 'https://seamless.ai/products/solutions/features/email-finder',
@@ -282,16 +306,36 @@ export default {
           url: 'https://seamless.ai/products/solutions/features/phone-finder',
           checked: CHECKED,
         },
-        { label: 'Seamless.AI Connect page', url: 'https://seamless.ai/products/connect', checked: CHECKED },
+        {
+          label: 'Seamless.AI Connect page',
+          url: 'https://seamless.ai/products/connect',
+          checked: CHECKED,
+        },
         {
           label: 'Seamless.AI help center: Integrations Overview',
           url: 'https://seamless.ai/customers/education/articles/integrations',
           checked: CHECKED,
         },
-        { label: 'Seamless.AI Integrations page (plan availability)', url: 'https://seamless.ai/products/integrations', checked: CHECKED },
-        { label: 'Seamless.AI API page', url: 'https://seamless.ai/products/api', checked: CHECKED },
-        { label: 'Seamless.AI Buyer Intent Data page', url: 'https://seamless.ai/products/buyer-intent-data', checked: CHECKED },
-        { label: 'Seamless.AI Chrome Extension page', url: 'https://seamless.ai/products/chrome-extension', checked: CHECKED },
+        {
+          label: 'Seamless.AI Integrations page (plan availability)',
+          url: 'https://seamless.ai/products/integrations',
+          checked: CHECKED,
+        },
+        {
+          label: 'Seamless.AI API page',
+          url: 'https://seamless.ai/products/api',
+          checked: CHECKED,
+        },
+        {
+          label: 'Seamless.AI Buyer Intent Data page',
+          url: 'https://seamless.ai/products/buyer-intent-data',
+          checked: CHECKED,
+        },
+        {
+          label: 'Seamless.AI Chrome Extension page',
+          url: 'https://seamless.ai/products/chrome-extension',
+          checked: CHECKED,
+        },
         {
           label: 'Seamless.AI on the Chrome Web Store',
           url: 'https://chromewebstore.google.com/detail/seamlessai/dbepenphjfofmnjmlacfcdehikakmaap',

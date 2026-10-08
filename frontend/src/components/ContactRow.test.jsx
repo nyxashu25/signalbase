@@ -137,7 +137,10 @@ describe('ContactRow', () => {
       phone: '+1 415 555 0132',
       hasPhone: true,
     });
-    expect(screen.getByRole('link', { name: '+1 415 555 0132' })).toHaveAttribute('href', 'tel:+14155550132');
+    expect(screen.getByRole('link', { name: '+1 415 555 0132' })).toHaveAttribute(
+      'href',
+      'tel:+14155550132',
+    );
     expect(screen.getByRole('button', { name: 'Copy phone' })).toBeInTheDocument();
   });
 });

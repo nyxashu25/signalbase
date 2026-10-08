@@ -17,7 +17,10 @@ export function StoryBackdrop() {
   const { ready } = useWorldState();
 
   return (
-    <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-ink-950">
+    <div
+      aria-hidden="true"
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-ink-950"
+    >
       <div
         className="absolute inset-0"
         style={{

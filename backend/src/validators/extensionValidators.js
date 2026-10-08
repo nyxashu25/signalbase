@@ -16,7 +16,10 @@ export const observeSchema = z.object({
   companyName: z.string().max(300).nullish(),
   // The zod cap is a hard reject well above the service's soft clip — a
   // client sending multi-MB payloads is broken or abusive, not unlucky.
-  domText: z.string().max(DOM_TEXT_MAX_CHARS * 2).nullish(),
+  domText: z
+    .string()
+    .max(DOM_TEXT_MAX_CHARS * 2)
+    .nullish(),
 });
 
 // Gmail / Calendar / CRM pages: the addresses visible on the page.

@@ -83,7 +83,11 @@ describe('database imports (Extend Database)', () => {
       const res = await request(app)
         .post('/api/v1/admin/database-imports')
         .set('Authorization', `Bearer ${token}`)
-        .attach('file', Buffer.from(`${CSV_HEADER}\n${csvRow()}\n${csvRow({ last: 'Chen' })}`), 'contacts.csv');
+        .attach(
+          'file',
+          Buffer.from(`${CSV_HEADER}\n${csvRow()}\n${csvRow({ last: 'Chen' })}`),
+          'contacts.csv',
+        );
 
       expect(res.status).toBe(202);
       expect(res.body.status).toBe('PROCESSING');

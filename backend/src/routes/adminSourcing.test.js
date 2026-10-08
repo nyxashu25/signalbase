@@ -72,8 +72,16 @@ describe('admin sourcing queues', () => {
   it('lists pending missing persons newest-demand-first and reports badge counts', async () => {
     const token = await loginAsAdmin();
     await seedMissingPerson();
-    await seedMissingPerson({ linkedinSlug: 'ana-silva', linkedinUrl: 'https://www.linkedin.com/in/ana-silva', name: 'Ana Silva' });
-    await seedMissingPerson({ linkedinSlug: 'resolved-one', linkedinUrl: 'https://www.linkedin.com/in/resolved-one', status: 'ADDED' });
+    await seedMissingPerson({
+      linkedinSlug: 'ana-silva',
+      linkedinUrl: 'https://www.linkedin.com/in/ana-silva',
+      name: 'Ana Silva',
+    });
+    await seedMissingPerson({
+      linkedinSlug: 'resolved-one',
+      linkedinUrl: 'https://www.linkedin.com/in/resolved-one',
+      status: 'ADDED',
+    });
     await seedLostChild();
 
     const list = await request(app)
@@ -103,7 +111,9 @@ describe('admin sourcing queues', () => {
     expect(res.status).toBe(200);
     expect(res.body.missingPerson.status).toBe('ADDED');
 
-    const audit = await prisma.adminAuditLog.findMany({ where: { action: 'RESOLVE_MISSING_PERSON' } });
+    const audit = await prisma.adminAuditLog.findMany({
+      where: { action: 'RESOLVE_MISSING_PERSON' },
+    });
     expect(audit).toHaveLength(1);
     expect(audit[0].metadata).toMatchObject({ linkedinSlug: 'casey-nguyen', resolution: 'ADDED' });
 
@@ -163,7 +173,11 @@ describe('admin sourcing queues', () => {
     // slug matches a PENDING row flips it (see databaseImportService).
     const { processImportBatch } = await import('../services/databaseImportService.js');
     const admin = await prisma.superAdmin.create({
-      data: { email: 'importer@datapit.io', passwordHash: await hashPassword('x'.repeat(12)), name: 'Importer' },
+      data: {
+        email: 'importer@datapit.io',
+        passwordHash: await hashPassword('x'.repeat(12)),
+        name: 'Importer',
+      },
     });
     const batch = await prisma.databaseImportBatch.create({
       data: { filename: 'test.csv', status: 'PROCESSING', totalRows: 1, uploadedById: admin.id },

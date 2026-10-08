@@ -37,7 +37,10 @@ const COMPANY_SORTS = {
   relevance: [{ _score: 'desc' }, { 'name.keyword': 'asc' }],
   name_asc: [{ 'name.keyword': 'asc' }],
   name_desc: [{ 'name.keyword': 'desc' }],
-  headcount_desc: [{ headcountMin: { order: 'desc', missing: '_last' } }, { 'name.keyword': 'asc' }],
+  headcount_desc: [
+    { headcountMin: { order: 'desc', missing: '_last' } },
+    { 'name.keyword': 'asc' },
+  ],
   newest: [{ createdAt: 'desc' }],
 };
 
@@ -293,7 +296,12 @@ export async function searchPeople({
     page,
     pageSize,
     facets: {
-      ...extractTermFacets(result.aggregations, ['seniority', 'department', 'industry', 'location']),
+      ...extractTermFacets(result.aggregations, [
+        'seniority',
+        'department',
+        'industry',
+        'location',
+      ]),
       emailStatus: extractKeyedFacet(
         result.aggregations?.emailStatus,
         Object.keys(EMAIL_STATUS_QUERIES),

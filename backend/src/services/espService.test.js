@@ -22,7 +22,9 @@ describe('espService.sendEmail', () => {
     env.ESP_FROM_EMAIL = 'sender@example.com';
     const fetchMock = vi
       .fn()
-      .mockResolvedValue(new Response(null, { status: 202, headers: { 'X-Message-Id': 'sg-abc123' } }));
+      .mockResolvedValue(
+        new Response(null, { status: 202, headers: { 'X-Message-Id': 'sg-abc123' } }),
+      );
     vi.stubGlobal('fetch', fetchMock);
 
     const result = await sendEmail({ to: 'a@b.com', subject: 'Hi', body: 'Body' });
@@ -52,9 +54,9 @@ describe('espService.sendEmail', () => {
     env.ESP_FROM_EMAIL = 'sender@example.com';
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(
-        new Response('{"errors":[{"message":"bad request"}]}', { status: 400 }),
-      ),
+      vi
+        .fn()
+        .mockResolvedValue(new Response('{"errors":[{"message":"bad request"}]}', { status: 400 })),
     );
 
     await expect(sendEmail({ to: 'a@b.com', subject: 'Hi', body: 'Body' })).rejects.toThrow(/400/);

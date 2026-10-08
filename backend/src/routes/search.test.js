@@ -330,7 +330,9 @@ describe('search API', () => {
       const peopleOnly = await request(app)
         .get('/api/v1/search/saved?type=PEOPLE')
         .set('Authorization', `Bearer ${accessToken}`);
-      expect(peopleOnly.body.savedSearches.map((s) => s.name)).toEqual(['Finance leaders, Germany']);
+      expect(peopleOnly.body.savedSearches.map((s) => s.name)).toEqual([
+        'Finance leaders, Germany',
+      ]);
 
       const all = await request(app)
         .get('/api/v1/search/saved')
@@ -416,7 +418,7 @@ describe('search API', () => {
       expect(res.body.company.contacts[0].email).not.toBe('jordan.bennett@novasystems.com');
     });
 
-    it('reflects this workspace\'s reveal status on the contact list', async () => {
+    it("reflects this workspace's reveal status on the contact list", async () => {
       const { nova, contact } = await seedFixtures();
       const { accessToken, workspaceId } = await registerAndLogin('Acme', 'owner@acme.test');
 
@@ -424,9 +426,8 @@ describe('search API', () => {
         data: {
           workspaceId,
           contactId: contact.id,
-          revealedById: (
-            await prisma.membership.findFirstOrThrow({ where: { workspaceId } })
-          ).userId,
+          revealedById: (await prisma.membership.findFirstOrThrow({ where: { workspaceId } }))
+            .userId,
         },
       });
 
@@ -463,7 +464,10 @@ describe('search API', () => {
 
     it('charges once for the first view and nothing for a repeat view', async () => {
       const { nova } = await seedFixtures();
-      const { accessToken, workspaceId, userId } = await registerAndLogin('Acme', 'owner@acme.test');
+      const { accessToken, workspaceId, userId } = await registerAndLogin(
+        'Acme',
+        'owner@acme.test',
+      );
       const before = await getBalance(userId);
 
       const first = await request(app)
@@ -482,7 +486,10 @@ describe('search API', () => {
         where: { workspaceId, delta: { lt: 0 } },
       });
       expect(ledger).toHaveLength(1);
-      expect(ledger[0]).toMatchObject({ delta: -CREDIT_COSTS.COMPANY_DETAIL_VIEW, reason: 'COMPANY_VIEW' });
+      expect(ledger[0]).toMatchObject({
+        delta: -CREDIT_COSTS.COMPANY_DETAIL_VIEW,
+        reason: 'COMPANY_VIEW',
+      });
 
       const views = await prisma.companyDetailView.findMany({ where: { workspaceId } });
       expect(views).toHaveLength(1);
@@ -490,7 +497,10 @@ describe('search API', () => {
 
     it('rejects with 402 and charges nothing when the workspace is out of credits', async () => {
       const { nova } = await seedFixtures();
-      const { accessToken, workspaceId, userId } = await registerAndLogin('Acme', 'owner@acme.test');
+      const { accessToken, workspaceId, userId } = await registerAndLogin(
+        'Acme',
+        'owner@acme.test',
+      );
       await redis.set(`credits:balance:user:${userId}`, 0);
 
       const res = await request(app)
@@ -541,9 +551,13 @@ describe('search API', () => {
 
       expect(res.status).toBe(200);
       expect(res.headers['content-type']).toMatch(/text\/csv/);
-      expect(res.headers['content-disposition']).toMatch(/attachment; filename="datapit-companies\.csv"/);
+      expect(res.headers['content-disposition']).toMatch(
+        /attachment; filename="datapit-companies\.csv"/,
+      );
       const lines = res.text.trim().split('\r\n');
-      expect(lines[0]).toBe('Name,Domain,Industry,Headcount Min,Headcount Max,Location,Tech Stack,LinkedIn');
+      expect(lines[0]).toBe(
+        'Name,Domain,Industry,Headcount Min,Headcount Max,Location,Tech Stack,LinkedIn',
+      );
       expect(lines).toHaveLength(2); // header + Nova Systems only
       expect(lines[1]).toContain('Nova Systems');
     });
@@ -581,7 +595,10 @@ describe('search API', () => {
 
     it('charges CSV_EXPORT credits per export, every time (no idempotency)', async () => {
       await seedFixtures();
-      const { accessToken, workspaceId, userId } = await registerAndLogin('Acme', 'owner@acme.test');
+      const { accessToken, workspaceId, userId } = await registerAndLogin(
+        'Acme',
+        'owner@acme.test',
+      );
       const before = await getBalance(userId);
 
       await request(app)
@@ -600,7 +617,10 @@ describe('search API', () => {
 
     it('rejects with 402 and produces no CSV when the workspace is out of credits', async () => {
       await seedFixtures();
-      const { accessToken, workspaceId, userId } = await registerAndLogin('Acme', 'owner@acme.test');
+      const { accessToken, workspaceId, userId } = await registerAndLogin(
+        'Acme',
+        'owner@acme.test',
+      );
       await redis.set(`credits:balance:user:${userId}`, 0);
 
       const res = await request(app)

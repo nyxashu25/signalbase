@@ -83,7 +83,9 @@ export function Login() {
 
           {pendingEmail ? (
             <>
-              <p className="mt-3 text-sm text-text-muted">Check your email to confirm your account</p>
+              <p className="mt-3 text-sm text-text-muted">
+                Check your email to confirm your account
+              </p>
               <p className="mt-4 text-sm leading-relaxed text-text-muted">
                 We sent a confirm link to <strong className="text-text">{pendingEmail}</strong>.
                 Click it to activate your workspace and sign in.
@@ -95,7 +97,7 @@ export function Login() {
                 onClick={() => resendVerification({ email: pendingEmail })}
               >
                 {resendState.isSuccess
-                  ? "Sent — check your inbox"
+                  ? 'Sent — check your inbox'
                   : resendState.isLoading
                     ? 'Sending…'
                     : "Didn't get it? Resend the email"}
@@ -143,7 +145,7 @@ export function Login() {
                     onClick={() => resendVerification({ email: form.email })}
                   >
                     {resendState.isSuccess
-                      ? "Sent — check your inbox"
+                      ? 'Sent — check your inbox'
                       : resendState.isLoading
                         ? 'Sending…'
                         : 'Resend verification email'}

@@ -28,7 +28,10 @@ export function ForgotPassword() {
                 If an account exists for <strong className="text-text">{email}</strong>, we&rsquo;ve
                 sent it a link to choose a new password. The link works once and expires in an hour.
               </p>
-              <Link to="/login" className="mt-5 block text-sm font-medium text-primary hover:underline">
+              <Link
+                to="/login"
+                className="mt-5 block text-sm font-medium text-primary hover:underline"
+              >
                 Back to sign in
               </Link>
             </>
@@ -63,7 +66,10 @@ export function ForgotPassword() {
                   {isLoading ? 'Sending…' : 'Send reset link'}
                 </button>
               </form>
-              <Link to="/login" className="mt-4 block text-sm font-medium text-primary hover:underline">
+              <Link
+                to="/login"
+                className="mt-4 block text-sm font-medium text-primary hover:underline"
+              >
                 Back to sign in
               </Link>
             </>

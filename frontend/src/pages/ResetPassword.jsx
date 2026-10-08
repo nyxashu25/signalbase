@@ -44,7 +44,10 @@ export function ResetPassword() {
           ) : !token ? (
             <>
               <p className="mt-4 text-sm text-red-600">Missing reset link</p>
-              <Link to="/forgot-password" className="mt-4 block text-sm font-medium text-primary hover:underline">
+              <Link
+                to="/forgot-password"
+                className="mt-4 block text-sm font-medium text-primary hover:underline"
+              >
                 Request a new reset link
               </Link>
             </>
@@ -79,7 +82,8 @@ export function ResetPassword() {
                 {mismatch && <p className="text-sm text-red-600">Passwords don&rsquo;t match.</p>}
                 {error && (
                   <p className="text-sm text-red-600">
-                    {error.data?.error?.message || 'Could not reset the password. Please try again.'}
+                    {error.data?.error?.message ||
+                      'Could not reset the password. Please try again.'}
                   </p>
                 )}
                 <button

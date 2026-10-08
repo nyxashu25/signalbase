@@ -23,7 +23,9 @@ export function SettingsSecurity() {
   const mismatch = form.confirm.length > 0 && form.next !== form.confirm;
   const tooShort = form.next.length > 0 && form.next.length < MIN_LENGTH;
   const canSubmit =
-    form.next.length >= MIN_LENGTH && form.next === form.confirm && (!hasPassword || form.current.length > 0);
+    form.next.length >= MIN_LENGTH &&
+    form.next === form.confirm &&
+    (!hasPassword || form.current.length > 0);
 
   function set(key) {
     return (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
@@ -39,7 +41,10 @@ export function SettingsSecurity() {
       }).unwrap();
       dispatch(updateUser(result.user));
       setForm({ current: '', next: '', confirm: '' });
-      toast.success(hasPassword ? 'Password changed' : 'Password set', 'Use it the next time you sign in.');
+      toast.success(
+        hasPassword ? 'Password changed' : 'Password set',
+        'Use it the next time you sign in.',
+      );
     } catch (err) {
       setError(err.data?.error?.message || 'Could not change password. Please try again.');
     }
@@ -56,7 +61,13 @@ export function SettingsSecurity() {
               : 'You signed up with Google. Setting a password gives you a second way in.'
           }
           footer={
-            <Button type="submit" variant="primary" icon={KeyRound} loading={isLoading} disabled={!canSubmit}>
+            <Button
+              type="submit"
+              variant="primary"
+              icon={KeyRound}
+              loading={isLoading}
+              disabled={!canSubmit}
+            >
               {hasPassword ? 'Change password' : 'Set password'}
             </Button>
           }
@@ -98,7 +109,10 @@ export function SettingsSecurity() {
         </SettingsSection>
       </form>
 
-      <SettingsSection title="Connected accounts" description="Other ways to sign in to this account.">
+      <SettingsSection
+        title="Connected accounts"
+        description="Other ways to sign in to this account."
+      >
         <SettingRow
           title="Google"
           description={
@@ -113,7 +127,9 @@ export function SettingsSecurity() {
         </SettingRow>
         <SettingRow
           title="Email & password"
-          description={hasPassword ? 'A password is set on this account.' : 'No password yet — set one above.'}
+          description={
+            hasPassword ? 'A password is set on this account.' : 'No password yet — set one above.'
+          }
           className="border-t border-border"
         >
           <StatusPill tone={hasPassword ? 'success' : 'neutral'} dot>

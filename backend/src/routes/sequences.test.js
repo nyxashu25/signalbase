@@ -500,7 +500,12 @@ describe('GET /sequences/analytics (workspace roll-up)', () => {
     expect(res.body.analytics.rates.openRate).toBe(0);
     expect(res.body.analytics.enrollments).toEqual({ total: 0, active: 0 });
     expect(res.body.analytics.sequences).toHaveLength(1);
-    expect(res.body.analytics.sequences[0]).toMatchObject({ name: 'Q3 push', status: 'DRAFT', enrolled: 0, SENT: 0 });
+    expect(res.body.analytics.sequences[0]).toMatchObject({
+      name: 'Q3 push',
+      status: 'DRAFT',
+      enrolled: 0,
+      SENT: 0,
+    });
   });
 
   it('is workspace-isolated and needs auth', async () => {

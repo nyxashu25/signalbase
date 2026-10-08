@@ -235,7 +235,7 @@ describe('list items', () => {
     expect(showRes.body.list.items).toHaveLength(0);
   });
 
-  it('org B cannot add to or remove from org A\'s list', async () => {
+  it("org B cannot add to or remove from org A's list", async () => {
     const orgA = await registerOrg('Org A', 'owner@org-a.test');
     const orgB = await registerOrg('Org B', 'owner@org-b.test');
     const contact = await seedContact();

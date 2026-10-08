@@ -134,7 +134,10 @@ function buildContacts(company, companyIndex) {
       emailVerified: false,
       // Roughly two in three contacts carry a (fake, 555-prefixed) direct
       // line so the phone column has something to mask and reveal.
-      phone: (companyIndex + j) % 3 === 2 ? null : `+1 415 555 ${String(1000 + ((companyIndex * 7 + j * 13) % 9000)).padStart(4, '0')}`,
+      phone:
+        (companyIndex + j) % 3 === 2
+          ? null
+          : `+1 415 555 ${String(1000 + ((companyIndex * 7 + j * 13) % 9000)).padStart(4, '0')}`,
       linkedinUrl: `https://www.linkedin.com/in/${firstName.toLowerCase()}-${lastName.toLowerCase()}`,
       // Kept in step with linkedinUrl above — this is what the Chrome
       // extension matches profile visits against (utils/linkedin.js).

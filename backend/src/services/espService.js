@@ -18,7 +18,9 @@ export async function sendEmail({ to, subject, body }) {
   }
 
   if (!env.ESP_FROM_EMAIL) {
-    throw new Error('ESP_API_KEY is set but ESP_FROM_EMAIL is not — SendGrid requires a verified sender');
+    throw new Error(
+      'ESP_API_KEY is set but ESP_FROM_EMAIL is not — SendGrid requires a verified sender',
+    );
   }
 
   const res = await fetch(SENDGRID_ENDPOINT, {

@@ -61,7 +61,11 @@ const apolloOnly = [
   'intent data',
   'CRM integrations',
 ].filter(Boolean);
-const heroOnly = [!LIVE.sequenceSending && 'email sequences', 'a dialer', 'CRM integrations'].filter(Boolean);
+const heroOnly = [
+  !LIVE.sequenceSending && 'email sequences',
+  'a dialer',
+  'CRM integrations',
+].filter(Boolean);
 
 const emailCell = LIVE.emailVerification
   ? `${CREDIT_COSTS.REVEAL} credits a reveal, or ${CREDIT_COSTS.EXTENSION_REVEAL} from the extension. Where no email is on file, DataPit suggests a first.last address, checked by a verifier.`
@@ -154,7 +158,11 @@ export default {
           LIVE.sequenceSending ? 'Yes, on paid plans' : 'Not yet',
           `${APOLLO.free.sequences} per team on Free; unlimited on paid plans`,
         ],
-        ['Dialer', 'No', `US dialer on paid plans, at ${APOLLO.credits.dialerMinute} credits a minute`],
+        [
+          'Dialer',
+          'No',
+          `US dialer on paid plans, at ${APOLLO.credits.dialerMinute} credits a minute`,
+        ],
         ['CRM integrations', 'Not yet', 'Salesforce, HubSpot and Pipedrive, on every plan'],
         [
           'API',
@@ -246,22 +254,66 @@ export default {
     {
       type: 'related',
       items: [
-        { label: 'ZoomInfo alternative', to: '/alternatives/zoominfo', text: 'DataPit and ZoomInfo compared.' },
-        { label: 'Lusha alternative', to: '/alternatives/lusha', text: 'DataPit and Lusha compared.' },
-        { label: 'Hunter alternative', to: '/alternatives/hunter', text: 'DataPit and Hunter compared.' },
-        { label: 'Pricing', to: '/pricing', text: `A free plan, and seat blocks from $${BASIC.price} a month.` },
+        {
+          label: 'ZoomInfo alternative',
+          to: '/alternatives/zoominfo',
+          text: 'DataPit and ZoomInfo compared.',
+        },
+        {
+          label: 'Lusha alternative',
+          to: '/alternatives/lusha',
+          text: 'DataPit and Lusha compared.',
+        },
+        {
+          label: 'Hunter alternative',
+          to: '/alternatives/hunter',
+          text: 'DataPit and Hunter compared.',
+        },
+        {
+          label: 'Pricing',
+          to: '/pricing',
+          text: `A free plan, and seat blocks from $${BASIC.price} a month.`,
+        },
       ],
     },
     {
       type: 'sources',
       items: [
-        { label: 'Apollo.io pricing (plans, credits, add-ons and plan features)', url: 'https://www.apollo.io/pricing', checked: CHECKED },
-        { label: 'Apollo.io homepage (database size claim)', url: 'https://www.apollo.io/', checked: CHECKED },
-        { label: 'Apollo.io Chrome extension', url: 'https://www.apollo.io/product/chrome-extension', checked: CHECKED },
-        { label: 'Apollo.io Sales Engagement (call recording, meeting scheduling)', url: 'https://www.apollo.io/product/sales-engagement', checked: CHECKED },
-        { label: 'Apollo.io Waterfall Enrichment', url: 'https://www.apollo.io/product/waterfall', checked: CHECKED },
-        { label: 'Apollo.io Knowledge Base: Buying Intent Overview', url: 'https://knowledge.apollo.io/hc/en-us/articles/8047704465933-Buying-Intent-Overview', checked: CHECKED },
-        { label: 'Apollo.io API docs: Rate Limits', url: 'https://docs.apollo.io/reference/rate-limits', checked: CHECKED },
+        {
+          label: 'Apollo.io pricing (plans, credits, add-ons and plan features)',
+          url: 'https://www.apollo.io/pricing',
+          checked: CHECKED,
+        },
+        {
+          label: 'Apollo.io homepage (database size claim)',
+          url: 'https://www.apollo.io/',
+          checked: CHECKED,
+        },
+        {
+          label: 'Apollo.io Chrome extension',
+          url: 'https://www.apollo.io/product/chrome-extension',
+          checked: CHECKED,
+        },
+        {
+          label: 'Apollo.io Sales Engagement (call recording, meeting scheduling)',
+          url: 'https://www.apollo.io/product/sales-engagement',
+          checked: CHECKED,
+        },
+        {
+          label: 'Apollo.io Waterfall Enrichment',
+          url: 'https://www.apollo.io/product/waterfall',
+          checked: CHECKED,
+        },
+        {
+          label: 'Apollo.io Knowledge Base: Buying Intent Overview',
+          url: 'https://knowledge.apollo.io/hc/en-us/articles/8047704465933-Buying-Intent-Overview',
+          checked: CHECKED,
+        },
+        {
+          label: 'Apollo.io API docs: Rate Limits',
+          url: 'https://docs.apollo.io/reference/rate-limits',
+          checked: CHECKED,
+        },
         { label: 'Apollo.io Trust Center', url: 'https://trust.apollo.io/', checked: CHECKED },
       ],
     },

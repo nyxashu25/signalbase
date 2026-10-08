@@ -51,7 +51,12 @@ export function MarketingNav() {
     <header className="sticky top-0 z-40 px-3 pt-3 sm:px-5" style={DARK_CHROME}>
       <div className="mx-auto max-w-[1280px] rounded-xl border border-white/10 bg-ink-950/75 shadow-[0_18px_50px_rgba(17,0,25,0.45)] backdrop-blur-xl">
         <div className="flex h-16 items-center justify-between px-4 sm:px-6">
-          <Link to="/" onClick={() => setMenuOpen(false)} onMouseEnter={() => prefetch('/')} className="flex items-center">
+          <Link
+            to="/"
+            onClick={() => setMenuOpen(false)}
+            onMouseEnter={() => prefetch('/')}
+            className="flex items-center"
+          >
             <img src="/logos/datapit-logo-dark.svg" alt="DataPit" className="h-11" />
           </Link>
 
@@ -114,11 +119,25 @@ export function MarketingNav() {
               className="rounded-md p-1.5 text-ink-300 hover:bg-white/5 hover:text-white md:hidden"
             >
               {menuOpen ? (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
                 </svg>
               ) : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" />
                 </svg>
               )}

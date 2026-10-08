@@ -28,11 +28,7 @@ export async function createInvite(req, res) {
 }
 
 export async function bulkInvite(req, res) {
-  const result = await workspaceService.bulkInvite(
-    req.auth.workspaceId,
-    req.auth.userId,
-    req.body,
-  );
+  const result = await workspaceService.bulkInvite(req.auth.workspaceId, req.auth.userId, req.body);
   res.status(201).json(result);
 }
 

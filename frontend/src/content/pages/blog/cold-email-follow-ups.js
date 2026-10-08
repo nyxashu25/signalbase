@@ -2,8 +2,10 @@ import { CREDIT_COSTS, DATAPIT_SUMMARY, LIVE, formatCount } from '../../../data/
 import { FREE_PLAN_MONTHLY_CREDITS, PLANS } from '../../../data/plans.js';
 
 const YAHOO_SENDERS = 'https://senders.yahooinc.com/best-practices/';
-const APPLE_MAIL_PRIVACY = 'https://support.apple.com/guide/mail/protect-email-privacy-mlhlp1205/mac';
-const FTC_CAN_SPAM = 'https://www.ftc.gov/business-guidance/resources/can-spam-act-compliance-guide-business';
+const APPLE_MAIL_PRIVACY =
+  'https://support.apple.com/guide/mail/protect-email-privacy-mlhlp1205/mac';
+const FTC_CAN_SPAM =
+  'https://www.ftc.gov/business-guidance/resources/can-spam-act-compliance-guide-business';
 const EC_OBJECT =
   'https://commission.europa.eu/law/law-topic/data-protection/information-business-and-organisations/dealing-requests-individuals_en';
 const ICO_EMAIL =
@@ -244,24 +246,53 @@ export default {
     {
       type: 'related',
       items: [
-        { label: 'Cold email templates', to: '/blog/cold-email-templates', text: 'Eight first-touch templates, and the legal basics every email needs.' },
-        { label: 'How to verify an email address', to: '/blog/how-to-verify-an-email-address', text: 'Check an address before you send to it.' },
-        { label: 'Email finder', to: '/features/email-finder', text: 'Reveal work email addresses in DataPit.' },
-        { label: 'Pricing', to: '/pricing', text: `A free plan, and seat blocks from $${LOWEST_PAID_PRICE} a month.` },
+        {
+          label: 'Cold email templates',
+          to: '/blog/cold-email-templates',
+          text: 'Eight first-touch templates, and the legal basics every email needs.',
+        },
+        {
+          label: 'How to verify an email address',
+          to: '/blog/how-to-verify-an-email-address',
+          text: 'Check an address before you send to it.',
+        },
+        {
+          label: 'Email finder',
+          to: '/features/email-finder',
+          text: 'Reveal work email addresses in DataPit.',
+        },
+        {
+          label: 'Pricing',
+          to: '/pricing',
+          text: `A free plan, and seat blocks from $${LOWEST_PAID_PRICE} a month.`,
+        },
       ],
     },
     {
       type: 'sources',
       items: [
         { label: 'Yahoo Sender Hub: Sender best practices', url: YAHOO_SENDERS, checked: CHECKED },
-        { label: 'Apple Support: Protect email privacy in Mail on Mac', url: APPLE_MAIL_PRIVACY, checked: CHECKED },
-        { label: 'Federal Trade Commission: CAN-SPAM Act, a compliance guide for business', url: FTC_CAN_SPAM, checked: CHECKED },
         {
-          label: 'European Commission: Dealing with requests from individuals (objections to processing)',
+          label: 'Apple Support: Protect email privacy in Mail on Mac',
+          url: APPLE_MAIL_PRIVACY,
+          checked: CHECKED,
+        },
+        {
+          label: 'Federal Trade Commission: CAN-SPAM Act, a compliance guide for business',
+          url: FTC_CAN_SPAM,
+          checked: CHECKED,
+        },
+        {
+          label:
+            'European Commission: Dealing with requests from individuals (objections to processing)',
           url: EC_OBJECT,
           checked: CHECKED,
         },
-        { label: 'Information Commissioner’s Office: Electronic mail marketing', url: ICO_EMAIL, checked: CHECKED },
+        {
+          label: 'Information Commissioner’s Office: Electronic mail marketing',
+          url: ICO_EMAIL,
+          checked: CHECKED,
+        },
       ],
     },
   ],

@@ -29,7 +29,18 @@ import { Terms } from '../../pages/marketing/Terms.jsx';
 import { renderWithProviders, mockFetchRoutes } from '../../test/testUtils.jsx';
 import { LIVE } from '../../data/facts.js';
 
-const KNOWN_STATIONS = ['mark', 'tunnel', 'reveal', 'sequence', 'ledger', 'lens', 'crystals', 'city', 'blocks', 'drift'];
+const KNOWN_STATIONS = [
+  'mark',
+  'tunnel',
+  'reveal',
+  'sequence',
+  'ledger',
+  'lens',
+  'crystals',
+  'city',
+  'blocks',
+  'drift',
+];
 
 function resetWorld() {
   setWorldState({ active: false, ready: false });
@@ -413,7 +424,9 @@ describe('IntroOverlay', () => {
     setWorldHandle({ intro });
     const { container } = render(<IntroOverlay />);
     act(() => setWorldState({ active: true }));
-    expect(screen.getByRole('progressbar', { name: 'Loading the DataPit world' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('progressbar', { name: 'Loading the DataPit world' }),
+    ).toBeInTheDocument();
     expect(screen.getByText('Descending into the pit')).toBeInTheDocument();
     expect(window.sessionStorage.getItem('dp-intro-seen')).toBe('1');
 
@@ -421,7 +434,6 @@ describe('IntroOverlay', () => {
     await waitFor(() => expect(intro).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(container).toBeEmptyDOMElement(), { timeout: 2000 });
   });
-
 });
 
 describe('StoryCover', () => {
@@ -443,11 +455,17 @@ describe('StoryCover', () => {
         eyebrow="Test"
         lines={[
           { content: 'Find work' },
-          { content: <span className="bg-gradient-brand bg-clip-text text-transparent">emails.</span> },
+          {
+            content: (
+              <span className="bg-gradient-brand bg-clip-text text-transparent">emails.</span>
+            ),
+          },
         ]}
       />,
     );
-    expect(screen.getByRole('heading', { level: 1, name: 'Find work emails.' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Find work emails.' }),
+    ).toBeInTheDocument();
     const h1 = container.querySelector('h1');
     expect(h1.querySelectorAll('[aria-label]')).toHaveLength(0);
     for (const line of h1.querySelectorAll('[data-line]')) {
@@ -514,7 +532,9 @@ describe('StoryCover', () => {
 
   it('gives other cover stations a same-size spacer without the grab area', () => {
     setWorldState({ active: true, ready: true });
-    const { container } = render(<StoryCover eyebrow="Test" lines={lines} station="blocks" side={-1} />);
+    const { container } = render(
+      <StoryCover eyebrow="Test" lines={lines} station="blocks" side={-1} />,
+    );
     const section = container.querySelector('[data-chapter]');
     expect(section).toHaveAttribute('data-station', 'blocks');
     expect(section).toHaveAttribute('data-station-side', '-1');
@@ -547,7 +567,22 @@ describe('page stations', () => {
   const sequence = LIVE.sequenceSending ? ['sequence'] : [];
 
   it.each([
-    ['Home', Home, ['mark', 'tunnel', 'reveal', ...sequence, 'ledger', 'drift', 'drift', 'city', 'drift', 'mark']],
+    [
+      'Home',
+      Home,
+      [
+        'mark',
+        'tunnel',
+        'reveal',
+        ...sequence,
+        'ledger',
+        'drift',
+        'drift',
+        'city',
+        'drift',
+        'mark',
+      ],
+    ],
     ['Product', Product, ['mark', 'lens', 'reveal', ...sequence, 'ledger', 'drift', 'tunnel']],
     ['Solutions', Solutions, ['crystals', 'city', 'mark']],
     ['Pricing', Pricing, ['blocks', 'drift', 'ledger', 'drift', 'mark']],

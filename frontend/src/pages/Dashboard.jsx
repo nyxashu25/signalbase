@@ -125,7 +125,9 @@ export function Dashboard() {
 
       <InstallExtensionCard />
 
-      {view === 'getting-started' && <GettingStarted progress={progress} isLoading={loadingProgress} />}
+      {view === 'getting-started' && (
+        <GettingStarted progress={progress} isLoading={loadingProgress} />
+      )}
       {view === 'overview' && <Overview />}
       {view === 'tools' && (
         <div className="max-w-2xl">
@@ -278,7 +280,9 @@ function StatTile({ to, icon: Icon, label, hint, value, loading = false }) {
       {loading ? (
         <Skeleton className="mt-3 h-8 w-16" />
       ) : (
-        <p className="mt-2 text-3xl font-extrabold tabular-nums tracking-tight text-text">{value ?? '—'}</p>
+        <p className="mt-2 text-3xl font-extrabold tabular-nums tracking-tight text-text">
+          {value ?? '—'}
+        </p>
       )}
     </Card>
   );

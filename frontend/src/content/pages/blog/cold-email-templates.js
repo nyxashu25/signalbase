@@ -1,7 +1,8 @@
 import { DATAPIT_SUMMARY, formatCount } from '../../../data/facts.js';
 import { FREE_PLAN_MONTHLY_CREDITS } from '../../../data/plans.js';
 
-const FTC_CAN_SPAM = 'https://www.ftc.gov/business-guidance/resources/can-spam-act-compliance-guide-business';
+const FTC_CAN_SPAM =
+  'https://www.ftc.gov/business-guidance/resources/can-spam-act-compliance-guide-business';
 const EC_THIRD_PARTY =
   'https://commission.europa.eu/law/law-topic/data-protection/information-business-and-organisations/legal-grounds-processing-data/can-data-received-third-party-be-used-marketing_en';
 const EC_OBJECT =
@@ -290,28 +291,57 @@ export default {
     {
       type: 'related',
       items: [
-        { label: 'Cold email follow-ups', to: '/blog/cold-email-follow-ups', text: 'How many to send, how far apart and what to say.' },
+        {
+          label: 'Cold email follow-ups',
+          to: '/blog/cold-email-follow-ups',
+          text: 'How many to send, how far apart and what to say.',
+        },
         {
           label: 'How to find someone’s email address',
           to: '/blog/how-to-find-someones-email-address',
           text: 'Ways to find a work email before you write.',
         },
-        { label: 'How to verify an email address', to: '/blog/how-to-verify-an-email-address', text: 'Check an address before you send to it.' },
-        { label: 'Free email verifier', to: '/tools/email-verifier', text: 'Check an address’s format, domain and MX records.' },
+        {
+          label: 'How to verify an email address',
+          to: '/blog/how-to-verify-an-email-address',
+          text: 'Check an address before you send to it.',
+        },
+        {
+          label: 'Free email verifier',
+          to: '/tools/email-verifier',
+          text: 'Check an address’s format, domain and MX records.',
+        },
       ],
     },
     {
       type: 'sources',
       items: [
-        { label: 'Federal Trade Commission: CAN-SPAM Act, a compliance guide for business', url: FTC_CAN_SPAM, checked: CHECKED },
-        { label: 'European Commission: Application of the GDPR', url: EC_GDPR_SCOPE, checked: CHECKED },
-        { label: 'European Commission: Can data received from a third party be used for marketing?', url: EC_THIRD_PARTY, checked: CHECKED },
         {
-          label: 'European Commission: Dealing with requests from individuals (objections to processing)',
+          label: 'Federal Trade Commission: CAN-SPAM Act, a compliance guide for business',
+          url: FTC_CAN_SPAM,
+          checked: CHECKED,
+        },
+        {
+          label: 'European Commission: Application of the GDPR',
+          url: EC_GDPR_SCOPE,
+          checked: CHECKED,
+        },
+        {
+          label: 'European Commission: Can data received from a third party be used for marketing?',
+          url: EC_THIRD_PARTY,
+          checked: CHECKED,
+        },
+        {
+          label:
+            'European Commission: Dealing with requests from individuals (objections to processing)',
           url: EC_OBJECT,
           checked: CHECKED,
         },
-        { label: 'Information Commissioner’s Office: Electronic mail marketing', url: ICO_EMAIL, checked: CHECKED },
+        {
+          label: 'Information Commissioner’s Office: Electronic mail marketing',
+          url: ICO_EMAIL,
+          checked: CHECKED,
+        },
       ],
     },
   ],

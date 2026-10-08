@@ -166,8 +166,8 @@ export function AdminUserDetail() {
             Adjust personal credits
           </p>
           <p className="mt-1 text-xs text-ink-300">
-            Add grants, Remove deducts (never below zero), Set moves the balance to an exact
-            figure — every change lands in the ledger as an ADJUSTMENT and in the audit log.
+            Add grants, Remove deducts (never below zero), Set moves the balance to an exact figure
+            — every change lands in the ledger as an ADJUSTMENT and in the audit log.
           </p>
           <form onSubmit={handleAdjustCredits} className="mt-3 flex gap-2">
             <select
@@ -176,9 +176,15 @@ export function AdminUserDetail() {
               aria-label="Adjustment mode"
               className="h-10 rounded-md border border-white/15 bg-white/5 px-2 text-sm text-white outline-none focus:border-neon-violet"
             >
-              <option value="add" className="bg-ink-900">Add</option>
-              <option value="remove" className="bg-ink-900">Remove</option>
-              <option value="set" className="bg-ink-900">Set to</option>
+              <option value="add" className="bg-ink-900">
+                Add
+              </option>
+              <option value="remove" className="bg-ink-900">
+                Remove
+              </option>
+              <option value="set" className="bg-ink-900">
+                Set to
+              </option>
             </select>
             <input
               type="number"

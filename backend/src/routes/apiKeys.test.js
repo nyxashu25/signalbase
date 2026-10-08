@@ -84,7 +84,9 @@ describe('api keys: lifecycle', () => {
     const org = await registerOrg('Acme', 'owner@acme.test');
     const created = (await createKey(org.accessToken)).body;
 
-    await expect(authenticateApiKey('dpk_' + '0'.repeat(40))).rejects.toMatchObject({ statusCode: 401 });
+    await expect(authenticateApiKey('dpk_' + '0'.repeat(40))).rejects.toMatchObject({
+      statusCode: 401,
+    });
     await expect(authenticateApiKey('not-a-key')).rejects.toMatchObject({ statusCode: 401 });
     // Right prefix, wrong secret tail
     const tampered = created.key.slice(0, 12) + 'f'.repeat(40 - 8);
@@ -103,7 +105,7 @@ describe('api keys: lifecycle', () => {
     expect(list.body.keys).toHaveLength(0);
   });
 
-  it('a suspended user\'s key stops working', async () => {
+  it("a suspended user's key stops working", async () => {
     const org = await registerOrg('Acme', 'owner@acme.test');
     const { key } = (await createKey(org.accessToken)).body;
 
@@ -111,7 +113,7 @@ describe('api keys: lifecycle', () => {
     await expect(authenticateApiKey(key)).rejects.toMatchObject({ statusCode: 403 });
   });
 
-  it('cannot revoke another user\'s key', async () => {
+  it("cannot revoke another user's key", async () => {
     const a = await registerOrg('Acme', 'owner@acme.test');
     const b = await registerOrg('Globex', 'owner@globex.test');
     const created = (await createKey(a.accessToken)).body;

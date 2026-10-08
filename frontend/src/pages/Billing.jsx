@@ -126,7 +126,9 @@ export function Billing() {
   // personal.
   const totalEver = (summary?.balance ?? 0) + (summary?.creditsUsed ?? 0);
   const usedPct =
-    summary && totalEver > 0 ? Math.min(100, Math.round((summary.creditsUsed / totalEver) * 100)) : 0;
+    summary && totalEver > 0
+      ? Math.min(100, Math.round((summary.creditsUsed / totalEver) * 100))
+      : 0;
 
   return (
     <div>
@@ -143,7 +145,10 @@ export function Billing() {
       {/* Plan overview */}
       <Card className="p-5">
         <div className="grid grid-cols-2 gap-6 md:grid-cols-5">
-          <Metric label="Current plan" hint="Change plans below — upgrades apply immediately. Paid plans come in seat blocks (paid + free seats); every teammate earns their own monthly credits.">
+          <Metric
+            label="Current plan"
+            hint="Change plans below — upgrades apply immediately. Paid plans come in seat blocks (paid + free seats); every teammate earns their own monthly credits."
+          >
             <span className="text-2xl font-extrabold text-text">{currentPlan?.name ?? '—'}</span>
             {summary?.blocks > 0 && (
               <span className="ml-2 text-xs font-medium text-text-muted">
@@ -159,7 +164,10 @@ export function Billing() {
               </span>
             )}
           </Metric>
-          <Metric label="Your balance" hint="Your personal credits, available right now — every teammate has their own balance.">
+          <Metric
+            label="Your balance"
+            hint="Your personal credits, available right now — every teammate has their own balance."
+          >
             <span className="text-2xl font-extrabold tabular-nums text-text">
               {summary?.balance ?? '—'}
             </span>
@@ -170,8 +178,8 @@ export function Billing() {
           >
             {summary?.capacity ? (
               <span className="text-base font-bold tabular-nums text-text">
-                {summary.assigned.paid}/{summary.capacity.paid} paid ·{' '}
-                {summary.assigned.free}/{summary.capacity.free} free
+                {summary.assigned.paid}/{summary.capacity.paid} paid · {summary.assigned.free}/
+                {summary.capacity.free} free
               </span>
             ) : (
               <span className="text-base font-bold text-text">—</span>
@@ -182,7 +190,10 @@ export function Billing() {
               </span>
             )}
           </Metric>
-          <Metric label="Used this cycle" hint="Credits you personally spent since your last grant.">
+          <Metric
+            label="Used this cycle"
+            hint="Credits you personally spent since your last grant."
+          >
             <span className="text-2xl font-extrabold tabular-nums text-text">
               {summary?.creditsUsed ?? '—'}
             </span>
@@ -197,8 +208,15 @@ export function Billing() {
           >
             <span className="text-base font-bold text-text">
               {isLocked && lockedUntil
-                ? lockedUntil.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
-                : nextMonthStart().toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
+                ? lockedUntil.toLocaleDateString(undefined, {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                  })
+                : nextMonthStart().toLocaleDateString(undefined, {
+                    day: 'numeric',
+                    month: 'short',
+                  })}
             </span>
           </Metric>
         </div>
@@ -251,7 +269,11 @@ export function Billing() {
         </div>
       </div>
       {pendingCount > 0 && (
-        <Banner tone="info" className="mb-3" title={`${pendingCount} teammate${pendingCount === 1 ? '' : 's'} awaiting payment`}>
+        <Banner
+          tone="info"
+          className="mb-3"
+          title={`${pendingCount} teammate${pendingCount === 1 ? '' : 's'} awaiting payment`}
+        >
           Buying {summary?.suggestedBlocks ?? 1}{' '}
           {(summary?.suggestedBlocks ?? 1) === 1 ? 'block' : 'blocks'} covers everyone currently in
           your workspace — each newly covered teammate gets a one-time 1,500-credit welcome gift.
@@ -281,7 +303,11 @@ export function Billing() {
             <Card
               key={plan.key}
               className={`flex flex-col p-5 ${
-                isCurrent ? 'border-primary ring-1 ring-primary' : plan.popular ? 'border-primary/40' : ''
+                isCurrent
+                  ? 'border-primary ring-1 ring-primary'
+                  : plan.popular
+                    ? 'border-primary/40'
+                    : ''
               }`}
             >
               <div className="flex items-center justify-between">
@@ -344,7 +370,10 @@ export function Billing() {
               <ul className="mt-4 flex flex-1 flex-col gap-1.5 text-xs text-text-muted">
                 {plan.features.map((f) => (
                   <li key={f} className="flex items-start gap-1.5">
-                    <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" aria-hidden="true" />
+                    <Check
+                      className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500"
+                      aria-hidden="true"
+                    />
                     {f}
                   </li>
                 ))}
@@ -390,7 +419,11 @@ export function Billing() {
             {transactions && transactions.results.length === 0 && (
               <tr>
                 <td colSpan={5}>
-                  <EmptyState compact illustration={<Illustration.Billing />} title="No transactions yet">
+                  <EmptyState
+                    compact
+                    illustration={<Illustration.Billing />}
+                    title="No transactions yet"
+                  >
                     Reveals, exports, grants, and purchases all show up here as they happen.{' '}
                     <Link to="/app/people" className="font-semibold text-primary hover:underline">
                       Find your first contact

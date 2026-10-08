@@ -36,7 +36,9 @@ describe('InstallExtensionCard', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Add to Chrome' }));
 
-    expect(screen.getByRole('dialog', { name: 'Install the DataPit extension' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('dialog', { name: 'Install the DataPit extension' }),
+    ).toBeInTheDocument();
     // Primary: the store link.
     const store = screen.getByRole('link', { name: 'Add to Chrome' });
     expect(store).toHaveAttribute('href', expect.stringContaining('chromewebstore.google.com'));

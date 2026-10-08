@@ -65,7 +65,15 @@ describe('SettingsApi', () => {
         respond: () => ({
           body: {
             keys: created
-              ? [{ id: 'k2', name: 'Chrome — laptop', prefix: 'dpk_99887766', createdAt: '2026-08-24T09:00:00.000Z', lastUsedAt: null }]
+              ? [
+                  {
+                    id: 'k2',
+                    name: 'Chrome — laptop',
+                    prefix: 'dpk_99887766',
+                    createdAt: '2026-08-24T09:00:00.000Z',
+                    lastUsedAt: null,
+                  },
+                ]
               : [],
           },
         }),

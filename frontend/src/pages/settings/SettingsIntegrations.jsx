@@ -21,8 +21,8 @@ export function SettingsIntegrations() {
             </Button>
           }
         >
-          CRM sync (Salesforce, HubSpot) and a Chrome extension are on the roadmap. Nothing is connected to
-          this workspace today, and nothing leaves it unless you export it.
+          CRM sync (Salesforce, HubSpot) and a Chrome extension are on the roadmap. Nothing is
+          connected to this workspace today, and nothing leaves it unless you export it.
         </EmptyState>
       </SettingsSection>
 

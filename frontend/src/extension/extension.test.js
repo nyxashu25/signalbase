@@ -16,12 +16,20 @@ let dom;
 afterEach(() => dom?.window.close());
 
 /** A page at `url` with `html`, the extension's scripts injected, and every runtime message recorded. */
-function load(url, html, scripts, { title = '', reply = () => ({ ok: false, error: 'NOT_CONNECTED' }), test = false } = {}) {
-  dom = new JSDOM(`<!doctype html><html><head><title>${title}</title></head><body>${html}</body></html>`, {
-    url,
-    runScripts: 'outside-only',
-    pretendToBeVisual: true,
-  });
+function load(
+  url,
+  html,
+  scripts,
+  { title = '', reply = () => ({ ok: false, error: 'NOT_CONNECTED' }), test = false } = {},
+) {
+  dom = new JSDOM(
+    `<!doctype html><html><head><title>${title}</title></head><body>${html}</body></html>`,
+    {
+      url,
+      runScripts: 'outside-only',
+      pretendToBeVisual: true,
+    },
+  );
   const messages = [];
   dom.window.chrome = {
     runtime: {
@@ -38,7 +46,8 @@ function load(url, html, scripts, { title = '', reply = () => ({ ok: false, erro
 }
 
 const tick = (ms = 0) => new Promise((resolve) => setTimeout(resolve, ms));
-const apps = (url, html, opts) => load(url, html, ['ui.js', 'apps.js'], { test: true, ...opts }).window.__DataPitApps;
+const apps = (url, html, opts) =>
+  load(url, html, ['ui.js', 'apps.js'], { test: true, ...opts }).window.__DataPitApps;
 
 describe('extension manifest', () => {
   it('injects the shared UI before each content script and covers all six surfaces', () => {
@@ -57,7 +66,9 @@ describe('extension manifest', () => {
     );
     // Company websites go through the popup with activeTab — no all-sites host permission.
     expect(manifest.permissions).toEqual(['storage', 'activeTab']);
-    expect(manifest.host_permissions.some((h) => h.includes('<all_urls>') || h === '*://*/*')).toBe(false);
+    expect(manifest.host_permissions.some((h) => h.includes('<all_urls>') || h === '*://*/*')).toBe(
+      false,
+    );
   });
 });
 
@@ -79,12 +90,15 @@ describe('apps.js: addresses on the page', () => {
   });
 
   it('Gmail: not the inbox list, whose rows also carry sender addresses', () => {
-    const inbox = '<div role="main"><span email="x@y.com">X</span><span email="z@w.com">Z</span></div>';
+    const inbox =
+      '<div role="main"><span email="x@y.com">X</span><span email="z@w.com">Z</span></div>';
     expect(apps('https://mail.google.com/mail/u/0/#inbox', inbox).pageAddresses()).toEqual([]);
     expect(apps('https://mail.google.com/mail/u/0/#inbox/p2', inbox).pageAddresses()).toEqual([]);
     // …but a draft open over the inbox still counts.
     const draft = `${inbox}<div role="dialog"><span email="new@lead.com">New</span></div>`;
-    expect(apps('https://mail.google.com/mail/u/0/#inbox', draft).pageAddresses()).toEqual(['new@lead.com']);
+    expect(apps('https://mail.google.com/mail/u/0/#inbox', draft).pageAddresses()).toEqual([
+      'new@lead.com',
+    ]);
   });
 
   it('Google Calendar: guests of the open event, minus calendar resources', () => {
@@ -101,14 +115,19 @@ describe('apps.js: addresses on the page', () => {
 
   it('HubSpot: only on record pages, from mailto links and the email property text', () => {
     const html = `<main><a href="mailto:ana@delta.com?subject=Hi">ana@delta.com</a><p>Email: bo@delta.com</p></main>`;
-    expect(apps('https://app.hubspot.com/contacts/123/objects/0-1/views/all/list', html).pageAddresses()).toEqual([]);
+    expect(
+      apps('https://app.hubspot.com/contacts/123/objects/0-1/views/all/list', html).pageAddresses(),
+    ).toEqual([]);
     const record = apps('https://app.hubspot.com/contacts/123/record/0-1/456', html);
     expect(record.adapter.id).toBe('hubspot');
     expect(record.pageAddresses()).toEqual(['ana@delta.com', 'bo@delta.com']);
   });
 
   it('Salesforce: mailto links inside Lightning web components (shadow DOM)', () => {
-    const t = apps('https://acme.lightning.force.com/lightning/r/Contact/003xx/view', '<div id="field"></div>');
+    const t = apps(
+      'https://acme.lightning.force.com/lightning/r/Contact/003xx/view',
+      '<div id="field"></div>',
+    );
     const host = t.adapter && dom.window.document.getElementById('field');
     const shadow = host.attachShadow({ mode: 'open' });
     shadow.innerHTML = '<a href="mailto:kim@epsilon.org">kim@epsilon.org</a>';
@@ -129,11 +148,21 @@ describe('content.js: Sales Navigator leads', () => {
     </main>`;
 
   it('matches by name and company when the page has no public profile link', async () => {
-    const { messages } = load('https://www.linkedin.com/sales/lead/ACwAAB123,NAME_SEARCH,x1', lead(), ['ui.js', 'content.js'], {
-      reply: (m) => (m.type === 'person' ? { ok: true, data: { status: 'not_found' } } : { ok: false }),
-    });
+    const { messages } = load(
+      'https://www.linkedin.com/sales/lead/ACwAAB123,NAME_SEARCH,x1',
+      lead(),
+      ['ui.js', 'content.js'],
+      {
+        reply: (m) =>
+          m.type === 'person' ? { ok: true, data: { status: 'not_found' } } : { ok: false },
+      },
+    );
     await tick(50);
-    expect(messages).toContainEqual({ type: 'person', name: 'Jordan Bennett', companyName: 'Nova Systems' });
+    expect(messages).toContainEqual({
+      type: 'person',
+      name: 'Jordan Bennett',
+      companyName: 'Nova Systems',
+    });
   });
 
   it('uses the public /in/ profile when Sales Navigator renders one', async () => {

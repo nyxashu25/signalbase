@@ -26,7 +26,9 @@ export function AdminLayout() {
   const { unansweredCount } = useTicketNotifications();
   // Same live-poll cadence as ticket notifications — the queues fill from
   // extension traffic, not admin actions, so they must refresh on their own.
-  const { data: sourcingCounts } = useGetSourcingCountsQuery(undefined, { pollingInterval: 60_000 });
+  const { data: sourcingCounts } = useGetSourcingCountsQuery(undefined, {
+    pollingInterval: 60_000,
+  });
   const [notifyPermission, setNotifyPermission] = useState(
     typeof Notification !== 'undefined' ? Notification.permission : 'unsupported',
   );

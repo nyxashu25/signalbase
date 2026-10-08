@@ -1,11 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  BOILERPLATE_MEDIUM,
-  BOILERPLATE_SHORT,
-  DATAPIT_SUMMARY,
-  LIVE,
-  PROFILES,
-} from './facts.js';
+import { BOILERPLATE_MEDIUM, BOILERPLATE_SHORT, DATAPIT_SUMMARY, LIVE, PROFILES } from './facts.js';
 
 const words = (text) => text.trim().split(/\s+/).length;
 

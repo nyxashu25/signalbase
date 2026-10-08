@@ -156,7 +156,7 @@ export function createTunnelPiece(ctx) {
       depth: 1 - k, // 0 near → 1 far
       phase: i * 0.61,
       dir: i % 2 === 0 ? 1 : -1,
-      speed: 0.05 + 0.06 * ((i * 7) % 5) / 4,
+      speed: 0.05 + (0.06 * ((i * 7) % 5)) / 4,
       tiltX,
       tiltY,
     };

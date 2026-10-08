@@ -74,7 +74,9 @@ describe('Settings', () => {
     expect(submit).toBeEnabled();
     await user.click(submit);
     await waitFor(() =>
-      expect(calls).toEqual([{ currentPassword: 'old-password-1', newPassword: 'brand-new-password' }]),
+      expect(calls).toEqual([
+        { currentPassword: 'old-password-1', newPassword: 'brand-new-password' },
+      ]),
     );
   });
 
@@ -82,7 +84,10 @@ describe('Settings', () => {
     mockFetchRoutes([]);
     renderWithProviders(<SettingsSecurity />, {
       preloadedState: {
-        auth: { ...state.auth, user: { ...state.auth.user, hasPassword: false, googleLinked: true } },
+        auth: {
+          ...state.auth,
+          user: { ...state.auth.user, hasPassword: false, googleLinked: true },
+        },
       },
     });
     expect(screen.queryByLabelText('Current password')).not.toBeInTheDocument();
@@ -121,8 +126,18 @@ describe('Settings', () => {
         respond: {
           body: {
             members: [
-              { id: 'm1', role: 'OWNER', joinedAt: '2026-08-01T00:00:00.000Z', user: { id: 'u1', name: 'Demo User', email: 'demo@datapit.io' } },
-              { id: 'm2', role: 'MEMBER', joinedAt: '2026-08-10T00:00:00.000Z', user: { id: 'u2', name: 'Grace Hopper', email: 'grace@datapit.io' } },
+              {
+                id: 'm1',
+                role: 'OWNER',
+                joinedAt: '2026-08-01T00:00:00.000Z',
+                user: { id: 'u1', name: 'Demo User', email: 'demo@datapit.io' },
+              },
+              {
+                id: 'm2',
+                role: 'MEMBER',
+                joinedAt: '2026-08-10T00:00:00.000Z',
+                user: { id: 'u2', name: 'Grace Hopper', email: 'grace@datapit.io' },
+              },
             ],
             seats: { total: 5, plan: 'BASIC', members: 2, pendingInvites: 0, used: 2 },
           },
@@ -147,8 +162,18 @@ describe('Settings', () => {
           return { status: 201, body: { invite } };
         },
       },
-      { url: '/workspace/invites', method: 'GET', respond: () => ({ body: { invites: [...pending] } }) },
-      { url: '/workspace/audit', method: 'GET', respond: { body: { members: [], unattributed: { totalSpent: 0, actionCount: 0 }, totalSpent: 0 } } },
+      {
+        url: '/workspace/invites',
+        method: 'GET',
+        respond: () => ({ body: { invites: [...pending] } }),
+      },
+      {
+        url: '/workspace/audit',
+        method: 'GET',
+        respond: {
+          body: { members: [], unattributed: { totalSpent: 0, actionCount: 0 }, totalSpent: 0 },
+        },
+      },
       { url: '/billing/credit-costs', method: 'GET', respond: { body: { CSV_EXPORT: 20 } } },
     ]);
     const user = userEvent.setup();
@@ -166,8 +191,12 @@ describe('Settings', () => {
     await waitFor(() => expect(created).toEqual([{ email: 'new@hire.test', role: 'ADMIN' }]));
     expect(await screen.findByText('Pending invites')).toBeInTheDocument();
     expect(screen.getByText('new@hire.test')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Copy invite link for new@hire.test' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Revoke invite for new@hire.test' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Copy invite link for new@hire.test' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Revoke invite for new@hire.test' }),
+    ).toBeInTheDocument();
   });
 
   it('Members: a MEMBER sees the invite button disabled', async () => {
@@ -176,7 +205,14 @@ describe('Settings', () => {
         url: '/workspace/members',
         respond: {
           body: {
-            members: [{ id: 'm1', role: 'MEMBER', joinedAt: '2026-08-01T00:00:00.000Z', user: { id: 'u1', name: 'Demo User', email: 'demo@datapit.io' } }],
+            members: [
+              {
+                id: 'm1',
+                role: 'MEMBER',
+                joinedAt: '2026-08-01T00:00:00.000Z',
+                user: { id: 'u1', name: 'Demo User', email: 'demo@datapit.io' },
+              },
+            ],
             seats: { total: 5, plan: 'BASIC', members: 1, pendingInvites: 0, used: 1 },
           },
         },
@@ -195,7 +231,14 @@ describe('Settings', () => {
         method: 'GET',
         respond: {
           body: {
-            members: [{ id: 'm1', role: 'OWNER', joinedAt: '2026-08-01T00:00:00.000Z', user: { id: 'u1', name: 'Demo User', email: 'demo@datapit.io' } }],
+            members: [
+              {
+                id: 'm1',
+                role: 'OWNER',
+                joinedAt: '2026-08-01T00:00:00.000Z',
+                user: { id: 'u1', name: 'Demo User', email: 'demo@datapit.io' },
+              },
+            ],
             seats: { total: 5, plan: 'BASIC', members: 1, pendingInvites: 0, used: 1 },
           },
         },
@@ -210,7 +253,15 @@ describe('Settings', () => {
             totalSpent: 22,
             unattributed: { totalSpent: 20, actionCount: 1 },
             members: [
-              { userId: 'u1', name: 'Demo User', email: 'demo@datapit.io', role: 'OWNER', totalSpent: 22, actionCount: 2, byReason: { EMAIL_REVEAL: 2, CSV_EXPORT: 20 } },
+              {
+                userId: 'u1',
+                name: 'Demo User',
+                email: 'demo@datapit.io',
+                role: 'OWNER',
+                totalSpent: 22,
+                actionCount: 2,
+                byReason: { EMAIL_REVEAL: 2, CSV_EXPORT: 20 },
+              },
             ],
           },
         },
@@ -234,22 +285,47 @@ describe('Settings', () => {
         respond: {
           body: {
             members: [
-              { id: 'm1', role: 'OWNER', joinedAt: '2026-08-01T00:00:00.000Z', user: { id: 'u1', name: 'Demo User', email: 'demo@datapit.io' } },
-              { id: 'm2', role: 'MEMBER', joinedAt: '2026-08-10T00:00:00.000Z', user: { id: 'u2', name: 'Grace Hopper', email: 'grace@datapit.io' } },
+              {
+                id: 'm1',
+                role: 'OWNER',
+                joinedAt: '2026-08-01T00:00:00.000Z',
+                user: { id: 'u1', name: 'Demo User', email: 'demo@datapit.io' },
+              },
+              {
+                id: 'm2',
+                role: 'MEMBER',
+                joinedAt: '2026-08-10T00:00:00.000Z',
+                user: { id: 'u2', name: 'Grace Hopper', email: 'grace@datapit.io' },
+              },
             ],
             seats: { total: 5, plan: 'BASIC', members: 2, pendingInvites: 0, used: 2 },
           },
         },
       },
       { url: '/workspace/invites', method: 'GET', respond: { body: { invites: [] } } },
-      { url: '/workspace/audit', method: 'GET', respond: { body: { members: [], unattributed: { totalSpent: 0, actionCount: 0 }, totalSpent: 0 } } },
+      {
+        url: '/workspace/audit',
+        method: 'GET',
+        respond: {
+          body: { members: [], unattributed: { totalSpent: 0, actionCount: 0 }, totalSpent: 0 },
+        },
+      },
       { url: '/billing/credit-costs', method: 'GET', respond: { body: { CSV_EXPORT: 20 } } },
       {
         url: '/workspace/members/u2/role',
         method: 'PATCH',
         respond: (url, init) => {
           calls.push(JSON.parse(init.body));
-          return { body: { member: { id: 'm2', role: 'ADMIN', joinedAt: '2026-08-10T00:00:00.000Z', user: { id: 'u2', name: 'Grace Hopper', email: 'grace@datapit.io' } } } };
+          return {
+            body: {
+              member: {
+                id: 'm2',
+                role: 'ADMIN',
+                joinedAt: '2026-08-10T00:00:00.000Z',
+                user: { id: 'u2', name: 'Grace Hopper', email: 'grace@datapit.io' },
+              },
+            },
+          };
         },
       },
     ]);
@@ -281,7 +357,14 @@ describe('SettingsMembers seat gate', () => {
         url: '/workspace/members',
         respond: {
           body: {
-            members: [{ id: 'm1', role: 'OWNER', joinedAt: '2026-08-01T00:00:00.000Z', user: { id: 'u1', name: 'Demo User', email: 'demo@datapit.io' } }],
+            members: [
+              {
+                id: 'm1',
+                role: 'OWNER',
+                joinedAt: '2026-08-01T00:00:00.000Z',
+                user: { id: 'u1', name: 'Demo User', email: 'demo@datapit.io' },
+              },
+            ],
             seats: { total: 1, plan: 'FREE', members: 1, pendingInvites: 0, used: 1 },
           },
         },
@@ -292,6 +375,9 @@ describe('SettingsMembers seat gate', () => {
     expect(await screen.findByText(/1 of 1 seat filled/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Invite teammate' })).toBeDisabled();
     expect(screen.getByText('Add your team on a paid plan')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Open Billing' })).toHaveAttribute('href', '/app/billing');
+    expect(screen.getByRole('link', { name: 'Open Billing' })).toHaveAttribute(
+      'href',
+      '/app/billing',
+    );
   });
 });

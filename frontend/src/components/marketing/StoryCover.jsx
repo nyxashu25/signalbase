@@ -53,7 +53,14 @@ const HINT_TEXT =
 
 function DragIcon() {
   return (
-    <svg width="16" height="10" viewBox="0 0 16 10" fill="none" stroke="currentColor" strokeWidth="1.75">
+    <svg
+      width="16"
+      height="10"
+      viewBox="0 0 16 10"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+    >
       <path d="M4 1L1 5l3 4M12 1l3 4-3 4M1 5h14" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
@@ -169,7 +176,9 @@ export function StoryCover({
     const measure = () => {
       const top = documentTop(section);
       const vh = window.innerHeight;
-      setHintTop(top + section.offsetHeight >= vh * 0.92 ? null : Math.max(8, Math.round(vh * 0.2 - top)));
+      setHintTop(
+        top + section.offsetHeight >= vh * 0.92 ? null : Math.max(8, Math.round(vh * 0.2 - top)),
+      );
     };
     measure();
     const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
@@ -218,12 +227,22 @@ export function StoryCover({
             }`}
           />
           {narration && (
-            <FadeIn as="p" whileInView={false} delay={0.6} className="story-narration mt-8 max-w-[520px] text-xl text-mauve-2/90">
+            <FadeIn
+              as="p"
+              whileInView={false}
+              delay={0.6}
+              className="story-narration mt-8 max-w-[520px] text-xl text-mauve-2/90"
+            >
               {narration}
             </FadeIn>
           )}
           {sub && (
-            <FadeIn as="p" whileInView={false} delay={0.75} className="mt-5 max-w-[560px] text-lg text-ink-300">
+            <FadeIn
+              as="p"
+              whileInView={false}
+              delay={0.75}
+              className="mt-5 max-w-[560px] text-lg text-ink-300"
+            >
               {sub}
             </FadeIn>
           )}
@@ -236,7 +255,12 @@ export function StoryCover({
         </div>
 
         {mark && (
-          <FadeIn as="div" whileInView={false} delay={0.35} className="flex justify-center lg:justify-end">
+          <FadeIn
+            as="div"
+            whileInView={false}
+            delay={0.35}
+            className="flex justify-center lg:justify-end"
+          >
             <div aria-hidden={worldReady ? 'true' : undefined} className={`relative ${stageSize}`}>
               <AnimatePresence initial={false}>
                 {!worldReady && (

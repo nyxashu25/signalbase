@@ -28,7 +28,12 @@ async function seedContact() {
     data: { name: 'Acme Widgets', domain: 'acme-widgets.test', industry: 'Software' },
   });
   const contact = await prisma.contact.create({
-    data: { companyId: company.id, firstName: 'Ada', lastName: 'Lovelace', email: 'ada@acme-widgets.test' },
+    data: {
+      companyId: company.id,
+      firstName: 'Ada',
+      lastName: 'Lovelace',
+      email: 'ada@acme-widgets.test',
+    },
   });
   return { company, contact };
 }
@@ -155,7 +160,12 @@ describe('dashboard: onboarding checklist', () => {
       data: { workspaceId: org.workspaceId, contactId: contact.id, revealedById: org.userId },
     });
     const list = await prisma.list.create({
-      data: { workspaceId: org.workspaceId, name: 'Leads', type: 'CONTACTS', createdById: org.userId },
+      data: {
+        workspaceId: org.workspaceId,
+        name: 'Leads',
+        type: 'CONTACTS',
+        createdById: org.userId,
+      },
     });
     await prisma.listItem.create({ data: { listId: list.id, contactId: contact.id } });
     await prisma.savedSearch.create({
@@ -174,7 +184,13 @@ describe('dashboard: onboarding checklist', () => {
     expect(find.tasks.every((t) => t.completed)).toBe(true);
     const keys = res.body.justRewarded.map((r) => r.key);
     expect(keys).toEqual(
-      expect.arrayContaining(['SEARCH_PEOPLE', 'REVEAL_EMAIL', 'ADD_TO_LIST', 'SAVE_SEARCH', 'group:find']),
+      expect.arrayContaining([
+        'SEARCH_PEOPLE',
+        'REVEAL_EMAIL',
+        'ADD_TO_LIST',
+        'SAVE_SEARCH',
+        'group:find',
+      ]),
     );
     // 4 tasks × 5 + group bonus 10
     expect(res.body.creditsEarned).toBe(30);
@@ -246,13 +262,23 @@ describe('dashboard: stats', () => {
       ],
     });
     await prisma.list.create({
-      data: { workspaceId: org.workspaceId, name: 'Leads', type: 'CONTACTS', createdById: org.userId },
+      data: {
+        workspaceId: org.workspaceId,
+        name: 'Leads',
+        type: 'CONTACTS',
+        createdById: org.userId,
+      },
     });
     await prisma.sequence.create({
       data: { workspaceId: org.workspaceId, name: 'Q3', status: 'ACTIVE', createdById: org.userId },
     });
     await prisma.sequence.create({
-      data: { workspaceId: org.workspaceId, name: 'Draft', status: 'DRAFT', createdById: org.userId },
+      data: {
+        workspaceId: org.workspaceId,
+        name: 'Draft',
+        status: 'DRAFT',
+        createdById: org.userId,
+      },
     });
 
     const res = await request(app)

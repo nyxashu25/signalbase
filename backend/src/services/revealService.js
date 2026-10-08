@@ -9,7 +9,13 @@ import { enqueueIndex } from './indexerService.js';
 // `reason` distinguishes where the spend came from in the ledger — the
 // in-app route charges EMAIL_REVEAL, the Chrome extension EXTENSION_REVEAL.
 // Everything else (reveal-state, masking, workspace-wide unlock) is shared.
-export async function revealContactEmail({ workspaceId, userId, contactId, reservationId, reason = 'EMAIL_REVEAL' }) {
+export async function revealContactEmail({
+  workspaceId,
+  userId,
+  contactId,
+  reservationId,
+  reason = 'EMAIL_REVEAL',
+}) {
   const contact = await prisma.contact.findUnique({
     where: { id: contactId },
     include: { company: true },

@@ -3,7 +3,11 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Routes, Route } from 'react-router-dom';
 import { AdminTicketDetail } from './AdminTicketDetail.jsx';
-import { renderWithProviders, authenticatedAdminState, mockFetchRoutes } from '../../test/testUtils.jsx';
+import {
+  renderWithProviders,
+  authenticatedAdminState,
+  mockFetchRoutes,
+} from '../../test/testUtils.jsx';
 
 const ticket = {
   id: 't1',
@@ -13,7 +17,13 @@ const ticket = {
   workspace: { id: 'w1', name: 'Acme Workspace' },
   createdBy: { id: 'u1', email: 'owner@acme.test' },
   messages: [
-    { id: 'm1', authorType: 'USER', authorName: 'Owner', body: 'Search is broken.', createdAt: '2026-08-20T09:00:00.000Z' },
+    {
+      id: 'm1',
+      authorType: 'USER',
+      authorName: 'Owner',
+      body: 'Search is broken.',
+      createdAt: '2026-08-20T09:00:00.000Z',
+    },
   ],
 };
 

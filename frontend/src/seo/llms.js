@@ -24,7 +24,16 @@ import {
 import { PRICING_FAQS, PRODUCT_FAQS } from '../data/faqs.js';
 import { PUBLIC_ROUTES, SITE_URL, absoluteUrl } from './site.js';
 
-const MAIN_PAGES = ['/', '/product', '/pricing', '/solutions', '/about', '/press', '/contact', '/blog'];
+const MAIN_PAGES = [
+  '/',
+  '/product',
+  '/pricing',
+  '/solutions',
+  '/about',
+  '/press',
+  '/contact',
+  '/blog',
+];
 const LEGAL_PAGES = ['/privacy', '/terms'];
 
 // Published content pages, grouped the way a reader looks for them.

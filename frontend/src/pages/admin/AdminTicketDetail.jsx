@@ -68,7 +68,9 @@ export function AdminTicketDetail() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${STATUS_STYLES[ticket.status]}`}>
+          <span
+            className={`rounded-full px-2.5 py-1 text-xs font-bold ${STATUS_STYLES[ticket.status]}`}
+          >
             {ticket.status}
           </span>
           {ticket.status !== 'CLOSED' && (
@@ -89,7 +91,9 @@ export function AdminTicketDetail() {
           <div
             key={m.id}
             className={`rounded-lg border p-4 ${
-              m.authorType === 'ADMIN' ? 'border-mauve-magic/40 bg-mauve-magic/10' : 'border-white/10 bg-ink-900'
+              m.authorType === 'ADMIN'
+                ? 'border-mauve-magic/40 bg-mauve-magic/10'
+                : 'border-white/10 bg-ink-900'
             }`}
           >
             <div className="flex items-center justify-between">

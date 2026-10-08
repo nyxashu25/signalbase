@@ -87,7 +87,9 @@ describe('auth flow', () => {
   });
 
   it('rejects an invalid or expired verify-email token', async () => {
-    const res = await request(app).post('/api/v1/auth/verify-email').send({ token: 'not-a-real-token' });
+    const res = await request(app)
+      .post('/api/v1/auth/verify-email')
+      .send({ token: 'not-a-real-token' });
     expect(res.status).toBe(400);
   });
 

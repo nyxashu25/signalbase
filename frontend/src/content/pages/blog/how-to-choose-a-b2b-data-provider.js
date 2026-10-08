@@ -48,15 +48,51 @@ export default {
       caption: 'The checklist at a glance',
       head: ['Check', 'What good looks like', 'Red flag'],
       rows: [
-        ['Coverage', 'It finds most of your own sample, in your regions and company sizes.', 'A total record count with no breakdown for your market.'],
-        ['Accuracy', 'It says what accuracy means, and how and when it was measured.', 'A single percentage with no method behind it.'],
-        ['Freshness', 'Records show when they were last updated.', 'No way to tell a new record from an old one.'],
-        ['Pricing model', 'Published prices, or a quote you can compare line by line.', 'Add-ons you only hear about after signing.'],
-        ['What a credit buys', 'A written list of every action that costs credits.', 'Unclear charges for guesses, repeat views or bounces.'],
-        ['Data rights', 'It explains its sources and passes on opt-outs.', 'It can’t say where a record came from.'],
-        ['Integrations', 'It connects to your CRM and tools on the plan you’d buy.', 'The sync you need sits on a higher tier.'],
-        ['Trial or free plan', 'Enough access to test real records you choose.', 'A demo on sample data picked for you.'],
-        ['Contract terms', 'Clear rules for renewal, cancellation and seat changes.', 'Automatic renewal with a notice period nobody mentioned.'],
+        [
+          'Coverage',
+          'It finds most of your own sample, in your regions and company sizes.',
+          'A total record count with no breakdown for your market.',
+        ],
+        [
+          'Accuracy',
+          'It says what accuracy means, and how and when it was measured.',
+          'A single percentage with no method behind it.',
+        ],
+        [
+          'Freshness',
+          'Records show when they were last updated.',
+          'No way to tell a new record from an old one.',
+        ],
+        [
+          'Pricing model',
+          'Published prices, or a quote you can compare line by line.',
+          'Add-ons you only hear about after signing.',
+        ],
+        [
+          'What a credit buys',
+          'A written list of every action that costs credits.',
+          'Unclear charges for guesses, repeat views or bounces.',
+        ],
+        [
+          'Data rights',
+          'It explains its sources and passes on opt-outs.',
+          'It can’t say where a record came from.',
+        ],
+        [
+          'Integrations',
+          'It connects to your CRM and tools on the plan you’d buy.',
+          'The sync you need sits on a higher tier.',
+        ],
+        [
+          'Trial or free plan',
+          'Enough access to test real records you choose.',
+          'A demo on sample data picked for you.',
+        ],
+        [
+          'Contract terms',
+          'Clear rules for renewal, cancellation and seat changes.',
+          'Automatic renewal with a notice period nobody mentioned.',
+        ],
       ],
     },
 
@@ -120,10 +156,26 @@ export default {
       type: 'table',
       head: ['Model', 'How it works', 'Watch for'],
       rows: [
-        ['Per seat', 'A price for each user, often with credits for each user.', 'The cost grows with every person who needs access.'],
-        ['Per account', 'One price for the company, with a shared pool of credits.', 'User limits, and one heavy user draining the pool.'],
-        ['Credits or pay as you go', 'You buy credits and spend them on actions, such as revealing an email.', 'Which actions cost credits, and whether unused credits expire.'],
-        ['Quote only', 'The price comes after a sales call, usually on an annual contract.', 'Minimum seats, automatic renewal and separately priced add-ons.'],
+        [
+          'Per seat',
+          'A price for each user, often with credits for each user.',
+          'The cost grows with every person who needs access.',
+        ],
+        [
+          'Per account',
+          'One price for the company, with a shared pool of credits.',
+          'User limits, and one heavy user draining the pool.',
+        ],
+        [
+          'Credits or pay as you go',
+          'You buy credits and spend them on actions, such as revealing an email.',
+          'Which actions cost credits, and whether unused credits expire.',
+        ],
+        [
+          'Quote only',
+          'The price comes after a sales call, usually on an annual contract.',
+          'Minimum seats, automatic renewal and separately priced add-ons.',
+        ],
       ],
       note: 'Phone numbers often cost more credits than emails, and API access or CRM sync may sit on a higher tier. Ask for each in the quote.',
     },
@@ -284,7 +336,8 @@ export default {
       type: 'sources',
       items: [
         {
-          label: 'ICO: Organisations using marketing services of data brokers: what you need to know',
+          label:
+            'ICO: Organisations using marketing services of data brokers: what you need to know',
           url: 'https://ico.org.uk/for-organisations/direct-marketing-and-privacy-and-electronic-communications/organisations-using-marketing-services-of-data-brokers/',
           checked: CHECKED,
         },
@@ -299,7 +352,8 @@ export default {
           checked: CHECKED,
         },
         {
-          label: 'European Commission: What happens if someone objects to my company processing their personal data?',
+          label:
+            'European Commission: What happens if someone objects to my company processing their personal data?',
           url: 'https://commission.europa.eu/law/law-topic/data-protection/information-business-and-organisations/dealing-requests-individuals/what-happens-if-someone-objects-my-company-processing-their-personal-data_en',
           checked: CHECKED,
         },

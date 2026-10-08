@@ -18,7 +18,9 @@ export function BlogIndex() {
         lines={[
           { content: 'Prospecting' },
           {
-            content: <span className="bg-gradient-brand bg-clip-text text-transparent">guides.</span>,
+            content: (
+              <span className="bg-gradient-brand bg-clip-text text-transparent">guides.</span>
+            ),
             className: 'sm:ml-[6vw]',
           },
         ]}
@@ -42,7 +44,9 @@ export function BlogIndex() {
                       <h2 className="text-xl font-extrabold leading-snug text-text group-hover:text-primary">
                         {post.title.replace(/ \| DataPit$/, '')}
                       </h2>
-                      <p className="mt-2 text-sm leading-relaxed text-text-muted">{post.description}</p>
+                      <p className="mt-2 text-sm leading-relaxed text-text-muted">
+                        {post.description}
+                      </p>
                       <p className="mt-2 text-xs text-text-muted">
                         Updated <time dateTime={post.updated}>{formatDay(post.updated)}</time>
                       </p>

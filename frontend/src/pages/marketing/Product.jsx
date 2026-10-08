@@ -23,10 +23,15 @@ const GUESS_SENTENCE = LIVE.emailVerification
 const MODULES = [
   {
     eyebrow: 'Search',
-    narration: 'Search people and companies for free, and watch the counts change as you filter. Every deal starts with a question.',
+    narration:
+      'Search people and companies for free, and watch the counts change as you filter. Every deal starts with a question.',
     title: 'Narrow the list before you spend a credit',
     desc: 'Filter people by job title, seniority and department, or companies by industry, headcount and location. Facet counts update as you narrow the query. Searching is free, so you know how big your list is before you reveal anyone.',
-    points: ['Faceted people and company search', 'Masked results until you reveal', 'Facet counts update as you filter'],
+    points: [
+      'Faceted people and company search',
+      'Masked results until you reveal',
+      'Facet counts update as you filter',
+    ],
     plate: <AnimatedSearchMockup />,
     station: 'lens',
   },
@@ -45,19 +50,29 @@ const MODULES = [
   },
   LIVE.sequenceSending && {
     eyebrow: 'Sequences',
-    narration: 'Sequences email your enrolled contacts on the schedule you set. Between one touch and the next, the engine keeps the timing.',
+    narration:
+      'Sequences email your enrolled contacts on the schedule you set. Between one touch and the next, the engine keeps the timing.',
     title: 'Outreach that runs itself between touches',
     desc: `Chain email and wait steps into a sequence, then enroll contacts from a saved list for ${formatCount(CREDIT_COSTS.SEQUENCE_ENROLLMENT)} credits each. The engine sends each step when it's due. Pause and resume a contact without losing their place.`,
-    points: ['Email and wait steps in any order', 'Enroll straight from a list', 'Pause and resume each contact'],
+    points: [
+      'Email and wait steps in any order',
+      'Enroll straight from a list',
+      'Pause and resume each contact',
+    ],
     plate: <AnimatedSequenceMockup />,
     station: 'sequence',
   },
   {
     eyebrow: 'Credits & billing',
-    narration: 'Your credit history shows each grant and charge as its own row. Reconciling becomes a read, not a project.',
+    narration:
+      'Your credit history shows each grant and charge as its own row. Reconciling becomes a read, not a project.',
     title: 'A credit ledger you can see, row by row',
     desc: 'Each monthly grant, reveal, company view, export and top-up is a row in your credit history. Admins on paid plans see spend for each teammate and can export it to CSV. Credits are held before a reveal runs, so concurrent reveals can never push a balance below zero.',
-    points: ['Full transaction history', 'Held credits come back if a reveal fails', 'Buy more credits any time'],
+    points: [
+      'Full transaction history',
+      'Held credits come back if a reveal fails',
+      'Buy more credits any time',
+    ],
     plate: <AnimatedCreditLedgerMockup />,
     station: 'ledger',
   },
@@ -86,10 +101,15 @@ export function Product() {
         lines={[
           { content: 'One workspace,' },
           // The chapter count changes with LIVE flags (sequences are gated).
-          { content: `${COUNT_WORDS[MODULES.length] ?? MODULES.length} things that`, className: 'sm:ml-[6vw]' },
+          {
+            content: `${COUNT_WORDS[MODULES.length] ?? MODULES.length} things that`,
+            className: 'sm:ml-[6vw]',
+          },
           {
             content: (
-              <span className="bg-gradient-brand bg-clip-text text-transparent">move pipeline.</span>
+              <span className="bg-gradient-brand bg-clip-text text-transparent">
+                move pipeline.
+              </span>
             ),
           },
         ]}
@@ -101,7 +121,10 @@ export function Product() {
 
       <FaqSection eyebrow="Questions" items={PRODUCT_FAQS} />
 
-      <GiantCTA station="tunnel" title={`Try it with ${formatCount(FREE_PLAN_MONTHLY_CREDITS)} free credits.`} />
+      <GiantCTA
+        station="tunnel"
+        title={`Try it with ${formatCount(FREE_PLAN_MONTHLY_CREDITS)} free credits.`}
+      />
 
       <MarketingFooter />
     </div>

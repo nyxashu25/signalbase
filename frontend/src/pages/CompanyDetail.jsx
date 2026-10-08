@@ -48,7 +48,12 @@ export function CompanyDetail() {
       <div className="max-w-3xl">
         <PageHeader backTo="/app/companies" backLabel="Companies" title="Company" />
         {error?.status === 402 ? (
-          <Banner tone="warning" title="Not enough credits to view this company" action="Add credits" actionTo="/app/billing/add-credits">
+          <Banner
+            tone="warning"
+            title="Not enough credits to view this company"
+            action="Add credits"
+            actionTo="/app/billing/add-credits"
+          >
             Viewing a company profile for the first time costs credits; repeat views are free.
           </Banner>
         ) : (

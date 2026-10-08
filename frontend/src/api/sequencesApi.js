@@ -28,7 +28,11 @@ export const sequencesApi = baseApi.injectEndpoints({
     }),
     activateSequence: builder.mutation({
       query: (id) => ({ url: `/sequences/${id}/activate`, method: 'POST' }),
-      invalidatesTags: (result, error, id) => ['Sequences', { type: 'Sequences', id }, 'Onboarding'],
+      invalidatesTags: (result, error, id) => [
+        'Sequences',
+        { type: 'Sequences', id },
+        'Onboarding',
+      ],
     }),
     enrollContact: builder.mutation({
       query: ({ sequenceId, contactId }) => ({

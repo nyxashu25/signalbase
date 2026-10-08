@@ -130,11 +130,7 @@ export default {
           'No. API keys only connect the Chrome extension.',
           'An Enterprise API, by demo. GTM AI adds self-serve API, MCP and CLI access, pay as you go.',
         ],
-        [
-          'Intent data',
-          'No.',
-          'On Copilot Advanced and above, and on the Marketing plans.',
-        ],
+        ['Intent data', 'No.', 'On Copilot Advanced and above, and on the Marketing plans.'],
       ],
       note: 'ZoomInfo details are from its pricing page, pricing guide and product pages, checked 28 September 2026. ZoomInfo doesn’t publish credit amounts for its Sales plans.',
     },
@@ -148,7 +144,13 @@ export default {
     {
       type: 'table',
       caption: 'Monthly cost by team size',
-      head: ['Team size', `DataPit ${BASIC.name}`, `DataPit ${PRO.name}`, `DataPit ${ORG.name}`, 'ZoomInfo Sales plans'],
+      head: [
+        'Team size',
+        `DataPit ${BASIC.name}`,
+        `DataPit ${PRO.name}`,
+        `DataPit ${ORG.name}`,
+        'ZoomInfo Sales plans',
+      ],
       rows: [5, 10, 25].map((n) => [
         `${n} people`,
         teamCost(BASIC, n),
@@ -232,9 +234,21 @@ export default {
           to: '/compare/datapit-vs-zoominfo',
           text: 'Plan by plan, feature by feature, and what one credit buys.',
         },
-        { label: 'Apollo alternative', to: '/alternatives/apollo', text: 'How DataPit compares with Apollo.' },
-        { label: 'Cognism alternative', to: '/alternatives/cognism', text: 'How DataPit compares with Cognism.' },
-        { label: 'Lusha alternative', to: '/alternatives/lusha', text: 'How DataPit compares with Lusha.' },
+        {
+          label: 'Apollo alternative',
+          to: '/alternatives/apollo',
+          text: 'How DataPit compares with Apollo.',
+        },
+        {
+          label: 'Cognism alternative',
+          to: '/alternatives/cognism',
+          text: 'How DataPit compares with Cognism.',
+        },
+        {
+          label: 'Lusha alternative',
+          to: '/alternatives/lusha',
+          text: 'How DataPit compares with Lusha.',
+        },
         {
           label: 'Pricing',
           to: '/pricing',

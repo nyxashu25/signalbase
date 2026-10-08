@@ -318,7 +318,11 @@ describe('extension: observe + reveal', () => {
     const first = await extReveal(org.apiKey, contact.id, key);
     const replay = await extReveal(org.apiKey, contact.id, key);
     expect(replay.body).toEqual(first.body);
-    expect(await prisma.creditLedgerEntry.count({ where: { workspaceId: org.workspaceId, delta: { lt: 0 } } })).toBe(1);
+    expect(
+      await prisma.creditLedgerEntry.count({
+        where: { workspaceId: org.workspaceId, delta: { lt: 0 } },
+      }),
+    ).toBe(1);
   });
 
   it('GET /extension/me reports identity, balance and the reveal price', async () => {
@@ -374,8 +378,16 @@ describe('extension: lookups by email and by company website', () => {
     expect(res.status).toBe(200);
     expect(res.body.results).toHaveLength(2);
     const [found, missing] = res.body.results;
-    expect(found).toMatchObject({ email: 'jordan.bennett@novasystems.com', status: 'found', cost: 4 });
-    expect(found.contact).toMatchObject({ firstName: 'Jordan', title: 'VP Engineering', revealed: false });
+    expect(found).toMatchObject({
+      email: 'jordan.bennett@novasystems.com',
+      status: 'found',
+      cost: 4,
+    });
+    expect(found.contact).toMatchObject({
+      firstName: 'Jordan',
+      title: 'VP Engineering',
+      revealed: false,
+    });
     expect(found.contact.phone).not.toBe('+1 415 555 0132'); // masked
     expect(missing).toEqual({ email: 'nobody@example.com', status: 'not_found' });
   });
@@ -470,9 +482,9 @@ describe('extension: Sales Navigator lookup by name and company', () => {
       data: { companyId: other.id, firstName: 'Jordan', lastName: 'Bennett', email: 'jb@other.co' },
     });
     expect((await person(org.apiKey, { name: 'Jordan Bennett' })).body.status).toBe('not_found');
-    expect((await person(org.apiKey, { name: 'Jordan Bennett', companyName: 'Acme' })).body.status).toBe(
-      'not_found',
-    );
+    expect(
+      (await person(org.apiKey, { name: 'Jordan Bennett', companyName: 'Acme' })).body.status,
+    ).toBe('not_found');
     const nova = await person(org.apiKey, { name: 'Jordan Bennett', companyName: 'Nova Systems' });
     expect(nova.body.contact.id).toBe(first.id);
   });

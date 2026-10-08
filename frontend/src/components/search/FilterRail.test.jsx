@@ -92,7 +92,10 @@ describe('FilterRail', () => {
     const onChange = vi.fn();
     render(
       <FilterRail
-        groups={[checkboxGroup({ selected: ['VP'], onToggle }), textGroup({ value: 'cfo', onChange })]}
+        groups={[
+          checkboxGroup({ selected: ['VP'], onToggle }),
+          textGroup({ value: 'cfo', onChange }),
+        ]}
       />,
     );
     await user.click(screen.getByText('Clear all 2'));
@@ -103,11 +106,7 @@ describe('FilterRail', () => {
   it('renders a locked group as a non-expandable row, excluded from counts and Clear all', async () => {
     const user = userEvent.setup();
     const onToggle = vi.fn();
-    render(
-      <FilterRail
-        groups={[checkboxGroup({ selected: ['VP'], onToggle }), lockedGroup()]}
-      />,
-    );
+    render(<FilterRail groups={[checkboxGroup({ selected: ['VP'], onToggle }), lockedGroup()]} />);
 
     expect(screen.getByText('Scores')).toBeInTheDocument();
     expect(screen.getByText('Soon')).toBeInTheDocument();

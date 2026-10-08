@@ -66,7 +66,9 @@ export function MarketingFooter() {
           </div>
           {COLUMNS.map((col) => (
             <div key={col.heading}>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-ink-500">{col.heading}</p>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-ink-500">
+                {col.heading}
+              </p>
               <ul className="mt-5 flex flex-col gap-3">
                 {col.links.map((link) => (
                   <li key={link.to}>

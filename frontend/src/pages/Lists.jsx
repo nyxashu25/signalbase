@@ -1,10 +1,21 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ListChecks, Plus, Users, Building2, Trash2 } from 'lucide-react';
-import { useListListsQuery, useCreateListMutation, useDeleteListMutation } from '../api/listsApi.js';
+import {
+  useListListsQuery,
+  useCreateListMutation,
+  useDeleteListMutation,
+} from '../api/listsApi.js';
 import { PageHeader } from '../components/ui/PageHeader.jsx';
 import { Button } from '../components/ui/Button.jsx';
-import { Card, TableFrame, thClass, tdClass, tdMutedClass, trClass } from '../components/ui/Card.jsx';
+import {
+  Card,
+  TableFrame,
+  thClass,
+  tdClass,
+  tdMutedClass,
+  trClass,
+} from '../components/ui/Card.jsx';
 import { EmptyState } from '../components/ui/EmptyState.jsx';
 import { Illustration } from '../components/ui/illustrations.jsx';
 import { SkeletonRows } from '../components/ui/Skeleton.jsx';
@@ -180,7 +191,9 @@ export function Lists() {
                       {list.name}
                     </Link>
                   </td>
-                  <td className={tdMutedClass}>{list.type === 'CONTACTS' ? 'People' : 'Companies'}</td>
+                  <td className={tdMutedClass}>
+                    {list.type === 'CONTACTS' ? 'People' : 'Companies'}
+                  </td>
                   <td className={`${tdMutedClass} tabular-nums`}>{list._count?.items ?? 0}</td>
                   <td className={tdMutedClass}>
                     {list.createdAt ? new Date(list.createdAt).toLocaleDateString() : '—'}

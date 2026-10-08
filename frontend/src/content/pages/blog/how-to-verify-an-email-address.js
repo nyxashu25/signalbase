@@ -36,13 +36,37 @@ export default {
       caption: 'What each check can and can’t tell you',
       head: ['Check', 'What it tells you', 'How far to trust it'],
       rows: [
-        ['Syntax', 'The address is written correctly and could exist.', 'Fully. A malformed address can’t receive mail.'],
+        [
+          'Syntax',
+          'The address is written correctly and could exist.',
+          'Fully. A malformed address can’t receive mail.',
+        ],
         ['Domain', 'The domain after the @ exists in DNS.', 'Fully, unless the lookup times out.'],
-        ['MX records', 'The domain names the servers that accept its email.', 'Highly. Without them, delivery is unlikely.'],
-        ['Disposable', 'The domain is a throwaway inbox service.', 'Well, as long as the list is kept current.'],
-        ['Role address', 'The address reaches a team, like sales@, not a person.', 'Highly. It’s read from the name itself.'],
-        ['Mailbox (SMTP)', 'The mail server accepts this exact recipient.', 'Often inconclusive, for the reasons below.'],
-        ['A real send', 'The message was delivered or bounced.', 'The final word on delivery, not on who reads it.'],
+        [
+          'MX records',
+          'The domain names the servers that accept its email.',
+          'Highly. Without them, delivery is unlikely.',
+        ],
+        [
+          'Disposable',
+          'The domain is a throwaway inbox service.',
+          'Well, as long as the list is kept current.',
+        ],
+        [
+          'Role address',
+          'The address reaches a team, like sales@, not a person.',
+          'Highly. It’s read from the name itself.',
+        ],
+        [
+          'Mailbox (SMTP)',
+          'The mail server accepts this exact recipient.',
+          'Often inconclusive, for the reasons below.',
+        ],
+        [
+          'A real send',
+          'The message was delivered or bounced.',
+          'The final word on delivery, not on who reads it.',
+        ],
       ],
       note: 'The [free email verifier](/tools/email-verifier) runs the first five checks. It deliberately doesn’t probe mail servers, so it can’t confirm that a mailbox exists.',
     },

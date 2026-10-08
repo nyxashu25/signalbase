@@ -4,20 +4,44 @@ import userEvent from '@testing-library/user-event';
 import { SettingsWorkspace } from './SettingsWorkspace.jsx';
 import { renderWithProviders, authenticatedState, mockFetchRoutes } from '../../test/testUtils.jsx';
 
-const summary = { plan: 'FREE', seats: 1, monthlyCreditGrant: 100, balance: 100, billingInterval: 'MONTH' };
+const summary = {
+  plan: 'FREE',
+  seats: 1,
+  monthlyCreditGrant: 100,
+  balance: 100,
+  billingInterval: 'MONTH',
+};
 
 describe('SettingsWorkspace branding', () => {
   it('shows current name + motto and saves an edit', async () => {
     const calls = [];
     mockFetchRoutes([
-      { url: '/workspace', method: 'GET', respond: { body: { workspace: { id: 'w1', name: 'Acme', plan: 'FREE', motto: 'Old motto', logoUrl: null } } } },
+      {
+        url: '/workspace',
+        method: 'GET',
+        respond: {
+          body: {
+            workspace: { id: 'w1', name: 'Acme', plan: 'FREE', motto: 'Old motto', logoUrl: null },
+          },
+        },
+      },
       { url: '/billing/summary', method: 'GET', respond: { body: summary } },
       {
         url: '/workspace',
         method: 'PATCH',
         respond: (url, init) => {
           calls.push(JSON.parse(init.body));
-          return { body: { workspace: { id: 'w1', name: 'Acme Growth', plan: 'FREE', motto: 'New motto', logoUrl: null } } };
+          return {
+            body: {
+              workspace: {
+                id: 'w1',
+                name: 'Acme Growth',
+                plan: 'FREE',
+                motto: 'New motto',
+                logoUrl: null,
+              },
+            },
+          };
         },
       },
     ]);
@@ -39,7 +63,21 @@ describe('SettingsWorkspace branding', () => {
 
   it('shows the uploaded logo when present', async () => {
     mockFetchRoutes([
-      { url: '/workspace', method: 'GET', respond: { body: { workspace: { id: 'w1', name: 'Acme', plan: 'BASIC', motto: null, logoUrl: 'data:image/png;base64,AAAA' } } } },
+      {
+        url: '/workspace',
+        method: 'GET',
+        respond: {
+          body: {
+            workspace: {
+              id: 'w1',
+              name: 'Acme',
+              plan: 'BASIC',
+              motto: null,
+              logoUrl: 'data:image/png;base64,AAAA',
+            },
+          },
+        },
+      },
       { url: '/billing/summary', method: 'GET', respond: { body: { ...summary, plan: 'BASIC' } } },
     ]);
     renderWithProviders(<SettingsWorkspace />, { preloadedState: authenticatedState });

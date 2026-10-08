@@ -73,7 +73,10 @@ export function VerifyEmail() {
                     ? 'Sending…'
                     : 'Resend verification email'}
               </button>
-              <Link to="/login" className="mt-4 block text-sm font-medium text-primary hover:underline">
+              <Link
+                to="/login"
+                className="mt-4 block text-sm font-medium text-primary hover:underline"
+              >
                 Back to sign in
               </Link>
             </>

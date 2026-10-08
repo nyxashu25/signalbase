@@ -9,17 +9,40 @@ import { cn } from '../../components/ui/cn.js';
 export const SETTINGS_SECTIONS = [
   { to: '/app/settings/profile', label: 'Profile', icon: UserCircle, keywords: 'name account' },
   { to: '/app/settings/workspace', label: 'Workspace', icon: Building2, keywords: 'plan rename' },
-  { to: '/app/settings/members', label: 'Users & teams', icon: Users, keywords: 'seats invite members' },
-  { to: '/app/settings/security', label: 'Security', icon: ShieldCheck, keywords: 'password google' },
-  { to: '/app/settings/notifications', label: 'Notifications', icon: Bell, keywords: 'email marketing opt out' },
+  {
+    to: '/app/settings/members',
+    label: 'Users & teams',
+    icon: Users,
+    keywords: 'seats invite members',
+  },
+  {
+    to: '/app/settings/security',
+    label: 'Security',
+    icon: ShieldCheck,
+    keywords: 'password google',
+  },
+  {
+    to: '/app/settings/notifications',
+    label: 'Notifications',
+    icon: Bell,
+    keywords: 'email marketing opt out',
+  },
   { to: '/app/settings/integrations', label: 'Integrations', icon: Plug, keywords: 'crm export' },
-  { to: '/app/settings/api', label: 'API & Extension', icon: KeyRound, keywords: 'api key chrome extension linkedin' },
+  {
+    to: '/app/settings/api',
+    label: 'API & Extension',
+    icon: KeyRound,
+    keywords: 'api key chrome extension linkedin',
+  },
 ];
 
 export function SettingsLayout() {
   return (
     <div>
-      <PageHeader title="Settings" description="Your account, your workspace, and how DataPit talks to you." />
+      <PageHeader
+        title="Settings"
+        description="Your account, your workspace, and how DataPit talks to you."
+      />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
         <nav aria-label="Settings sections" className="lg:sticky lg:top-4 lg:self-start">
           <ul className="flex flex-wrap gap-1 lg:flex-col">
@@ -30,7 +53,9 @@ export function SettingsLayout() {
                   className={({ isActive }) =>
                     cn(
                       'flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors',
-                      isActive ? 'bg-primary/10 text-primary' : 'text-text-muted hover:bg-surface-hover hover:text-text',
+                      isActive
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-text-muted hover:bg-surface-hover hover:text-text',
                     )
                   }
                 >
@@ -58,7 +83,11 @@ export function SettingsSection({ title, description, children, footer }) {
         {description && <p className="mt-0.5 text-sm text-text-muted">{description}</p>}
       </div>
       <div className="px-5 py-4">{children}</div>
-      {footer && <div className="flex items-center justify-end gap-2 border-t border-border px-5 py-3">{footer}</div>}
+      {footer && (
+        <div className="flex items-center justify-end gap-2 border-t border-border px-5 py-3">
+          {footer}
+        </div>
+      )}
     </section>
   );
 }

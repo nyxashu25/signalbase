@@ -213,7 +213,8 @@ function normalizePath(pathname) {
 /** The metadata for any pathname: a public page, a private screen, or 404. */
 export function metaForPath(pathname) {
   const path = normalizePath(pathname || '/');
-  const route = SEO_ROUTES.find((r) => r.path === path) ?? CONTENT_ROUTES.find((r) => r.path === path);
+  const route =
+    SEO_ROUTES.find((r) => r.path === path) ?? CONTENT_ROUTES.find((r) => r.path === path);
   if (route) return route;
   if (path === EMAIL_FORMAT_INDEX_META.path) return EMAIL_FORMAT_INDEX_META;
   const format = /^\/email-format\/([a-z0-9.-]+)$/.exec(path);
@@ -279,7 +280,8 @@ const SECTION_INDEX = { blog: '/blog', 'email-format': '/email-format' };
 function breadcrumbs(route) {
   const trail = [{ name: 'Home', path: '/' }];
   const index = SECTION_INDEX[route.section];
-  if (index && index !== route.path) trail.push({ name: SECTIONS[route.section].label, path: index });
+  if (index && index !== route.path)
+    trail.push({ name: SECTIONS[route.section].label, path: index });
   trail.push({ name: route.name, path: route.path });
   return {
     '@type': 'BreadcrumbList',

@@ -125,7 +125,9 @@ export function StoryChapter({
       style={{ perspective: 1500 }}
     >
       <div ref={pageRef} className="preserve-3d">
-        <div className={`flex flex-col gap-6 sm:flex-row sm:items-end sm:gap-10 ${plateFirst ? 'sm:flex-row-reverse sm:text-right' : ''}`}>
+        <div
+          className={`flex flex-col gap-6 sm:flex-row sm:items-end sm:gap-10 ${plateFirst ? 'sm:flex-row-reverse sm:text-right' : ''}`}
+        >
           <span
             ref={numeralRef}
             aria-hidden="true"
@@ -140,7 +142,9 @@ export function StoryChapter({
               Chapter {n} — {eyebrow}
             </p>
             {narration && (
-              <p className={`story-narration mt-3 max-w-[440px] text-lg text-ink-300 ${tone === 'surface' ? 'text-text-muted' : ''}`}>
+              <p
+                className={`story-narration mt-3 max-w-[440px] text-lg text-ink-300 ${tone === 'surface' ? 'text-text-muted' : ''}`}
+              >
                 {narration}
               </p>
             )}
@@ -156,7 +160,9 @@ export function StoryChapter({
 
         <div className="mt-14 grid grid-cols-1 items-center gap-14 lg:grid-cols-2">
           <div ref={copyRef} className={plateFirst ? 'lg:order-2' : ''}>
-            <p className={`text-base leading-relaxed ${tone === 'surface' ? 'text-text-muted' : 'text-ink-300'}`}>
+            <p
+              className={`text-base leading-relaxed ${tone === 'surface' ? 'text-text-muted' : 'text-ink-300'}`}
+            >
               {desc}
             </p>
             {points.length > 0 && (

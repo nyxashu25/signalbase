@@ -59,7 +59,9 @@ export function SequenceDetail() {
 
       {sequence.status === 'ACTIVE' && <EnrollFromList sequenceId={sequence.id} />}
 
-      <h2 className="mt-8 text-sm font-bold uppercase tracking-wide text-text-muted">Enrollments</h2>
+      <h2 className="mt-8 text-sm font-bold uppercase tracking-wide text-text-muted">
+        Enrollments
+      </h2>
       <div className="mt-3 overflow-x-auto rounded-lg border border-border bg-surface-elevated">
         <table className="w-full">
           <thead>
@@ -289,7 +291,9 @@ function EnrollmentRow({ sequenceId, enrollment }) {
           {enrollment.status}
         </span>
       </td>
-      <td className="px-4 py-3 text-sm tabular-nums text-text-muted">{enrollment.currentStepIndex + 1}</td>
+      <td className="px-4 py-3 text-sm tabular-nums text-text-muted">
+        {enrollment.currentStepIndex + 1}
+      </td>
       <td className="px-4 py-3 text-right">
         {enrollment.status === 'ACTIVE' && (
           <div className="flex justify-end gap-3">

@@ -41,7 +41,9 @@ function serializeMessage(m) {
     id: m.id,
     authorType: m.authorType,
     authorName:
-      m.authorType === 'ADMIN' ? (m.authorAdmin?.name ?? 'Support team') : (m.authorUser?.name ?? 'User'),
+      m.authorType === 'ADMIN'
+        ? (m.authorAdmin?.name ?? 'Support team')
+        : (m.authorUser?.name ?? 'User'),
     body: m.body,
     createdAt: m.createdAt,
   };
@@ -109,7 +111,10 @@ export async function addUserReply(workspaceId, ticketId, userId, body) {
   });
   // Flips back to UNANSWERED even if the admin had already replied — the
   // ball is back in the admin's court until they reply again.
-  const updated = await prisma.ticket.update({ where: { id: ticketId }, data: { status: 'UNANSWERED' } });
+  const updated = await prisma.ticket.update({
+    where: { id: ticketId },
+    data: { status: 'UNANSWERED' },
+  });
   return serializeTicket(updated);
 }
 
@@ -143,20 +148,29 @@ export async function getTicketForAdmin(ticketId) {
 }
 
 export async function addAdminReply(ticketId, adminId, body) {
-  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId }, include: { createdBy: true } });
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    include: { createdBy: true },
+  });
   if (!ticket) throw new ApiError(404, 'Ticket not found');
   if (ticket.status === 'CLOSED') throw new ApiError(400, 'This ticket is closed');
 
   await prisma.ticketMessage.create({
     data: { ticketId, authorType: 'ADMIN', authorAdminId: adminId, body },
   });
-  const updated = await prisma.ticket.update({ where: { id: ticketId }, data: { status: 'ANSWERED' } });
+  const updated = await prisma.ticket.update({
+    where: { id: ticketId },
+    data: { status: 'ANSWERED' },
+  });
   await notificationService.sendTicketReplyNotification(ticket.createdBy, updated);
   return serializeTicket(updated);
 }
 
 export async function closeTicket(ticketId) {
-  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId }, include: { createdBy: true } });
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    include: { createdBy: true },
+  });
   if (!ticket) throw new ApiError(404, 'Ticket not found');
 
   const updated = await prisma.ticket.update({

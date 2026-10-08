@@ -26,7 +26,10 @@ export const FormField = forwardRef(function FormField(
           id={inputId}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy}
-          className={cn(inputClass, error && 'border-red-500/60 focus:border-red-500 focus:ring-red-500/20')}
+          className={cn(
+            inputClass,
+            error && 'border-red-500/60 focus:border-red-500 focus:ring-red-500/20',
+          )}
           {...inputProps}
         />
       )}

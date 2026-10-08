@@ -143,7 +143,10 @@ const GALLERY = [
   {
     name: 'datapit-gallery-pricing',
     eyebrow: 'Seat-block pricing',
-    lines: [`${basic.block.paidSeats + basic.block.freeSeats} seats for`, `$${basic.price} a month.`],
+    lines: [
+      `${basic.block.paidSeats + basic.block.freeSeats} seats for`,
+      `$${basic.price} a month.`,
+    ],
     sub: 'Every seat earns its own monthly credits.',
     panelTitle: 'Plans, per month',
     rows: PLANS.map((p) => ({
@@ -250,7 +253,9 @@ function screenshot(name, html, width, height) {
     { stdio: 'ignore' },
   );
   const size = fs.statSync(out).size;
-  console.log(`press: ${path.relative(root, out)} ${width}×${height} (${(size / 1024).toFixed(0)} kB)`);
+  console.log(
+    `press: ${path.relative(root, out)} ${width}×${height} (${(size / 1024).toFixed(0)} kB)`,
+  );
   if (size > MAX_BYTES) throw new Error(`${name}.png is over ${MAX_BYTES / 1024} kB`);
 }
 
@@ -261,9 +266,19 @@ const bounds = measure();
 // also survives the circular crop LinkedIn, X and Product Hunt apply.
 const m = bounds.mark;
 const side = Math.max(m.w, m.h) / 0.72;
-const squareMark = reframe(SVGS.mark, [m.x + m.w / 2 - side / 2, m.y + m.h / 2 - side / 2, side, side]);
+const squareMark = reframe(SVGS.mark, [
+  m.x + m.w / 2 - side / 2,
+  m.y + m.h / 2 - side / 2,
+  side,
+  side,
+]);
 for (const size of [400, 1024]) {
-  screenshot(`datapit-mark-${size}`, logoPage(squareMark, { width: size, height: size }), size, size);
+  screenshot(
+    `datapit-mark-${size}`,
+    logoPage(squareMark, { width: size, height: size }),
+    size,
+    size,
+  );
   screenshot(
     `datapit-mark-on-dark-${size}`,
     logoPage(squareMark, { width: size, height: size, background: BRAND_GROUND }),
@@ -283,7 +298,12 @@ for (const [key, name] of [
   const pad = b.bar;
   const box = [b.x - pad, b.y - pad, b.w + 2 * pad, b.h + 2 * pad];
   const height = Math.round((WORDMARK_WIDTH * box[3]) / box[2]);
-  screenshot(name, logoPage(reframe(SVGS[key], box), { width: WORDMARK_WIDTH, height }), WORDMARK_WIDTH, height);
+  screenshot(
+    name,
+    logoPage(reframe(SVGS[key], box), { width: WORDMARK_WIDTH, height }),
+    WORDMARK_WIDTH,
+    height,
+  );
 }
 
 for (const image of GALLERY) screenshot(image.name, galleryPage(image), 1270, 760);

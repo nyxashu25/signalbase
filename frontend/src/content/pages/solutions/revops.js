@@ -81,8 +81,14 @@ export default {
         ['Reveal a contact in the web app', String(CREDIT_COSTS.REVEAL)],
         ['Reveal a contact from the Chrome extension', String(CREDIT_COSTS.EXTENSION_REVEAL)],
         ['Open a contact a teammate already revealed', 'Free'],
-        ['Open a company’s full profile', `${CREDIT_COSTS.COMPANY_VIEW}, the first time your workspace opens it`],
-        ['Export a search or list as a CSV, up to 5,000 rows', `${CREDIT_COSTS.CSV_EXPORT} per file`],
+        [
+          'Open a company’s full profile',
+          `${CREDIT_COSTS.COMPANY_VIEW}, the first time your workspace opens it`,
+        ],
+        [
+          'Export a search or list as a CSV, up to 5,000 rows',
+          `${CREDIT_COSTS.CSV_EXPORT} per file`,
+        ],
         ...(LIVE.sequenceSending
           ? [['Enroll a contact in a sequence', formatCount(CREDIT_COSTS.SEQUENCE_ENROLLMENT)]]
           : []),
@@ -94,7 +100,13 @@ export default {
       type: 'table',
       head: ['Plan', 'Price per block', 'Seats per block', 'Credits per paid seat', 'Owner bonus'],
       rows: [
-        ['Free', '$0', '1', `${formatCount(FREE_PLAN_MONTHLY_CREDITS)} a month for the one seat`, 'None'],
+        [
+          'Free',
+          '$0',
+          '1',
+          `${formatCount(FREE_PLAN_MONTHLY_CREDITS)} a month for the one seat`,
+          'None',
+        ],
         ...PAID.map((p) => [
           p.name,
           `$${p.price} a month`,
@@ -130,7 +142,9 @@ export default {
         '**No pipeline attribution.** DataPit records credit spend, not deals or revenue.',
         ...(LIVE.sequenceSending
           ? []
-          : ['**No sequence delivery.** Sequence sending isn’t switched on, so DataPit doesn’t deliver outreach email today.']),
+          : [
+              '**No sequence delivery.** Sequence sending isn’t switched on, so DataPit doesn’t deliver outreach email today.',
+            ]),
       ],
     },
     { type: 'h2', text: 'How does DataPit handle opt-out requests?' },
@@ -170,10 +184,22 @@ export default {
     {
       type: 'related',
       items: [
-        { label: 'Sales leaders', to: '/solutions/sales-leaders', text: 'What a sales team costs, by team size.' },
-        { label: 'Marketers', to: '/solutions/marketers', text: 'Account and contact lists for campaigns.' },
+        {
+          label: 'Sales leaders',
+          to: '/solutions/sales-leaders',
+          text: 'What a sales team costs, by team size.',
+        },
+        {
+          label: 'Marketers',
+          to: '/solutions/marketers',
+          text: 'Account and contact lists for campaigns.',
+        },
         { label: 'Pricing', to: '/pricing', text: 'Every plan, seat block and billing option.' },
-        { label: 'People search', to: '/features/people-search', text: 'The filters your team searches with.' },
+        {
+          label: 'People search',
+          to: '/features/people-search',
+          text: 'The filters your team searches with.',
+        },
       ],
     },
   ],

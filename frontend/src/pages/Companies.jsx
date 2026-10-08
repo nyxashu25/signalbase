@@ -189,7 +189,11 @@ export function Companies() {
     <div>
       <PageHeader
         title="Find companies"
-        subtitle={data ? `${data.total.toLocaleString()} ${data.total === 1 ? 'company' : 'companies'}` : undefined}
+        subtitle={
+          data
+            ? `${data.total.toLocaleString()} ${data.total === 1 ? 'company' : 'companies'}`
+            : undefined
+        }
         actions={
           <>
             <SavedSearchesMenu
@@ -291,7 +295,10 @@ export function Companies() {
                     const isSelected = selected.has(company.id);
                     const headcount = headcountLabel(company.headcountMin, company.headcountMax);
                     return (
-                      <tr key={company.id} className={`${trClass} ${isSelected ? 'bg-primary/5' : ''}`}>
+                      <tr
+                        key={company.id}
+                        className={`${trClass} ${isSelected ? 'bg-primary/5' : ''}`}
+                      >
                         <td className="w-10 px-3 py-3">
                           <input
                             type="checkbox"
@@ -354,20 +361,22 @@ export function Companies() {
                         )}
                         {show('industry') && (
                           <td className="px-4 py-3">
-                            {company.industry ? <StatusPill>{company.industry}</StatusPill> : <span className="text-sm text-text-muted">—</span>}
+                            {company.industry ? (
+                              <StatusPill>{company.industry}</StatusPill>
+                            ) : (
+                              <span className="text-sm text-text-muted">—</span>
+                            )}
                           </td>
                         )}
                         {show('employees') && (
                           <td className={`${tdMutedClass} tabular-nums`}>
-                            {headcount ? (
-                              <StatusPill tone="info">{headcount}</StatusPill>
-                            ) : (
-                              '—'
-                            )}
+                            {headcount ? <StatusPill tone="info">{headcount}</StatusPill> : '—'}
                           </td>
                         )}
                         {show('location') && (
-                          <td className={`${tdMutedClass} whitespace-nowrap`}>{company.location ?? '—'}</td>
+                          <td className={`${tdMutedClass} whitespace-nowrap`}>
+                            {company.location ?? '—'}
+                          </td>
                         )}
                         <td className="px-4 py-2 text-right">
                           <AddToListButton type="COMPANIES" companyId={company.id} label="Save" />
@@ -379,8 +388,14 @@ export function Companies() {
                     <tr>
                       <td colSpan={columnCount}>
                         <EmptyState
-                          illustration={hasActiveFilters ? <Illustration.Search /> : <Illustration.Companies />}
-                          title={hasActiveFilters ? 'No companies match these filters' : 'No companies yet'}
+                          illustration={
+                            hasActiveFilters ? <Illustration.Search /> : <Illustration.Companies />
+                          }
+                          title={
+                            hasActiveFilters
+                              ? 'No companies match these filters'
+                              : 'No companies yet'
+                          }
                           actions={
                             hasActiveFilters ? (
                               <Button variant="primary" icon={RotateCcw} onClick={resetAll}>

@@ -56,7 +56,10 @@ const CONTACT_COLUMNS = [
   { header: 'Department', value: (c) => c.department },
   { header: 'Email', value: (c) => c.email },
   { header: 'Phone', value: (c) => c.phone },
-  { header: 'Email Status', value: (c) => (c.revealed ? 'Revealed' : c.email ? 'Masked' : 'Not found') },
+  {
+    header: 'Email Status',
+    value: (c) => (c.revealed ? 'Revealed' : c.email ? 'Masked' : 'Not found'),
+  },
 ];
 
 // Charged only after the export data is actually produced — a failed ES

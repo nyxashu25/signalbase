@@ -49,7 +49,10 @@ describe('account settings (auth/me)', () => {
     const me = await request(app).get('/api/v1/auth/me').set(auth(org.accessToken));
     expect(me.body.user.name).toBe('Ada Lovelace');
 
-    const bad = await request(app).patch('/api/v1/auth/me').set(auth(org.accessToken)).send({ name: '   ' });
+    const bad = await request(app)
+      .patch('/api/v1/auth/me')
+      .set(auth(org.accessToken))
+      .send({ name: '   ' });
     expect(bad.status).toBe(400);
   });
 

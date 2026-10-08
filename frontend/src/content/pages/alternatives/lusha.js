@@ -1,4 +1,10 @@
-import { CREDIT_COSTS, EXTENSION_STORE_URL, LIVE, MAX_SELF_SERVE_BLOCKS, formatCount } from '../../../data/facts.js';
+import {
+  CREDIT_COSTS,
+  EXTENSION_STORE_URL,
+  LIVE,
+  MAX_SELF_SERVE_BLOCKS,
+  formatCount,
+} from '../../../data/facts.js';
 import {
   BILLING_INTERVALS,
   FREE_PLAN_MONTHLY_CREDITS,
@@ -31,7 +37,9 @@ const dataPitCosts = (people) => PAID.map((p) => teamCost(p, people)).join('. ')
 
 // "a, b or c" / "a, b and c"
 function joinList(items, word = 'or') {
-  return items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} ${word} ${items[items.length - 1]}`;
+  return items.length < 2
+    ? items.join('')
+    : `${items.slice(0, -1).join(', ')} ${word} ${items[items.length - 1]}`;
 }
 
 // What Lusha offers today that DataPit doesn't; phone data and sequence
@@ -158,7 +166,12 @@ export default {
     { type: 'h2', text: 'What does Lusha cost for a team compared with DataPit?' },
     {
       type: 'table',
-      head: ['Team size', 'DataPit, billed monthly', 'Lusha, billed monthly', 'Lusha, billed yearly (per month)'],
+      head: [
+        'Team size',
+        'DataPit, billed monthly',
+        'Lusha, billed monthly',
+        'Lusha, billed yearly (per month)',
+      ],
       rows: [
         [
           '5 people',
@@ -222,7 +235,10 @@ export default {
       items: [
         {
           q: 'Is DataPit cheaper than Lusha?',
-          a: `On list price, yes, for the team sizes Lusha publishes. DataPit ${BASIC.name} is $${BASIC.price} a month for up to ${seats(BASIC)} people, while 5 seats on Lusha Pro cost $219.60 a month billed monthly. Lusha includes things DataPit doesn’t yet, such as ${joinList(lushaOnly.filter((x) => x !== 'an API'), 'and')}.`,
+          a: `On list price, yes, for the team sizes Lusha publishes. DataPit ${BASIC.name} is $${BASIC.price} a month for up to ${seats(BASIC)} people, while 5 seats on Lusha Pro cost $219.60 a month billed monthly. Lusha includes things DataPit doesn’t yet, such as ${joinList(
+            lushaOnly.filter((x) => x !== 'an API'),
+            'and',
+          )}.`,
         },
         {
           q: 'Does DataPit have a free plan?',
@@ -254,26 +270,87 @@ export default {
     {
       type: 'related',
       items: [
-        { label: 'Apollo alternative', to: '/alternatives/apollo', text: 'How DataPit compares with Apollo on price, seats and features.' },
-        { label: 'ZoomInfo alternative', to: '/alternatives/zoominfo', text: 'How DataPit compares with ZoomInfo on price, seats and features.' },
-        { label: 'Cognism alternative', to: '/alternatives/cognism', text: 'How DataPit compares with Cognism on price, seats and features.' },
-        { label: 'Pricing', to: '/pricing', text: `Seat blocks from $${BASIC.price} a month, and a free plan.` },
+        {
+          label: 'Apollo alternative',
+          to: '/alternatives/apollo',
+          text: 'How DataPit compares with Apollo on price, seats and features.',
+        },
+        {
+          label: 'ZoomInfo alternative',
+          to: '/alternatives/zoominfo',
+          text: 'How DataPit compares with ZoomInfo on price, seats and features.',
+        },
+        {
+          label: 'Cognism alternative',
+          to: '/alternatives/cognism',
+          text: 'How DataPit compares with Cognism on price, seats and features.',
+        },
+        {
+          label: 'Pricing',
+          to: '/pricing',
+          text: `Seat blocks from $${BASIC.price} a month, and a free plan.`,
+        },
       ],
     },
     {
       type: 'sources',
       items: [
-        { label: 'Lusha pricing: plans, seats, credits, credit costs, extra seats, API, intent topics and FAQ', url: 'https://www.lusha.com/pricing/', checked: CHECKED },
-        { label: 'Lusha homepage: database size claims', url: 'https://www.lusha.com/', checked: CHECKED },
-        { label: 'Lusha data page: coverage by country', url: 'https://www.lusha.com/data/', checked: CHECKED },
-        { label: 'Lusha Chrome extension page', url: 'https://www.lusha.com/lusha-extension/', checked: CHECKED },
-        { label: 'Lusha on the Chrome Web Store', url: 'https://chromewebstore.google.com/detail/lusha-easily-find-b2b-con/mcebeofpilippmndlpcghpmghcljajna', checked: CHECKED },
-        { label: 'Lusha Engage: email sequences', url: 'https://www.lusha.com/engage/', checked: CHECKED },
-        { label: 'Lusha docs: native CRM integrations', url: 'https://docs.lusha.com/user-guide/native-crm-integrations', checked: CHECKED },
-        { label: 'Lusha integrations marketplace', url: 'https://www.lusha.com/integrations/', checked: CHECKED },
-        { label: 'Lusha docs: API fundamentals', url: 'https://docs.lusha.com/tutorials/api_fundamentals', checked: CHECKED },
-        { label: 'Lusha buying signals', url: 'https://www.lusha.com/buying-signals/', checked: CHECKED },
-        { label: 'Lusha Trust Center: compliance', url: 'https://www.lusha.com/trust-center/tc-compliance/', checked: CHECKED },
+        {
+          label:
+            'Lusha pricing: plans, seats, credits, credit costs, extra seats, API, intent topics and FAQ',
+          url: 'https://www.lusha.com/pricing/',
+          checked: CHECKED,
+        },
+        {
+          label: 'Lusha homepage: database size claims',
+          url: 'https://www.lusha.com/',
+          checked: CHECKED,
+        },
+        {
+          label: 'Lusha data page: coverage by country',
+          url: 'https://www.lusha.com/data/',
+          checked: CHECKED,
+        },
+        {
+          label: 'Lusha Chrome extension page',
+          url: 'https://www.lusha.com/lusha-extension/',
+          checked: CHECKED,
+        },
+        {
+          label: 'Lusha on the Chrome Web Store',
+          url: 'https://chromewebstore.google.com/detail/lusha-easily-find-b2b-con/mcebeofpilippmndlpcghpmghcljajna',
+          checked: CHECKED,
+        },
+        {
+          label: 'Lusha Engage: email sequences',
+          url: 'https://www.lusha.com/engage/',
+          checked: CHECKED,
+        },
+        {
+          label: 'Lusha docs: native CRM integrations',
+          url: 'https://docs.lusha.com/user-guide/native-crm-integrations',
+          checked: CHECKED,
+        },
+        {
+          label: 'Lusha integrations marketplace',
+          url: 'https://www.lusha.com/integrations/',
+          checked: CHECKED,
+        },
+        {
+          label: 'Lusha docs: API fundamentals',
+          url: 'https://docs.lusha.com/tutorials/api_fundamentals',
+          checked: CHECKED,
+        },
+        {
+          label: 'Lusha buying signals',
+          url: 'https://www.lusha.com/buying-signals/',
+          checked: CHECKED,
+        },
+        {
+          label: 'Lusha Trust Center: compliance',
+          url: 'https://www.lusha.com/trust-center/tc-compliance/',
+          checked: CHECKED,
+        },
       ],
     },
   ],

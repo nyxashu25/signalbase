@@ -13,7 +13,9 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const pagesDir = path.join(root, 'src', 'content', 'pages');
 const outFile = path.join(root, 'src', 'content', 'registry.generated.js');
 
-const { validatePage, SECTIONS } = await import(pathToFileURL(path.join(root, 'src/content/schema.js')).href);
+const { validatePage, SECTIONS } = await import(
+  pathToFileURL(path.join(root, 'src/content/schema.js')).href
+);
 
 function walk(dir) {
   if (!fs.existsSync(dir)) return [];

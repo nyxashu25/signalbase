@@ -82,9 +82,24 @@ export default {
       head: ['Stage', 'Plan', 'Price', 'Credits a month'],
       rows: [
         ['Just you', 'Free', '$0', formatCount(FREE_PLAN_MONTHLY_CREDITS)],
-        [`You and up to ${seats(BASIC) - 1} others`, `${BASIC.name}, 1 block`, `$${BASIC.price} a month`, credits(BASIC)],
-        [`Up to ${seats(PRO)} people`, `${PRO.name}, 1 block`, `$${PRO.price} a month`, credits(PRO)],
-        [`Up to ${seats(ORG)} people`, `${ORG.name}, 1 block`, `$${ORG.price} a month`, credits(ORG)],
+        [
+          `You and up to ${seats(BASIC) - 1} others`,
+          `${BASIC.name}, 1 block`,
+          `$${BASIC.price} a month`,
+          credits(BASIC),
+        ],
+        [
+          `Up to ${seats(PRO)} people`,
+          `${PRO.name}, 1 block`,
+          `$${PRO.price} a month`,
+          credits(PRO),
+        ],
+        [
+          `Up to ${seats(ORG)} people`,
+          `${ORG.name}, 1 block`,
+          `$${ORG.price} a month`,
+          credits(ORG),
+        ],
       ],
       note: `Quarterly billing saves ${discount('QUARTER')}% and annual billing ${discount('YEAR')}%. Each newly covered teammate gets a one-time ${formatCount(WELCOME_GIFT_CREDITS)}-credit welcome gift. See [pricing](/pricing) for every plan.`,
     },
@@ -134,15 +149,31 @@ export default {
     {
       type: 'related',
       items: [
-        { label: 'Sales leaders', to: '/solutions/sales-leaders', text: 'What DataPit costs once you have a team.' },
-        { label: 'Marketers', to: '/solutions/marketers', text: 'Account and contact lists for campaigns.' },
-        { label: 'Chrome extension', to: '/chrome-extension', text: 'Look up LinkedIn profiles against DataPit.' },
+        {
+          label: 'Sales leaders',
+          to: '/solutions/sales-leaders',
+          text: 'What DataPit costs once you have a team.',
+        },
+        {
+          label: 'Marketers',
+          to: '/solutions/marketers',
+          text: 'Account and contact lists for campaigns.',
+        },
+        {
+          label: 'Chrome extension',
+          to: '/chrome-extension',
+          text: 'Look up LinkedIn profiles against DataPit.',
+        },
         {
           label: 'How to find someone’s email address',
           to: '/blog/how-to-find-someones-email-address',
           text: 'A step-by-step guide for B2B contacts.',
         },
-        { label: 'Cold email templates', to: '/blog/cold-email-templates', text: 'First emails you can adapt.' },
+        {
+          label: 'Cold email templates',
+          to: '/blog/cold-email-templates',
+          text: 'First emails you can adapt.',
+        },
         { label: 'Pricing', to: '/pricing', text: 'The free plan and every paid plan.' },
       ],
     },

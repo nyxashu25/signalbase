@@ -19,7 +19,9 @@ describe('POST /notifications/unsubscribe', () => {
 
   it('flips marketingOptOut for the token-carried user, no auth required', async () => {
     const org = await prisma.org.create({ data: { name: 'Acme', slug: 'acme-unsub' } });
-    const workspace = await prisma.workspace.create({ data: { orgId: org.id, name: 'Acme Workspace' } });
+    const workspace = await prisma.workspace.create({
+      data: { orgId: org.id, name: 'Acme Workspace' },
+    });
     const user = await prisma.user.create({
       data: { email: 'unsub-me@acme.test', name: 'Unsub Me', emailVerified: true },
     });

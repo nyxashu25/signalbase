@@ -2,7 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AdminTickets } from './AdminTickets.jsx';
-import { renderWithProviders, authenticatedAdminState, mockFetchRoutes } from '../../test/testUtils.jsx';
+import {
+  renderWithProviders,
+  authenticatedAdminState,
+  mockFetchRoutes,
+} from '../../test/testUtils.jsx';
 
 const ticket = {
   id: 't1',
@@ -60,8 +64,20 @@ describe('AdminTickets customer-replied nudge', () => {
         respond: {
           body: {
             results: [
-              { ...ticket, id: 'fresh', subject: 'Brand new', lastMessageAuthorType: 'USER', messageCount: 1 },
-              { ...ticket, id: 'replied', subject: 'They came back', lastMessageAuthorType: 'USER', messageCount: 3 },
+              {
+                ...ticket,
+                id: 'fresh',
+                subject: 'Brand new',
+                lastMessageAuthorType: 'USER',
+                messageCount: 1,
+              },
+              {
+                ...ticket,
+                id: 'replied',
+                subject: 'They came back',
+                lastMessageAuthorType: 'USER',
+                messageCount: 3,
+              },
             ],
             total: 2,
             page: 1,

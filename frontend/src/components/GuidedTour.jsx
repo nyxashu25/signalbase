@@ -47,7 +47,9 @@ function computeTooltipPos(rect) {
   const top = Math.max(GAP, Math.min(rect.top, viewportH - CARD_HEIGHT_ESTIMATE - GAP));
   const rightSideLeft = rect.right + GAP;
   const left =
-    rightSideLeft + CARD_WIDTH < viewportW ? rightSideLeft : Math.max(GAP, rect.left - GAP - CARD_WIDTH);
+    rightSideLeft + CARD_WIDTH < viewportW
+      ? rightSideLeft
+      : Math.max(GAP, rect.left - GAP - CARD_WIDTH);
   return { top, left };
 }
 

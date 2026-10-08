@@ -31,7 +31,10 @@ export function GiantCTA({
       <div
         aria-hidden="true"
         className="pointer-events-none absolute left-1/2 top-1/2 h-[60vh] w-[80vw] -translate-x-1/2 -translate-y-1/2 rounded-full"
-        style={{ background: 'radial-gradient(circle, rgba(190,61,255,0.18), transparent 62%)', filter: 'blur(30px)' }}
+        style={{
+          background: 'radial-gradient(circle, rgba(190,61,255,0.18), transparent 62%)',
+          filter: 'blur(30px)',
+        }}
       />
       <Link to={to} className="group relative mx-auto block max-w-[1400px] px-6 py-32 sm:py-44">
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-mauve-magic">{eyebrow}</p>
@@ -46,7 +49,15 @@ export function GiantCTA({
           {/* Padding widens the magnetic field past the 44px disc. */}
           <Magnetic className="-m-4 inline-block p-4" max={6} strength={0.4}>
             <span className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-action shadow-[0_0_28px_rgba(197,82,255,0.5)] transition-transform duration-200 ease-brand group-hover:translate-x-2">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
                 <path d="M4 12h15M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </span>

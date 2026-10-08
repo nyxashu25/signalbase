@@ -22,7 +22,13 @@ function hasFinePointer() {
  * chase itself. A no-op wrapper with the same structure under reduced
  * motion and on coarse (touch) pointers.
  */
-export function Magnetic({ children, as: Tag = 'span', className = 'inline-block', strength = 0.3, max = 4 }) {
+export function Magnetic({
+  children,
+  as: Tag = 'span',
+  className = 'inline-block',
+  strength = 0.3,
+  max = 4,
+}) {
   const reduceMotion = useReducedMotion();
   const [finePointer] = useState(hasFinePointer);
   const x = useMotionValue(0);

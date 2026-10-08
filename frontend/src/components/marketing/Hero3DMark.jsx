@@ -29,7 +29,10 @@ const BACK_TONES = ['#5f0a8f', '#560a82', '#4d0a76', '#450969', '#3d085d', '#360
 
 function layerTone(i) {
   if (i === 0) return null;
-  const idx = Math.min(BACK_TONES.length - 1, Math.floor(((i - 1) / (LAYERS - 1)) * BACK_TONES.length));
+  const idx = Math.min(
+    BACK_TONES.length - 1,
+    Math.floor(((i - 1) / (LAYERS - 1)) * BACK_TONES.length),
+  );
   return BACK_TONES[idx];
 }
 
@@ -48,7 +51,14 @@ function MarkLayer({ index, gradientId }) {
     >
       {index === 0 && (
         <defs>
-          <linearGradient id={gradientId} x1="16" y1="24" x2="142" y2="138" gradientUnits="userSpaceOnUse">
+          <linearGradient
+            id={gradientId}
+            x1="16"
+            y1="24"
+            x2="142"
+            y2="138"
+            gradientUnits="userSpaceOnUse"
+          >
             <stop offset="0" stopColor="#7C00BA" />
             <stop offset=".28" stopColor="#AA00FF" />
             <stop offset=".58" stopColor="#BE3DFF" />
@@ -65,7 +75,14 @@ function MarkLayer({ index, gradientId }) {
           <rect key={b.x} x={b.x} y={b.y} width={b.w} height={b.h} rx={b.rx} />
         ))}
       </g>
-      <path d={D_PATH} fill="none" stroke={fill} strokeWidth="23" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d={D_PATH}
+        fill="none"
+        stroke={fill}
+        strokeWidth="23"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
@@ -123,16 +140,25 @@ export function Hero3DMark({ className = '', sinkWith = null, size = 'lg' }) {
     return () => ctx.revert();
   }, [reduceMotion, sinkWith]);
 
-  const dimension = size === 'lg' ? 'h-[280px] w-[280px] sm:h-[360px] sm:w-[360px] lg:h-[440px] lg:w-[440px]' : 'h-[200px] w-[200px] sm:h-[260px] sm:w-[260px]';
+  const dimension =
+    size === 'lg'
+      ? 'h-[280px] w-[280px] sm:h-[360px] sm:w-[360px] lg:h-[440px] lg:w-[440px]'
+      : 'h-[200px] w-[200px] sm:h-[260px] sm:w-[260px]';
   const layers = reduceMotion ? [0] : Array.from({ length: LAYERS }, (_, i) => i);
 
   return (
-    <div ref={stageRef} className={`relative ${dimension} ${className}`} style={{ perspective: 1200 }}>
+    <div
+      ref={stageRef}
+      className={`relative ${dimension} ${className}`}
+      style={{ perspective: 1200 }}
+    >
       <motion.div
         className="preserve-3d relative h-full w-full"
         style={{ rotateX: springX, rotateY: springY }}
       >
-        <div className={`preserve-3d relative h-full w-full ${reduceMotion ? '' : 'story-idle-turn'}`}>
+        <div
+          className={`preserve-3d relative h-full w-full ${reduceMotion ? '' : 'story-idle-turn'}`}
+        >
           {/* Lit platform under the mark */}
           <div
             aria-hidden="true"

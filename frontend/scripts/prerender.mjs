@@ -74,7 +74,8 @@ function toTag({ tag, attrs, text }) {
   const attrText = Object.entries(attrs)
     .map(([k, v]) => ` ${k}="${escapeHtml(v)}"`)
     .join('');
-  if (tag === 'script') return `<script${attrText} data-seo>${text.replace(/</g, '\\u003c')}</script>`;
+  if (tag === 'script')
+    return `<script${attrText} data-seo>${text.replace(/</g, '\\u003c')}</script>`;
   return `<${tag}${attrText} data-seo />`;
 }
 

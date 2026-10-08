@@ -85,7 +85,8 @@ export function SavedSearchesMenu({ type, currentFilters, hasActiveFilters, onAp
           <div className="flex max-h-60 flex-col gap-0.5 overflow-y-auto">
             {saved && saved.length === 0 && (
               <p className="px-2 py-3 text-xs text-text-muted">
-                Nothing saved yet. Set some filters, then save them here to come back to in one click.
+                Nothing saved yet. Set some filters, then save them here to come back to in one
+                click.
               </p>
             )}
             {saved?.map((s) => (
@@ -128,7 +129,14 @@ export function SavedSearchesMenu({ type, currentFilters, hasActiveFilters, onAp
                   aria-label="Saved search name"
                   className="h-8 min-w-0 flex-1 rounded-md border border-border bg-surface-elevated px-2 text-xs text-text outline-none focus:border-focus focus:ring-2 focus:ring-focus/25"
                 />
-                <Button type="submit" variant="primary" size="sm" icon={Check} loading={creating} disabled={!name.trim()}>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="sm"
+                  icon={Check}
+                  loading={creating}
+                  disabled={!name.trim()}
+                >
                   Save
                 </Button>
               </form>

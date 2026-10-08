@@ -333,7 +333,8 @@ export default {
           checked: CHECKED,
         },
         {
-          label: 'European Commission: What happens if someone objects to my company processing their personal data?',
+          label:
+            'European Commission: What happens if someone objects to my company processing their personal data?',
           url: 'https://commission.europa.eu/law/law-topic/data-protection/information-business-and-organisations/dealing-requests-individuals/what-happens-if-someone-objects-my-company-processing-their-personal-data_en',
           checked: CHECKED,
         },

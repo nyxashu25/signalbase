@@ -66,7 +66,9 @@ export function mockFetchRoutes(routes) {
       }
     }
     const result =
-      typeof match.respond === 'function' ? match.respond(url, { ...init, method, body: requestBody }) : match.respond;
+      typeof match.respond === 'function'
+        ? match.respond(url, { ...init, method, body: requestBody })
+        : match.respond;
     const status = result.status ?? 200;
     const body = result.body ?? {};
     // The Fetch spec forbids a body on these statuses — the real Response

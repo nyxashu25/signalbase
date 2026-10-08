@@ -54,10 +54,7 @@ describe('resendService.sendEmail', () => {
 
   it('returns sent:false (does not throw) when the request itself fails', async () => {
     env.RESEND_API_KEY = 'test-key';
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockRejectedValue(new Error('network down')),
-    );
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')));
 
     const result = await sendEmail({ to: 'a@b.com', subject: 'Hi', html: '<p>Hi</p>' });
 

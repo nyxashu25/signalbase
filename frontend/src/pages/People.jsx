@@ -61,7 +61,11 @@ const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest' },
 ];
 
-const EMAIL_STATUS_LABELS = { verified: 'Verified', unverified: 'Unverified', not_found: 'Not found' };
+const EMAIL_STATUS_LABELS = {
+  verified: 'Verified',
+  unverified: 'Unverified',
+  not_found: 'Not found',
+};
 
 const DEFAULT_COLUMNS = CONTACT_COLUMNS.map((c) => c.key);
 
@@ -217,7 +221,9 @@ export function People() {
     else
       toast.warning(
         `Revealed ${ok} of ${ok + failed}`,
-        failed === ok + failed ? 'Check your credit balance.' : 'Some reveals failed — check your credit balance.',
+        failed === ok + failed
+          ? 'Check your credit balance.'
+          : 'Some reveals failed — check your credit balance.',
       );
   }
 
@@ -240,7 +246,10 @@ export function People() {
       label: 'Email status',
       icon: Mail,
       type: 'checkbox',
-      options: (facets.emailStatus ?? []).map((o) => ({ ...o, label: EMAIL_STATUS_LABELS[o.value] })),
+      options: (facets.emailStatus ?? []).map((o) => ({
+        ...o,
+        label: EMAIL_STATUS_LABELS[o.value],
+      })),
       selected: filters.emailStatus,
       onToggle: (v) => updateArray('emailStatus', v),
     },
@@ -365,7 +374,11 @@ export function People() {
     <div>
       <PageHeader
         title="Find people"
-        subtitle={data ? `${data.total.toLocaleString()} ${data.total === 1 ? 'person' : 'people'}` : undefined}
+        subtitle={
+          data
+            ? `${data.total.toLocaleString()} ${data.total === 1 ? 'person' : 'people'}`
+            : undefined
+        }
         actions={
           <>
             <SavedSearchesMenu
@@ -418,7 +431,11 @@ export function People() {
               }}
               options={SORT_OPTIONS}
             />
-            <ColumnPicker columns={CONTACT_COLUMNS} visible={visibleColumns} onToggle={toggleColumn} />
+            <ColumnPicker
+              columns={CONTACT_COLUMNS}
+              visible={visibleColumns}
+              onToggle={toggleColumn}
+            />
           </>
         }
       />
@@ -452,7 +469,10 @@ export function People() {
                       />
                     </th>
                     {CONTACT_COLUMNS.filter((c) => visibleColumns.includes(c.key)).map((c) => (
-                      <th key={c.key} className={`${thClass} ${c.key === 'linkedin' ? '!px-3' : ''}`}>
+                      <th
+                        key={c.key}
+                        className={`${thClass} ${c.key === 'linkedin' ? '!px-3' : ''}`}
+                      >
                         {c.key === 'linkedin' ? <span className="sr-only">LinkedIn</span> : c.label}
                       </th>
                     ))}
@@ -478,8 +498,12 @@ export function People() {
                     <tr>
                       <td colSpan={columnCount}>
                         <EmptyState
-                          illustration={hasActiveFilters ? <Illustration.Search /> : <Illustration.People />}
-                          title={hasActiveFilters ? 'No people match these filters' : 'No people yet'}
+                          illustration={
+                            hasActiveFilters ? <Illustration.Search /> : <Illustration.People />
+                          }
+                          title={
+                            hasActiveFilters ? 'No people match these filters' : 'No people yet'
+                          }
                           actions={
                             hasActiveFilters ? (
                               <Button variant="primary" icon={RotateCcw} onClick={resetAll}>

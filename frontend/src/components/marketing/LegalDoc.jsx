@@ -18,13 +18,27 @@ export function LegalDoc({ title, updated, children }) {
         className="relative text-white"
       >
         <div className="mx-auto max-w-[900px] px-6 pb-14 pt-20 sm:pt-24">
-          <FadeIn as="p" whileInView={false} className="text-xs font-bold uppercase tracking-[0.22em] text-mauve-magic">
+          <FadeIn
+            as="p"
+            whileInView={false}
+            className="text-xs font-bold uppercase tracking-[0.22em] text-mauve-magic"
+          >
             Document
           </FadeIn>
-          <FadeIn as="h1" whileInView={false} delay={0.1} className="mt-5 text-[clamp(2.4rem,6vw,5rem)] font-extrabold uppercase leading-[0.95] tracking-tight">
+          <FadeIn
+            as="h1"
+            whileInView={false}
+            delay={0.1}
+            className="mt-5 text-[clamp(2.4rem,6vw,5rem)] font-extrabold uppercase leading-[0.95] tracking-tight"
+          >
             {title}
           </FadeIn>
-          <FadeIn as="p" whileInView={false} delay={0.2} className="story-narration mt-5 text-lg text-mauve-2/90">
+          <FadeIn
+            as="p"
+            whileInView={false}
+            delay={0.2}
+            className="story-narration mt-5 text-lg text-mauve-2/90"
+          >
             Last updated {updated}
           </FadeIn>
         </div>
@@ -35,8 +49,8 @@ export function LegalDoc({ title, updated, children }) {
           <div className="story-glass px-6 py-12 sm:px-10 sm:py-16">
             <p className="rounded-md border border-border bg-surface px-4 py-3 text-xs leading-relaxed text-text-muted">
               This describes how DataPit actually handles data today, in plain language, and we keep
-              it current as the product changes. It hasn't been reviewed by outside counsel, so if you
-              need a formal legal review for your own compliance purposes,{' '}
+              it current as the product changes. It hasn't been reviewed by outside counsel, so if
+              you need a formal legal review for your own compliance purposes,{' '}
               <a href="/contact" className="font-medium text-primary hover:underline">
                 contact us
               </a>{' '}

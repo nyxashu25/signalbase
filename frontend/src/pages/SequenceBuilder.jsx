@@ -10,16 +10,16 @@ function withKey(step) {
 export function SequenceBuilder() {
   const navigate = useNavigate();
   const [name, setName] = useState('');
-  const [steps, setSteps] = useState([
-    withKey({ type: 'EMAIL', subject: '', body: '' }),
-  ]);
+  const [steps, setSteps] = useState([withKey({ type: 'EMAIL', subject: '', body: '' })]);
   const [error, setError] = useState(null);
   const [createSequence, { isLoading }] = useCreateSequenceMutation();
 
   function addStep(type) {
     setSteps((s) => [
       ...s,
-      withKey(type === 'EMAIL' ? { type: 'EMAIL', subject: '', body: '' } : { type: 'WAIT', waitDays: 3 }),
+      withKey(
+        type === 'EMAIL' ? { type: 'EMAIL', subject: '', body: '' } : { type: 'WAIT', waitDays: 3 },
+      ),
     ]);
   }
 
@@ -79,7 +79,10 @@ export function SequenceBuilder() {
 
         <div className="flex flex-col gap-3">
           {steps.map((step, i) => (
-            <div key={step._key} className="rounded-lg border border-border bg-surface-elevated p-4">
+            <div
+              key={step._key}
+              className="rounded-lg border border-border bg-surface-elevated p-4"
+            >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wide text-primary">
                   Step {i + 1} &middot; {step.type === 'EMAIL' ? 'Email' : 'Wait'}

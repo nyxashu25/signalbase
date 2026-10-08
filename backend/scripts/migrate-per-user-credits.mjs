@@ -96,7 +96,9 @@ async function moveBalancesToOwners() {
       select: { userId: true },
     });
     if (!owner) {
-      console.warn(`  ! workspace ${workspace.id} (${workspace.name}) has ${balance} credits but no OWNER — left untouched`);
+      console.warn(
+        `  ! workspace ${workspace.id} (${workspace.name}) has ${balance} credits but no OWNER — left untouched`,
+      );
       skippedNoOwner++;
       continue;
     }
@@ -119,7 +121,9 @@ async function moveBalancesToOwners() {
       `credits:balance:user:${owner.userId}`,
     );
     moved++;
-    console.log(`  moved ${balance} credits: workspace "${workspace.name}" -> owner ${owner.userId}`);
+    console.log(
+      `  moved ${balance} credits: workspace "${workspace.name}" -> owner ${owner.userId}`,
+    );
   }
 
   // Crash-window recovery: marker written but the move never ran (owner not
@@ -135,7 +139,9 @@ async function moveBalancesToOwners() {
       `credits:balance:user:${marker.userId}`,
     );
     if (recovered > 0) {
-      console.log(`  recovered interrupted move for workspace ${marker.workspaceId} (${recovered})`);
+      console.log(
+        `  recovered interrupted move for workspace ${marker.workspaceId} (${recovered})`,
+      );
     }
   }
 

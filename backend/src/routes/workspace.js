@@ -35,14 +35,23 @@ const inviteLimiter = rateLimit({
 // Workspace branding — readable by any member, editable by ADMIN+ (free on
 // every plan). Logo is a small uploaded image stored inline (uploadImage).
 workspaceRouter.get('/', asyncHandler(workspaceController.profile));
-workspaceRouter.post('/logo', requireRole('ADMIN'), uploadImage, asyncHandler(workspaceController.uploadLogo));
+workspaceRouter.post(
+  '/logo',
+  requireRole('ADMIN'),
+  uploadImage,
+  asyncHandler(workspaceController.uploadLogo),
+);
 workspaceRouter.delete('/logo', requireRole('ADMIN'), asyncHandler(workspaceController.removeLogo));
 
 workspaceRouter.get('/members', asyncHandler(workspaceController.members));
 // Team features (invite, revoke, change role) are paid-only — requireTeamPlan
 // after the role check. Listing invites stays open to ADMIN on any plan so
 // the Free UI can render an empty list rather than erroring.
-workspaceRouter.get('/invites', requireRole('ADMIN'), asyncHandler(workspaceController.listInvites));
+workspaceRouter.get(
+  '/invites',
+  requireRole('ADMIN'),
+  asyncHandler(workspaceController.listInvites),
+);
 workspaceRouter.post(
   '/invites',
   requireRole('ADMIN'),

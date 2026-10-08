@@ -30,33 +30,24 @@ describe('toCsv', () => {
   });
 
   it('renders null/undefined values as empty fields', () => {
-    const csv = toCsv([{ name: 'Nova' }], [
-      { header: 'Name', value: (r) => r.name },
-      { header: 'Missing', value: (r) => r.missing },
-    ]);
+    const csv = toCsv(
+      [{ name: 'Nova' }],
+      [
+        { header: 'Name', value: (r) => r.name },
+        { header: 'Missing', value: (r) => r.missing },
+      ],
+    );
 
     expect(csv).toBe('Name,Missing\r\nNova,\r\n');
   });
 
   it('neutralizes leading =, +, -, @ to prevent CSV formula injection', () => {
     const csv = toCsv(
-      [
-        { v: '=SUM(A1:A9)' },
-        { v: '+1234' },
-        { v: '-1234' },
-        { v: '@cmd' },
-        { v: 'safe-value' },
-      ],
+      [{ v: '=SUM(A1:A9)' }, { v: '+1234' }, { v: '-1234' }, { v: '@cmd' }, { v: 'safe-value' }],
       [{ header: 'V', value: (r) => r.v }],
     );
 
     const rows = csv.trim().split('\r\n').slice(1);
-    expect(rows).toEqual([
-      "'=SUM(A1:A9)",
-      "'+1234",
-      "'-1234",
-      "'@cmd",
-      'safe-value',
-    ]);
+    expect(rows).toEqual(["'=SUM(A1:A9)", "'+1234", "'-1234", "'@cmd", 'safe-value']);
   });
 });

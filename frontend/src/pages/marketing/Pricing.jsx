@@ -21,7 +21,12 @@ import {
 } from '../../data/plans.js';
 import { APOLLO, COMPETITOR_PRICES_CHECKED, ZOOMINFO } from '../../data/competitors.js';
 import { PRICING_FAQS } from '../../data/faqs.js';
-import { CREDIT_COSTS, MAX_SELF_SERVE_BLOCKS, formatCount, pricingSummary } from '../../data/facts.js';
+import {
+  CREDIT_COSTS,
+  MAX_SELF_SERVE_BLOCKS,
+  formatCount,
+  pricingSummary,
+} from '../../data/facts.js';
 import { FaqSection } from '../../components/marketing/FaqSection.jsx';
 
 const CADENCE_LABEL = { MONTH: 'month', QUARTER: 'quarter', YEAR: 'year' };
@@ -67,7 +72,8 @@ function formatDay(isoDay) {
   });
 }
 
-const discountPercent = (key) => Math.round(BILLING_INTERVALS.find((i) => i.key === key).discount * 100);
+const discountPercent = (key) =>
+  Math.round(BILLING_INTERVALS.find((i) => i.key === key).discount * 100);
 
 /**
  * Every plan's numbers side by side, monthly — the table readers (and answer
@@ -82,20 +88,34 @@ function PlanComparison() {
     <div className="mt-16">
       <h3 className="text-lg font-bold text-text">Plans at a glance</h3>
       <p className="mt-1 text-sm text-text-muted">
-        Monthly prices per seat block. Quarterly billing saves {discountPercent('QUARTER')}% and annual
-        billing saves {discountPercent('YEAR')}%.
+        Monthly prices per seat block. Quarterly billing saves {discountPercent('QUARTER')}% and
+        annual billing saves {discountPercent('YEAR')}%.
       </p>
       <div className="mt-5 overflow-x-auto rounded-lg border border-border">
         <table className="w-full min-w-[680px] text-left text-sm tabular-nums">
           <thead className="bg-surface text-xs uppercase tracking-wide text-text-muted">
             <tr>
-              <th scope="col" className={head}>Plan</th>
-              <th scope="col" className={head}>Price / month</th>
-              <th scope="col" className={head}>Seats per block</th>
-              <th scope="col" className={head}>Credits / paid seat / month</th>
-              <th scope="col" className={head}>Credits / free seat / month</th>
-              <th scope="col" className={head}>Owner bonus / month</th>
-              <th scope="col" className={head}>Price per paid seat</th>
+              <th scope="col" className={head}>
+                Plan
+              </th>
+              <th scope="col" className={head}>
+                Price / month
+              </th>
+              <th scope="col" className={head}>
+                Seats per block
+              </th>
+              <th scope="col" className={head}>
+                Credits / paid seat / month
+              </th>
+              <th scope="col" className={head}>
+                Credits / free seat / month
+              </th>
+              <th scope="col" className={head}>
+                Owner bonus / month
+              </th>
+              <th scope="col" className={head}>
+                Price per paid seat
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border text-text">
@@ -103,13 +123,21 @@ function PlanComparison() {
               const b = plan.block;
               return (
                 <tr key={plan.key}>
-                  <th scope="row" className={`${cell} font-bold`}>{plan.name}</th>
+                  <th scope="row" className={`${cell} font-bold`}>
+                    {plan.name}
+                  </th>
                   <td className={cell}>{b ? `$${plan.price} per block` : '$0'}</td>
-                  <td className={cell}>{b ? `${b.paidSeats} paid + ${b.freeSeats} free` : '1 seat'}</td>
-                  <td className={cell}>{formatCount(b ? b.paidSeatCredits : FREE_PLAN_MONTHLY_CREDITS)}</td>
+                  <td className={cell}>
+                    {b ? `${b.paidSeats} paid + ${b.freeSeats} free` : '1 seat'}
+                  </td>
+                  <td className={cell}>
+                    {formatCount(b ? b.paidSeatCredits : FREE_PLAN_MONTHLY_CREDITS)}
+                  </td>
                   <td className={cell}>{b ? formatCount(FREE_SEAT_MONTHLY_CREDITS) : '—'}</td>
                   <td className={cell}>{b && b.ownerBonus ? formatCount(b.ownerBonus) : '—'}</td>
-                  <td className={cell}>{b ? formatUsd(Math.round((plan.price / b.paidSeats) * 100) / 100) : '$0'}</td>
+                  <td className={cell}>
+                    {b ? formatUsd(Math.round((plan.price / b.paidSeats) * 100) / 100) : '$0'}
+                  </td>
                 </tr>
               );
             })}
@@ -117,7 +145,8 @@ function PlanComparison() {
         </table>
       </div>
       <p className="mt-4 text-xs text-text-muted">
-        Prices last updated <time dateTime={PRICING_UPDATED_AT}>{formatDay(PRICING_UPDATED_AT)}</time>.
+        Prices last updated{' '}
+        <time dateTime={PRICING_UPDATED_AT}>{formatDay(PRICING_UPDATED_AT)}</time>.
       </p>
       <TeamCosts />
     </div>
@@ -144,12 +173,24 @@ function TeamCosts() {
         <table className="w-full min-w-[680px] text-left text-sm tabular-nums">
           <thead className="bg-surface text-xs uppercase tracking-wide text-text-muted">
             <tr>
-              <th scope="col" className={head}>Team size</th>
-              <th scope="col" className={head}>DataPit Basic</th>
-              <th scope="col" className={head}>DataPit Professional</th>
-              <th scope="col" className={head}>{APOLLO.name} Basic, billed monthly</th>
-              <th scope="col" className={head}>{APOLLO.name} Basic, billed annually</th>
-              <th scope="col" className={head}>{ZOOMINFO.name}</th>
+              <th scope="col" className={head}>
+                Team size
+              </th>
+              <th scope="col" className={head}>
+                DataPit Basic
+              </th>
+              <th scope="col" className={head}>
+                DataPit Professional
+              </th>
+              <th scope="col" className={head}>
+                {APOLLO.name} Basic, billed monthly
+              </th>
+              <th scope="col" className={head}>
+                {APOLLO.name} Basic, billed annually
+              </th>
+              <th scope="col" className={head}>
+                {ZOOMINFO.name}
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border text-text">
@@ -158,12 +199,20 @@ function TeamCosts() {
               const pro = teamCost('PROFESSIONAL', people);
               return (
                 <tr key={people}>
-                  <th scope="row" className={`${cell} font-bold`}>{people} people</th>
+                  <th scope="row" className={`${cell} font-bold`}>
+                    {people} people
+                  </th>
                   <td className={cell}>
-                    {usd(basic.monthly)} <span className="text-text-muted">({basic.blocks} {basic.blocks === 1 ? 'block' : 'blocks'})</span>
+                    {usd(basic.monthly)}{' '}
+                    <span className="text-text-muted">
+                      ({basic.blocks} {basic.blocks === 1 ? 'block' : 'blocks'})
+                    </span>
                   </td>
                   <td className={cell}>
-                    {usd(pro.monthly)} <span className="text-text-muted">({pro.blocks} {pro.blocks === 1 ? 'block' : 'blocks'})</span>
+                    {usd(pro.monthly)}{' '}
+                    <span className="text-text-muted">
+                      ({pro.blocks} {pro.blocks === 1 ? 'block' : 'blocks'})
+                    </span>
                   </td>
                   <td className={cell}>{usd(APOLLO.basicMonthlyBilling * people)}</td>
                   <td className={cell}>{usd(APOLLO.basicAnnualBilling * people)} a month</td>
@@ -175,18 +224,37 @@ function TeamCosts() {
         </table>
       </div>
       <p className="mt-4 text-xs leading-relaxed text-text-muted">
-        List prices only; the plans don&rsquo;t include the same data or features. {APOLLO.name} Basic is ${APOLLO.basicMonthlyBilling} per
-        seat per month billed monthly, or ${APOLLO.basicAnnualBilling} billed annually, per{' '}
-        <a href={APOLLO.pricingUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline">
+        List prices only; the plans don&rsquo;t include the same data or features. {APOLLO.name}{' '}
+        Basic is ${APOLLO.basicMonthlyBilling} per seat per month billed monthly, or $
+        {APOLLO.basicAnnualBilling} billed annually, per{' '}
+        <a
+          href={APOLLO.pricingUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-primary hover:underline"
+        >
           {APOLLO.name}&rsquo;s pricing page
         </a>
         . {ZOOMINFO.name} publishes no prices for its paid plans (
-        <a href={ZOOMINFO.pricingUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline">
+        <a
+          href={ZOOMINFO.pricingUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-primary hover:underline"
+        >
           pricing page
         </a>
-        ). Checked <time dateTime={COMPETITOR_PRICES_CHECKED}>{formatDay(COMPETITOR_PRICES_CHECKED)}</time>. Compare in
-        detail: <Link to="/alternatives/apollo" className="font-medium text-primary hover:underline">Apollo alternative</Link>,{' '}
-        <Link to="/alternatives/zoominfo" className="font-medium text-primary hover:underline">ZoomInfo alternative</Link>.
+        ). Checked{' '}
+        <time dateTime={COMPETITOR_PRICES_CHECKED}>{formatDay(COMPETITOR_PRICES_CHECKED)}</time>.
+        Compare in detail:{' '}
+        <Link to="/alternatives/apollo" className="font-medium text-primary hover:underline">
+          Apollo alternative
+        </Link>
+        ,{' '}
+        <Link to="/alternatives/zoominfo" className="font-medium text-primary hover:underline">
+          ZoomInfo alternative
+        </Link>
+        .
       </p>
     </div>
   );
@@ -206,7 +274,9 @@ export function Pricing() {
         lines={[
           { content: 'Simple, team-based' },
           {
-            content: <span className="bg-gradient-brand bg-clip-text text-transparent">pricing.</span>,
+            content: (
+              <span className="bg-gradient-brand bg-clip-text text-transparent">pricing.</span>
+            ),
             className: 'sm:ml-[6vw]',
           },
         ]}
@@ -218,12 +288,16 @@ export function Pricing() {
               type="button"
               onClick={() => setBillingIntervalChoice(i.key)}
               className={`rounded px-4 py-1.5 text-sm font-bold transition-colors ${
-                billingIntervalChoice === i.key ? 'bg-gradient-action text-white' : 'text-ink-300 hover:text-white'
+                billingIntervalChoice === i.key
+                  ? 'bg-gradient-action text-white'
+                  : 'text-ink-300 hover:text-white'
               }`}
             >
               {i.label}
               {i.discount > 0 && (
-                <span className="ml-1.5 text-[11px] font-medium opacity-80">−{Math.round(i.discount * 100)}%</span>
+                <span className="ml-1.5 text-[11px] font-medium opacity-80">
+                  −{Math.round(i.discount * 100)}%
+                </span>
               )}
             </button>
           ))}
@@ -245,12 +319,20 @@ export function Pricing() {
               style={{ background: 'linear-gradient(180deg, rgba(231,179,255,0.2), transparent)' }}
             />
             <div className="relative mx-auto max-w-[1240px] px-6 py-16 sm:py-20">
-              <p className="story-eyebrow text-xs font-bold uppercase tracking-[0.22em]">Chapter 01 — The plans</p>
-              <Stagger as="div" className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4" staggerDelay={0.1}>
+              <p className="story-eyebrow text-xs font-bold uppercase tracking-[0.22em]">
+                Chapter 01 — The plans
+              </p>
+              <Stagger
+                as="div"
+                className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4"
+                staggerDelay={0.1}
+              >
                 {PLANS.map((plan) => {
-                  const displayPrice = plan.key === 'FREE' ? 0 : planTotalForInterval(plan.key, billingIntervalChoice);
+                  const displayPrice =
+                    plan.key === 'FREE' ? 0 : planTotalForInterval(plan.key, billingIntervalChoice);
                   const unit =
-                    plan.block && `block/${cadence} · ${plan.block.paidSeats} paid + ${plan.block.freeSeats} free seats`;
+                    plan.block &&
+                    `block/${cadence} · ${plan.block.paidSeats} paid + ${plan.block.freeSeats} free seats`;
 
                   return (
                     <StaggerItem key={plan.key} as="div">
@@ -265,10 +347,15 @@ export function Pricing() {
                           <p className="mt-1 text-sm text-text-muted">{plan.tagline}</p>
 
                           <div className="relative mt-6 flex items-baseline gap-1">
-                            <AnimatedPrice value={formatUsd(displayPrice)} className="text-4xl font-extrabold tracking-tight text-text" />
+                            <AnimatedPrice
+                              value={formatUsd(displayPrice)}
+                              className="text-4xl font-extrabold tracking-tight text-text"
+                            />
                             {unit && <span className="text-sm text-text-muted">/{unit}</span>}
                           </div>
-                          {!plan.block && <div className="mt-1 text-sm text-text-muted">forever</div>}
+                          {!plan.block && (
+                            <div className="mt-1 text-sm text-text-muted">forever</div>
+                          )}
 
                           <div className="mt-3 inline-flex w-fit rounded-full bg-surface px-3 py-1 text-xs font-bold text-text-muted">
                             {plan.credits}
@@ -300,11 +387,12 @@ export function Pricing() {
                 })}
               </Stagger>
               <p className="mt-8 text-center text-xs text-text-muted">
-                Prices are per seat block. Buy up to {MAX_SELF_SERVE_BLOCKS} blocks at checkout; larger teams
-                can talk to sales. Free seats never cost anything and still earn{' '}
-                {formatCount(FREE_SEAT_MONTHLY_CREDITS)} credits a month. Every newly covered teammate gets a
-                one-time {formatCount(WELCOME_GIFT_CREDITS)}-credit welcome gift. Quarterly billing saves{' '}
-                {discountPercent('QUARTER')}% and annual billing saves {discountPercent('YEAR')}%.
+                Prices are per seat block. Buy up to {MAX_SELF_SERVE_BLOCKS} blocks at checkout;
+                larger teams can talk to sales. Free seats never cost anything and still earn{' '}
+                {formatCount(FREE_SEAT_MONTHLY_CREDITS)} credits a month. Every newly covered
+                teammate gets a one-time {formatCount(WELCOME_GIFT_CREDITS)}-credit welcome gift.
+                Quarterly billing saves {discountPercent('QUARTER')}% and annual billing saves{' '}
+                {discountPercent('YEAR')}%.
               </p>
               <PlanComparison />
             </div>
@@ -320,7 +408,9 @@ export function Pricing() {
         className="relative text-white"
       >
         <div className="mx-auto max-w-[1200px] px-6 py-28 sm:py-36">
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-mauve-magic">Chapter 02 — How billing actually works</p>
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-mauve-magic">
+            Chapter 02 — How billing actually works
+          </p>
           <ScrubHeadline
             as="h2"
             className="mt-6 max-w-[820px] text-[clamp(1.9rem,4.6vw,4rem)] font-extrabold uppercase leading-[1.05] tracking-tight"
@@ -329,12 +419,13 @@ export function Pricing() {
           </ScrubHeadline>
           <div className="mt-14 grid grid-cols-1 items-center gap-14 lg:grid-cols-2">
             <FadeIn as="p" className="text-base leading-relaxed text-ink-300">
-              Your seat blocks set the monthly price, and each seat earns its own credits. A reveal costs{' '}
-              {CREDIT_COSTS.REVEAL} credits in the app or {CREDIT_COSTS.EXTENSION_REVEAL} from the Chrome
-              extension. Opening a company&rsquo;s profile costs {CREDIT_COSTS.COMPANY_VIEW} the first time
-              your workspace views it. A CSV export costs {CREDIT_COSTS.CSV_EXPORT} per file, and enrolling a
-              contact in a sequence costs {CREDIT_COSTS.SEQUENCE_ENROLLMENT}. Searching is free. Every grant and
-              charge is a row in a credit ledger you can see.
+              Your seat blocks set the monthly price, and each seat earns its own credits. A reveal
+              costs {CREDIT_COSTS.REVEAL} credits in the app or {CREDIT_COSTS.EXTENSION_REVEAL} from
+              the Chrome extension. Opening a company&rsquo;s profile costs{' '}
+              {CREDIT_COSTS.COMPANY_VIEW} the first time your workspace views it. A CSV export costs{' '}
+              {CREDIT_COSTS.CSV_EXPORT} per file, and enrolling a contact in a sequence costs{' '}
+              {CREDIT_COSTS.SEQUENCE_ENROLLMENT}. Searching is free. Every grant and charge is a row
+              in a credit ledger you can see.
             </FadeIn>
             <FadeIn as="div" delay={0.15}>
               <Plate3D>
@@ -356,7 +447,15 @@ export function Pricing() {
 
 function CheckIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mt-0.5 shrink-0 text-primary">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      className="mt-0.5 shrink-0 text-primary"
+    >
       <path d="M5 12.5l4.5 4.5L19 7" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );

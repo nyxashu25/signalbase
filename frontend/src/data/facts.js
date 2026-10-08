@@ -123,7 +123,8 @@ export function pricingSummary() {
     `DataPit is free for one user with ${formatCount(FREE_PLAN_MONTHLY_CREDITS)} credits a month. ` +
     'Paid plans are sold in seat blocks. ' +
     PAID_PLANS.map(
-      (p) => `${p.name} is $${p.price} a month for ${p.block.paidSeats} paid seats plus ${p.block.freeSeats} free.`,
+      (p) =>
+        `${p.name} is $${p.price} a month for ${p.block.paidSeats} paid seats plus ${p.block.freeSeats} free.`,
     ).join(' ') +
     ` Billing quarterly saves ${discount('QUARTER')}% and annually ${discount('YEAR')}%.`
   );

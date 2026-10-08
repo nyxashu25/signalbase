@@ -45,12 +45,14 @@ const SEAT_HINT = {
 
 // "a@x.com, b@x.com\nc@x.com" -> unique, trimmed, lowercased addresses.
 function parseEmails(raw) {
-  return [...new Set(
-    raw
-      .split(/[\s,;]+/)
-      .map((e) => e.trim().toLowerCase())
-      .filter((e) => e.includes('@')),
-  )];
+  return [
+    ...new Set(
+      raw
+        .split(/[\s,;]+/)
+        .map((e) => e.trim().toLowerCase())
+        .filter((e) => e.includes('@')),
+    ),
+  ];
 }
 
 // Spend reasons shown in the audit (mirrors the backend's SPEND_REASON_LABELS).
@@ -162,7 +164,10 @@ export function SettingsMembers() {
     try {
       if (emails.length === 1) {
         const { invite } = await createInvite({ email: emails[0], role: form.role }).unwrap();
-        toast.success('Invite sent', `${invite.email} has 7 days to accept — or copy them the link below.`);
+        toast.success(
+          'Invite sent',
+          `${invite.email} has 7 days to accept — or copy them the link below.`,
+        );
       } else {
         const result = await bulkInvite({ emails, role: form.role }).unwrap();
         const failures = result.results.filter((r) => !r.ok);
@@ -171,7 +176,10 @@ export function SettingsMembers() {
         } else {
           toast.success(
             `${result.invited} sent · ${result.failed} skipped`,
-            failures.map((f) => `${f.email}: ${f.error}`).slice(0, 3).join(' · '),
+            failures
+              .map((f) => `${f.email}: ${f.error}`)
+              .slice(0, 3)
+              .join(' · '),
           );
         }
       }
@@ -235,7 +243,10 @@ export function SettingsMembers() {
         }
       >
         {showForm && canInviteNow && (
-          <form onSubmit={handleInvite} className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-border bg-surface p-3">
+          <form
+            onSubmit={handleInvite}
+            className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-border bg-surface p-3"
+          >
             <FormField
               label="Emails"
               hint="One or many — separate with commas, spaces or new lines. No seat limit: extra teammates wait as 'awaiting payment' until your next block purchase covers them."
@@ -303,9 +314,15 @@ export function SettingsMembers() {
                       <span className="min-w-0">
                         <span className="block truncate font-semibold">
                           {m.user.name}
-                          {m.user.id === me?.id && <span className="ml-1.5 text-xs font-medium text-text-muted">(you)</span>}
+                          {m.user.id === me?.id && (
+                            <span className="ml-1.5 text-xs font-medium text-text-muted">
+                              (you)
+                            </span>
+                          )}
                         </span>
-                        <span className="block truncate text-xs text-text-muted">{m.user.email}</span>
+                        <span className="block truncate text-xs text-text-muted">
+                          {m.user.email}
+                        </span>
                       </span>
                     </span>
                   </td>
@@ -454,13 +471,19 @@ export function SettingsMembers() {
                     <td className={tdClass}>
                       <span className="block truncate font-semibold">{invite.email}</span>
                       {invite.invitedBy && (
-                        <span className="block text-xs text-text-muted">invited by {invite.invitedBy.name}</span>
+                        <span className="block text-xs text-text-muted">
+                          invited by {invite.invitedBy.name}
+                        </span>
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <StatusPill tone={ROLE_TONE[invite.role] ?? 'neutral'}>{invite.role}</StatusPill>
+                      <StatusPill tone={ROLE_TONE[invite.role] ?? 'neutral'}>
+                        {invite.role}
+                      </StatusPill>
                     </td>
-                    <td className={tdMutedClass}>{new Date(invite.expiresAt).toLocaleDateString()}</td>
+                    <td className={tdMutedClass}>
+                      {new Date(invite.expiresAt).toLocaleDateString()}
+                    </td>
                     <td className="whitespace-nowrap px-4 py-2 text-right">
                       <Tooltip content={copiedId === invite.id ? 'Copied' : 'Copy invite link'}>
                         <Button
@@ -495,7 +518,12 @@ export function SettingsMembers() {
       {teamUnlocked && <TeamAudit reasonLabels={REASON_LABELS} />}
 
       {canManage && isFree && (
-        <Banner tone="info" title="Add your team on a paid plan" action="Open Billing" actionTo="/app/billing">
+        <Banner
+          tone="info"
+          title="Add your team on a paid plan"
+          action="Open Billing"
+          actionTo="/app/billing"
+        >
           Inviting teammates, setting roles, and the team credit audit are paid features. Upgrade
           from Billing to build your team — each seat block bundles paid + free seats, and every
           teammate earns their own monthly credits.
@@ -528,9 +556,7 @@ function TeamAudit({ reasonLabels }) {
     <SettingsSection
       title="Team credit audit"
       description="Every teammate's credit spend on this workspace's shared balance."
-      footer={
-        <ExportCsvButton path="/workspace/audit/export" label="Download team audit" />
-      }
+      footer={<ExportCsvButton path="/workspace/audit/export" label="Download team audit" />}
     >
       <TableFrame className="-mx-5 -my-4 rounded-none border-0">
         <table className="w-full">
@@ -553,7 +579,9 @@ function TeamAudit({ reasonLabels }) {
                 <td className={`${tdMutedClass} tabular-nums`}>{m.actionCount}</td>
                 <td className="px-4 py-3">
                   <span className="flex flex-wrap gap-1.5">
-                    {Object.entries(m.byReason).length === 0 && <span className="text-xs text-text-muted">—</span>}
+                    {Object.entries(m.byReason).length === 0 && (
+                      <span className="text-xs text-text-muted">—</span>
+                    )}
                     {Object.entries(m.byReason).map(([reason, amount]) => (
                       <span
                         key={reason}
@@ -571,11 +599,15 @@ function TeamAudit({ reasonLabels }) {
               <tr className={trClass}>
                 <td className={tdMutedClass}>
                   <span className="block font-semibold text-text-muted">Unattributed</span>
-                  <span className="block text-xs text-text-muted">Older activity or former teammates</span>
+                  <span className="block text-xs text-text-muted">
+                    Older activity or former teammates
+                  </span>
                 </td>
                 <td className={`${tdMutedClass} tabular-nums`}>{data.unattributed.actionCount}</td>
                 <td className={tdMutedClass}>—</td>
-                <td className={`${tdMutedClass} font-semibold tabular-nums`}>{data.unattributed.totalSpent}</td>
+                <td className={`${tdMutedClass} font-semibold tabular-nums`}>
+                  {data.unattributed.totalSpent}
+                </td>
               </tr>
             )}
           </tbody>

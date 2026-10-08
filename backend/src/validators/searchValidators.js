@@ -13,7 +13,15 @@ const pagination = {
 // Headcount buckets — the same keys drive the ES range filter, the range
 // aggregation that powers the facet counts, and the filter rail's labels,
 // so they live in one place (see HEADCOUNT_BUCKETS in searchService.js).
-export const HEADCOUNT_KEYS = ['1-10', '11-50', '51-200', '201-500', '501-1000', '1001-5000', '5001+'];
+export const HEADCOUNT_KEYS = [
+  '1-10',
+  '11-50',
+  '51-200',
+  '201-500',
+  '501-1000',
+  '1001-5000',
+  '5001+',
+];
 
 export const EMAIL_STATUS_KEYS = ['verified', 'unverified', 'not_found'];
 

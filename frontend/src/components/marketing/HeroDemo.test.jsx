@@ -86,13 +86,16 @@ describe('HeroDemo', () => {
     },
   );
 
-  it.skipIf(LIVE.sequenceSending)('goes from companies straight to the credit ledger while sending is off', () => {
-    render(<HeroDemo />);
-    expect(screen.queryByText('41 enrolled · Active')).not.toBeInTheDocument();
-    // companies-start(9400) + companies(1300) + move-to-facet(800) +
-    // click-facet(450) + filtered(1700) + to-credits(400) = 14050 is the
-    // start of "credits"; +10 lands inside it.
-    advanceBy(14050 + 10);
-    expect(screen.getByText('app.datapit.io/billing')).toBeInTheDocument();
-  });
+  it.skipIf(LIVE.sequenceSending)(
+    'goes from companies straight to the credit ledger while sending is off',
+    () => {
+      render(<HeroDemo />);
+      expect(screen.queryByText('41 enrolled · Active')).not.toBeInTheDocument();
+      // companies-start(9400) + companies(1300) + move-to-facet(800) +
+      // click-facet(450) + filtered(1700) + to-credits(400) = 14050 is the
+      // start of "credits"; +10 lands inside it.
+      advanceBy(14050 + 10);
+      expect(screen.getByText('app.datapit.io/billing')).toBeInTheDocument();
+    },
+  );
 });

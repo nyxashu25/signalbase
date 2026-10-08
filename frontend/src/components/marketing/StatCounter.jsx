@@ -10,7 +10,14 @@ gsap.registerPlugin(ScrollTrigger);
  * costs, plan terms) — never fabricated usage/traction stats; see Home.jsx
  * for which numbers this renders.
  */
-export function StatCounter({ value, prefix = '', suffix = '', decimals = 0, delay = 0, className }) {
+export function StatCounter({
+  value,
+  prefix = '',
+  suffix = '',
+  decimals = 0,
+  delay = 0,
+  className,
+}) {
   const ref = useRef(null);
 
   useEffect(() => {

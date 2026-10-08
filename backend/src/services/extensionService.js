@@ -38,7 +38,10 @@ export function extractJobTitle(headline) {
 // Compare titles by meaning, not formatting: lowercase, punctuation and
 // spacing collapsed. "VP of Sales" and "vp of sales." read equal.
 function normalizeTitle(s) {
-  return (s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  return (s || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
 }
 
 /**
@@ -119,9 +122,7 @@ async function recordMissingPerson(auth, payload, slug) {
   // Field-level freshest-wins: a repeat sighting refreshes only the fields
   // it actually captured — a sparse observation (parser had a bad day) must
   // never blank out data a richer earlier sighting already recorded.
-  const refresh = Object.fromEntries(
-    Object.entries(observed).filter(([, value]) => value != null),
-  );
+  const refresh = Object.fromEntries(Object.entries(observed).filter(([, value]) => value != null));
   const { count } = await prisma.missingPerson.updateMany({
     where: { linkedinSlug: slug },
     data: {
@@ -239,7 +240,10 @@ export async function lookupEmails(auth, emails) {
   const byEmail = new Map();
   for (const row of rows) if (!byEmail.has(row.email)) byEmail.set(row.email, row);
 
-  const masked = await attachRevealStatus(auth.workspaceId, [...byEmail.values()].map(serializeContact));
+  const masked = await attachRevealStatus(
+    auth.workspaceId,
+    [...byEmail.values()].map(serializeContact),
+  );
   const maskedById = new Map(masked.map((c) => [c.id, c]));
 
   return {
@@ -320,7 +324,10 @@ export async function lookupCompany(auth, domainInput) {
  * the company narrows them to one.
  */
 export async function lookupPerson(auth, { name, companyName }) {
-  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  const parts = String(name || '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
   if (parts.length < 2) return { status: 'not_found' };
   const firstName = parts[0];
   const lastName = parts[parts.length - 1];

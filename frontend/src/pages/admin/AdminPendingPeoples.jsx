@@ -29,7 +29,14 @@ function toRpfRow(p) {
   const spaceAt = name.lastIndexOf(' ');
   const firstName = spaceAt > 0 ? name.slice(0, spaceAt) : name;
   const lastName = spaceAt > 0 ? name.slice(spaceAt + 1) : '';
-  return [firstName, lastName, p.jobTitle ?? '', p.companyName ?? '', p.location ?? '', p.linkedinUrl].join(',');
+  return [
+    firstName,
+    lastName,
+    p.jobTitle ?? '',
+    p.companyName ?? '',
+    p.location ?? '',
+    p.linkedinUrl,
+  ].join(',');
 }
 
 export function AdminPendingPeoples() {
@@ -87,7 +94,10 @@ export function AdminPendingPeoples() {
       </div>
 
       {error && (
-        <p role="alert" className="mt-3 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+        <p
+          role="alert"
+          className="mt-3 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300"
+        >
           {error}
         </p>
       )}
@@ -111,7 +121,9 @@ export function AdminPendingPeoples() {
               <Fragment key={p.id}>
                 <tr className="border-b border-white/5 hover:bg-white/5">
                   <td className="px-4 py-3 text-sm">
-                    <span className="block font-medium text-white">{p.name ?? '(name not captured)'}</span>
+                    <span className="block font-medium text-white">
+                      {p.name ?? '(name not captured)'}
+                    </span>
                     <span className="block text-xs text-ink-300">{p.jobTitle ?? '—'}</span>
                     <a
                       href={p.linkedinUrl}
@@ -167,7 +179,9 @@ export function AdminPendingPeoples() {
                         </>
                       )}
                       {p.status !== 'PENDING' && (
-                        <span className={`rounded-full px-2.5 py-1 font-bold ${STATUS_STYLES[p.status]}`}>
+                        <span
+                          className={`rounded-full px-2.5 py-1 font-bold ${STATUS_STYLES[p.status]}`}
+                        >
                           {p.status}
                         </span>
                       )}

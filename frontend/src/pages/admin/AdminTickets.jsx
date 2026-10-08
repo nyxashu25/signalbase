@@ -27,7 +27,12 @@ export function AdminTickets() {
   const [status, setStatus] = useState('ACTIVE');
   const [type, setType] = useState(undefined);
   const [page, setPage] = useState(1);
-  const { data, isFetching } = useListAdminTicketsQuery({ status, type, page, pageSize: PAGE_SIZE });
+  const { data, isFetching } = useListAdminTicketsQuery({
+    status,
+    type,
+    page,
+    pageSize: PAGE_SIZE,
+  });
 
   return (
     <div>
@@ -107,17 +112,21 @@ export function AdminTickets() {
                 <td className="px-4 py-3 text-sm text-ink-300">{t.createdBy?.email ?? '—'}</td>
                 <td className="px-4 py-3 text-sm">
                   <span className="inline-flex flex-wrap items-center gap-1.5">
-                    <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${STATUS_STYLES[t.status]}`}>
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-xs font-bold ${STATUS_STYLES[t.status]}`}
+                    >
                       {t.status}
                     </span>
-                    {t.status === 'UNANSWERED' && t.lastMessageAuthorType === 'USER' && (t.messageCount ?? 1) > 1 && (
-                      <span
-                        className="rounded-full bg-red-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-300"
-                        title="The customer replied to an answered thread — it needs you again"
-                      >
-                        Customer replied
-                      </span>
-                    )}
+                    {t.status === 'UNANSWERED' &&
+                      t.lastMessageAuthorType === 'USER' &&
+                      (t.messageCount ?? 1) > 1 && (
+                        <span
+                          className="rounded-full bg-red-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-300"
+                          title="The customer replied to an answered thread — it needs you again"
+                        >
+                          Customer replied
+                        </span>
+                      )}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-sm text-ink-300">

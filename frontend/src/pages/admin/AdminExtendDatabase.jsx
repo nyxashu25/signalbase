@@ -62,9 +62,8 @@ export function AdminExtendDatabase() {
     <div>
       <h1 className="text-xl font-semibold text-white">Extend database</h1>
       <p className="mt-1 max-w-2xl text-sm text-ink-300">
-        Upload a CSV in the RPF format to add companies and contacts to the live database. New
-        rows are inserted right away but stay out of search until you review the batch and
-        publish it.
+        Upload a CSV in the RPF format to add companies and contacts to the live database. New rows
+        are inserted right away but stay out of search until you review the batch and publish it.
       </p>
 
       <form
@@ -151,9 +150,7 @@ export function AdminExtendDatabase() {
                       </button>
                     )}
                     {b.status === 'APPROVED' && (
-                      <span className="text-xs text-ink-300">
-                        by {b.approvedBy?.name ?? '—'}
-                      </span>
+                      <span className="text-xs text-ink-300">by {b.approvedBy?.name ?? '—'}</span>
                     )}
                   </td>
                 </tr>

@@ -53,7 +53,10 @@ export function SettingsApi() {
   async function handleRevoke(key) {
     try {
       await revokeApiKey(key.id).unwrap();
-      toast.success('Key revoked', `"${key.name}" no longer works — anything using it is now signed out.`);
+      toast.success(
+        'Key revoked',
+        `"${key.name}" no longer works — anything using it is now signed out.`,
+      );
       if (freshKey?.id === key.id) setFreshKey(null);
     } catch (err) {
       toast.error('Could not revoke key', err.data?.error?.message);
@@ -75,12 +78,19 @@ export function SettingsApi() {
       {freshKey && (
         <Banner tone="success" title={`API key "${freshKey.name}" created`}>
           <p className="mb-2">
-            Copy it now — for your security it is shown <strong>only this once</strong> and can never be
-            retrieved again. Paste it into the DataPit Chrome extension to connect it.
+            Copy it now — for your security it is shown <strong>only this once</strong> and can
+            never be retrieved again. Paste it into the DataPit Chrome extension to connect it.
           </p>
           <span className="flex flex-wrap items-center gap-2">
-            <code className="rounded bg-surface-sunken px-2 py-1 font-mono text-xs break-all">{freshKey.key}</code>
-            <Button variant="secondary" size="sm" icon={copied ? Check : Copy} onClick={copyFreshKey}>
+            <code className="rounded bg-surface-sunken px-2 py-1 font-mono text-xs break-all">
+              {freshKey.key}
+            </code>
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={copied ? Check : Copy}
+              onClick={copyFreshKey}
+            >
               {copied ? 'Copied' : 'Copy key'}
             </Button>
             <Button variant="ghost" size="sm" onClick={() => setFreshKey(null)}>
@@ -100,7 +110,10 @@ export function SettingsApi() {
         }
       >
         {showForm && (
-          <form onSubmit={handleCreate} className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-border bg-surface p-3">
+          <form
+            onSubmit={handleCreate}
+            className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-border bg-surface p-3"
+          >
             <FormField
               label="Key name"
               hint="Where will it live? e.g. “Chrome extension — work laptop”"
@@ -118,7 +131,13 @@ export function SettingsApi() {
                 className={inputClass}
               />
             </FormField>
-            <Button type="submit" variant="primary" icon={KeyRound} loading={creating} disabled={!name.trim()}>
+            <Button
+              type="submit"
+              variant="primary"
+              icon={KeyRound}
+              loading={creating}
+              disabled={!name.trim()}
+            >
               Create key
             </Button>
             <Button variant="ghost" onClick={() => setShowForm(false)}>
@@ -211,10 +230,20 @@ function ExtensionSection() {
       description="Look people up against DataPit on LinkedIn, Gmail, Google Calendar, your CRM and company websites."
       footer={
         <div className="flex flex-wrap items-center gap-2">
-          <a className="text-xs font-semibold text-text-muted hover:text-text" href={EXTENSION_DOWNLOAD_URL} download>
+          <a
+            className="text-xs font-semibold text-text-muted hover:text-text"
+            href={EXTENSION_DOWNLOAD_URL}
+            download
+          >
             Download .zip (manual)
           </a>
-          <Button variant="primary" icon={Puzzle} href={EXTENSION_STORE_URL} target="_blank" rel="noreferrer">
+          <Button
+            variant="primary"
+            icon={Puzzle}
+            href={EXTENSION_STORE_URL}
+            target="_blank"
+            rel="noreferrer"
+          >
             Add to Chrome
           </Button>
         </div>
@@ -231,9 +260,13 @@ function ExtensionSection() {
           <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" aria-hidden="true" />
           {outdated ? (
             <span>
-              Connected — but you're on <strong>v{version}</strong> (latest is v{EXTENSION_VERSION}). Chrome updates
-              the Web Store version automatically within a few hours; if you installed manually, download the .zip
-              and reload it in <code className="rounded bg-surface-sunken px-1 py-0.5 font-mono text-xs">chrome://extensions</code>.
+              Connected — but you're on <strong>v{version}</strong> (latest is v{EXTENSION_VERSION}
+              ). Chrome updates the Web Store version automatically within a few hours; if you
+              installed manually, download the .zip and reload it in{' '}
+              <code className="rounded bg-surface-sunken px-1 py-0.5 font-mono text-xs">
+                chrome://extensions
+              </code>
+              .
             </span>
           ) : (
             <span>
@@ -246,14 +279,18 @@ function ExtensionSection() {
       <ol className="list-decimal space-y-1.5 pl-5 text-sm text-text-muted">
         <li>Create an API key above and copy it.</li>
         <li>
-          Click <strong className="text-text">Add to Chrome</strong> (below) to install from the Chrome Web Store.
+          Click <strong className="text-text">Add to Chrome</strong> (below) to install from the
+          Chrome Web Store.
         </li>
-        <li>Click the extension icon, paste the key, and open a LinkedIn profile, an email thread or a CRM record.</li>
+        <li>
+          Click the extension icon, paste the key, and open a LinkedIn profile, an email thread or a
+          CRM record.
+        </li>
       </ol>
       <p className="mt-3 text-sm text-text-muted">
-        Found profiles reveal their email and phone for <strong className="text-text">4 credits</strong> —
-        contacts your workspace already revealed are free. Profiles we don't have yet are queued for our
-        data team automatically.
+        Found profiles reveal their email and phone for{' '}
+        <strong className="text-text">4 credits</strong> — contacts your workspace already revealed
+        are free. Profiles we don't have yet are queued for our data team automatically.
       </p>
     </SettingsSection>
   );

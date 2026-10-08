@@ -7,7 +7,13 @@ import { renderWithProviders, authenticatedState, mockFetchRoutes } from '../tes
 
 const subjectsPayload = {
   subjects: {
-    SUPPORT: ['Bug report', 'Account access issue', 'Billing or payment issue', 'Data quality issue', 'Other'],
+    SUPPORT: [
+      'Bug report',
+      'Account access issue',
+      'Billing or payment issue',
+      'Data quality issue',
+      'Other',
+    ],
     SALES: ['Upgrade my plan', 'Request a demo', 'Custom pricing', 'Add seats / team', 'Other'],
   },
   maxWords: 200,
@@ -26,7 +32,9 @@ function renderNewTicket() {
 describe('NewTicket', () => {
   it('defaults to Support subjects and switches to Sales subjects when the type toggle changes', async () => {
     const user = userEvent.setup();
-    mockFetchRoutes([{ url: '/tickets/subjects', method: 'GET', respond: { body: subjectsPayload } }]);
+    mockFetchRoutes([
+      { url: '/tickets/subjects', method: 'GET', respond: { body: subjectsPayload } },
+    ]);
     renderNewTicket();
 
     expect(await screen.findByRole('option', { name: 'Bug report' })).toBeInTheDocument();
@@ -39,7 +47,9 @@ describe('NewTicket', () => {
 
   it('blocks submission once the body exceeds 200 words', async () => {
     const user = userEvent.setup();
-    mockFetchRoutes([{ url: '/tickets/subjects', method: 'GET', respond: { body: subjectsPayload } }]);
+    mockFetchRoutes([
+      { url: '/tickets/subjects', method: 'GET', respond: { body: subjectsPayload } },
+    ]);
     renderNewTicket();
 
     await screen.findByRole('option', { name: 'Bug report' });

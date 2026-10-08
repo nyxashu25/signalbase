@@ -11,7 +11,13 @@ const openTicket = {
   type: 'SUPPORT',
   status: 'UNANSWERED',
   messages: [
-    { id: 'm1', authorType: 'USER', authorName: 'Demo User', body: 'Search is broken.', createdAt: '2026-08-20T09:00:00.000Z' },
+    {
+      id: 'm1',
+      authorType: 'USER',
+      authorName: 'Demo User',
+      body: 'Search is broken.',
+      createdAt: '2026-08-20T09:00:00.000Z',
+    },
   ],
 };
 
@@ -30,7 +36,11 @@ describe('TicketDetail', () => {
   it('renders the message thread and lets the user send a reply', async () => {
     const user = userEvent.setup();
     mockFetchRoutes([
-      { url: '/tickets/subjects', method: 'GET', respond: { body: { subjects: {}, maxWords: 200 } } },
+      {
+        url: '/tickets/subjects',
+        method: 'GET',
+        respond: { body: { subjects: {}, maxWords: 200 } },
+      },
       { url: '/tickets/t1', method: 'GET', respond: { body: openTicket } },
       {
         url: '/tickets/t1/messages',
@@ -52,7 +62,11 @@ describe('TicketDetail', () => {
 
   it('blocks a reply over 200 words', async () => {
     mockFetchRoutes([
-      { url: '/tickets/subjects', method: 'GET', respond: { body: { subjects: {}, maxWords: 200 } } },
+      {
+        url: '/tickets/subjects',
+        method: 'GET',
+        respond: { body: { subjects: {}, maxWords: 200 } },
+      },
       { url: '/tickets/t1', method: 'GET', respond: { body: openTicket } },
     ]);
     renderDetail('t1');
@@ -65,7 +79,11 @@ describe('TicketDetail', () => {
 
   it('shows a closed message instead of a reply box for a closed ticket', async () => {
     mockFetchRoutes([
-      { url: '/tickets/subjects', method: 'GET', respond: { body: { subjects: {}, maxWords: 200 } } },
+      {
+        url: '/tickets/subjects',
+        method: 'GET',
+        respond: { body: { subjects: {}, maxWords: 200 } },
+      },
       { url: '/tickets/t2', method: 'GET', respond: { body: closedTicket } },
     ]);
     renderDetail('t2');

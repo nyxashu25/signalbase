@@ -46,7 +46,8 @@ const GUESS_POINT = LIVE.emailVerification
 const CHAPTERS = [
   {
     eyebrow: 'Search & reveal',
-    narration: 'Search people for free, then pay credits to see a work email. Nothing is charged for looking.',
+    narration:
+      'Search people for free, then pay credits to see a work email. Nothing is charged for looking.',
     title: 'Search for free. Reveal the contacts you want.',
     desc: `Search people by job title, seniority, department and company at no cost. Results stay masked until you reveal one for ${CREDIT_COSTS.REVEAL} credits. Once anyone on your team reveals a contact, the whole workspace sees it for free.`,
     points: [
@@ -59,7 +60,8 @@ const CHAPTERS = [
   },
   LIVE.sequenceSending && {
     eyebrow: 'Outreach',
-    narration: 'Sequences email your contacts on a schedule you set. The signal keeps moving after the first touch.',
+    narration:
+      'Sequences email your contacts on a schedule you set. The signal keeps moving after the first touch.',
     title: 'Sequences that keep working after the first email',
     desc: `Build a sequence of email and wait steps, then enroll contacts from a saved list. Enrollment costs ${formatCount(CREDIT_COSTS.SEQUENCE_ENROLLMENT)} credits per contact, charged up front. Pause or resume a contact without losing their place.`,
     points: [
@@ -201,7 +203,9 @@ export function Home() {
         className="relative text-white"
       >
         <div className="mx-auto max-w-[1200px] px-6 py-32 sm:py-44">
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-mauve-magic">Prologue — Why DataPit</p>
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-mauve-magic">
+            Prologue — Why DataPit
+          </p>
           <ScrubHeadline
             as="h2"
             className="mt-8 max-w-[1000px] text-[clamp(1.9rem,4.6vw,4rem)] font-extrabold uppercase leading-[1.05] tracking-tight"
@@ -255,11 +259,16 @@ export function Home() {
             />
             <div className="relative mx-auto max-w-[1200px] px-6 py-24 sm:py-32">
               <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:gap-10">
-                <span aria-hidden="true" className="story-numeral select-none text-[clamp(6rem,16vw,13rem)] font-extrabold leading-[0.8] tracking-tight">
+                <span
+                  aria-hidden="true"
+                  className="story-numeral select-none text-[clamp(6rem,16vw,13rem)] font-extrabold leading-[0.8] tracking-tight"
+                >
                   {REST_NUMERAL}
                 </span>
                 <div className="pb-2">
-                  <p className="story-eyebrow text-xs font-bold uppercase tracking-[0.22em]">Chapter {REST_NUMERAL} — And the rest</p>
+                  <p className="story-eyebrow text-xs font-bold uppercase tracking-[0.22em]">
+                    Chapter {REST_NUMERAL} — And the rest
+                  </p>
                   <p className="story-narration mt-3 max-w-[440px] text-lg text-text-muted">
                     Three more tools surface now: company search, lists and team roles.
                   </p>
@@ -299,16 +308,32 @@ export function Home() {
       >
         <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-14 px-6 py-28 sm:grid-cols-3 sm:py-36">
           <div>
-            <StatCounter value={CREDIT_COSTS.REVEAL} className="block text-[clamp(3.5rem,8vw,7rem)] font-extrabold leading-none tabular-nums" />
-            <p className="mt-4 text-sm font-bold uppercase tracking-[0.2em] text-ink-300">Credits per reveal in the app</p>
+            <StatCounter
+              value={CREDIT_COSTS.REVEAL}
+              className="block text-[clamp(3.5rem,8vw,7rem)] font-extrabold leading-none tabular-nums"
+            />
+            <p className="mt-4 text-sm font-bold uppercase tracking-[0.2em] text-ink-300">
+              Credits per reveal in the app
+            </p>
           </div>
           <div>
-            <StatCounter value={FREE_PLAN_MONTHLY_CREDITS} className="block text-[clamp(3.5rem,8vw,7rem)] font-extrabold leading-none tabular-nums" />
-            <p className="mt-4 text-sm font-bold uppercase tracking-[0.2em] text-ink-300">Free credits every month</p>
+            <StatCounter
+              value={FREE_PLAN_MONTHLY_CREDITS}
+              className="block text-[clamp(3.5rem,8vw,7rem)] font-extrabold leading-none tabular-nums"
+            />
+            <p className="mt-4 text-sm font-bold uppercase tracking-[0.2em] text-ink-300">
+              Free credits every month
+            </p>
           </div>
           <div>
-            <StatCounter value={0} prefix="$" className="block text-[clamp(3.5rem,8vw,7rem)] font-extrabold leading-none tabular-nums" />
-            <p className="mt-4 text-sm font-bold uppercase tracking-[0.2em] text-ink-300">To start — no card required</p>
+            <StatCounter
+              value={0}
+              prefix="$"
+              className="block text-[clamp(3.5rem,8vw,7rem)] font-extrabold leading-none tabular-nums"
+            />
+            <p className="mt-4 text-sm font-bold uppercase tracking-[0.2em] text-ink-300">
+              To start — no card required
+            </p>
           </div>
         </div>
       </section>
@@ -325,7 +350,10 @@ export function Home() {
         data-station-side="0"
         className="relative text-text"
       >
-        <div aria-hidden="true" className="story-glass pointer-events-none absolute inset-x-3 inset-y-0 mx-auto max-w-[1200px] sm:inset-x-6" />
+        <div
+          aria-hidden="true"
+          className="story-glass pointer-events-none absolute inset-x-3 inset-y-0 mx-auto max-w-[1200px] sm:inset-x-6"
+        />
         <div className="relative">
           <ScrollSteps eyebrow="How it works" steps={STEPS} />
         </div>
@@ -344,17 +372,57 @@ function StepFindGraphic() {
   return (
     <svg viewBox="0 0 120 120" fill="none" className="h-full w-full">
       <defs>
-        <linearGradient id="dpg-find" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+        <linearGradient
+          id="dpg-find"
+          x1="0"
+          y1="0"
+          x2="120"
+          y2="120"
+          gradientUnits="userSpaceOnUse"
+        >
           <stop stopColor="#9400de" />
           <stop offset="1" stopColor="#cf70ff" />
         </linearGradient>
       </defs>
-      <rect x="10" y="16" width="66" height="12" rx="6" stroke="#aa00ff" strokeOpacity="0.35" strokeWidth="3" />
-      <rect x="10" y="40" width="82" height="12" rx="6" stroke="#aa00ff" strokeOpacity="0.35" strokeWidth="3" />
-      <rect x="10" y="64" width="54" height="12" rx="6" stroke="#aa00ff" strokeOpacity="0.35" strokeWidth="3" />
+      <rect
+        x="10"
+        y="16"
+        width="66"
+        height="12"
+        rx="6"
+        stroke="#aa00ff"
+        strokeOpacity="0.35"
+        strokeWidth="3"
+      />
+      <rect
+        x="10"
+        y="40"
+        width="82"
+        height="12"
+        rx="6"
+        stroke="#aa00ff"
+        strokeOpacity="0.35"
+        strokeWidth="3"
+      />
+      <rect
+        x="10"
+        y="64"
+        width="54"
+        height="12"
+        rx="6"
+        stroke="#aa00ff"
+        strokeOpacity="0.35"
+        strokeWidth="3"
+      />
       <circle cx="78" cy="74" r="24" stroke="url(#dpg-find)" strokeWidth="4.5" />
       <path d="M96 92l14 14" stroke="url(#dpg-find)" strokeWidth="4.5" strokeLinecap="round" />
-      <path d="M68 74h20M78 64v20" stroke="#cf70ff" strokeWidth="3" strokeLinecap="round" strokeOpacity="0.7" />
+      <path
+        d="M68 74h20M78 64v20"
+        stroke="#cf70ff"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeOpacity="0.7"
+      />
     </svg>
   );
 }
@@ -363,16 +431,57 @@ function StepRevealGraphic() {
   return (
     <svg viewBox="0 0 120 120" fill="none" className="h-full w-full">
       <defs>
-        <linearGradient id="dpg-reveal" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+        <linearGradient
+          id="dpg-reveal"
+          x1="0"
+          y1="0"
+          x2="120"
+          y2="120"
+          gradientUnits="userSpaceOnUse"
+        >
           <stop stopColor="#9400de" />
           <stop offset="1" stopColor="#cf70ff" />
         </linearGradient>
       </defs>
-      <rect x="14" y="30" width="92" height="62" rx="10" stroke="url(#dpg-reveal)" strokeWidth="4.5" />
-      <path d="M18 36l42 34 42-34" stroke="url(#dpg-reveal)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="96" cy="30" r="16" fill="#aa00ff" fillOpacity="0.14" stroke="#cf70ff" strokeWidth="3.5" />
-      <path d="M89 30l5 5 9-10" stroke="#cf70ff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M24 14l3 6M36 8l1.5 6.5M12 24l6 3" stroke="#cf70ff" strokeWidth="3" strokeLinecap="round" strokeOpacity="0.7" />
+      <rect
+        x="14"
+        y="30"
+        width="92"
+        height="62"
+        rx="10"
+        stroke="url(#dpg-reveal)"
+        strokeWidth="4.5"
+      />
+      <path
+        d="M18 36l42 34 42-34"
+        stroke="url(#dpg-reveal)"
+        strokeWidth="4.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle
+        cx="96"
+        cy="30"
+        r="16"
+        fill="#aa00ff"
+        fillOpacity="0.14"
+        stroke="#cf70ff"
+        strokeWidth="3.5"
+      />
+      <path
+        d="M89 30l5 5 9-10"
+        stroke="#cf70ff"
+        strokeWidth="3.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M24 14l3 6M36 8l1.5 6.5M12 24l6 3"
+        stroke="#cf70ff"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeOpacity="0.7"
+      />
     </svg>
   );
 }
@@ -381,16 +490,60 @@ function StepSignalsGraphic() {
   return (
     <svg viewBox="0 0 120 120" fill="none" className="h-full w-full">
       <defs>
-        <linearGradient id="dpg-signals" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+        <linearGradient
+          id="dpg-signals"
+          x1="0"
+          y1="0"
+          x2="120"
+          y2="120"
+          gradientUnits="userSpaceOnUse"
+        >
           <stop stopColor="#9400de" />
           <stop offset="1" stopColor="#cf70ff" />
         </linearGradient>
       </defs>
-      <rect x="16" y="72" width="16" height="34" rx="5" stroke="#aa00ff" strokeOpacity="0.4" strokeWidth="3.5" />
-      <rect x="44" y="54" width="16" height="52" rx="5" stroke="#aa00ff" strokeOpacity="0.6" strokeWidth="3.5" />
-      <rect x="72" y="34" width="16" height="72" rx="5" stroke="url(#dpg-signals)" strokeWidth="4" />
-      <path d="M18 44c18 2 34-6 46-18" stroke="url(#dpg-signals)" strokeWidth="4.5" strokeLinecap="round" />
-      <path d="M56 22l10-1-2 10" stroke="url(#dpg-signals)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+      <rect
+        x="16"
+        y="72"
+        width="16"
+        height="34"
+        rx="5"
+        stroke="#aa00ff"
+        strokeOpacity="0.4"
+        strokeWidth="3.5"
+      />
+      <rect
+        x="44"
+        y="54"
+        width="16"
+        height="52"
+        rx="5"
+        stroke="#aa00ff"
+        strokeOpacity="0.6"
+        strokeWidth="3.5"
+      />
+      <rect
+        x="72"
+        y="34"
+        width="16"
+        height="72"
+        rx="5"
+        stroke="url(#dpg-signals)"
+        strokeWidth="4"
+      />
+      <path
+        d="M18 44c18 2 34-6 46-18"
+        stroke="url(#dpg-signals)"
+        strokeWidth="4.5"
+        strokeLinecap="round"
+      />
+      <path
+        d="M56 22l10-1-2 10"
+        stroke="url(#dpg-signals)"
+        strokeWidth="4.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
       <circle cx="103" cy="20" r="5" fill="#cf70ff" fillOpacity="0.8" />
     </svg>
   );
@@ -398,7 +551,14 @@ function StepSignalsGraphic() {
 
 function IconBuilding() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+    >
       <rect x="4" y="3" width="12" height="18" rx="1.5" />
       <path d="M9 8h2M9 12h2M9 16h2M16 11h4v10h-4z" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
@@ -407,7 +567,14 @@ function IconBuilding() {
 
 function IconList() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+    >
       <path d="M8 6h13M8 12h13M8 18h13" strokeLinecap="round" />
       <circle cx="3.5" cy="6" r="1.25" />
       <circle cx="3.5" cy="12" r="1.25" />
@@ -418,7 +585,14 @@ function IconList() {
 
 function IconShield() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+    >
       <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" strokeLinejoin="round" />
       <path d="M9 12l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>

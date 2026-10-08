@@ -1,8 +1,5 @@
 import { useState } from 'react';
-import {
-  useListLostChildrenQuery,
-  useResolveLostChildMutation,
-} from '../../api/adminDataApi.js';
+import { useListLostChildrenQuery, useResolveLostChildMutation } from '../../api/adminDataApi.js';
 
 const PAGE_SIZE = 25;
 
@@ -65,7 +62,10 @@ export function AdminChildsFound() {
       </div>
 
       {error && (
-        <p role="alert" className="mt-3 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+        <p
+          role="alert"
+          className="mt-3 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300"
+        >
           {error}
         </p>
       )}
@@ -89,9 +89,13 @@ export function AdminChildsFound() {
               <tr key={lc.id} className="border-b border-white/5 hover:bg-white/5">
                 <td className="px-4 py-3 text-sm">
                   <span className="block font-medium text-white">
-                    {lc.contact ? `${lc.contact.firstName} ${lc.contact.lastName}` : '(contact removed)'}
+                    {lc.contact
+                      ? `${lc.contact.firstName} ${lc.contact.lastName}`
+                      : '(contact removed)'}
                   </span>
-                  <span className="block text-xs text-ink-300">{lc.contact?.company?.name ?? '—'}</span>
+                  <span className="block text-xs text-ink-300">
+                    {lc.contact?.company?.name ?? '—'}
+                  </span>
                   {lc.contact?.linkedinUrl && (
                     <a
                       href={lc.contact.linkedinUrl}
@@ -130,7 +134,9 @@ export function AdminChildsFound() {
                       </button>
                     </span>
                   ) : (
-                    <span className={`rounded-full px-2.5 py-1 font-bold ${STATUS_STYLES[lc.status]}`}>
+                    <span
+                      className={`rounded-full px-2.5 py-1 font-bold ${STATUS_STYLES[lc.status]}`}
+                    >
                       {lc.status}
                     </span>
                   )}

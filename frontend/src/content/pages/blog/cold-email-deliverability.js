@@ -103,8 +103,16 @@ export default {
           'Anyone who sends close to 5,000 or more messages to personal Gmail accounts in 24 hours, counted across the primary domain. The status is permanent.',
           'A sender of “a significant volume of mail”. Yahoo doesn’t give a number.',
         ],
-        ['SPF and DKIM', 'All senders: SPF or DKIM. Bulk: both.', 'All senders: SPF or DKIM. Bulk: both.'],
-        ['DKIM key length', '1024 bits or longer, with 2048 recommended.', '1024 bits or longer, with 2048 recommended.'],
+        [
+          'SPF and DKIM',
+          'All senders: SPF or DKIM. Bulk: both.',
+          'All senders: SPF or DKIM. Bulk: both.',
+        ],
+        [
+          'DKIM key length',
+          '1024 bits or longer, with 2048 recommended.',
+          '1024 bits or longer, with 2048 recommended.',
+        ],
         [
           'DMARC',
           'Bulk: a DMARC record, with p=none as the minimum.',
@@ -329,7 +337,8 @@ export default {
           checked: CHECKED,
         },
         {
-          label: 'RFC 9989: Domain-Based Message Authentication, Reporting, and Conformance (DMARC)',
+          label:
+            'RFC 9989: Domain-Based Message Authentication, Reporting, and Conformance (DMARC)',
           url: 'https://www.rfc-editor.org/rfc/rfc9989.html',
           checked: CHECKED,
         },

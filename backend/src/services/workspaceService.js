@@ -211,7 +211,13 @@ export async function listMembers(workspaceId, { withBalances = false } = {}) {
 }
 
 function serializeProfile(w) {
-  return { id: w.id, name: w.name, plan: w.plan, motto: w.motto ?? null, logoUrl: w.logoUrl ?? null };
+  return {
+    id: w.id,
+    name: w.name,
+    plan: w.plan,
+    motto: w.motto ?? null,
+    logoUrl: w.logoUrl ?? null,
+  };
 }
 
 /** Branding for Settings → Workspace (name, motto, logo). Free on every plan. */
@@ -316,7 +322,7 @@ export async function transferToMember(workspaceId, fromUserId, toUserId, amount
   if (!covered) {
     throw new ApiError(
       409,
-      "That teammate is awaiting payment — cover them with a seat block before transferring credits",
+      'That teammate is awaiting payment — cover them with a seat block before transferring credits',
     );
   }
 
@@ -387,7 +393,10 @@ export async function teamAuditCsv(workspaceId) {
   const userIds = [...new Set(entries.map((e) => e.spentById).filter(Boolean))];
   const contactIds = [...new Set(entries.map((e) => e.contactId).filter(Boolean))];
   const [users, contacts] = await Promise.all([
-    prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, name: true, email: true } }),
+    prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, name: true, email: true },
+    }),
     prisma.contact.findMany({
       where: { id: { in: contactIds } },
       select: { id: true, firstName: true, lastName: true },
@@ -404,7 +413,7 @@ export async function teamAuditCsv(workspaceId) {
       email: u ? u.email : '',
       action: SPEND_REASON_LABELS[e.reason] ?? e.reason,
       credits: -e.delta,
-      detail: e.contactId ? contactMap.get(e.contactId) ?? '' : '',
+      detail: e.contactId ? (contactMap.get(e.contactId) ?? '') : '',
     };
   });
 

@@ -163,7 +163,10 @@ export function ContactRow({
         <td className="whitespace-nowrap px-4 py-3 text-sm">
           {contact.revealed && contact.phone ? (
             <span className="flex items-center gap-1.5">
-              <a href={`tel:${contact.phone.replace(/[^\d+]/g, '')}`} className="text-text hover:underline">
+              <a
+                href={`tel:${contact.phone.replace(/[^\d+]/g, '')}`}
+                className="text-text hover:underline"
+              >
                 {contact.phone}
               </a>
               <Tooltip content={copied === 'phone' ? 'Copied' : 'Copy phone'}>

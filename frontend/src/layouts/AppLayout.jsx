@@ -36,7 +36,13 @@ import { cn } from '../components/ui/cn.js';
 // Grouped by job-to-be-done (docs/UX-ROADMAP.md §1.1). Only features that
 // actually exist get an entry — no placeholder nav for things we don't
 // ship. data-tour ids are load-bearing: GuidedTour spotlights them.
-const HOME = { to: '/app', label: 'Home', end: true, icon: LayoutDashboard, tourId: 'nav-dashboard' };
+const HOME = {
+  to: '/app',
+  label: 'Home',
+  end: true,
+  icon: LayoutDashboard,
+  tourId: 'nav-dashboard',
+};
 
 const NAV_GROUPS = [
   {
@@ -65,7 +71,13 @@ const NAV_GROUPS = [
     key: 'support',
     label: 'Support',
     items: [
-      { to: '/app/tickets', label: 'Tickets', icon: LifeBuoy, tourId: 'nav-tickets', badge: 'tickets' },
+      {
+        to: '/app/tickets',
+        label: 'Tickets',
+        icon: LifeBuoy,
+        tourId: 'nav-tickets',
+        badge: 'tickets',
+      },
       { to: '/app/help', label: 'Help', icon: BookOpen },
     ],
   },
@@ -211,7 +223,8 @@ export function AppLayout() {
                   aria-label={rail ? 'Expand sidebar' : 'Collapse sidebar'}
                   className={cn(
                     'hidden h-8 w-8 items-center justify-center rounded-md text-text-muted hover:bg-surface-hover hover:text-text md:flex',
-                    !showLabels && 'absolute -right-3.5 top-3 border border-border bg-surface-elevated shadow-sm',
+                    !showLabels &&
+                      'absolute -right-3.5 top-3 border border-border bg-surface-elevated shadow-sm',
                   )}
                 >
                   {rail ? (
@@ -223,7 +236,10 @@ export function AppLayout() {
               </Tooltip>
             </div>
 
-            <nav className={cn('flex-1 overflow-y-auto py-3', showLabels ? 'px-3' : 'px-2')} aria-label="Primary">
+            <nav
+              className={cn('flex-1 overflow-y-auto py-3', showLabels ? 'px-3' : 'px-2')}
+              aria-label="Primary"
+            >
               <div className="flex flex-col gap-0.5">{renderItem(HOME)}</div>
 
               {NAV_GROUPS.map((group) => {
@@ -239,7 +255,10 @@ export function AppLayout() {
                       >
                         {group.label}
                         <ChevronDown
-                          className={cn('h-3.5 w-3.5 transition-transform', collapsed && '-rotate-90')}
+                          className={cn(
+                            'h-3.5 w-3.5 transition-transform',
+                            collapsed && '-rotate-90',
+                          )}
                           aria-hidden="true"
                         />
                       </button>
@@ -254,7 +273,12 @@ export function AppLayout() {
               })}
             </nav>
 
-            <div className={cn('flex shrink-0 flex-col gap-2 border-t border-border', showLabels ? 'p-3' : 'py-3')}>
+            <div
+              className={cn(
+                'flex shrink-0 flex-col gap-2 border-t border-border',
+                showLabels ? 'p-3' : 'py-3',
+              )}
+            >
               <OnboardingCard collapsed={!showLabels} />
               <UpgradeCard collapsed={!showLabels} />
             </div>

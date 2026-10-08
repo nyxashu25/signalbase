@@ -99,9 +99,7 @@ describe('GuidedTour', () => {
     await user.click(screen.getByRole('button', { name: 'Skip tour' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    await waitFor(() =>
-      expect(store.getState().auth.user.tutorialCompletedAt).toBeTruthy(),
-    );
+    await waitFor(() => expect(store.getState().auth.user.tutorialCompletedAt).toBeTruthy());
   });
 
   it('still dismisses locally even if the complete request fails', async () => {

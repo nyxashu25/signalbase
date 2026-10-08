@@ -1,4 +1,10 @@
-import { CREDIT_COSTS, EXTENSION_STORE_URL, LIVE, MAX_SELF_SERVE_BLOCKS, formatCount } from '../../../data/facts.js';
+import {
+  CREDIT_COSTS,
+  EXTENSION_STORE_URL,
+  LIVE,
+  MAX_SELF_SERVE_BLOCKS,
+  formatCount,
+} from '../../../data/facts.js';
 import {
   BILLING_INTERVALS,
   FREE_PLAN_MONTHLY_CREDITS,
@@ -30,9 +36,12 @@ const RR = [
   { name: 'Pro', monthly: 99, yearly: 829 },
   { name: 'Ultimate', monthly: 209, yearly: 1699 },
 ];
-const rrMonthly = (people) => RR.map((p) => `${p.name}: ${usd(p.monthly * people)}`).join('. ') + '.';
+const rrMonthly = (people) =>
+  RR.map((p) => `${p.name}: ${usd(p.monthly * people)}`).join('. ') + '.';
 const rrYearly = (people) =>
-  RR.map((p) => `${p.name}: ${usd((p.yearly * people) / 12)} (${usd(p.yearly * people)} a year)`).join('. ') + '.';
+  RR.map(
+    (p) => `${p.name}: ${usd((p.yearly * people) / 12)} (${usd(p.yearly * people)} a year)`,
+  ).join('. ') + '.';
 
 // Monthly-billing cost of a DataPit plan for a team: blocks are
 // ceil(people / seats per block), as the billing page pre-fills them.
@@ -44,7 +53,9 @@ const dataPitCosts = (people) => PAID.map((p) => teamCost(p, people)).join('. ')
 
 // "a, b or c" / "a, b and c"
 function joinList(items, word = 'or') {
-  return items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} ${word} ${items[items.length - 1]}`;
+  return items.length < 2
+    ? items.join('')
+    : `${items.slice(0, -1).join(', ')} ${word} ${items[items.length - 1]}`;
 }
 
 // What RocketReach offers today that DataPit doesn't; phone data and email
@@ -180,7 +191,12 @@ export default {
     { type: 'h2', text: 'What does RocketReach cost for a team compared with DataPit?' },
     {
       type: 'table',
-      head: ['Team size', 'DataPit, billed monthly', 'RocketReach, billed monthly', 'RocketReach, billed annually (per month)'],
+      head: [
+        'Team size',
+        'DataPit, billed monthly',
+        'RocketReach, billed monthly',
+        'RocketReach, billed annually (per month)',
+      ],
       rows: [
         ['5 people', dataPitCosts(5), rrMonthly(5), rrYearly(5)],
         ['10 people', dataPitCosts(10), rrMonthly(10), rrYearly(10)],
@@ -272,24 +288,77 @@ export default {
     {
       type: 'related',
       items: [
-        { label: 'Apollo alternative', to: '/alternatives/apollo', text: 'How DataPit compares with Apollo on price, seats and features.' },
-        { label: 'Hunter alternative', to: '/alternatives/hunter', text: 'How DataPit compares with Hunter on price, seats and features.' },
-        { label: 'Lusha alternative', to: '/alternatives/lusha', text: 'How DataPit compares with Lusha on price, seats and features.' },
-        { label: 'Pricing', to: '/pricing', text: `Seat blocks from $${BASIC.price} a month, and a free plan.` },
+        {
+          label: 'Apollo alternative',
+          to: '/alternatives/apollo',
+          text: 'How DataPit compares with Apollo on price, seats and features.',
+        },
+        {
+          label: 'Hunter alternative',
+          to: '/alternatives/hunter',
+          text: 'How DataPit compares with Hunter on price, seats and features.',
+        },
+        {
+          label: 'Lusha alternative',
+          to: '/alternatives/lusha',
+          text: 'How DataPit compares with Lusha on price, seats and features.',
+        },
+        {
+          label: 'Pricing',
+          to: '/pricing',
+          text: `Seat blocks from $${BASIC.price} a month, and a free plan.`,
+        },
       ],
     },
     {
       type: 'sources',
       items: [
-        { label: 'RocketReach pricing: plans, seat prices, lookups, exports, phones, integrations, API, intent, SSO and FAQ', url: 'https://rocketreach.co/pricing', checked: CHECKED },
-        { label: 'RocketReach homepage: database size and coverage claims', url: 'https://rocketreach.co/', checked: CHECKED },
-        { label: 'RocketReach help center: What are RocketReach credits?', url: 'https://knowledgebase.rocketreach.co/hc/en-us/articles/23024457785243-What-are-RocketReach-Credits', checked: CHECKED },
-        { label: 'RocketReach help center: How do Unlimited Lookup plans work?', url: 'https://knowledgebase.rocketreach.co/hc/en-us/articles/28936676766363-How-do-Unlimited-Lookup-plans-work', checked: CHECKED },
-        { label: 'RocketReach help center: How does the browser extension work?', url: 'https://knowledgebase.rocketreach.co/hc/en-us/articles/230561248-How-does-the-RocketReach-Browser-Extension-work', checked: CHECKED },
-        { label: 'RocketReach Messages: email sequences', url: 'https://rocketreach.co/resources/products/messages/', checked: CHECKED },
-        { label: 'RocketReach API docs: overview', url: 'https://docs.rocketreach.co/reference/rocketreach-api', checked: CHECKED },
-        { label: 'RocketReach API docs: rate limits', url: 'https://docs.rocketreach.co/reference/rate-limits', checked: CHECKED },
-        { label: 'RocketReach security: certifications and SSO', url: 'https://rocketreach.co/resources/security/', checked: CHECKED },
+        {
+          label:
+            'RocketReach pricing: plans, seat prices, lookups, exports, phones, integrations, API, intent, SSO and FAQ',
+          url: 'https://rocketreach.co/pricing',
+          checked: CHECKED,
+        },
+        {
+          label: 'RocketReach homepage: database size and coverage claims',
+          url: 'https://rocketreach.co/',
+          checked: CHECKED,
+        },
+        {
+          label: 'RocketReach help center: What are RocketReach credits?',
+          url: 'https://knowledgebase.rocketreach.co/hc/en-us/articles/23024457785243-What-are-RocketReach-Credits',
+          checked: CHECKED,
+        },
+        {
+          label: 'RocketReach help center: How do Unlimited Lookup plans work?',
+          url: 'https://knowledgebase.rocketreach.co/hc/en-us/articles/28936676766363-How-do-Unlimited-Lookup-plans-work',
+          checked: CHECKED,
+        },
+        {
+          label: 'RocketReach help center: How does the browser extension work?',
+          url: 'https://knowledgebase.rocketreach.co/hc/en-us/articles/230561248-How-does-the-RocketReach-Browser-Extension-work',
+          checked: CHECKED,
+        },
+        {
+          label: 'RocketReach Messages: email sequences',
+          url: 'https://rocketreach.co/resources/products/messages/',
+          checked: CHECKED,
+        },
+        {
+          label: 'RocketReach API docs: overview',
+          url: 'https://docs.rocketreach.co/reference/rocketreach-api',
+          checked: CHECKED,
+        },
+        {
+          label: 'RocketReach API docs: rate limits',
+          url: 'https://docs.rocketreach.co/reference/rate-limits',
+          checked: CHECKED,
+        },
+        {
+          label: 'RocketReach security: certifications and SSO',
+          url: 'https://rocketreach.co/resources/security/',
+          checked: CHECKED,
+        },
       ],
     },
   ],

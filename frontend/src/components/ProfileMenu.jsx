@@ -1,8 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
-import { UserCircle, Settings, CreditCard, LifeBuoy, LogOut, ChevronDown, Check, Building2 } from 'lucide-react';
-import { useLogoutMutation, useListMyWorkspacesQuery, useSwitchWorkspaceMutation } from '../api/authApi.js';
+import {
+  UserCircle,
+  Settings,
+  CreditCard,
+  LifeBuoy,
+  LogOut,
+  ChevronDown,
+  Check,
+  Building2,
+} from 'lucide-react';
+import {
+  useLogoutMutation,
+  useListMyWorkspacesQuery,
+  useSwitchWorkspaceMutation,
+} from '../api/authApi.js';
 import { setSession, clearSession } from '../store/authSlice.js';
 import { LetterAvatar } from './ui/LetterAvatar.jsx';
 
@@ -110,7 +123,9 @@ export function ProfileMenu() {
                       {w.role}
                     </span>
                   </span>
-                  {w.current && <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />}
+                  {w.current && (
+                    <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                  )}
                 </button>
               ))}
             </>

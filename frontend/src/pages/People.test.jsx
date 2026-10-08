@@ -107,7 +107,9 @@ describe('People', () => {
     expect(bar).toHaveTextContent('Reveal 1 · 2 cr');
 
     await user.click(screen.getByRole('button', { name: 'Clear selection' }));
-    await waitFor(() => expect(screen.queryByRole('toolbar', { name: 'Bulk actions' })).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.queryByRole('toolbar', { name: 'Bulk actions' })).not.toBeInTheDocument(),
+    );
   });
 
   it('changes the sort and re-queries with it', async () => {
@@ -166,10 +168,27 @@ describe('People (reveal + text filters)', () => {
         },
       },
       { url: '/billing/credit-costs', respond: { body: { costs: { REVEAL: 2 } } } },
-      { url: '/billing/summary', respond: { body: { balance: 100, plan: 'FREE', monthlyCreditGrant: 100, creditsUsed: 0 } } },
+      {
+        url: '/billing/summary',
+        respond: { body: { balance: 100, plan: 'FREE', monthlyCreditGrant: 100, creditsUsed: 0 } },
+      },
       { url: /\/lists$/, respond: { body: { lists: [] } } },
       { url: /\/search\/saved/, respond: { body: { savedSearches: [] } } },
-      { url: '/dashboard/onboarding', respond: { body: { groups: [], completedCount: 0, totalCount: 0, percent: 0, creditsEarned: 0, creditsAvailable: 75, nextTask: null, justRewarded: [] } } },
+      {
+        url: '/dashboard/onboarding',
+        respond: {
+          body: {
+            groups: [],
+            completedCount: 0,
+            totalCount: 0,
+            percent: 0,
+            creditsEarned: 0,
+            creditsAvailable: 75,
+            nextTask: null,
+            justRewarded: [],
+          },
+        },
+      },
     ]);
     renderWithProviders(<People />, { preloadedState: authenticatedState });
 

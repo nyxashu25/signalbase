@@ -85,20 +85,30 @@ export function validatePage(page, file = page?.meta?.path ?? '?') {
     fail(`description is ${m.description.length} chars (max 160)`);
   if (!DAY.test(m.updated ?? '')) fail('meta.updated must be YYYY-MM-DD');
   if (typeof m.published !== 'boolean') fail('meta.published must be true or false');
-  if (!page.hero?.eyebrow || !Array.isArray(page.hero?.lines) || !page.hero.lines.length || !page.hero?.sub)
+  if (
+    !page.hero?.eyebrow ||
+    !Array.isArray(page.hero?.lines) ||
+    !page.hero.lines.length ||
+    !page.hero?.sub
+  )
     fail('hero needs eyebrow, lines and sub');
   if (!Array.isArray(page.blocks) || !page.blocks.length) fail('blocks missing');
   (page.blocks ?? []).forEach((b, i) => {
     const need = BLOCK_TYPES[b?.type];
     if (!need) return fail(`block ${i}: unknown type ${b?.type}`);
-    for (const k of need) if (b[k] === undefined || b[k] === '') fail(`block ${i} (${b.type}): ${k} missing`);
+    for (const k of need)
+      if (b[k] === undefined || b[k] === '') fail(`block ${i} (${b.type}): ${k} missing`);
     if (b.type === 'table') {
-      if (!Array.isArray(b.rows) || b.rows.some((r) => !Array.isArray(r) || r.length !== b.head.length))
+      if (
+        !Array.isArray(b.rows) ||
+        b.rows.some((r) => !Array.isArray(r) || r.length !== b.head.length)
+      )
         fail(`block ${i} (table): every row needs ${b.head?.length} cells`);
     }
     if (b.type === 'sources') {
       for (const s of b.items ?? [])
-        if (!/^https:\/\//.test(s.url ?? '') || !DAY.test(s.checked ?? '')) fail(`block ${i}: source needs https url and checked date`);
+        if (!/^https:\/\//.test(s.url ?? '') || !DAY.test(s.checked ?? ''))
+          fail(`block ${i}: source needs https url and checked date`);
     }
   });
   return problems;

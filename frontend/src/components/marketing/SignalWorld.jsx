@@ -135,8 +135,10 @@ function readStation(el, index) {
   // when the chapter asks for it, so plain stations keep the default framing.
   const { stationX, stationLift, stationSize } = el.dataset;
   if (stationX !== undefined && Number.isFinite(Number(stationX))) station.x = Number(stationX);
-  if (stationLift !== undefined && Number.isFinite(Number(stationLift))) station.lift = Number(stationLift);
-  if (stationSize !== undefined && Number.isFinite(Number(stationSize))) station.size = Number(stationSize);
+  if (stationLift !== undefined && Number.isFinite(Number(stationLift)))
+    station.lift = Number(stationLift);
+  if (stationSize !== undefined && Number.isFinite(Number(stationSize)))
+    station.size = Number(stationSize);
   return station;
 }
 
@@ -178,7 +180,8 @@ const FIRST_INTERACTION = ['pointerdown', 'touchstart', 'wheel', 'keydown', 'scr
 function afterFirstInteraction(fn) {
   const opts = { capture: true, passive: true };
   let cancelInner = null;
-  const stopListening = () => FIRST_INTERACTION.forEach((type) => window.removeEventListener(type, fire, opts));
+  const stopListening = () =>
+    FIRST_INTERACTION.forEach((type) => window.removeEventListener(type, fire, opts));
   function fire() {
     stopListening();
     cancelInner = fn();
@@ -324,7 +327,9 @@ export function SignalWorld({ pathname }) {
     }
 
     function sendStations({ stations, empty }) {
-      const sig = stations.map((s) => `${s.key}:${s.side}:${s.x ?? ''}:${s.lift ?? ''}:${s.size ?? ''}`).join('|');
+      const sig = stations
+        .map((s) => `${s.key}:${s.side}:${s.x ?? ''}:${s.lift ?? ''}:${s.size ?? ''}`)
+        .join('|');
       if (sig === stationSig) return;
       stationSig = sig;
       // A swap that arrives after the route-change warp has faded (a slow
@@ -349,7 +354,9 @@ export function SignalWorld({ pathname }) {
       if (midsFor !== key) {
         midsFor = key;
         const maxCenter = Math.max(half, docHeight - half);
-        mids = chapters.map(({ top, height }) => Math.min(maxCenter, Math.max(half, top + height / 2)));
+        mids = chapters.map(({ top, height }) =>
+          Math.min(maxCenter, Math.max(half, top + height / 2)),
+        );
         for (let k = 1; k < n; k++) if (mids[k] < mids[k - 1]) mids[k] = mids[k - 1];
         spreadCollapsed(mids);
       }
@@ -454,7 +461,10 @@ export function SignalWorld({ pathname }) {
         drag.y = e.clientY;
       }
       if (e.pointerType === 'touch') return;
-      world.setPointer((e.clientX / window.innerWidth) * 2 - 1, 1 - (e.clientY / window.innerHeight) * 2);
+      world.setPointer(
+        (e.clientX / window.innerWidth) * 2 - 1,
+        1 - (e.clientY / window.innerHeight) * 2,
+      );
     }
     function onPointerDown(e) {
       if (!world || drag) return;
@@ -520,7 +530,10 @@ export function SignalWorld({ pathname }) {
       },
     };
 
-    const bodyRO = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => (needsMeasure = true)) : null;
+    const bodyRO =
+      typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(() => (needsMeasure = true))
+        : null;
     bodyRO?.observe(document.body);
     // The host's own size, read without forcing layout; also catches a tab
     // that booted while its viewport was still zero-sized.
@@ -603,7 +616,9 @@ export function SignalWorld({ pathname }) {
       }
     }
 
-    const cancelBoot = coarse ? afterFirstInteraction(() => scheduleIdle(boot)) : scheduleIdle(boot);
+    const cancelBoot = coarse
+      ? afterFirstInteraction(() => scheduleIdle(boot))
+      : scheduleIdle(boot);
 
     return () => {
       cancelled = true;

@@ -55,7 +55,10 @@ async function main() {
     connection: bullConnection,
   });
   databaseImportWorker.on('failed', (job, err) => {
-    logger.error({ jobId: job?.id, batchId: job?.data?.batchId, err }, 'database-import job failed');
+    logger.error(
+      { jobId: job?.id, batchId: job?.data?.batchId, err },
+      'database-import job failed',
+    );
   });
 
   const monthlyGrantWorker = new Worker('monthly-grant', monthlyGrantProcessor, {

@@ -160,11 +160,7 @@ async function clearReservation(reservationId) {
  */
 export async function resolveReservationForCommit(reservationId, { userId, workspaceId }) {
   const reservation = await readReservation(reservationId);
-  if (
-    !reservation ||
-    reservation.userId !== userId ||
-    reservation.workspaceId !== workspaceId
-  ) {
+  if (!reservation || reservation.userId !== userId || reservation.workspaceId !== workspaceId) {
     throw new ApiError(
       409,
       'Reservation not found, already resolved, or expired — retry the reveal',

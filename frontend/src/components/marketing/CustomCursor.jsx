@@ -7,9 +7,24 @@ const INTERACTIVE = 'a, button, [role="button"], [data-cursor]';
 // Ring size and tone per mode. Width/height animate (not scale) so the
 // "Drag" label inside stays crisp at its own font size.
 const RING = {
-  default: { width: 34, height: 34, borderColor: 'rgba(207,112,255,0.5)', backgroundColor: 'rgba(170,0,255,0)' },
-  hover: { width: 54, height: 54, borderColor: 'rgba(221,153,255,0.9)', backgroundColor: 'rgba(170,0,255,0.10)' },
-  grab: { width: 64, height: 64, borderColor: 'rgba(231,179,255,0.95)', backgroundColor: 'rgba(170,0,255,0.16)' },
+  default: {
+    width: 34,
+    height: 34,
+    borderColor: 'rgba(207,112,255,0.5)',
+    backgroundColor: 'rgba(170,0,255,0)',
+  },
+  hover: {
+    width: 54,
+    height: 54,
+    borderColor: 'rgba(221,153,255,0.9)',
+    backgroundColor: 'rgba(170,0,255,0.10)',
+  },
+  grab: {
+    width: 64,
+    height: 64,
+    borderColor: 'rgba(231,179,255,0.95)',
+    backgroundColor: 'rgba(170,0,255,0.16)',
+  },
 };
 
 function canUseCustomCursor() {

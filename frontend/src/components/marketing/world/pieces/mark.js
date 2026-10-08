@@ -108,8 +108,10 @@ function dContour() {
     for (let i = 0; i <= n; i++) {
       const t = i / n;
       const u = 1 - t;
-      const x = u * u * u * p0[0] + 3 * u * u * t * p1[0] + 3 * u * t * t * p2[0] + t * t * t * p3[0];
-      const y = u * u * u * p0[1] + 3 * u * u * t * p1[1] + 3 * u * t * t * p2[1] + t * t * t * p3[1];
+      const x =
+        u * u * u * p0[0] + 3 * u * u * t * p1[0] + 3 * u * t * t * p2[0] + t * t * t * p3[0];
+      const y =
+        u * u * u * p0[1] + 3 * u * u * t * p1[1] + 3 * u * t * t * p2[1] + t * t * t * p3[1];
       const tx =
         3 * u * u * (p1[0] - p0[0]) + 6 * u * t * (p2[0] - p1[0]) + 3 * t * t * (p3[0] - p2[0]);
       const ty =
@@ -333,7 +335,10 @@ function buildMarkSolid(THREE, low) {
     const x = pos.getX(i) / scale + ox;
     const ySvg = -(pos.getY(i) / scale + oy);
     const zN = (pos.getZ(i) / scale + oz - zMin) / zSpan;
-    const g = Math.min(1, Math.max(0, ((x - GRAD_X0) * GRAD_DX + (ySvg - GRAD_Y0) * GRAD_DY) / gLen2));
+    const g = Math.min(
+      1,
+      Math.max(0, ((x - GRAD_X0) * GRAD_DX + (ySvg - GRAD_Y0) * GRAD_DY) / gLen2),
+    );
     const facing = Math.abs(nrm.getZ(i));
     c.setHex(rampColor(0.28 + 0.72 * g));
     c.multiplyScalar(ALBEDO * (0.7 + 0.3 * zN) * (SIDE_SHADE + (1 - SIDE_SHADE) * facing));

@@ -23,7 +23,12 @@ import { useListSequencesQuery } from '../../api/sequencesApi.js';
 import { LetterAvatar } from '../ui/LetterAvatar.jsx';
 
 const PAGES = [
-  { label: 'Home', to: '/app', icon: LayoutDashboard, keywords: 'dashboard overview getting started' },
+  {
+    label: 'Home',
+    to: '/app',
+    icon: LayoutDashboard,
+    keywords: 'dashboard overview getting started',
+  },
   { label: 'People', to: '/app/people', icon: Users, keywords: 'contacts search find' },
   { label: 'Companies', to: '/app/companies', icon: Building2, keywords: 'accounts search' },
   { label: 'Lists', to: '/app/lists', icon: ListChecks, keywords: 'saved' },
@@ -31,11 +36,36 @@ const PAGES = [
   { label: 'Billing', to: '/app/billing', icon: CreditCard, keywords: 'plan credits invoices' },
   { label: 'Tickets', to: '/app/tickets', icon: LifeBuoy, keywords: 'support help' },
   { label: 'Settings', to: '/app/settings', icon: Settings, keywords: 'account preferences' },
-  { label: 'Profile settings', to: '/app/settings/profile', icon: UserCircle, keywords: 'name account' },
-  { label: 'Workspace settings', to: '/app/settings/workspace', icon: Settings, keywords: 'rename plan' },
-  { label: 'Users & teams', to: '/app/settings/members', icon: Users, keywords: 'seats invite members' },
-  { label: 'Security settings', to: '/app/settings/security', icon: Settings, keywords: 'password google' },
-  { label: 'Notification settings', to: '/app/settings/notifications', icon: Settings, keywords: 'email opt out' },
+  {
+    label: 'Profile settings',
+    to: '/app/settings/profile',
+    icon: UserCircle,
+    keywords: 'name account',
+  },
+  {
+    label: 'Workspace settings',
+    to: '/app/settings/workspace',
+    icon: Settings,
+    keywords: 'rename plan',
+  },
+  {
+    label: 'Users & teams',
+    to: '/app/settings/members',
+    icon: Users,
+    keywords: 'seats invite members',
+  },
+  {
+    label: 'Security settings',
+    to: '/app/settings/security',
+    icon: Settings,
+    keywords: 'password google',
+  },
+  {
+    label: 'Notification settings',
+    to: '/app/settings/notifications',
+    icon: Settings,
+    keywords: 'email opt out',
+  },
   { label: 'Help', to: '/app/help', icon: BookOpen, keywords: 'docs guide how credits work faq' },
 ];
 

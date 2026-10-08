@@ -66,7 +66,9 @@ export function FilterRail({ groups, total, isFetching = false, className }) {
               <Skeleton className="h-3.5 w-16" />
             ) : total !== undefined ? (
               <>
-                <span className="font-semibold tabular-nums text-text">{total.toLocaleString()}</span>{' '}
+                <span className="font-semibold tabular-nums text-text">
+                  {total.toLocaleString()}
+                </span>{' '}
                 total
               </>
             ) : null}
@@ -134,7 +136,10 @@ function FilterGroup({ group }) {
       >
         <span
           aria-hidden="true"
-          className={cn('h-1.5 w-1.5 shrink-0 rounded-full', active > 0 ? 'bg-primary' : 'bg-transparent')}
+          className={cn(
+            'h-1.5 w-1.5 shrink-0 rounded-full',
+            active > 0 ? 'bg-primary' : 'bg-transparent',
+          )}
         />
         {Icon && <Icon className="h-4 w-4 shrink-0 text-text-muted" aria-hidden="true" />}
         <span className="flex-1 truncate text-sm font-semibold text-text">{group.label}</span>
@@ -161,7 +166,10 @@ function FilterGroup({ group }) {
           </span>
         )}
         <ChevronDown
-          className={cn('h-4 w-4 shrink-0 text-text-muted transition-transform', open && 'rotate-180')}
+          className={cn(
+            'h-4 w-4 shrink-0 text-text-muted transition-transform',
+            open && 'rotate-180',
+          )}
           aria-hidden="true"
         />
       </button>
@@ -185,7 +193,9 @@ function LockedFilterRow({ group }) {
     <Tooltip content={group.hint ?? `${group.label} isn't available yet — it's on our roadmap.`}>
       <div className="flex w-full cursor-default items-center gap-2 border-b border-border px-3.5 py-2.5 text-left last:border-0">
         {Icon && <Icon className="h-4 w-4 shrink-0 text-text-muted/50" aria-hidden="true" />}
-        <span className="flex-1 truncate text-sm font-semibold text-text-muted/70">{group.label}</span>
+        <span className="flex-1 truncate text-sm font-semibold text-text-muted/70">
+          {group.label}
+        </span>
         <span className="flex items-center gap-1 rounded-full border border-border bg-surface-sunken px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-text-muted">
           <Lock className="h-2.5 w-2.5" aria-hidden="true" />
           Soon
@@ -211,7 +221,9 @@ function TextFilter({ group }) {
 
   return (
     <div>
-      {group.hint && <p className="mb-1.5 text-[11px] font-semibold text-text-muted">{group.hint}</p>}
+      {group.hint && (
+        <p className="mb-1.5 text-[11px] font-semibold text-text-muted">{group.hint}</p>
+      )}
       {group.value ? (
         <Chip label={group.value} onRemove={() => group.onChange('')} />
       ) : (
@@ -259,7 +271,9 @@ function CheckboxFilter({ group }) {
 
   return (
     <div>
-      {group.hint && <p className="mb-1.5 text-[11px] font-semibold text-text-muted">{group.hint}</p>}
+      {group.hint && (
+        <p className="mb-1.5 text-[11px] font-semibold text-text-muted">{group.hint}</p>
+      )}
       {selectedOptions.length > 0 && (
         <div className="mb-2 flex flex-wrap gap-1.5">
           {selectedOptions.map((opt) => (

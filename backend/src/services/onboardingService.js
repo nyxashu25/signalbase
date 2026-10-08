@@ -197,7 +197,8 @@ export async function getProgress(workspaceId, userId) {
         totalCount += 1;
         if (completed) completedCount += 1;
       }
-      const requiresPlan = group.requiresSequences && sequencesLocked && !completed ? 'BASIC' : null;
+      const requiresPlan =
+        group.requiresSequences && sequencesLocked && !completed ? 'BASIC' : null;
       if (!nextTask && available && !completed && !requiresPlan) nextTask = task.key;
       return {
         key: task.key,

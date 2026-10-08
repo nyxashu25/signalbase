@@ -100,7 +100,9 @@ export default {
         '**People search.** Filters for job title, seniority, department and company, free to run. See [people search](/features/people-search).',
         `**The Chrome extension.** Look up the LinkedIn profile you’re on and reveal the contact for ${CREDIT_COSTS.EXTENSION_REVEAL} credits.`,
         ...(LIVE.sequenceSending
-          ? ['**Sequences.** Email and wait steps on every paid plan, so reps can follow up from the same workspace.']
+          ? [
+              '**Sequences.** Email and wait steps on every paid plan, so reps can follow up from the same workspace.',
+            ]
           : []),
       ],
     },
@@ -113,7 +115,10 @@ export default {
       type: 'table',
       caption: 'Monthly price by team size',
       head: ['Team size', ...PAID.map((p) => p.name)],
-      rows: [5, 10, 25].map((people) => [`${people} people`, ...PAID.map((p) => teamCell(p, people))]),
+      rows: [5, 10, 25].map((people) => [
+        `${people} people`,
+        ...PAID.map((p) => teamCell(p, people)),
+      ]),
       note: `Monthly billing. Quarterly billing saves ${discount('QUARTER')}% and annual billing ${discount('YEAR')}%. Self-serve checkout goes up to ${MAX_SELF_SERVE_BLOCKS} blocks; for more, [contact sales](/contact).`,
     },
     {
@@ -129,8 +134,14 @@ export default {
         ['Reveal a contact in the web app', String(CREDIT_COSTS.REVEAL)],
         ['Reveal a contact from the Chrome extension', String(CREDIT_COSTS.EXTENSION_REVEAL)],
         ['Open a contact a teammate already revealed', 'Free'],
-        ['Open a company’s full profile', `${CREDIT_COSTS.COMPANY_VIEW}, the first time your workspace opens it`],
-        ['Export a search or list as a CSV, up to 5,000 rows', `${CREDIT_COSTS.CSV_EXPORT} per file`],
+        [
+          'Open a company’s full profile',
+          `${CREDIT_COSTS.COMPANY_VIEW}, the first time your workspace opens it`,
+        ],
+        [
+          'Export a search or list as a CSV, up to 5,000 rows',
+          `${CREDIT_COSTS.CSV_EXPORT} per file`,
+        ],
         ...(LIVE.sequenceSending
           ? [['Enroll a contact in a sequence', String(CREDIT_COSTS.SEQUENCE_ENROLLMENT)]]
           : []),
@@ -165,13 +176,35 @@ export default {
     {
       type: 'related',
       items: [
-        { label: 'RevOps', to: '/solutions/revops', text: 'Seats, roles, credit prices and the team audit in detail.' },
-        { label: 'Account executives', to: '/solutions/account-executives', text: 'How AEs find the right people at a target account.' },
+        {
+          label: 'RevOps',
+          to: '/solutions/revops',
+          text: 'Seats, roles, credit prices and the team audit in detail.',
+        },
+        {
+          label: 'Account executives',
+          to: '/solutions/account-executives',
+          text: 'How AEs find the right people at a target account.',
+        },
         ...(LIVE.sequenceSending
-          ? [{ label: 'SDRs', to: '/solutions/sdrs', text: 'Build a list, reveal it and work it in a sequence.' }]
+          ? [
+              {
+                label: 'SDRs',
+                to: '/solutions/sdrs',
+                text: 'Build a list, reveal it and work it in a sequence.',
+              },
+            ]
           : []),
-        { label: 'People search', to: '/features/people-search', text: 'The filters your reps search with.' },
-        { label: 'Pricing', to: '/pricing', text: `Seat blocks from $${BASIC.price} a month, and a free plan.` },
+        {
+          label: 'People search',
+          to: '/features/people-search',
+          text: 'The filters your reps search with.',
+        },
+        {
+          label: 'Pricing',
+          to: '/pricing',
+          text: `Seat blocks from $${BASIC.price} a month, and a free plan.`,
+        },
       ],
     },
   ],

@@ -241,7 +241,9 @@ export function HeroDemo({ className = '' }) {
           {LIVE.sequenceSending && (
             <ScreenFade active={screen === 'sequences'}>
               <div className="p-5">
-                <p className="text-xs font-bold text-white">Q3 outbound &mdash; Marketing leaders</p>
+                <p className="text-xs font-bold text-white">
+                  Q3 outbound &mdash; Marketing leaders
+                </p>
                 <p className="mt-0.5 text-[11px] text-ink-300">41 enrolled &middot; Active</p>
                 <div className="mt-6 flex flex-col">
                   {[

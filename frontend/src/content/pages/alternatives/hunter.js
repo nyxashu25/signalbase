@@ -28,7 +28,8 @@ const freeReveals = formatCount(FREE_PLAN_MONTHLY_CREDITS / CREDIT_COSTS.REVEAL)
 // The largest team for which DataPit Basic (monthly billing) costs less than
 // Hunter.io Starter (monthly billing).
 let basicCheaperUpTo = 0;
-while (teamCost('BASIC', basicCheaperUpTo + 1).monthly < HUNTER.starter.monthly) basicCheaperUpTo += 1;
+while (teamCost('BASIC', basicCheaperUpTo + 1).monthly < HUNTER.starter.monthly)
+  basicCheaperUpTo += 1;
 
 const dataPitCell = (key, people) => {
   const c = teamCost(key, people);
@@ -124,7 +125,9 @@ export default {
         ],
         [
           'Email verification',
-          LIVE.emailVerification ? 'Guessed emails are checked by a verifier when revealed' : 'Not yet',
+          LIVE.emailVerification
+            ? 'Guessed emails are checked by a verifier when revealed'
+            : 'Not yet',
           'Yes, half a credit per check, and failed checks are free',
         ],
         [
@@ -147,8 +150,16 @@ export default {
           `${CREDIT_COSTS.CSV_EXPORT} credits per file, up to 5,000 rows, on every plan. Unrevealed contacts stay masked`,
           'Yes. Free exports are capped at 10 emails per domain',
         ],
-        ['CRM integrations', 'Not yet', 'HubSpot, Salesforce, Pipedrive and Zoho CRM, plus others through Zapier'],
-        ['API', 'No general API. API keys connect the Chrome extension only', 'REST API and a hosted MCP server, on every plan'],
+        [
+          'CRM integrations',
+          'Not yet',
+          'HubSpot, Salesforce, Pipedrive and Zoho CRM, plus others through Zapier',
+        ],
+        [
+          'API',
+          'No general API. API keys connect the Chrome extension only',
+          'REST API and a hosted MCP server, on every plan',
+        ],
       ],
       note: 'Hunter.io details come from its website, help center and Chrome Web Store listing, checked on 28 September 2026. See the sources at the end of this page.',
     },
@@ -247,23 +258,51 @@ export default {
     {
       type: 'related',
       items: [
-        { label: 'Apollo alternative', to: '/alternatives/apollo', text: 'How DataPit compares with Apollo on price and features.' },
-        { label: 'RocketReach alternative', to: '/alternatives/rocketreach', text: 'How DataPit compares with RocketReach.' },
-        { label: 'Lusha alternative', to: '/alternatives/lusha', text: 'How DataPit compares with Lusha.' },
-        { label: 'Pricing', to: '/pricing', text: `Seat blocks from $${basic.price} a month, and a free plan.` },
+        {
+          label: 'Apollo alternative',
+          to: '/alternatives/apollo',
+          text: 'How DataPit compares with Apollo on price and features.',
+        },
+        {
+          label: 'RocketReach alternative',
+          to: '/alternatives/rocketreach',
+          text: 'How DataPit compares with RocketReach.',
+        },
+        {
+          label: 'Lusha alternative',
+          to: '/alternatives/lusha',
+          text: 'How DataPit compares with Lusha.',
+        },
+        {
+          label: 'Pricing',
+          to: '/pricing',
+          text: `Seat blocks from $${basic.price} a month, and a free plan.`,
+        },
       ],
     },
     {
       type: 'sources',
       items: [
-        { label: 'Hunter.io pricing: plans, credits and team members', url: 'https://hunter.io/pricing', checked: CHECKED },
+        {
+          label: 'Hunter.io pricing: plans, credits and team members',
+          url: 'https://hunter.io/pricing',
+          checked: CHECKED,
+        },
         {
           label: 'Hunter.io Help Center: What’s included in Hunter’s Free Plan?',
           url: 'https://help.hunter.io/en/articles/11060999-what-s-included-in-hunter-s-free-plan',
           checked: CHECKED,
         },
-        { label: 'Hunter.io: Our data (database size and sourcing)', url: 'https://hunter.io/our-data', checked: CHECKED },
-        { label: 'Hunter.io Email Verifier', url: 'https://hunter.io/email-verifier', checked: CHECKED },
+        {
+          label: 'Hunter.io: Our data (database size and sourcing)',
+          url: 'https://hunter.io/our-data',
+          checked: CHECKED,
+        },
+        {
+          label: 'Hunter.io Email Verifier',
+          url: 'https://hunter.io/email-verifier',
+          checked: CHECKED,
+        },
         {
           label: 'Hunter.io Help Center: Hunter Discover FAQs (phone numbers)',
           url: 'https://help.hunter.io/en/articles/12269815-hunter-discover-faqs',
@@ -274,10 +313,22 @@ export default {
           url: 'https://chromewebstore.google.com/detail/hunter-email-finder-exten/hgmhmanijnjhaffoampdlllchpolkdnj',
           checked: CHECKED,
         },
-        { label: 'Hunter.io cold email software (Sequences)', url: 'https://hunter.io/cold-email-software', checked: CHECKED },
-        { label: 'Hunter.io integrations', url: 'https://hunter.io/integrations', checked: CHECKED },
+        {
+          label: 'Hunter.io cold email software (Sequences)',
+          url: 'https://hunter.io/cold-email-software',
+          checked: CHECKED,
+        },
+        {
+          label: 'Hunter.io integrations',
+          url: 'https://hunter.io/integrations',
+          checked: CHECKED,
+        },
         { label: 'Hunter.io API', url: 'https://hunter.io/api', checked: CHECKED },
-        { label: 'Hunter.io llms.txt (MCP server)', url: 'https://hunter.io/llms.txt', checked: CHECKED },
+        {
+          label: 'Hunter.io llms.txt (MCP server)',
+          url: 'https://hunter.io/llms.txt',
+          checked: CHECKED,
+        },
         { label: 'Hunter.io Signals', url: 'https://hunter.io/intent-data', checked: CHECKED },
         {
           label: 'Hunter.io Help Center: GDPR Compliance',

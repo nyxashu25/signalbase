@@ -73,7 +73,10 @@ async function api(method, path, { token, body } = {}) {
 }
 
 function fingerprint(passwordHash) {
-  return createHash('sha256').update(passwordHash ?? 'none').digest('hex').slice(0, 16);
+  return createHash('sha256')
+    .update(passwordHash ?? 'none')
+    .digest('hex')
+    .slice(0, 16);
 }
 
 async function cleanup() {
@@ -92,7 +95,9 @@ async function cleanup() {
   await prisma.dataSubjectOptOut.deleteMany({ where: { email: OPTOUT_EMAIL } });
   // Extension leg: the MissingPerson row is global and not covered by any
   // cascade (LostChild + ApiKey go with the contact/user deletes above).
-  await prisma.missingPerson.deleteMany({ where: { linkedinSlug: { startsWith: `e2e-missing-${STAMP}` } } });
+  await prisma.missingPerson.deleteMany({
+    where: { linkedinSlug: { startsWith: `e2e-missing-${STAMP}` } },
+  });
 
   const testContacts = await prisma.contact.findMany({
     where: { company: { domain: TEST_DOMAIN } },
@@ -103,7 +108,9 @@ async function cleanup() {
   }
   const testCompany = await prisma.company.findUnique({ where: { domain: TEST_DOMAIN } });
   if (testCompany) {
-    await es.delete({ index: COMPANIES_INDEX, id: testCompany.id }, { ignore: [404] }).catch(() => {});
+    await es
+      .delete({ index: COMPANIES_INDEX, id: testCompany.id }, { ignore: [404] })
+      .catch(() => {});
     await prisma.company.delete({ where: { id: testCompany.id } }).catch(() => {});
   }
   for (const wsId of workspaceIds) await redis.del(`credits:balance:${wsId}`).catch(() => {});
@@ -121,9 +128,15 @@ try {
   const reg = await api('POST', '/auth/register', {
     body: { email: OWNER_EMAIL, password: PASSWORD_1, name: 'E2E Owner', orgName: 'E2E Probe Org' },
   });
-  check('register returns 202 pendingVerification', reg.status === 202 && reg.body.pendingVerification === true, JSON.stringify(reg.body));
+  check(
+    'register returns 202 pendingVerification',
+    reg.status === 202 && reg.body.pendingVerification === true,
+    JSON.stringify(reg.body),
+  );
 
-  const early = await api('POST', '/auth/login', { body: { email: OWNER_EMAIL, password: PASSWORD_1 } });
+  const early = await api('POST', '/auth/login', {
+    body: { email: OWNER_EMAIL, password: PASSWORD_1 },
+  });
   check('login blocked before verification (403)', early.status === 403);
 
   const ownerRow = await prisma.user.findUnique({ where: { email: OWNER_EMAIL } });
@@ -135,17 +148,27 @@ try {
   const workspaceId = verify.body.workspace.id;
 
   const me = await api('GET', '/auth/me', { token: owner });
-  check('me: verified FREE workspace', me.status === 200 && me.body.user.emailVerified === true && me.body.workspace.plan === 'FREE');
+  check(
+    'me: verified FREE workspace',
+    me.status === 200 && me.body.user.emailVerified === true && me.body.workspace.plan === 'FREE',
+  );
 
   // --- billing baseline ---
   const summary = await api('GET', '/billing/summary', { token: owner });
-  check('billing summary: 800 starting personal credits', summary.status === 200 && summary.body.balance === 800, JSON.stringify(summary.body));
+  check(
+    'billing summary: 800 starting personal credits',
+    summary.status === 200 && summary.body.balance === 800,
+    JSON.stringify(summary.body),
+  );
 
   // --- search (read-only against the real index) ---
-  const search = await api('GET', '/search/people?page=1&pageSize=3&sort=relevance', { token: owner });
+  const search = await api('GET', '/search/people?page=1&pageSize=3&sort=relevance', {
+    token: owner,
+  });
   check('people search responds', search.status === 200 && Array.isArray(search.body.results));
   const anyMasked = search.body.results.find((c) => c.email && !c.revealed);
-  if (anyMasked) check('unrevealed emails are masked', anyMasked.email.includes('*'), anyMasked.email);
+  if (anyMasked)
+    check('unrevealed emails are masked', anyMasked.email.includes('*'), anyMasked.email);
 
   // --- own seeded contact: reveal + phone + list masking ---
   const company = await prisma.company.create({
@@ -161,83 +184,192 @@ try {
     },
   });
 
-  const list = await api('POST', '/lists', { token: owner, body: { name: 'E2E list', type: 'CONTACTS' } });
+  const list = await api('POST', '/lists', {
+    token: owner,
+    body: { name: 'E2E list', type: 'CONTACTS' },
+  });
   check('create list', list.status === 201);
-  const addItem = await api('POST', `/lists/${list.body.list.id}/items`, { token: owner, body: { contactId: contact.id } });
+  const addItem = await api('POST', `/lists/${list.body.list.id}/items`, {
+    token: owner,
+    body: { contactId: contact.id },
+  });
   check('add contact to list', addItem.status === 201);
   const listBefore = await api('GET', `/lists/${list.body.list.id}`, { token: owner });
   const itemBefore = listBefore.body.list.items[0].contact;
-  check('list detail masks phone before reveal', itemBefore.phone === '+1 415 *** **00' && itemBefore.revealed === false, itemBefore.phone);
+  check(
+    'list detail masks phone before reveal',
+    itemBefore.phone === '+1 415 *** **00' && itemBefore.revealed === false,
+    itemBefore.phone,
+  );
 
   const reveal = await api('POST', `/contacts/${contact.id}/reveal`, { token: owner });
-  check('reveal returns email + phone', reveal.status === 200 && reveal.body.email === `probe.person@${TEST_DOMAIN}` && reveal.body.phone === '+1 415 555 0000', JSON.stringify(reveal.body));
+  check(
+    'reveal returns email + phone',
+    reveal.status === 200 &&
+      reveal.body.email === `probe.person@${TEST_DOMAIN}` &&
+      reveal.body.phone === '+1 415 555 0000',
+    JSON.stringify(reveal.body),
+  );
   const afterBalance = await api('GET', '/billing/summary', { token: owner });
-  check('reveal charged 2 credits', afterBalance.body.balance === 798, String(afterBalance.body.balance));
+  check(
+    'reveal charged 2 credits',
+    afterBalance.body.balance === 798,
+    String(afterBalance.body.balance),
+  );
   const listAfter = await api('GET', `/lists/${list.body.list.id}`, { token: owner });
-  check('list detail shows clear phone after reveal', listAfter.body.list.items[0].contact.phone === '+1 415 555 0000');
+  check(
+    'list detail shows clear phone after reveal',
+    listAfter.body.list.items[0].contact.phone === '+1 415 555 0000',
+  );
 
   // --- saved searches ---
-  const saved = await api('POST', '/search/saved', { token: owner, body: { type: 'PEOPLE', name: 'E2E saved', filters: { title: 'qa' } } });
+  const saved = await api('POST', '/search/saved', {
+    token: owner,
+    body: { type: 'PEOPLE', name: 'E2E saved', filters: { title: 'qa' } },
+  });
   check('create saved search', saved.status === 201);
   const savedList = await api('GET', '/search/saved?type=PEOPLE', { token: owner });
-  check('list saved searches', savedList.status === 200 && savedList.body.savedSearches.some((s) => s.name === 'E2E saved'));
+  check(
+    'list saved searches',
+    savedList.status === 200 && savedList.body.savedSearches.some((s) => s.name === 'E2E saved'),
+  );
 
   // --- onboarding hub ---
   const onboarding = await api('GET', '/dashboard/onboarding', { token: owner });
-  const doneKeys = onboarding.body.groups.flatMap((g) => g.tasks).filter((t) => t.completed).map((t) => t.key);
-  check('onboarding detects reveal/list/saved-search/verify', ['REVEAL_EMAIL', 'ADD_TO_LIST', 'SAVE_SEARCH', 'VERIFY_EMAIL'].every((k) => doneKeys.includes(k)), doneKeys.join(','));
-  check('onboarding paid rewards', onboarding.body.creditsEarned >= 15, String(onboarding.body.creditsEarned));
+  const doneKeys = onboarding.body.groups
+    .flatMap((g) => g.tasks)
+    .filter((t) => t.completed)
+    .map((t) => t.key);
+  check(
+    'onboarding detects reveal/list/saved-search/verify',
+    ['REVEAL_EMAIL', 'ADD_TO_LIST', 'SAVE_SEARCH', 'VERIFY_EMAIL'].every((k) =>
+      doneKeys.includes(k),
+    ),
+    doneKeys.join(','),
+  );
+  check(
+    'onboarding paid rewards',
+    onboarding.body.creditsEarned >= 15,
+    String(onboarding.body.creditsEarned),
+  );
   const stats = await api('GET', '/dashboard/stats', { token: owner });
-  check('dashboard stats', stats.status === 200 && stats.body.revealsThisMonth === 1 && stats.body.lists === 1);
+  check(
+    'dashboard stats',
+    stats.status === 200 && stats.body.revealsThisMonth === 1 && stats.body.lists === 1,
+  );
 
   // --- sequences plan gate (FREE) ---
-  const seqGate = await api('POST', '/sequences', { token: owner, body: { name: 'E2E seq', steps: [{ type: 'EMAIL', subject: 'x', body: 'y' }] } });
+  const seqGate = await api('POST', '/sequences', {
+    token: owner,
+    body: { name: 'E2E seq', steps: [{ type: 'EMAIL', subject: 'x', body: 'y' }] },
+  });
   check('sequence create plan-gated on FREE (403)', seqGate.status === 403, String(seqGate.status));
 
   // --- tickets ---
-  const ticket = await api('POST', '/tickets', { token: owner, body: { type: 'SUPPORT', subject: 'Bug report', body: 'E2E probe ticket — safe to close.' } });
+  const ticket = await api('POST', '/tickets', {
+    token: owner,
+    body: { type: 'SUPPORT', subject: 'Bug report', body: 'E2E probe ticket — safe to close.' },
+  });
   check('create ticket', ticket.status === 201 && ticket.body.status === 'UNANSWERED');
   const tickets = await api('GET', '/tickets?status=ACTIVE', { token: owner });
   check('ticket list + counts', tickets.status === 200 && tickets.body.counts.ACTIVE === 1);
 
   // --- invites: team features are paid-only, then seat-gated ---
-  const blocked = await api('POST', '/workspace/invites', { token: owner, body: { email: INVITEE_EMAIL, role: 'MEMBER' } });
-  check('invite blocked on FREE plan (403 team gate)', blocked.status === 403, String(blocked.status));
+  const blocked = await api('POST', '/workspace/invites', {
+    token: owner,
+    body: { email: INVITEE_EMAIL, role: 'MEMBER' },
+  });
+  check(
+    'invite blocked on FREE plan (403 team gate)',
+    blocked.status === 403,
+    String(blocked.status),
+  );
   // Upgrade to a paid plan (+ seat headroom) so team features unlock.
   await prisma.workspace.update({ where: { id: workspaceId }, data: { plan: 'BASIC', blocks: 1 } });
-  const invite = await api('POST', '/workspace/invites', { token: owner, body: { email: INVITEE_EMAIL, role: 'MEMBER' } });
-  check('create invite once on a paid plan', invite.status === 201 && invite.body.invite.inviteUrl.includes('token='));
+  const invite = await api('POST', '/workspace/invites', {
+    token: owner,
+    body: { email: INVITEE_EMAIL, role: 'MEMBER' },
+  });
+  check(
+    'create invite once on a paid plan',
+    invite.status === 201 && invite.body.invite.inviteUrl.includes('token='),
+  );
   const inviteToken = new URL(invite.body.invite.inviteUrl).searchParams.get('token');
   const info = await api('GET', `/auth/invite?token=${encodeURIComponent(inviteToken)}`);
-  check('invite info (public)', info.status === 200 && info.body.accountExists === false && info.body.workspaceName.includes('E2E'));
-  const accept = await api('POST', '/auth/accept-invite', { body: { token: inviteToken, name: 'E2E Invitee', password: PASSWORD_1 } });
-  check('accept invite -> session in inviting workspace', accept.status === 200 && accept.body.workspace.id === workspaceId && accept.body.role === 'MEMBER');
+  check(
+    'invite info (public)',
+    info.status === 200 &&
+      info.body.accountExists === false &&
+      info.body.workspaceName.includes('E2E'),
+  );
+  const accept = await api('POST', '/auth/accept-invite', {
+    body: { token: inviteToken, name: 'E2E Invitee', password: PASSWORD_1 },
+  });
+  check(
+    'accept invite -> session in inviting workspace',
+    accept.status === 200 &&
+      accept.body.workspace.id === workspaceId &&
+      accept.body.role === 'MEMBER',
+  );
   const members = await api('GET', '/workspace/members', { token: owner });
   check('members list has both seats', members.body.members.length === 2);
-  const replay = await api('POST', '/auth/accept-invite', { body: { token: inviteToken, name: 'X', password: 'xxxxxxxxxx' } });
+  const replay = await api('POST', '/auth/accept-invite', {
+    body: { token: inviteToken, name: 'X', password: 'xxxxxxxxxx' },
+  });
   check('invite link is single-use (400)', replay.status === 400);
 
   // --- workspace branding (free) + role change + team audit (paid) ---
-  const brand = await api('PATCH', '/workspace', { token: owner, body: { name: 'E2E Probe Workspace', motto: 'Testing, one two.' } });
-  check('workspace branding: name + motto saved', brand.status === 200 && brand.body.workspace.motto === 'Testing, one two.');
+  const brand = await api('PATCH', '/workspace', {
+    token: owner,
+    body: { name: 'E2E Probe Workspace', motto: 'Testing, one two.' },
+  });
+  check(
+    'workspace branding: name + motto saved',
+    brand.status === 200 && brand.body.workspace.motto === 'Testing, one two.',
+  );
   const inviteeUser = await prisma.user.findUnique({ where: { email: INVITEE_EMAIL } });
-  const promote = await api('PATCH', `/workspace/members/${inviteeUser.id}/role`, { token: owner, body: { role: 'ADMIN' } });
-  check('promote teammate to admin', promote.status === 200 && promote.body.member.role === 'ADMIN');
+  const promote = await api('PATCH', `/workspace/members/${inviteeUser.id}/role`, {
+    token: owner,
+    body: { role: 'ADMIN' },
+  });
+  check(
+    'promote teammate to admin',
+    promote.status === 200 && promote.body.member.role === 'ADMIN',
+  );
   const auditView = await api('GET', '/workspace/audit', { token: owner });
-  check('team audit attributes spend to a teammate', auditView.status === 200 && auditView.body.totalSpent >= 2 && auditView.body.members.some((m) => m.totalSpent >= 2), JSON.stringify(auditView.body?.totalSpent));
+  check(
+    'team audit attributes spend to a teammate',
+    auditView.status === 200 &&
+      auditView.body.totalSpent >= 2 &&
+      auditView.body.members.some((m) => m.totalSpent >= 2),
+    JSON.stringify(auditView.body?.totalSpent),
+  );
   const csvRes = await fetch(`${BASE}/workspace/audit/export`, {
     headers: { Authorization: `Bearer ${owner}`, 'X-Forwarded-For': `203.0.113.${STAMP % 250}` },
   });
   const csvText = await csvRes.text();
-  check('team audit CSV downloads with a header row', csvRes.status === 200 && csvText.startsWith('Date,Member,Email,Action,Credits,Detail'));
+  check(
+    'team audit CSV downloads with a header row',
+    csvRes.status === 200 && csvText.startsWith('Date,Member,Email,Action,Credits,Detail'),
+  );
 
   // --- Chrome extension surface: API key -> observe -> 4-credit reveal ---
-  const keyRes = await api('POST', '/api-keys', { token: owner, body: { name: 'E2E extension probe' } });
-  check('create API key (dpk_…, shown once)', keyRes.status === 201 && /^dpk_[0-9a-f]{40}$/.test(keyRes.body.key ?? ''));
+  const keyRes = await api('POST', '/api-keys', {
+    token: owner,
+    body: { name: 'E2E extension probe' },
+  });
+  check(
+    'create API key (dpk_…, shown once)',
+    keyRes.status === 201 && /^dpk_[0-9a-f]{40}$/.test(keyRes.body.key ?? ''),
+  );
   const dpk = keyRes.body.key;
 
   const extMe = await api('GET', '/extension/me', { token: dpk });
-  check('extension /me: key auth + reveal price 4', extMe.status === 200 && extMe.body.revealCost === 4, JSON.stringify(extMe.body));
+  check(
+    'extension /me: key auth + reveal price 4',
+    extMe.status === 200 && extMe.body.revealCost === 4,
+    JSON.stringify(extMe.body),
+  );
   const jwtOnExt = await api('GET', '/extension/me', { token: owner });
   check('session JWT rejected on /extension (401)', jwtOnExt.status === 401);
 
@@ -259,19 +391,43 @@ try {
     // A realistic LinkedIn headline (title + company + fluff). The backend
     // must distil it to the clean title "Head of QA" for the comparison and
     // for storage — proving title extraction against the live API.
-    body: { linkedinUrl: `https://www.linkedin.com/in/${extSlug}?utm_source=e2e`, jobTitle: 'Head of QA at BigCorp | ex-Google | speaker', companyName: 'BigCorp' },
+    body: {
+      linkedinUrl: `https://www.linkedin.com/in/${extSlug}?utm_source=e2e`,
+      jobTitle: 'Head of QA at BigCorp | ex-Google | speaker',
+      companyName: 'BigCorp',
+    },
   });
-  check('observe known -> found, masked, cost 4', obs.status === 200 && obs.body.status === 'found' && obs.body.cost === 4 && obs.body.contact.revealed === false, JSON.stringify({ status: obs.body?.status, cost: obs.body?.cost }));
+  check(
+    'observe known -> found, masked, cost 4',
+    obs.status === 200 &&
+      obs.body.status === 'found' &&
+      obs.body.cost === 4 &&
+      obs.body.contact.revealed === false,
+    JSON.stringify({ status: obs.body?.status, cost: obs.body?.cost }),
+  );
   check('observe reported the title change', obs.body.titleChangeReported === true);
-  const lostChildRow = await prisma.lostChild.findFirst({ where: { contactId: extContact.id, status: 'PENDING' } });
-  check('LostChild stores the CLEAN extracted title (not the headline)', Boolean(lostChildRow) && lostChildRow.newTitle === 'Head of QA', lostChildRow?.newTitle);
+  const lostChildRow = await prisma.lostChild.findFirst({
+    where: { contactId: extContact.id, status: 'PENDING' },
+  });
+  check(
+    'LostChild stores the CLEAN extracted title (not the headline)',
+    Boolean(lostChildRow) && lostChildRow.newTitle === 'Head of QA',
+    lostChildRow?.newTitle,
+  );
 
   // Same title dressed up as a headline must NOT re-flag (false-positive guard).
   const sameTitle = await api('POST', '/extension/observe', {
     token: dpk,
-    body: { linkedinUrl: `https://www.linkedin.com/in/${extSlug}`, jobTitle: 'QA Engineer at BigCorp | mentor' },
+    body: {
+      linkedinUrl: `https://www.linkedin.com/in/${extSlug}`,
+      jobTitle: 'QA Engineer at BigCorp | mentor',
+    },
   });
-  check('headline of the SAME stored title reports no change', sameTitle.body.titleChangeReported === false, String(sameTitle.body?.titleChangeReported));
+  check(
+    'headline of the SAME stored title reports no change',
+    sameTitle.body.titleChangeReported === false,
+    String(sameTitle.body?.titleChangeReported),
+  );
 
   const missSlug = `e2e-missing-${STAMP}`;
   const miss = await api('POST', '/extension/observe', {
@@ -279,16 +435,40 @@ try {
     // location/companyName deliberately null: the content script reports
     // unparsed fields as null, and this exact shape once 400'd in prod
     // (validator used .optional() instead of .nullish()).
-    body: { linkedinUrl: `https://www.linkedin.com/in/${missSlug}`, name: 'E2E Missing', jobTitle: 'Ghost', location: null, companyName: null },
+    body: {
+      linkedinUrl: `https://www.linkedin.com/in/${missSlug}`,
+      name: 'E2E Missing',
+      jobTitle: 'Ghost',
+      location: null,
+      companyName: null,
+    },
   });
-  check('observe unknown (with null parsed fields) -> queued (Pending peoples)', miss.status === 200 && miss.body.status === 'not_found' && miss.body.queued === true, JSON.stringify(miss.body));
+  check(
+    'observe unknown (with null parsed fields) -> queued (Pending peoples)',
+    miss.status === 200 && miss.body.status === 'not_found' && miss.body.queued === true,
+    JSON.stringify(miss.body),
+  );
 
   const balBeforeExt = (await api('GET', '/billing/summary', { token: owner })).body.balance;
-  const extReveal = await api('POST', `/extension/contacts/${extContact.id}/reveal`, { token: dpk });
+  const extReveal = await api('POST', `/extension/contacts/${extContact.id}/reveal`, {
+    token: dpk,
+  });
   const balAfterExt = (await api('GET', '/billing/summary', { token: owner })).body.balance;
-  check('extension reveal returns email + phone', extReveal.status === 200 && Boolean(extReveal.body.email) && extReveal.body.phone === '+1 415 555 0001', JSON.stringify(extReveal.body));
-  check('extension reveal charged 4 credits', balBeforeExt - balAfterExt === 4, `${balBeforeExt} -> ${balAfterExt}`);
-  const extLedger = await prisma.creditLedgerEntry.findFirst({ where: { workspaceId, reason: 'EXTENSION_REVEAL' } });
+  check(
+    'extension reveal returns email + phone',
+    extReveal.status === 200 &&
+      Boolean(extReveal.body.email) &&
+      extReveal.body.phone === '+1 415 555 0001',
+    JSON.stringify(extReveal.body),
+  );
+  check(
+    'extension reveal charged 4 credits',
+    balBeforeExt - balAfterExt === 4,
+    `${balBeforeExt} -> ${balAfterExt}`,
+  );
+  const extLedger = await prisma.creditLedgerEntry.findFirst({
+    where: { workspaceId, reason: 'EXTENSION_REVEAL' },
+  });
   check('ledger reason EXTENSION_REVEAL', Boolean(extLedger) && extLedger.delta === -4);
 
   const keyGone = await api('DELETE', `/api-keys/${keyRes.body.id}`, { token: owner });
@@ -299,19 +479,32 @@ try {
   const forgot = await api('POST', '/auth/forgot-password', { body: { email: OWNER_EMAIL } });
   check('forgot-password enumeration-safe 200', forgot.status === 200 && forgot.body.sent === true);
   const ownerNow = await prisma.user.findUnique({ where: { email: OWNER_EMAIL } });
-  const resetToken = tokenService.signPasswordResetToken(ownerNow.id, fingerprint(ownerNow.passwordHash));
-  const reset = await api('POST', '/auth/reset-password', { body: { token: resetToken, newPassword: PASSWORD_2 } });
+  const resetToken = tokenService.signPasswordResetToken(
+    ownerNow.id,
+    fingerprint(ownerNow.passwordHash),
+  );
+  const reset = await api('POST', '/auth/reset-password', {
+    body: { token: resetToken, newPassword: PASSWORD_2 },
+  });
   check('reset-password succeeds', reset.status === 200 && reset.body.reset === true);
-  const oldLogin = await api('POST', '/auth/login', { body: { email: OWNER_EMAIL, password: PASSWORD_1 } });
+  const oldLogin = await api('POST', '/auth/login', {
+    body: { email: OWNER_EMAIL, password: PASSWORD_1 },
+  });
   check('old password rejected', oldLogin.status === 401);
-  const newLogin = await api('POST', '/auth/login', { body: { email: OWNER_EMAIL, password: PASSWORD_2 } });
+  const newLogin = await api('POST', '/auth/login', {
+    body: { email: OWNER_EMAIL, password: PASSWORD_2 },
+  });
   check('new password logs in', newLogin.status === 200);
   owner = newLogin.body.accessToken;
-  const replayReset = await api('POST', '/auth/reset-password', { body: { token: resetToken, newPassword: 'attacker-pw-123' } });
+  const replayReset = await api('POST', '/auth/reset-password', {
+    body: { token: resetToken, newPassword: 'attacker-pw-123' },
+  });
   check('reset link single-use (400)', replayReset.status === 400);
 
   // --- privacy opt-out ---
-  const optout = await api('POST', '/privacy/opt-out', { body: { email: OPTOUT_EMAIL, reason: 'e2e probe' } });
+  const optout = await api('POST', '/privacy/opt-out', {
+    body: { email: OPTOUT_EMAIL, reason: 'e2e probe' },
+  });
   check('privacy opt-out accepted (202)', optout.status === 202, String(optout.status));
   const optRow = await prisma.dataSubjectOptOut.findUnique({ where: { email: OPTOUT_EMAIL } });
   check('opt-out registered', Boolean(optRow));

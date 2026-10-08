@@ -56,7 +56,8 @@ export function TiltCard({ children, className = '', tilt = 6, featured = false 
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 rounded-xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
           style={{
-            background: 'radial-gradient(360px circle at var(--gx) var(--gy), rgba(197,82,255,0.16), transparent 60%)',
+            background:
+              'radial-gradient(360px circle at var(--gx) var(--gy), rgba(197,82,255,0.16), transparent 60%)',
             '--gx': glowX,
             '--gy': glowY,
           }}

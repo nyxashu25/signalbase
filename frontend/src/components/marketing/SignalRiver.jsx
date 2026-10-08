@@ -84,7 +84,8 @@ export function SignalRiver({ className = '' }) {
     const measureDoc = () => {
       docHeight = document.documentElement.scrollHeight;
     };
-    const docObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measureDoc) : null;
+    const docObserver =
+      typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measureDoc) : null;
 
     function makeParticle() {
       return {

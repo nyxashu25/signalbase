@@ -48,7 +48,10 @@ export async function purgeExpiredDeletions(now = new Date()) {
       await prisma.org.delete({ where: { id: workspace.orgId } }).catch(() => {});
     }
     purgedWorkspaces++;
-    logger.info({ workspaceId: workspace.id, name: workspace.name }, 'Hard-purged a soft-deleted workspace');
+    logger.info(
+      { workspaceId: workspace.id, name: workspace.name },
+      'Hard-purged a soft-deleted workspace',
+    );
   }
 
   return { purgedUsers, purgedWorkspaces };

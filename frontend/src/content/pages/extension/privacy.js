@@ -105,8 +105,16 @@ export default {
       caption: 'Every request the extension makes',
       head: ['When', 'What it sends', 'Why'],
       rows: [
-        ['You connect an API key', 'The key', 'To check the key works, so a mistyped key fails straight away.'],
-        ['You open the popup', 'Your API key', 'To show your name, email address, workspace, plan and credit balance.'],
+        [
+          'You connect an API key',
+          'The key',
+          'To check the key works, so a mistyped key fails straight away.',
+        ],
+        [
+          'You open the popup',
+          'Your API key',
+          'To show your name, email address, workspace, plan and credit balance.',
+        ],
         [
           'You open a LinkedIn profile or Sales Navigator lead, or click Scan',
           'The five profile fields and your API key. For a lead with no public profile link: the name and company only.',
@@ -161,7 +169,11 @@ export default {
       caption: 'What DataPit keeps after a lookup or reveal',
       head: ['What happened', 'What DataPit keeps', 'Why'],
       rows: [
-        ['A LinkedIn profile is in DataPit, and no title change shows up', 'Nothing new from the profile.', 'There’s nothing to update.'],
+        [
+          'A LinkedIn profile is in DataPit, and no title change shows up',
+          'Nothing new from the profile.',
+          'There’s nothing to update.',
+        ],
         [
           'A LinkedIn profile is in DataPit, but the job title differs',
           'The new job title (the first part of the headline), the company name you saw, and the profile name from its address. Also the old title, how often and when it was reported, and who reported it first.',
@@ -206,11 +218,26 @@ export default {
       head: ['Permission', 'Why the extension needs it'],
       rows: [
         ['Storage', 'To keep your API key and the API address on your computer.'],
-        ['Active tab', 'To see the address of the tab you’re on when you click the DataPit icon, so the popup can look up that company’s website. Chrome grants it only after you click, only for that tab.'],
-        ['Access to datapit.io', 'To send lookups and reveals to DataPit’s API, and to tell the DataPit dashboard the extension is installed.'],
-        ['Access to linkedin.com', 'To read the five profile fields and show the DataPit card on profile and Sales Navigator lead pages.'],
-        ['Access to mail.google.com and calendar.google.com', 'To read the email addresses of the people in an open thread, draft or event, and show the DataPit card.'],
-        ['Access to app.hubspot.com and Salesforce Lightning', 'To read the email addresses on an open CRM record, and show the DataPit card.'],
+        [
+          'Active tab',
+          'To see the address of the tab you’re on when you click the DataPit icon, so the popup can look up that company’s website. Chrome grants it only after you click, only for that tab.',
+        ],
+        [
+          'Access to datapit.io',
+          'To send lookups and reveals to DataPit’s API, and to tell the DataPit dashboard the extension is installed.',
+        ],
+        [
+          'Access to linkedin.com',
+          'To read the five profile fields and show the DataPit card on profile and Sales Navigator lead pages.',
+        ],
+        [
+          'Access to mail.google.com and calendar.google.com',
+          'To read the email addresses of the people in an open thread, draft or event, and show the DataPit card.',
+        ],
+        [
+          'Access to app.hubspot.com and Salesforce Lightning',
+          'To read the email addresses on an open CRM record, and show the DataPit card.',
+        ],
         [
           'Access to localhost',
           'For DataPit’s own development and testing. The extension sends requests there only if you point its API address at it. On pages at localhost:5173, it only announces that it’s installed.',
@@ -304,8 +331,16 @@ export default {
     {
       type: 'related',
       items: [
-        { label: 'Privacy policy', to: '/privacy', text: 'Your account, retention and the opt-out form.' },
-        { label: 'Chrome extension', to: '/chrome-extension', text: 'Where the extension works and what reveals cost.' },
+        {
+          label: 'Privacy policy',
+          to: '/privacy',
+          text: 'Your account, retention and the opt-out form.',
+        },
+        {
+          label: 'Chrome extension',
+          to: '/chrome-extension',
+          text: 'Where the extension works and what reveals cost.',
+        },
         { label: 'Contact', to: '/contact', text: 'Questions about this notice or your data.' },
       ],
     },

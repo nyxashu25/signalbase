@@ -19,7 +19,14 @@ export function BulkActionBar({ count, noun = 'selected', onClear, children }) {
       </span>
       <span className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
       <div className="flex items-center gap-1.5">{children}</div>
-      <Button variant="ghost" size="sm" iconOnly icon={X} aria-label="Clear selection" onClick={onClear} />
+      <Button
+        variant="ghost"
+        size="sm"
+        iconOnly
+        icon={X}
+        aria-label="Clear selection"
+        onClick={onClear}
+      />
     </div>
   );
 }

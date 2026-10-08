@@ -1,4 +1,10 @@
-import { CREDIT_COSTS, EXTENSION_STORE_URL, LIVE, MAX_SELF_SERVE_BLOCKS, formatCount } from '../../../data/facts.js';
+import {
+  CREDIT_COSTS,
+  EXTENSION_STORE_URL,
+  LIVE,
+  MAX_SELF_SERVE_BLOCKS,
+  formatCount,
+} from '../../../data/facts.js';
 import {
   BILLING_INTERVALS,
   FREE_PLAN_MONTHLY_CREDITS,
@@ -22,10 +28,12 @@ const seatsPerBlock = (p) => p.block.paidSeats + p.block.freeSeats;
 const blockSeats = (p) => `${p.block.paidSeats} paid + ${p.block.freeSeats} free`;
 const money = (n) => (Number.isInteger(n) ? `$${formatCount(n)}` : `$${n.toFixed(2)}`);
 // What a block costs per month when it's billed annually.
-const annualPerMonth = (p) => money(Math.round((blockPriceForInterval(p.key, 'YEAR') / 12) * 100) / 100);
+const annualPerMonth = (p) =>
+  money(Math.round((blockPriceForInterval(p.key, 'YEAR') / 12) * 100) / 100);
 
 function dataPitPlanRow(p) {
-  if (!p.block) return [p.name, 'Free', 'Free', '1 seat', `${formatCount(FREE_PLAN_MONTHLY_CREDITS)} credits`];
+  if (!p.block)
+    return [p.name, 'Free', 'Free', '1 seat', `${formatCount(FREE_PLAN_MONTHLY_CREDITS)} credits`];
   const bonus = p.block.ownerBonus ? `, plus a ${formatCount(p.block.ownerBonus)} owner bonus` : '';
   return [
     p.name,
@@ -217,7 +225,11 @@ export default {
           'Filters for job title, company, seniority, department, company industry, company location and email status. Saved searches.',
           'Advanced search on Lite, and search and export on Professional',
         ],
-        ['Company search', 'Filters for industry, employee count and location', 'Company profiles on the Sales and Marketing plans'],
+        [
+          'Company search',
+          'Filters for industry, employee count and location',
+          'Company profiles on the Sales and Marketing plans',
+        ],
         [
           'Email finding',
           `The work email on file, or ${LIVE.emailVerification ? 'one first.last@ guess, checked by a verifier,' : 'one unverified first.last@ guess'} when there’s none`,
@@ -244,8 +256,16 @@ export default {
           LIVE.sequenceSending ? 'On paid plans, with email and wait steps' : 'Not yet',
           'The Engage add-on, and workflows for automated outreach on Copilot Advanced',
         ],
-        ['Intent data', 'No', 'Copilot Advanced and up, and 25 to unlimited topics on the Marketing plans'],
-        ['Website visitor identification', 'No', 'Copilot Advanced, and WebSights Lite on the free plan'],
+        [
+          'Intent data',
+          'No',
+          'Copilot Advanced and up, and 25 to unlimited topics on the Marketing plans',
+        ],
+        [
+          'Website visitor identification',
+          'No',
+          'Copilot Advanced, and WebSights Lite on the free plan',
+        ],
         [
           'ABM advertising',
           'No',
@@ -261,7 +281,11 @@ export default {
           'No general API. API keys only connect the Chrome extension.',
           'An Enterprise API by demo, GTM AI’s API, MCP and CLI, and a ZoomInfo MCP for Claude, ChatGPT and other assistants',
         ],
-        ['CSV export', `Yes, ${CREDIT_COSTS.CSV_EXPORT} credits per file`, 'Contact exports on Lite, and export on paid plans'],
+        [
+          'CSV export',
+          `Yes, ${CREDIT_COSTS.CSV_EXPORT} credits per file`,
+          'Contact exports on Lite, and export on paid plans',
+        ],
         ['Single sign-on', 'No', 'SSO/SAML on GTM AI Enterprise'],
         [
           'Opt-out for people listed',
@@ -341,9 +365,21 @@ export default {
           to: '/alternatives/zoominfo',
           text: 'Team costs, and when each tool is the better fit.',
         },
-        { label: 'DataPit vs Apollo', to: '/compare/datapit-vs-apollo', text: 'The same comparison, with Apollo.' },
-        { label: 'People search', to: '/features/people-search', text: 'The filters, and what search costs.' },
-        { label: 'Pricing', to: '/pricing', text: `A free plan, and seat blocks from $${BASIC.price} a month.` },
+        {
+          label: 'DataPit vs Apollo',
+          to: '/compare/datapit-vs-apollo',
+          text: 'The same comparison, with Apollo.',
+        },
+        {
+          label: 'People search',
+          to: '/features/people-search',
+          text: 'The filters, and what search costs.',
+        },
+        {
+          label: 'Pricing',
+          to: '/pricing',
+          text: `A free plan, and seat blocks from $${BASIC.price} a month.`,
+        },
       ],
     },
     {
@@ -365,7 +401,11 @@ export default {
           url: 'https://help.zoominfo.com/s/article/ZoomInfo-Lite-Credits-Explained',
           checked: CHECKED,
         },
-        { label: 'ZoomInfo: Free trial', url: 'https://www.zoominfo.com/free-trial', checked: CHECKED },
+        {
+          label: 'ZoomInfo: Free trial',
+          url: 'https://www.zoominfo.com/free-trial',
+          checked: CHECKED,
+        },
         { label: 'ZoomInfo: llms.txt', url: 'https://www.zoominfo.com/llms.txt', checked: CHECKED },
         { label: 'ZoomInfo: Our data', url: 'https://www.zoominfo.com/data', checked: CHECKED },
         {
@@ -383,7 +423,11 @@ export default {
           url: 'https://www.zoominfo.com/solutions/data-as-a-service/enterprise-api',
           checked: CHECKED,
         },
-        { label: 'ZoomInfo: MCP', url: 'https://www.zoominfo.com/solutions/zoominfo-mcp', checked: CHECKED },
+        {
+          label: 'ZoomInfo: MCP',
+          url: 'https://www.zoominfo.com/solutions/zoominfo-mcp',
+          checked: CHECKED,
+        },
         { label: 'GTM AI by ZoomInfo: Pricing', url: 'https://gtm.ai/pricing', checked: CHECKED },
       ],
     },

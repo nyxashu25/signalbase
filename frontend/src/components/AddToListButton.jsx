@@ -10,7 +10,13 @@ import { cn } from './ui/cn.js';
 
 // type: 'CONTACTS' | 'COMPANIES' — which lists this button offers, and
 // which id field it sends when adding.
-export function AddToListButton({ type, contactId, companyId, size = 'sm', label = 'Add to list' }) {
+export function AddToListButton({
+  type,
+  contactId,
+  companyId,
+  size = 'sm',
+  label = 'Add to list',
+}) {
   const [open, setOpen] = useState(false);
   const [newListName, setNewListName] = useState('');
   const [addedTo, setAddedTo] = useState(null);
@@ -86,7 +92,9 @@ export function AddToListButton({ type, contactId, companyId, size = 'sm', label
                 <ListChecks className="h-3.5 w-3.5 shrink-0 text-text-muted" aria-hidden="true" />
                 <span className="flex-1 truncate">{l.name}</span>
                 {addedTo === l.id && (
-                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Added</span>
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                    Added
+                  </span>
                 )}
               </button>
             ))}

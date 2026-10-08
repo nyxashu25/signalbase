@@ -157,7 +157,12 @@ function FileLinks({ name, files }) {
     <ul className="flex flex-wrap gap-2">
       {files.map((file) => (
         <li key={file.href}>
-          <a href={file.href} download aria-label={`Download ${name}, ${file.label}`} className={fileLinkClass}>
+          <a
+            href={file.href}
+            download
+            aria-label={`Download ${name}, ${file.label}`}
+            className={fileLinkClass}
+          >
             {file.label}
           </a>
         </li>
@@ -182,7 +187,9 @@ export function Press() {
         lines={[
           { content: 'DataPit' },
           {
-            content: <span className="bg-gradient-brand bg-clip-text text-transparent">press kit.</span>,
+            content: (
+              <span className="bg-gradient-brand bg-clip-text text-transparent">press kit.</span>
+            ),
             className: 'sm:ml-[6vw]',
           },
         ]}
@@ -203,9 +210,14 @@ export function Press() {
                 </p>
                 <div className="flex flex-col gap-4">
                   {BOILERPLATES.map((b) => (
-                    <figure key={b.label} className="rounded-lg border border-border bg-surface-elevated/60 p-5">
+                    <figure
+                      key={b.label}
+                      className="rounded-lg border border-border bg-surface-elevated/60 p-5"
+                    >
                       <figcaption className="flex items-center justify-between gap-4">
-                        <span className="text-xs font-bold uppercase tracking-[0.16em] text-text-muted">{b.label}</span>
+                        <span className="text-xs font-bold uppercase tracking-[0.16em] text-text-muted">
+                          {b.label}
+                        </span>
                         <CopyButton text={b.text} label={b.label} />
                       </figcaption>
                       <p className="mt-3 text-base leading-relaxed text-text">{b.text}</p>
@@ -218,8 +230,13 @@ export function Press() {
                 {/* The same facts, word for word, as the About page and llms-full.txt. */}
                 <dl className="divide-y divide-border border-y border-border">
                   {glanceFacts().map((fact) => (
-                    <div key={fact.label} className="grid grid-cols-1 gap-2 py-5 sm:grid-cols-[180px_1fr] sm:gap-8">
-                      <dt className="text-xs font-bold uppercase tracking-[0.16em] text-text-muted">{fact.label}</dt>
+                    <div
+                      key={fact.label}
+                      className="grid grid-cols-1 gap-2 py-5 sm:grid-cols-[180px_1fr] sm:gap-8"
+                    >
+                      <dt className="text-xs font-bold uppercase tracking-[0.16em] text-text-muted">
+                        {fact.label}
+                      </dt>
                       <dd className="text-base leading-relaxed">{fact.value}</dd>
                     </div>
                   ))}
@@ -229,13 +246,22 @@ export function Press() {
               <Section id="logos" title="Logos">
                 <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {LOGOS.map((logo) => (
-                    <li key={logo.name} className="flex flex-col overflow-hidden rounded-lg border border-border bg-surface-elevated/60">
-                      <div className={`flex h-40 items-center justify-center border-b border-border p-6 ${GROUND[logo.ground]}`}>
+                    <li
+                      key={logo.name}
+                      className="flex flex-col overflow-hidden rounded-lg border border-border bg-surface-elevated/60"
+                    >
+                      <div
+                        className={`flex h-40 items-center justify-center border-b border-border p-6 ${GROUND[logo.ground]}`}
+                      >
                         <img
                           src={logo.preview}
                           alt={`${logo.name} preview`}
                           loading="lazy"
-                          className={logo.square ? 'h-28 w-28 object-contain' : 'max-h-24 w-full object-contain'}
+                          className={
+                            logo.square
+                              ? 'h-28 w-28 object-contain'
+                              : 'max-h-24 w-full object-contain'
+                          }
                         />
                       </div>
                       <div className="flex flex-1 flex-col gap-3 p-5">
@@ -249,9 +275,10 @@ export function Press() {
                   ))}
                 </ul>
                 <p className="text-sm leading-relaxed text-text-muted">
-                  Use the logo as supplied: don&apos;t recolor parts of it, stretch it, rotate it or add effects,
-                  and leave clear space around it about as wide as the mark&apos;s tallest bar. The SVG logos set
-                  their text in Montserrat; if you don&apos;t have it installed, use the PNGs.
+                  Use the logo as supplied: don&apos;t recolor parts of it, stretch it, rotate it or
+                  add effects, and leave clear space around it about as wide as the mark&apos;s
+                  tallest bar. The SVG logos set their text in Montserrat; if you don&apos;t have it
+                  installed, use the PNGs.
                 </p>
               </Section>
 
@@ -261,7 +288,10 @@ export function Press() {
                 </p>
                 <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {IMAGES.map((image) => (
-                    <li key={image.href} className="flex flex-col overflow-hidden rounded-lg border border-border bg-surface-elevated/60">
+                    <li
+                      key={image.href}
+                      className="flex flex-col overflow-hidden rounded-lg border border-border bg-surface-elevated/60"
+                    >
                       <img
                         src={image.href}
                         alt={image.alt}
@@ -272,7 +302,10 @@ export function Press() {
                       />
                       <div className="flex items-center justify-between gap-3 p-5">
                         <h3 className="text-base font-bold text-text">{image.name}</h3>
-                        <FileLinks name={image.name} files={[{ label: 'PNG 1270×760', href: image.href }]} />
+                        <FileLinks
+                          name={image.name}
+                          files={[{ label: 'PNG 1270×760', href: image.href }]}
+                        />
                       </div>
                     </li>
                   ))}
@@ -282,7 +315,10 @@ export function Press() {
               <Section id="brand" title="Colors and type">
                 <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {COLORS.map((color) => (
-                    <li key={color.hex} className="flex items-center gap-4 rounded-lg border border-border bg-surface-elevated/60 p-3">
+                    <li
+                      key={color.hex}
+                      className="flex items-center gap-4 rounded-lg border border-border bg-surface-elevated/60 p-3"
+                    >
                       <span
                         aria-hidden="true"
                         className="h-12 w-12 shrink-0 rounded-md border border-border"
@@ -290,7 +326,10 @@ export function Press() {
                       />
                       <div>
                         <p className="text-sm font-bold text-text">
-                          {color.name} <span className="font-mono font-semibold text-text-muted">{color.hex}</span>
+                          {color.name}{' '}
+                          <span className="font-mono font-semibold text-text-muted">
+                            {color.hex}
+                          </span>
                         </p>
                         <p className="text-sm text-text-muted">{color.role}</p>
                       </div>
@@ -300,8 +339,8 @@ export function Press() {
                 <div className="flex flex-col gap-2">
                   <span aria-hidden="true" className="h-10 w-full rounded-md bg-gradient-brand" />
                   <p className="text-sm leading-relaxed text-text-muted">
-                    The brand gradient runs from Indigo 2 (#610091) through Royal Violet, Purple X11 and Hyper Magenta to
-                    Mauve Magic.
+                    The brand gradient runs from Indigo 2 (#610091) through Royal Violet, Purple X11
+                    and Hyper Magenta to Mauve Magic.
                   </p>
                 </div>
                 <p className="text-base leading-relaxed text-text-muted">
@@ -314,7 +353,8 @@ export function Press() {
                   >
                     Montserrat
                   </a>
-                  , free on Google Fonts. Headlines are set in ExtraBold (800) and body text in Medium (500).
+                  , free on Google Fonts. Headlines are set in ExtraBold (800) and body text in
+                  Medium (500).
                 </p>
               </Section>
 
@@ -336,7 +376,8 @@ export function Press() {
                   </ul>
                 ) : (
                   <p className="text-base leading-relaxed text-text-muted">
-                    DataPit&apos;s official profiles on other sites will be listed here once they&apos;re live.
+                    DataPit&apos;s official profiles on other sites will be listed here once
+                    they&apos;re live.
                   </p>
                 )}
               </Section>
@@ -344,7 +385,10 @@ export function Press() {
               <Section id="press-contact" title="Press contact">
                 <p className="text-base leading-relaxed text-text-muted">
                   For interviews, product questions or a fact check, write to us through the{' '}
-                  <Link to="/contact" className="font-semibold text-primary underline-offset-2 hover:underline">
+                  <Link
+                    to="/contact"
+                    className="font-semibold text-primary underline-offset-2 hover:underline"
+                  >
                     contact page
                   </Link>{' '}
                   and mention your publication.

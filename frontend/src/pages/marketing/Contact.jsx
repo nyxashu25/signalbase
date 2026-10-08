@@ -27,7 +27,9 @@ export function Contact() {
         sub="Use this form to ask about a plan, a bulk credit package, or whether DataPit fits your workflow. We'll reply by email."
         lines={[
           {
-            content: <span className="bg-gradient-brand bg-clip-text text-transparent">Talk to us.</span>,
+            content: (
+              <span className="bg-gradient-brand bg-clip-text text-transparent">Talk to us.</span>
+            ),
           },
         ]}
       />
@@ -46,18 +48,38 @@ export function Contact() {
                 {isSuccess ? (
                   <div className="py-6 text-center">
                     <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/15">
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-emerald-500">
-                        <path d="M5 12.5l4.5 4.5L19 7" strokeLinecap="round" strokeLinejoin="round" />
+                      <svg
+                        width="22"
+                        height="22"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        className="text-emerald-500"
+                      >
+                        <path
+                          d="M5 12.5l4.5 4.5L19 7"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
                       </svg>
                     </div>
                     <h2 className="mt-4 text-lg font-bold text-text">Message sent</h2>
-                    <p className="mt-2 text-sm text-text-muted">Thanks — we'll reply to {form.email} shortly.</p>
+                    <p className="mt-2 text-sm text-text-muted">
+                      Thanks — we'll reply to {form.email} shortly.
+                    </p>
                   </div>
                 ) : (
                   <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <Field label="Name" required value={form.name} onChange={update('name')} />
-                      <Field label="Work email" type="email" required value={form.email} onChange={update('email')} />
+                      <Field
+                        label="Work email"
+                        type="email"
+                        required
+                        value={form.email}
+                        onChange={update('email')}
+                      />
                     </div>
                     <Field label="Company" value={form.company} onChange={update('company')} />
                     <label className="flex flex-col gap-1 text-sm text-text-muted">

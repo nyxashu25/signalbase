@@ -1,5 +1,9 @@
 import { CREDIT_COSTS, LIVE, formatCount } from '../../../data/facts.js';
-import { FREE_PLAN_MONTHLY_CREDITS, FREE_SEAT_MONTHLY_CREDITS, PLANS } from '../../../data/plans.js';
+import {
+  FREE_PLAN_MONTHLY_CREDITS,
+  FREE_SEAT_MONTHLY_CREDITS,
+  PLANS,
+} from '../../../data/plans.js';
 
 // Hidden until sequence emails are really delivered (LIVE.sequenceSending):
 // today sends are simulated. Written from the sequence engine as built
@@ -93,11 +97,26 @@ export default {
     { type: 'h2', text: 'Which plans include sequences?' },
     {
       type: 'table',
-      head: ['Plan', 'Sequences', 'Credits per paid seat a month', 'Enrollments those credits cover'],
+      head: [
+        'Plan',
+        'Sequences',
+        'Credits per paid seat a month',
+        'Enrollments those credits cover',
+      ],
       rows: PLANS.map((p) =>
         p.block
-          ? [p.name, 'Yes', formatCount(p.block.paidSeatCredits), enrollments(p.block.paidSeatCredits)]
-          : [p.name, 'Not included', `${formatCount(FREE_PLAN_MONTHLY_CREDITS)} (one seat)`, 'None'],
+          ? [
+              p.name,
+              'Yes',
+              formatCount(p.block.paidSeatCredits),
+              enrollments(p.block.paidSeatCredits),
+            ]
+          : [
+              p.name,
+              'Not included',
+              `${formatCount(FREE_PLAN_MONTHLY_CREDITS)} (one seat)`,
+              'None',
+            ],
       ),
       note: `Free seats on paid plans earn ${formatCount(FREE_SEAT_MONTHLY_CREDITS)} credits a month, enough for ${enrollments(FREE_SEAT_MONTHLY_CREDITS)} enrollments. The same credits pay for reveals, company profiles and exports. See [pricing](/pricing).`,
     },

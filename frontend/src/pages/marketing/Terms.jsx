@@ -14,8 +14,8 @@ export function Terms() {
         </LegalSection>
         <LegalSection title="2. Credits">
           <p>
-            Credits are granted monthly per your plan and can be purchased in addition. Searching
-            is free; credits are spent on reveals, company profile views, CSV exports and sequence
+            Credits are granted monthly per your plan and can be purchased in addition. Searching is
+            free; credits are spent on reveals, company profile views, CSV exports and sequence
             enrollments, at the rates shown in the product, and credits held for a reveal that fails
             are returned. Credits do not roll over between billing cycles and have no cash value.
           </p>

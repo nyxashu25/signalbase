@@ -53,11 +53,11 @@ describe('emailVerifierService.verifyEmail', () => {
     env.EMAIL_VERIFIER_API_KEY = 'test-key';
     vi.stubGlobal(
       'fetch',
-      vi
-        .fn()
-        .mockResolvedValue(
-          new Response(JSON.stringify({ errors: [{ details: 'invalid api key' }] }), { status: 401 }),
-        ),
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ errors: [{ details: 'invalid api key' }] }), {
+          status: 401,
+        }),
+      ),
     );
 
     await expect(verifyEmail('a@b.com')).rejects.toThrow(/401/);

@@ -549,7 +549,11 @@ describe('stripeService.createPlanSubscriptionSession (unit, injected client)', 
     const eightyNineDaysAgo = new Date(Date.now() - 89 * 24 * 60 * 60 * 1000);
     await prisma.workspace.update({
       where: { id: workspace.id },
-      data: { plan: 'PROFESSIONAL', billingInterval: 'QUARTER', planActivatedAt: eightyNineDaysAgo },
+      data: {
+        plan: 'PROFESSIONAL',
+        billingInterval: 'QUARTER',
+        planActivatedAt: eightyNineDaysAgo,
+      },
     });
 
     await expect(
@@ -640,7 +644,7 @@ describe('stripeService.createCheckoutSession (unit, injected client)', () => {
     expect(session.sessionId).toMatch(/^cs_simulated_/);
   });
 
-  it('prices a non-package amount at the closest package\'s per-credit rate', async () => {
+  it("prices a non-package amount at the closest package's per-credit rate", async () => {
     await saveStripeSettings({ secretKey: 'sk_test_configured' }, null);
     // Closest to 999 is the 600-credit package ($30.00 = 5c/credit) —
     // 300-credit gap vs. 501 to the 1500-credit package.
@@ -650,10 +654,7 @@ describe('stripeService.createCheckoutSession (unit, injected client)', () => {
     };
     const makeClient = () => ({ checkout: { sessions: { create } } });
 
-    const session = await createCheckoutSession(
-      { workspaceId: 'ws_1', credits: 999 },
-      makeClient,
-    );
+    const session = await createCheckoutSession({ workspaceId: 'ws_1', credits: 999 }, makeClient);
     expect(session.sessionId).toBe('cs_test_custom');
   });
 
@@ -725,7 +726,13 @@ describe('GET /billing/transactions', () => {
       data: { createdAt: new Date(now - 60_000) },
     });
     await prisma.creditLedgerEntry.create({
-      data: { userId, workspaceId, delta: 100, reason: 'MONTHLY_GRANT', createdAt: new Date(now - 2000) },
+      data: {
+        userId,
+        workspaceId,
+        delta: 100,
+        reason: 'MONTHLY_GRANT',
+        createdAt: new Date(now - 2000),
+      },
     });
     await prisma.creditLedgerEntry.create({
       data: {

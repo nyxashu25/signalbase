@@ -93,7 +93,11 @@ export function InstallExtensionCard() {
             </div>
             <p className="text-xs text-text-muted">
               Not on Chrome, or installing manually?{' '}
-              <a className="font-semibold text-primary hover:underline" href={EXTENSION_DOWNLOAD_URL} download>
+              <a
+                className="font-semibold text-primary hover:underline"
+                href={EXTENSION_DOWNLOAD_URL}
+                download
+              >
                 Download the .zip
               </a>{' '}
               and load it unpacked from <code className="font-mono">chrome://extensions</code>.
@@ -112,7 +116,9 @@ function InstalledState({ version, onDone }) {
         <CheckCircle2 className="h-6 w-6" aria-hidden="true" />
       </span>
       <div>
-        <p className="text-sm font-bold text-text">Extension connected{version ? ` — v${version}` : ''}</p>
+        <p className="text-sm font-bold text-text">
+          Extension connected{version ? ` — v${version}` : ''}
+        </p>
         <p className="mt-1 text-sm text-text-muted">
           Next, create an API key so the extension can act as you and spend this workspace's
           credits.

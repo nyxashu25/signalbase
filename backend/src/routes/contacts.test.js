@@ -16,7 +16,11 @@ async function registerOrg(orgName, email) {
     name: 'Owner',
     orgName,
   });
-  return { accessToken: res.body.accessToken, workspaceId: res.body.workspace.id, userId: res.body.user.id };
+  return {
+    accessToken: res.body.accessToken,
+    workspaceId: res.body.workspace.id,
+    userId: res.body.user.id,
+  };
 }
 
 async function seedContact() {

@@ -16,16 +16,16 @@ section gallery of amix-design.com — rendered in the DataPit Design Language
 
 ## Files and ownership
 
-| File | Owns |
-|---|---|
-| `palette.js` | Brand colors as THREE.Color-ready hex + helpers (`rampColor(t)`). |
-| `threeKit.js` | `THREE` — the named-import slice of three.js handed to pieces and the field as `ctx.THREE` (never `import * as THREE`, which would defeat tree-shaking). |
-| `engine.js` | `createSignalWorld()` — renderer, bloom, environment, fog, lights, camera rig, station layout, piece lifecycle, warp, intro, drag, pause, dispose. |
-| `field.js` | `createSignalField()` — the global GPU particle field that fills the whole flight path (always on; drives the warp streak). |
-| `pieces/index.js` | `PIECES` registry: station key → piece factory. |
-| `pieces/<key>.js` | One set piece each (see keys below). |
+| File                 | Owns                                                                                                                                                                                |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `palette.js`         | Brand colors as THREE.Color-ready hex + helpers (`rampColor(t)`).                                                                                                                   |
+| `threeKit.js`        | `THREE` — the named-import slice of three.js handed to pieces and the field as `ctx.THREE` (never `import * as THREE`, which would defeat tree-shaking).                            |
+| `engine.js`          | `createSignalWorld()` — renderer, bloom, environment, fog, lights, camera rig, station layout, piece lifecycle, warp, intro, drag, pause, dispose.                                  |
+| `field.js`           | `createSignalField()` — the global GPU particle field that fills the whole flight path (always on; drives the warp streak).                                                         |
+| `pieces/index.js`    | `PIECES` registry: station key → piece factory.                                                                                                                                     |
+| `pieces/<key>.js`    | One set piece each (see keys below).                                                                                                                                                |
 | `../SignalWorld.jsx` | React host: capability check, lazy import of `engine.js` (after idle; on touch screens after the first interaction), canvas, feeds scroll/pointer/stations, fallback, `worldStore`. |
-| `../worldStore.js` | Tiny external store: `{ active, ready }` + `useWorldActive()`. |
+| `../worldStore.js`   | Tiny external store: `{ active, ready }` + `useWorldActive()`.                                                                                                                      |
 
 **Nothing outside `world/` and `SignalWorld.jsx` may import `three`.** The
 engine is loaded with a dynamic `import()` so three.js stays out of the main
@@ -35,19 +35,19 @@ bundle and never loads in jsdom tests.
 
 ```js
 const world = await createSignalWorld({ canvas, quality }); // quality: 'high' | 'low'
-world.setStations(stations)   // [{ key, side }] in DOM order. key ∈ PIECES or 'drift'. side ∈ -1 | 0 | 1
-world.setScroll(s)            // continuous station coordinate: s = k when chapter k is centered in the viewport
-                              // (the host clamps each chapter's rest point to what the viewport centre can reach,
-                              //  so s = 0 at the top of every page; send it *before* setStations on a new layout)
-world.setPointer(nx, ny)      // pointer in NDC, -1..1 (y up)
-world.grab(dxPx, dyPx)        // hero drag delta in pixels (spins the piece of the station nearest s; inertia on release)
-world.release()
-world.warp()                  // one-shot route-change pulse (~0.9 s)
-world.intro()                 // Promise — camera descends from above into station 0 (~2.4 s)
-world.resize(width, height)   // CSS pixels
-world.setPaused(bool)         // tab hidden / offscreen
-world.dispose()               // free every GPU resource, stop the loop
-world.ready                   // true once first frame rendered
+world.setStations(stations); // [{ key, side }] in DOM order. key ∈ PIECES or 'drift'. side ∈ -1 | 0 | 1
+world.setScroll(s); // continuous station coordinate: s = k when chapter k is centered in the viewport
+// (the host clamps each chapter's rest point to what the viewport centre can reach,
+//  so s = 0 at the top of every page; send it *before* setStations on a new layout)
+world.setPointer(nx, ny); // pointer in NDC, -1..1 (y up)
+world.grab(dxPx, dyPx); // hero drag delta in pixels (spins the piece of the station nearest s; inertia on release)
+world.release();
+world.warp(); // one-shot route-change pulse (~0.9 s)
+world.intro(); // Promise — camera descends from above into station 0 (~2.4 s)
+world.resize(width, height); // CSS pixels
+world.setPaused(bool); // tab hidden / offscreen
+world.dispose(); // free every GPU resource, stop the loop
+world.ready; // true once first frame rendered
 ```
 
 ### Station layout (engine)
@@ -121,15 +121,15 @@ Rules for every piece:
 
 ## Station keys
 
-| key | set piece |
-|---|---|
-| `mark` | The DataPit mark as a real extruded, beveled, reflective solid (three signal nodes, three data bars, the open D), on a lit ring platform with orbiting signal nodes. Hero; drag-spinnable. |
-| `tunnel` | "Descending into the pit": receding glowing rings with particles spiralling inward. |
-| `reveal` | A floating glass contact card whose masked (blurred) email line resolves to sharp on a sweep; a verified badge orbits. |
-| `sequence` | Nodes along a curved tube; light pulses travel the tube and light each node as they pass (email → wait → follow-up). |
-| `ledger` | A helix of thin coin discs slowly rotating; coins drop in (grants) and peel away (reveals). |
-| `lens` | A glass lens ring scanning across an instanced grid of data dots; dots under the lens brighten and lift. |
-| `crystals` | Six faceted crystals orbiting a glowing core (the six roles). |
-| `city` | Instanced ascending data bars — the logo's bars grown into a skyline — heights breathing in a wave. |
-| `blocks` | Seat blocks: solid violet "paid" cubes + glass "free" cubes that assemble from scattered as `local` goes −1 → 0. |
-| `drift` | No piece — only the global field (engine handles; not in `PIECES`). |
+| key        | set piece                                                                                                                                                                                  |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `mark`     | The DataPit mark as a real extruded, beveled, reflective solid (three signal nodes, three data bars, the open D), on a lit ring platform with orbiting signal nodes. Hero; drag-spinnable. |
+| `tunnel`   | "Descending into the pit": receding glowing rings with particles spiralling inward.                                                                                                        |
+| `reveal`   | A floating glass contact card whose masked (blurred) email line resolves to sharp on a sweep; a verified badge orbits.                                                                     |
+| `sequence` | Nodes along a curved tube; light pulses travel the tube and light each node as they pass (email → wait → follow-up).                                                                       |
+| `ledger`   | A helix of thin coin discs slowly rotating; coins drop in (grants) and peel away (reveals).                                                                                                |
+| `lens`     | A glass lens ring scanning across an instanced grid of data dots; dots under the lens brighten and lift.                                                                                   |
+| `crystals` | Six faceted crystals orbiting a glowing core (the six roles).                                                                                                                              |
+| `city`     | Instanced ascending data bars — the logo's bars grown into a skyline — heights breathing in a wave.                                                                                        |
+| `blocks`   | Seat blocks: solid violet "paid" cubes + glass "free" cubes that assemble from scattered as `local` goes −1 → 0.                                                                           |
+| `drift`    | No piece — only the global field (engine handles; not in `PIECES`).                                                                                                                        |

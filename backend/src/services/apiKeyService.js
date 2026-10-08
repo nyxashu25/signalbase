@@ -37,7 +37,10 @@ export async function listApiKeys(userId) {
 export async function createApiKey(userId, name) {
   const activeCount = await prisma.apiKey.count({ where: { userId, revokedAt: null } });
   if (activeCount >= MAX_KEYS_PER_USER) {
-    throw new ApiError(422, `You can hold at most ${MAX_KEYS_PER_USER} active API keys — revoke one first`);
+    throw new ApiError(
+      422,
+      `You can hold at most ${MAX_KEYS_PER_USER} active API keys — revoke one first`,
+    );
   }
 
   const fullKey = `dpk_${randomBytes(KEY_BYTES).toString('hex')}`;

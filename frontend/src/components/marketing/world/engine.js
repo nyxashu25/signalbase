@@ -223,7 +223,10 @@ export async function createSignalWorld({ canvas, quality = 'high', onContextLos
   const prCap = high ? 1.75 : 1.25;
   const maxPixels = high ? MAX_PIXELS_HIGH : MAX_PIXELS_LOW;
   const pixelRatioFor = (w, h) =>
-    Math.max(MIN_PIXEL_RATIO, Math.min(devicePixelRatio(), prCap, Math.sqrt(maxPixels / Math.max(1, w * h))));
+    Math.max(
+      MIN_PIXEL_RATIO,
+      Math.min(devicePixelRatio(), prCap, Math.sqrt(maxPixels / Math.max(1, w * h))),
+    );
 
   const fallbackW = typeof window !== 'undefined' ? window.innerWidth : 1280;
   const fallbackH = typeof window !== 'undefined' ? window.innerHeight : 720;

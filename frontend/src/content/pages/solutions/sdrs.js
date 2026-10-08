@@ -93,7 +93,11 @@ export default {
     {
       type: 'list',
       items: [
-        ...(SENDING ? [] : ['**Sending isn’t on yet.** Sequence emails are not delivered today, so don’t enroll contacts you expect to reach.']),
+        ...(SENDING
+          ? []
+          : [
+              '**Sending isn’t on yet.** Sequence emails are not delivered today, so don’t enroll contacts you expect to reach.',
+            ]),
         `**Enrollment is charged up front.** Each contact costs ${ENROLL} credits when you enroll them, whatever happens next.`,
         '**Reveal before you enroll.** A contact with no email on file is dropped at the first email step, and the enrollment isn’t refunded.',
         '**Plain text from one sender.** Emails go out as plain text from DataPit’s sending address. There’s no Gmail or Outlook mailbox connection yet.',
@@ -115,8 +119,14 @@ export default {
         ['Reveal a contact in the web app', String(CREDIT_COSTS.REVEAL)],
         ['Reveal a contact from the Chrome extension', String(CREDIT_COSTS.EXTENSION_REVEAL)],
         ['Open a contact a teammate already revealed', 'Free'],
-        ['Open a company’s full profile', `${CREDIT_COSTS.COMPANY_VIEW}, the first time your workspace opens it`],
-        ['Export a search or list as a CSV, up to 5,000 rows', `${CREDIT_COSTS.CSV_EXPORT} per file`],
+        [
+          'Open a company’s full profile',
+          `${CREDIT_COSTS.COMPANY_VIEW}, the first time your workspace opens it`,
+        ],
+        [
+          'Export a search or list as a CSV, up to 5,000 rows',
+          `${CREDIT_COSTS.CSV_EXPORT} per file`,
+        ],
         ['Enroll a contact in a sequence', formatCount(ENROLL)],
       ],
     },
@@ -151,12 +161,36 @@ export default {
     {
       type: 'related',
       items: [
-        { label: 'Cold email templates', to: '/blog/cold-email-templates', text: 'First emails you can adapt for your list.' },
-        { label: 'Cold email follow-ups', to: '/blog/cold-email-follow-ups', text: 'How many follow-ups to send, and when.' },
-        { label: 'Account executives', to: '/solutions/account-executives', text: 'Finding the right people at one target account.' },
-        { label: 'Sales leaders', to: '/solutions/sales-leaders', text: 'Seats, shared reveals and the team credit audit.' },
-        { label: 'People search', to: '/features/people-search', text: 'Every filter, and what each one matches.' },
-        { label: 'Pricing', to: '/pricing', text: `Seat blocks from $${BASIC.price} a month, and a free plan.` },
+        {
+          label: 'Cold email templates',
+          to: '/blog/cold-email-templates',
+          text: 'First emails you can adapt for your list.',
+        },
+        {
+          label: 'Cold email follow-ups',
+          to: '/blog/cold-email-follow-ups',
+          text: 'How many follow-ups to send, and when.',
+        },
+        {
+          label: 'Account executives',
+          to: '/solutions/account-executives',
+          text: 'Finding the right people at one target account.',
+        },
+        {
+          label: 'Sales leaders',
+          to: '/solutions/sales-leaders',
+          text: 'Seats, shared reveals and the team credit audit.',
+        },
+        {
+          label: 'People search',
+          to: '/features/people-search',
+          text: 'Every filter, and what each one matches.',
+        },
+        {
+          label: 'Pricing',
+          to: '/pricing',
+          text: `Seat blocks from $${BASIC.price} a month, and a free plan.`,
+        },
       ],
     },
   ],

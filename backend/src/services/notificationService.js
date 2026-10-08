@@ -273,9 +273,9 @@ export async function sendContactFormLead({ name, email, company, message, categ
   const admins = await prisma.superAdmin.findMany({ select: { email: true } });
   if (admins.length === 0) return;
 
-  const categoryLabel = { general: 'General inquiry', support: 'Support', enterprise: 'Enterprise' }[
-    category
-  ] ?? category;
+  const categoryLabel =
+    { general: 'General inquiry', support: 'Support', enterprise: 'Enterprise' }[category] ??
+    category;
 
   const html = baseTemplate({
     heading: `New contact form lead — ${categoryLabel}`,

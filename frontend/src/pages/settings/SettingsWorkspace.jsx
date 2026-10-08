@@ -52,7 +52,10 @@ export function SettingsWorkspace() {
   async function handleSubmit(e) {
     e.preventDefault();
     try {
-      const updated = await updateWorkspaceMut({ name: name.trim(), motto: motto.trim() || null }).unwrap();
+      const updated = await updateWorkspaceMut({
+        name: name.trim(),
+        motto: motto.trim() || null,
+      }).unwrap();
       dispatch(updateWorkspace({ name: updated.name }));
       toast.success('Workspace saved');
     } catch (err) {
@@ -68,7 +71,10 @@ export function SettingsWorkspace() {
       await uploadLogo(file).unwrap();
       toast.success('Logo updated');
     } catch (err) {
-      toast.error('Could not upload logo', err.data?.error?.message ?? 'Use a PNG, JPEG or WebP under 150KB.');
+      toast.error(
+        'Could not upload logo',
+        err.data?.error?.message ?? 'Use a PNG, JPEG or WebP under 150KB.',
+      );
     }
   }
 
@@ -146,7 +152,11 @@ export function SettingsWorkspace() {
                 maxLength={120}
                 required
                 disabled={!canEdit}
-                hint={canEdit ? 'Shown in the top bar and on every ticket you raise.' : 'Only owners and admins can edit the workspace.'}
+                hint={
+                  canEdit
+                    ? 'Shown in the top bar and on every ticket you raise.'
+                    : 'Only owners and admins can edit the workspace.'
+                }
               />
               <FormField label="Workspace ID" hint="Handy when talking to support.">
                 <code className="flex h-9 items-center truncate rounded-md border border-border bg-surface-sunken px-3 font-mono text-xs text-text-muted">
@@ -186,7 +196,9 @@ export function SettingsWorkspace() {
           <Stat label="Seats">{summary?.seats ?? '—'}</Stat>
           <Stat label="Monthly grant">{summary?.monthlyCreditGrant ?? '—'}</Stat>
           <Stat label="Balance">{summary?.balance ?? '—'}</Stat>
-          <Stat label="Billing interval">{summary?.billingInterval ? summary.billingInterval.toLowerCase() : '—'}</Stat>
+          <Stat label="Billing interval">
+            {summary?.billingInterval ? summary.billingInterval.toLowerCase() : '—'}
+          </Stat>
         </dl>
       </SettingsSection>
     </div>

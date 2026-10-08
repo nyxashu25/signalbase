@@ -69,7 +69,10 @@ export default {
       rows: [
         ['Keyword', 'The company name.'],
         ['Industry', 'One or more industries.'],
-        ['Employees', 'Headcount bands: 1–10, 11–50, 51–200, 201–500, 501–1,000, 1,001–5,000 and 5,001+.'],
+        [
+          'Employees',
+          'Headcount bands: 1–10, 11–50, 51–200, 201–500, 501–1,000, 1,001–5,000 and 5,001+.',
+        ],
         ['Location', 'Where the company is based.'],
         [
           'Tech stack',

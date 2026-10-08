@@ -32,8 +32,14 @@ function progressFixture({ done = false } = {}) {
       requiresPlan: null,
       tasks: [
         task('SEARCH_PEOPLE', 'Run a people search', { completed: true, rewardedCredits: 5 }),
-        task('REVEAL_EMAIL', 'Reveal an email address', { completed: done, rewardedCredits: done ? 5 : 0 }),
-        task('ADD_TO_LIST', 'Add a contact to a list', { completed: done, rewardedCredits: done ? 5 : 0 }),
+        task('REVEAL_EMAIL', 'Reveal an email address', {
+          completed: done,
+          rewardedCredits: done ? 5 : 0,
+        }),
+        task('ADD_TO_LIST', 'Add a contact to a list', {
+          completed: done,
+          rewardedCredits: done ? 5 : 0,
+        }),
         task('SAVE_SEARCH', 'Save a search', { completed: done, rewardedCredits: done ? 5 : 0 }),
       ],
     },
@@ -46,9 +52,18 @@ function progressFixture({ done = false } = {}) {
       completedAt: null,
       requiresPlan: done ? null : 'BASIC',
       tasks: [
-        task('CREATE_SEQUENCE', 'Create a sequence', { completed: done, requiresPlan: done ? null : 'BASIC' }),
-        task('ACTIVATE_SEQUENCE', 'Activate it', { completed: done, requiresPlan: done ? null : 'BASIC' }),
-        task('ENROLL_CONTACT', 'Enroll a contact', { completed: done, requiresPlan: done ? null : 'BASIC' }),
+        task('CREATE_SEQUENCE', 'Create a sequence', {
+          completed: done,
+          requiresPlan: done ? null : 'BASIC',
+        }),
+        task('ACTIVATE_SEQUENCE', 'Activate it', {
+          completed: done,
+          requiresPlan: done ? null : 'BASIC',
+        }),
+        task('ENROLL_CONTACT', 'Enroll a contact', {
+          completed: done,
+          requiresPlan: done ? null : 'BASIC',
+        }),
       ],
     },
     {
@@ -87,14 +102,23 @@ function setup({ done = false, route = '/app' } = {}) {
     {
       url: '/dashboard/stats',
       respond: {
-        body: { revealsThisMonth: 3, creditsUsedThisMonth: 26, activeSequences: 1, lists: 2, savedContacts: 4 },
+        body: {
+          revealsThisMonth: 3,
+          creditsUsedThisMonth: 26,
+          activeSequences: 1,
+          lists: 2,
+          savedContacts: 4,
+        },
       },
     },
     {
       url: '/billing/summary',
       respond: { body: { balance: 93, plan: 'FREE', monthlyCreditGrant: 100, creditsUsed: 7 } },
     },
-    { url: /\/billing\/transactions/, respond: { body: { results: [], total: 0, page: 1, pageSize: 5 } } },
+    {
+      url: /\/billing\/transactions/,
+      respond: { body: { results: [], total: 0, page: 1, pageSize: 5 } },
+    },
     { url: '/billing/credit-costs', respond: { body: { costs: { REVEAL: 2 } } } },
   ]);
   return renderWithProviders(<Dashboard />, { preloadedState: authenticatedState, route });
@@ -119,9 +143,9 @@ describe('Dashboard (Home)', () => {
     expect(screen.getByText('Next: Reveal an email address')).toBeInTheDocument();
     const nextRow = document.querySelector('[data-task="REVEAL_EMAIL"]');
     expect(nextRow).toHaveAttribute('data-state', 'next');
-    expect(within(nextRow).getByRole('link', { name: 'Go there: Reveal an email address' })).toHaveTextContent(
-      'Go there',
-    );
+    expect(
+      within(nextRow).getByRole('link', { name: 'Go there: Reveal an email address' }),
+    ).toHaveTextContent('Go there');
     // Other open tasks only get a quiet "Go".
     const otherRow = document.querySelector('[data-task="ADD_TO_LIST"]');
     expect(otherRow).toHaveAttribute('data-state', 'open');
@@ -136,7 +160,10 @@ describe('Dashboard (Home)', () => {
     expect(document.querySelector('[data-task="SEARCH_PEOPLE"]')).toBeNull();
     // Both "find" (search done) and "explore" (verify done) have one collapsed row; first is "find".
     await userEvent.click(screen.getAllByRole('button', { name: 'Show 1 completed' })[0]);
-    expect(document.querySelector('[data-task="SEARCH_PEOPLE"]')).toHaveAttribute('data-state', 'done');
+    expect(document.querySelector('[data-task="SEARCH_PEOPLE"]')).toHaveAttribute(
+      'data-state',
+      'done',
+    );
 
     // The sequences group is locked on Free — no CTAs, a plan pill instead.
     expect(screen.getByText('Basic plan and up')).toBeInTheDocument();
@@ -178,8 +205,17 @@ describe('Dashboard (Home)', () => {
   it('shows the resources strip linking to the guide, credits help and tickets', async () => {
     setup();
     await screen.findByText('2 of 10 done');
-    expect(screen.getByRole('link', { name: /Read the guide/ })).toHaveAttribute('href', '/app/help');
-    expect(screen.getByRole('link', { name: /How credits work/ })).toHaveAttribute('href', '/app/help#credits');
-    expect(screen.getByRole('link', { name: /Talk to us/ })).toHaveAttribute('href', '/app/tickets/new');
+    expect(screen.getByRole('link', { name: /Read the guide/ })).toHaveAttribute(
+      'href',
+      '/app/help',
+    );
+    expect(screen.getByRole('link', { name: /How credits work/ })).toHaveAttribute(
+      'href',
+      '/app/help#credits',
+    );
+    expect(screen.getByRole('link', { name: /Talk to us/ })).toHaveAttribute(
+      'href',
+      '/app/tickets/new',
+    );
   });
 });

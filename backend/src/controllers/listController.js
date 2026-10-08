@@ -48,7 +48,10 @@ export async function removeItem(req, res) {
 }
 
 function csvSafeFilename(name) {
-  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  const slug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
   return `${slug || 'list'}.csv`;
 }
 

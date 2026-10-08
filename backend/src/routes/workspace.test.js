@@ -24,16 +24,27 @@ async function registerOrg(orgName, email, blocks = 1, plan = 'BASIC') {
     where: { id: res.body.workspace.id },
     data: { blocks: plan === 'FREE' ? 0 : blocks, plan },
   });
-  return { accessToken: res.body.accessToken, workspaceId: res.body.workspace.id, userId: res.body.user.id };
+  return {
+    accessToken: res.body.accessToken,
+    workspaceId: res.body.workspace.id,
+    userId: res.body.user.id,
+  };
 }
 
 // There is no invite flow yet (TODO.md P0) — seat a second member directly.
 async function addMember(workspaceId, email, role) {
   const user = await prisma.user.create({
-    data: { email, name: 'Teammate', passwordHash: await hashPassword('correct-horse-battery'), emailVerified: true },
+    data: {
+      email,
+      name: 'Teammate',
+      passwordHash: await hashPassword('correct-horse-battery'),
+      emailVerified: true,
+    },
   });
   await prisma.membership.create({ data: { userId: user.id, workspaceId, role } });
-  const login = await request(app).post('/api/v1/auth/login').send({ email, password: 'correct-horse-battery' });
+  const login = await request(app)
+    .post('/api/v1/auth/login')
+    .send({ email, password: 'correct-horse-battery' });
   return { user, accessToken: login.body.accessToken };
 }
 
@@ -70,7 +81,10 @@ describe('workspace', () => {
       .set(auth(org.accessToken))
       .send({ name: 'Acme Growth', motto: 'We find the people who matter.' });
     expect(upd.status).toBe(200);
-    expect(upd.body.workspace).toMatchObject({ name: 'Acme Growth', motto: 'We find the people who matter.' });
+    expect(upd.body.workspace).toMatchObject({
+      name: 'Acme Growth',
+      motto: 'We find the people who matter.',
+    });
 
     // Clearing the motto (empty/null) wipes it.
     const cleared = await request(app)
@@ -112,7 +126,10 @@ describe('workspace', () => {
     const res = await request(app)
       .post('/api/v1/workspace/logo')
       .set(auth(org.accessToken))
-      .attach('logo', Buffer.from('not an image'), { filename: 'x.txt', contentType: 'text/plain' });
+      .attach('logo', Buffer.from('not an image'), {
+        filename: 'x.txt',
+        contentType: 'text/plain',
+      });
     expect(res.status).toBe(400);
   });
 
@@ -147,9 +164,20 @@ describe('workspace', () => {
     // Two spends by the owner, one by the teammate; one unattributed.
     await prisma.creditLedgerEntry.createMany({
       data: [
-        { workspaceId: org.workspaceId, delta: -2, reason: 'EMAIL_REVEAL', contactId: contact.id, spentById: org.userId },
+        {
+          workspaceId: org.workspaceId,
+          delta: -2,
+          reason: 'EMAIL_REVEAL',
+          contactId: contact.id,
+          spentById: org.userId,
+        },
         { workspaceId: org.workspaceId, delta: -20, reason: 'CSV_EXPORT', spentById: org.userId },
-        { workspaceId: org.workspaceId, delta: -2, reason: 'EMAIL_REVEAL', spentById: member.user.id },
+        {
+          workspaceId: org.workspaceId,
+          delta: -2,
+          reason: 'EMAIL_REVEAL',
+          spentById: member.user.id,
+        },
         { workspaceId: org.workspaceId, delta: -20, reason: 'COMPANY_VIEW', spentById: null },
         { workspaceId: org.workspaceId, delta: 100, reason: 'MONTHLY_GRANT' }, // a grant — must be excluded
       ],
@@ -159,7 +187,11 @@ describe('workspace', () => {
     expect(audit.status).toBe(200);
     expect(audit.body.totalSpent).toBe(44); // 2 + 20 + 2 + 20, grant excluded
     const owner = audit.body.members.find((m) => m.userId === org.userId);
-    expect(owner).toMatchObject({ totalSpent: 22, actionCount: 2, byReason: { EMAIL_REVEAL: 2, CSV_EXPORT: 20 } });
+    expect(owner).toMatchObject({
+      totalSpent: 22,
+      actionCount: 2,
+      byReason: { EMAIL_REVEAL: 2, CSV_EXPORT: 20 },
+    });
     const teammate = audit.body.members.find((m) => m.userId === member.user.id);
     expect(teammate).toMatchObject({ totalSpent: 2, actionCount: 1 });
     expect(audit.body.unattributed).toMatchObject({ totalSpent: 20, actionCount: 1 });
@@ -206,10 +238,15 @@ describe('workspace', () => {
       .set(auth(org.accessToken))
       .send({ role: 'ADMIN' });
     expect(promote.status).toBe(200);
-    expect(promote.body.member).toMatchObject({ role: 'ADMIN', user: { email: 'member@acme.test' } });
+    expect(promote.body.member).toMatchObject({
+      role: 'ADMIN',
+      user: { email: 'member@acme.test' },
+    });
 
     // The owner's role can't be changed.
-    const owner = await prisma.membership.findFirst({ where: { workspaceId: org.workspaceId, role: 'OWNER' } });
+    const owner = await prisma.membership.findFirst({
+      where: { workspaceId: org.workspaceId, role: 'OWNER' },
+    });
     const protectOwner = await request(app)
       .patch(`/api/v1/workspace/members/${owner.userId}/role`)
       .set(auth(org.accessToken))
@@ -613,14 +650,10 @@ describe('seat assignment, transfers, member removal (OWNER)', () => {
     const org = await registerOrg('Acme', 'owner@acme.test');
     const mate = await addMember(org.workspaceId, 'mate@acme.test', 'MEMBER');
 
-    const asOwner = await request(app)
-      .get('/api/v1/workspace/members')
-      .set(auth(org.accessToken));
+    const asOwner = await request(app).get('/api/v1/workspace/members').set(auth(org.accessToken));
     expect(asOwner.body.members.every((m) => typeof m.balance === 'number')).toBe(true);
 
-    const asMate = await request(app)
-      .get('/api/v1/workspace/members')
-      .set(auth(mate.accessToken));
+    const asMate = await request(app).get('/api/v1/workspace/members').set(auth(mate.accessToken));
     expect(asMate.body.members.every((m) => m.balance === undefined)).toBe(true);
   });
 
@@ -675,4 +708,3 @@ describe('seat assignment, transfers, member removal (OWNER)', () => {
     expect(denied.status).toBe(403);
   });
 });
-

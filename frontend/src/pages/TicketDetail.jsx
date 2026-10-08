@@ -87,10 +87,7 @@ export function TicketDetail() {
         {ticket.messages.map((m) => {
           const isAdmin = m.authorType === 'ADMIN';
           return (
-            <Card
-              key={m.id}
-              className={`p-4 ${isAdmin ? 'border-primary/30 bg-primary/5' : ''}`}
-            >
+            <Card key={m.id} className={`p-4 ${isAdmin ? 'border-primary/30 bg-primary/5' : ''}`}>
               <div className="flex items-center gap-2.5">
                 <LetterAvatar name={isAdmin ? 'DataPit' : m.authorName} size="sm" />
                 <span className="text-xs font-bold text-text">
@@ -133,7 +130,13 @@ export function TicketDetail() {
           />
           {error && <Banner tone="danger">{error}</Banner>}
           <div>
-            <Button type="submit" variant="primary" icon={Send} loading={replying} disabled={!canReply}>
+            <Button
+              type="submit"
+              variant="primary"
+              icon={Send}
+              loading={replying}
+              disabled={!canReply}
+            >
               Send reply
             </Button>
           </div>

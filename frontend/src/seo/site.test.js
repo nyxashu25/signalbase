@@ -76,7 +76,9 @@ describe('seo: Organization profiles', () => {
   });
 
   it('puts PROFILES on the home page Organization', () => {
-    const org = structuredData(metaForPath('/'))['@graph'].find((n) => n['@type'] === 'Organization');
+    const org = structuredData(metaForPath('/'))['@graph'].find(
+      (n) => n['@type'] === 'Organization',
+    );
     expect(org.sameAs ?? []).toEqual(PROFILES.map((p) => p.url));
   });
 

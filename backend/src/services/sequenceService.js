@@ -71,7 +71,13 @@ export async function enroll(workspaceId, sequenceId, contactId, reservationId, 
         data: { sequenceId, workspaceId, contactId, nextStepDueAt: new Date() },
       }),
       prisma.creditLedgerEntry.create({
-        data: { userId, workspaceId, delta: -amount, reason: 'SEQUENCE_ENROLLMENT', spentById: userId },
+        data: {
+          userId,
+          workspaceId,
+          delta: -amount,
+          reason: 'SEQUENCE_ENROLLMENT',
+          spentById: userId,
+        },
       }),
     ]);
     return enrollment;
@@ -164,7 +170,10 @@ export async function getWorkspaceAnalytics(workspaceId) {
   let enrolledTotal = 0;
   let activeEnrollments = 0;
   for (const row of enrollmentGroups) {
-    enrolledBySequence.set(row.sequenceId, (enrolledBySequence.get(row.sequenceId) ?? 0) + row._count);
+    enrolledBySequence.set(
+      row.sequenceId,
+      (enrolledBySequence.get(row.sequenceId) ?? 0) + row._count,
+    );
     enrolledTotal += row._count;
     if (row.status === 'ACTIVE') activeEnrollments += row._count;
   }

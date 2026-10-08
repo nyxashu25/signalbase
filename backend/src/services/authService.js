@@ -51,7 +51,9 @@ function defaultWorkspaceName(name) {
 async function createAccount({ email, name, passwordHash, googleId, orgName, emailVerified }) {
   const workspaceName = (orgName && orgName.trim()) || defaultWorkspaceName(name);
   const { user, workspace, membership, org } = await prisma.$transaction(async (tx) => {
-    const org = await tx.org.create({ data: { name: workspaceName, slug: slugify(workspaceName) } });
+    const org = await tx.org.create({
+      data: { name: workspaceName, slug: slugify(workspaceName) },
+    });
     const workspace = await tx.workspace.create({
       data: {
         orgId: org.id,
@@ -163,7 +165,10 @@ export async function verifyEmail(token) {
  * password (possession of the inbox is the same proof signup used).
  */
 function passwordFingerprint(passwordHash) {
-  return createHash('sha256').update(passwordHash ?? 'none').digest('hex').slice(0, 16);
+  return createHash('sha256')
+    .update(passwordHash ?? 'none')
+    .digest('hex')
+    .slice(0, 16);
 }
 
 /** Enumeration-safe: always {sent:true}, whether or not the email exists. */

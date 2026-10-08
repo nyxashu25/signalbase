@@ -166,11 +166,17 @@ export default {
         ],
         [
           'A phone number',
-          LIVE.phoneData ? 'Included in the email reveal, where the record has one' : 'Not available yet',
+          LIVE.phoneData
+            ? 'Included in the email reveal, where the record has one'
+            : 'Not available yet',
           `${APOLLO.credits.phone} credits for a personal number; HQ and corporate numbers cost none`,
         ],
         ['A minute on the US dialer', 'No dialer', `${APOLLO.credits.dialerMinute} credits`],
-        ['Enriching a record', 'Not offered', `${APOLLO.credits.enrichMin} to ${APOLLO.credits.enrichMax} credits`],
+        [
+          'Enriching a record',
+          'Not offered',
+          `${APOLLO.credits.enrichMin} to ${APOLLO.credits.enrichMax} credits`,
+        ],
         ['An AI research run', 'Not offered', `${APOLLO.credits.research} credit`],
       ],
     },
@@ -236,10 +242,16 @@ export default {
           'Every plan, free to run. Filters for job title, company, seniority, department, and company industry and location.',
           'Every plan; Free has basic filters',
         ],
-        ['Work emails', emailCell, `${APOLLO.credits.email} credit per email. Apollo.io says it runs seven-step email verification.`],
+        [
+          'Work emails',
+          emailCell,
+          `${APOLLO.credits.email} credit per email. Apollo.io says it runs seven-step email verification.`,
+        ],
         [
           'Phone numbers',
-          LIVE.phoneData ? 'Included in the reveal, where the record has one. No phone finder.' : 'Not yet',
+          LIVE.phoneData
+            ? 'Included in the reveal, where the record has one. No phone finder.'
+            : 'Not yet',
           `${APOLLO.credits.phone} credits per personal number`,
         ],
         ['Waterfall enrichment', 'No', 'Paid plans, from 20+ partner providers'],
@@ -260,14 +272,22 @@ export default {
           'No',
           `US dialer on paid plans. The Advanced Dialer add-on is $${APOLLO.addOn.annual} per team a month billed annually, or $${APOLLO.addOn.monthly} monthly.`,
         ],
-        ['Intent data', 'No', 'Bombora topics: 1 on Free, 6 on Basic and Professional, 12 on Organization'],
+        [
+          'Intent data',
+          'No',
+          'Bombora topics: 1 on Free, 6 on Basic and Professional, 12 on Organization',
+        ],
         ['CRM integrations', 'Not yet', 'Salesforce, HubSpot and Pipedrive, on every plan'],
         [
           'API',
           'No general API. API keys only connect the Chrome extension.',
           'REST API on every plan. Free has lower rate limits, and some endpoints may be restricted.',
         ],
-        ['AI assistants (MCP)', 'No', 'Connector for Claude, ChatGPT and Perplexity, on every plan'],
+        [
+          'AI assistants (MCP)',
+          'No',
+          'Connector for Claude, ChatGPT and Perplexity, on every plan',
+        ],
         ['Single sign-on', 'No', 'Organization plan'],
       ],
     },
@@ -329,25 +349,81 @@ export default {
     {
       type: 'related',
       items: [
-        { label: 'Apollo alternative', to: '/alternatives/apollo', text: 'Team prices at 5, 10 and 25 people.' },
-        { label: 'DataPit vs ZoomInfo', to: '/compare/datapit-vs-zoominfo', text: 'The same comparison for ZoomInfo.' },
-        { label: 'Chrome extension', to: '/chrome-extension', text: 'Look up LinkedIn profiles in DataPit.' },
-        { label: 'Pricing', to: '/pricing', text: `A free plan, and seat blocks from $${BASIC.price} a month.` },
+        {
+          label: 'Apollo alternative',
+          to: '/alternatives/apollo',
+          text: 'Team prices at 5, 10 and 25 people.',
+        },
+        {
+          label: 'DataPit vs ZoomInfo',
+          to: '/compare/datapit-vs-zoominfo',
+          text: 'The same comparison for ZoomInfo.',
+        },
+        {
+          label: 'Chrome extension',
+          to: '/chrome-extension',
+          text: 'Look up LinkedIn profiles in DataPit.',
+        },
+        {
+          label: 'Pricing',
+          to: '/pricing',
+          text: `A free plan, and seat blocks from $${BASIC.price} a month.`,
+        },
       ],
     },
     {
       type: 'sources',
       items: [
-        { label: 'Apollo.io pricing (plans, credits, add-ons and plan features)', url: 'https://www.apollo.io/pricing', checked: CHECKED },
-        { label: 'Apollo.io homepage (database size claim)', url: 'https://www.apollo.io/', checked: CHECKED },
-        { label: 'Apollo.io B2B Data (email verification claim)', url: 'https://www.apollo.io/product/b2b-data', checked: CHECKED },
-        { label: 'Apollo.io Knowledge Base: Access a Prospect’s Phone Number', url: 'https://knowledge.apollo.io/hc/en-us/articles/31969477982221-Access-a-Prospect-s-Phone-Number', checked: CHECKED },
-        { label: 'Apollo.io Chrome extension', url: 'https://www.apollo.io/product/chrome-extension', checked: CHECKED },
-        { label: 'Chrome Web Store: Apollo.io extension listing', url: 'https://chromewebstore.google.com/detail/apolloio-email-finder-and/alhgpfoeiimagjlnfekdhkjlkiomcapa', checked: CHECKED },
-        { label: 'Apollo.io Sales Engagement (call recording, meeting scheduling)', url: 'https://www.apollo.io/product/sales-engagement', checked: CHECKED },
-        { label: 'Apollo.io Waterfall Enrichment', url: 'https://www.apollo.io/product/waterfall', checked: CHECKED },
-        { label: 'Apollo.io Knowledge Base: Buying Intent Overview', url: 'https://knowledge.apollo.io/hc/en-us/articles/8047704465933-Buying-Intent-Overview', checked: CHECKED },
-        { label: 'Apollo.io API docs: Rate Limits', url: 'https://docs.apollo.io/reference/rate-limits', checked: CHECKED },
+        {
+          label: 'Apollo.io pricing (plans, credits, add-ons and plan features)',
+          url: 'https://www.apollo.io/pricing',
+          checked: CHECKED,
+        },
+        {
+          label: 'Apollo.io homepage (database size claim)',
+          url: 'https://www.apollo.io/',
+          checked: CHECKED,
+        },
+        {
+          label: 'Apollo.io B2B Data (email verification claim)',
+          url: 'https://www.apollo.io/product/b2b-data',
+          checked: CHECKED,
+        },
+        {
+          label: 'Apollo.io Knowledge Base: Access a Prospect’s Phone Number',
+          url: 'https://knowledge.apollo.io/hc/en-us/articles/31969477982221-Access-a-Prospect-s-Phone-Number',
+          checked: CHECKED,
+        },
+        {
+          label: 'Apollo.io Chrome extension',
+          url: 'https://www.apollo.io/product/chrome-extension',
+          checked: CHECKED,
+        },
+        {
+          label: 'Chrome Web Store: Apollo.io extension listing',
+          url: 'https://chromewebstore.google.com/detail/apolloio-email-finder-and/alhgpfoeiimagjlnfekdhkjlkiomcapa',
+          checked: CHECKED,
+        },
+        {
+          label: 'Apollo.io Sales Engagement (call recording, meeting scheduling)',
+          url: 'https://www.apollo.io/product/sales-engagement',
+          checked: CHECKED,
+        },
+        {
+          label: 'Apollo.io Waterfall Enrichment',
+          url: 'https://www.apollo.io/product/waterfall',
+          checked: CHECKED,
+        },
+        {
+          label: 'Apollo.io Knowledge Base: Buying Intent Overview',
+          url: 'https://knowledge.apollo.io/hc/en-us/articles/8047704465933-Buying-Intent-Overview',
+          checked: CHECKED,
+        },
+        {
+          label: 'Apollo.io API docs: Rate Limits',
+          url: 'https://docs.apollo.io/reference/rate-limits',
+          checked: CHECKED,
+        },
         { label: 'Apollo.io MCP', url: 'https://www.apollo.io/product/mcp', checked: CHECKED },
         { label: 'Apollo.io Trust Center', url: 'https://trust.apollo.io/', checked: CHECKED },
       ],

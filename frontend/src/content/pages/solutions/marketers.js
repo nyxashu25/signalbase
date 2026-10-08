@@ -132,15 +132,31 @@ export default {
       type: 'related',
       items: [
         { label: 'Founders', to: '/solutions/founders', text: 'Prospecting on the free plan.' },
-        { label: 'RevOps', to: '/solutions/revops', text: 'Seats, credit prices and the team audit.' },
-        { label: 'People search', to: '/features/people-search', text: 'Every filter, and what each one matches.' },
-        { label: 'Free email verifier', to: '/tools/email-verifier', text: 'Check an address before you send.' },
+        {
+          label: 'RevOps',
+          to: '/solutions/revops',
+          text: 'Seats, credit prices and the team audit.',
+        },
+        {
+          label: 'People search',
+          to: '/features/people-search',
+          text: 'Every filter, and what each one matches.',
+        },
+        {
+          label: 'Free email verifier',
+          to: '/tools/email-verifier',
+          text: 'Check an address before you send.',
+        },
         {
           label: 'How to verify an email address',
           to: '/blog/how-to-verify-an-email-address',
           text: 'What each check tells you, and what it can’t.',
         },
-        { label: 'Pricing', to: '/pricing', text: `Seat blocks from $${BASIC.price} a month, and a free plan.` },
+        {
+          label: 'Pricing',
+          to: '/pricing',
+          text: `Seat blocks from $${BASIC.price} a month, and a free plan.`,
+        },
       ],
     },
   ],

@@ -27,7 +27,9 @@ describe('AdminExtendDatabase', () => {
     mockFetchRoutes([{ url: '/database-imports', method: 'GET', respond: { body: [] } }]);
     renderWithProviders(<AdminExtendDatabase />, { preloadedState: authenticatedAdminState });
 
-    expect(await screen.findByText('No imports yet — upload a CSV to get started.')).toBeInTheDocument();
+    expect(
+      await screen.findByText('No imports yet — upload a CSV to get started.'),
+    ).toBeInTheDocument();
   });
 
   it('lists a pending batch with its counts and an expandable error list', async () => {
@@ -89,7 +91,10 @@ describe('AdminExtendDatabase', () => {
       {
         url: '/database-imports',
         method: 'POST',
-        respond: { status: 400, body: { error: { message: 'CSV is missing required column(s): Domain' } } },
+        respond: {
+          status: 400,
+          body: { error: { message: 'CSV is missing required column(s): Domain' } },
+        },
       },
     ]);
     renderWithProviders(<AdminExtendDatabase />, { preloadedState: authenticatedAdminState });

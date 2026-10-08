@@ -36,7 +36,9 @@ describe('AcceptInvite', () => {
       },
     ]);
     const user = userEvent.setup();
-    const { store } = renderWithProviders(<AcceptInvite />, { route: '/accept-invite?token=tok-1' });
+    const { store } = renderWithProviders(<AcceptInvite />, {
+      route: '/accept-invite?token=tok-1',
+    });
 
     expect(await screen.findByText('Join Acme Workspace on DataPit')).toBeInTheDocument();
     await user.type(screen.getByLabelText('Your name'), 'New Hire');

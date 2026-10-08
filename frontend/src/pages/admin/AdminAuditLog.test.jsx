@@ -1,7 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { screen } from '@testing-library/react';
 import { AdminAuditLog } from './AdminAuditLog.jsx';
-import { renderWithProviders, authenticatedAdminState, mockFetchRoutes } from '../../test/testUtils.jsx';
+import {
+  renderWithProviders,
+  authenticatedAdminState,
+  mockFetchRoutes,
+} from '../../test/testUtils.jsx';
 
 describe('AdminAuditLog', () => {
   it('shows an empty state when nothing has been logged yet', async () => {

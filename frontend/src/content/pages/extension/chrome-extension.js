@@ -46,7 +46,11 @@ export default {
       type: 'table',
       head: ['Where', 'What you see', 'When it looks people up'],
       rows: [
-        ['LinkedIn profiles', 'A card for the person whose profile you’re on', 'When you open the profile'],
+        [
+          'LinkedIn profiles',
+          'A card for the person whose profile you’re on',
+          'When you open the profile',
+        ],
         [
           'Sales Navigator leads',
           'A card for the lead, matched by their public profile or by name and company',
@@ -59,7 +63,11 @@ export default {
         ],
         ['Gmail', 'The people in the open email thread or draft', 'When you open the DataPit card'],
         ['Google Calendar', 'The guests of the open event', 'When you open the DataPit card'],
-        ['HubSpot and Salesforce', 'The people on the contact, lead, company or account record', 'When you open the DataPit card'],
+        [
+          'HubSpot and Salesforce',
+          'The people on the contact, lead, company or account record',
+          'When you open the DataPit card',
+        ],
       ],
       note: 'On Gmail, Calendar and the CRMs, the launcher shows how many people it can see, and nothing is looked up until you open the card.',
     },
@@ -145,8 +153,16 @@ export default {
       type: 'related',
       items: [
         { label: 'Product', to: '/product', text: 'Search, reveal and the credit ledger.' },
-        { label: 'Pricing', to: '/pricing', text: `Seat blocks from $${LOWEST_PRICE} a month, and a free plan.` },
-        { label: 'Extension privacy notice', to: '/chrome-extension/privacy', text: 'What the extension reads, sends and stores, and how to remove it.' },
+        {
+          label: 'Pricing',
+          to: '/pricing',
+          text: `Seat blocks from $${LOWEST_PRICE} a month, and a free plan.`,
+        },
+        {
+          label: 'Extension privacy notice',
+          to: '/chrome-extension/privacy',
+          text: 'What the extension reads, sends and stores, and how to remove it.',
+        },
       ],
     },
   ],

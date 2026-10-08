@@ -1,5 +1,9 @@
 import { CREDIT_COSTS, LIVE, formatCount } from '../../../data/facts.js';
-import { FREE_PLAN_MONTHLY_CREDITS, FREE_SEAT_MONTHLY_CREDITS, findPlan } from '../../../data/plans.js';
+import {
+  FREE_PLAN_MONTHLY_CREDITS,
+  FREE_SEAT_MONTHLY_CREDITS,
+  findPlan,
+} from '../../../data/plans.js';
 
 const BASIC = findPlan('BASIC');
 const PRO = findPlan('PROFESSIONAL');
@@ -129,18 +133,40 @@ export default {
     {
       type: 'related',
       items: [
-        { label: 'Sales leaders', to: '/solutions/sales-leaders', text: 'Seats, shared reveals and the team credit audit.' },
+        {
+          label: 'Sales leaders',
+          to: '/solutions/sales-leaders',
+          text: 'Seats, shared reveals and the team credit audit.',
+        },
         ...(LIVE.sequenceSending
-          ? [{ label: 'SDRs', to: '/solutions/sdrs', text: 'Build a list, reveal it and work it in a sequence.' }]
+          ? [
+              {
+                label: 'SDRs',
+                to: '/solutions/sdrs',
+                text: 'Build a list, reveal it and work it in a sequence.',
+              },
+            ]
           : []),
-        { label: 'Chrome extension', to: '/chrome-extension', text: 'Look up LinkedIn profiles against DataPit.' },
-        { label: 'People search', to: '/features/people-search', text: 'Every filter, and what each one matches.' },
+        {
+          label: 'Chrome extension',
+          to: '/chrome-extension',
+          text: 'Look up LinkedIn profiles against DataPit.',
+        },
+        {
+          label: 'People search',
+          to: '/features/people-search',
+          text: 'Every filter, and what each one matches.',
+        },
         {
           label: 'How to find someone’s email address',
           to: '/blog/how-to-find-someones-email-address',
           text: 'A step-by-step guide for B2B contacts.',
         },
-        { label: 'Pricing', to: '/pricing', text: `Seat blocks from $${BASIC.price} a month, and a free plan.` },
+        {
+          label: 'Pricing',
+          to: '/pricing',
+          text: `Seat blocks from $${BASIC.price} a month, and a free plan.`,
+        },
       ],
     },
   ],

@@ -224,10 +224,7 @@ async function grantMonthlyCredits(invoice) {
 
   // Per-member distribution: paid seats at the plan rate, free seats at the
   // flat rate, plus the owner bonus — see creditGrantService.
-  const { totalCredits } = await creditGrantService.distributeWorkspaceGrant(
-    workspace.id,
-    months,
-  );
+  const { totalCredits } = await creditGrantService.distributeWorkspaceGrant(workspace.id, months);
 
   const owner = await getWorkspaceOwnerEmail(workspace.id);
   if (owner && totalCredits > 0) {

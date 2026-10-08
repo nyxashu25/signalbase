@@ -354,7 +354,12 @@ describe('admin data routes', () => {
       expect(res.status).toBe(200);
       expect(res.body.total).toBe(4);
       const actions = res.body.results.map((e) => e.action);
-      expect(actions).toEqual(['ADJUST_USER_CREDITS', 'UPDATE_PLAN', 'UNSUSPEND_USER', 'SUSPEND_USER']); // newest first
+      expect(actions).toEqual([
+        'ADJUST_USER_CREDITS',
+        'UPDATE_PLAN',
+        'UNSUSPEND_USER',
+        'SUSPEND_USER',
+      ]); // newest first
 
       const planEntry = res.body.results.find((e) => e.action === 'UPDATE_PLAN');
       expect(planEntry.metadata).toMatchObject({ from: 'FREE', to: 'BASIC' });
@@ -408,10 +413,15 @@ describe('audit log coverage for settings, imports and promotions', () => {
       .send({ subject: 'Big news', body: '<p>Hi</p>' });
     expect(res.status).toBe(200);
 
-    const log = await request(app).get('/api/v1/admin/audit-log').set('Authorization', `Bearer ${token}`);
+    const log = await request(app)
+      .get('/api/v1/admin/audit-log')
+      .set('Authorization', `Bearer ${token}`);
     const entry = log.body.results.find((e) => e.action === 'SEND_PROMOTION');
     expect(entry).toBeTruthy();
-    expect(entry.metadata).toEqual({ subject: 'Big news', recipientCount: res.body.recipientCount });
+    expect(entry.metadata).toEqual({
+      subject: 'Big news',
+      recipientCount: res.body.recipientCount,
+    });
     expect(entry.targetUser).toBeFalsy();
   });
 
@@ -423,7 +433,9 @@ describe('audit log coverage for settings, imports and promotions', () => {
       .send({ secretKey: 'sk_test_abc123', webhookSecret: 'whsec_abc123' });
     expect(res.status).toBe(200);
 
-    const log = await request(app).get('/api/v1/admin/audit-log').set('Authorization', `Bearer ${token}`);
+    const log = await request(app)
+      .get('/api/v1/admin/audit-log')
+      .set('Authorization', `Bearer ${token}`);
     const entry = log.body.results.find((e) => e.action === 'SAVE_STRIPE_SETTINGS');
     expect(entry.metadata).toEqual({ fields: ['secretKey', 'webhookSecret'] });
     expect(JSON.stringify(entry)).not.toContain('sk_test_abc123');

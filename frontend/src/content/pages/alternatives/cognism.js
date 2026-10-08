@@ -1,4 +1,10 @@
-import { CREDIT_COSTS, EXTENSION_STORE_URL, LIVE, MAX_SELF_SERVE_BLOCKS, formatCount } from '../../../data/facts.js';
+import {
+  CREDIT_COSTS,
+  EXTENSION_STORE_URL,
+  LIVE,
+  MAX_SELF_SERVE_BLOCKS,
+  formatCount,
+} from '../../../data/facts.js';
 import {
   BILLING_INTERVALS,
   FREE_PLAN_MONTHLY_CREDITS,
@@ -143,9 +149,21 @@ export default {
     { type: 'h2', text: 'What does Cognism cost for a team compared with DataPit?' },
     {
       type: 'table',
-      head: ['Team size', `DataPit ${BASIC.name}`, `DataPit ${PRO.name}`, `DataPit ${ORG.name}`, 'Cognism'],
+      head: [
+        'Team size',
+        `DataPit ${BASIC.name}`,
+        `DataPit ${PRO.name}`,
+        `DataPit ${ORG.name}`,
+        'Cognism',
+      ],
       rows: [
-        ['5 people', teamCost(BASIC, 5), teamCost(PRO, 5), teamCost(ORG, 5), 'Quote only (Standard or Pro, 5 seats included)'],
+        [
+          '5 people',
+          teamCost(BASIC, 5),
+          teamCost(PRO, 5),
+          teamCost(ORG, 5),
+          'Quote only (Standard or Pro, 5 seats included)',
+        ],
         ['10 people', teamCost(BASIC, 10), teamCost(PRO, 10), teamCost(ORG, 10), 'Quote only'],
         ['25 people', teamCost(BASIC, 25), teamCost(PRO, 25), teamCost(ORG, 25), 'Quote only'],
       ],
@@ -223,26 +241,86 @@ export default {
     {
       type: 'related',
       items: [
-        { label: 'ZoomInfo alternative', to: '/alternatives/zoominfo', text: 'DataPit compared with ZoomInfo.' },
-        { label: 'Lusha alternative', to: '/alternatives/lusha', text: 'DataPit compared with Lusha.' },
-        { label: 'Apollo alternative', to: '/alternatives/apollo', text: 'DataPit compared with Apollo.' },
-        { label: 'Pricing', to: '/pricing', text: `Seat blocks from $${BASIC.price} a month, and a free plan.` },
+        {
+          label: 'ZoomInfo alternative',
+          to: '/alternatives/zoominfo',
+          text: 'DataPit compared with ZoomInfo.',
+        },
+        {
+          label: 'Lusha alternative',
+          to: '/alternatives/lusha',
+          text: 'DataPit compared with Lusha.',
+        },
+        {
+          label: 'Apollo alternative',
+          to: '/alternatives/apollo',
+          text: 'DataPit compared with Apollo.',
+        },
+        {
+          label: 'Pricing',
+          to: '/pricing',
+          text: `Seat blocks from $${BASIC.price} a month, and a free plan.`,
+        },
       ],
     },
     {
       type: 'sources',
       items: [
-        { label: 'Cognism pricing: packages, seats, credits and feature table', url: 'https://www.cognism.com/pricing', checked: CHECKED },
-        { label: 'Cognism CRM Enrichment (from $12,000 a year)', url: 'https://www.cognism.com/enrich', checked: CHECKED },
-        { label: 'Cognism free data sample', url: 'https://www.cognism.com/datasample', checked: CHECKED },
-        { label: 'Cognism FAQ (database description)', url: 'https://www.cognism.com/faq', checked: CHECKED },
-        { label: 'Cognism for SMBs (100M mobile numbers claim)', url: 'https://www.cognism.com/for-smbs', checked: CHECKED },
-        { label: 'Cognism Our Data (phone-verified mobiles, European data)', url: 'https://www.cognism.com/our-data', checked: CHECKED },
-        { label: 'Cognism integrations', url: 'https://www.cognism.com/integrations', checked: CHECKED },
-        { label: 'Cognism security (ISO 27001, ISO 27701, SOC 2 Type II)', url: 'https://www.cognism.com/security', checked: CHECKED },
-        { label: 'Cognism compliance (DNC lists, California data broker)', url: 'https://www.cognism.com/compliance', checked: CHECKED },
-        { label: 'Cognism Data-as-a-Service', url: 'https://www.cognism.com/data-as-a-service', checked: CHECKED },
-        { label: 'Cognism vs Apollo.io (personal emails)', url: 'https://www.cognism.com/cognism-vs-apollo-io', checked: CHECKED },
+        {
+          label: 'Cognism pricing: packages, seats, credits and feature table',
+          url: 'https://www.cognism.com/pricing',
+          checked: CHECKED,
+        },
+        {
+          label: 'Cognism CRM Enrichment (from $12,000 a year)',
+          url: 'https://www.cognism.com/enrich',
+          checked: CHECKED,
+        },
+        {
+          label: 'Cognism free data sample',
+          url: 'https://www.cognism.com/datasample',
+          checked: CHECKED,
+        },
+        {
+          label: 'Cognism FAQ (database description)',
+          url: 'https://www.cognism.com/faq',
+          checked: CHECKED,
+        },
+        {
+          label: 'Cognism for SMBs (100M mobile numbers claim)',
+          url: 'https://www.cognism.com/for-smbs',
+          checked: CHECKED,
+        },
+        {
+          label: 'Cognism Our Data (phone-verified mobiles, European data)',
+          url: 'https://www.cognism.com/our-data',
+          checked: CHECKED,
+        },
+        {
+          label: 'Cognism integrations',
+          url: 'https://www.cognism.com/integrations',
+          checked: CHECKED,
+        },
+        {
+          label: 'Cognism security (ISO 27001, ISO 27701, SOC 2 Type II)',
+          url: 'https://www.cognism.com/security',
+          checked: CHECKED,
+        },
+        {
+          label: 'Cognism compliance (DNC lists, California data broker)',
+          url: 'https://www.cognism.com/compliance',
+          checked: CHECKED,
+        },
+        {
+          label: 'Cognism Data-as-a-Service',
+          url: 'https://www.cognism.com/data-as-a-service',
+          checked: CHECKED,
+        },
+        {
+          label: 'Cognism vs Apollo.io (personal emails)',
+          url: 'https://www.cognism.com/cognism-vs-apollo-io',
+          checked: CHECKED,
+        },
         {
           label: 'Chrome Web Store: Cognism Sales Intelligence Extension',
           url: 'https://chromewebstore.google.com/detail/cognism-sales-intelligenc/pjbinjkigjcgibbafakmahamfggifapk',
