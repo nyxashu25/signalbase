@@ -205,12 +205,18 @@ async function seedDemoTenant() {
   return { org, workspace, user };
 }
 
+// Shallow copy of `obj` without `keys` (rest-destructuring would leave unused
+// bindings, which `no-unused-vars` rejects).
+function omitKeys(obj, keys) {
+  return Object.fromEntries(Object.entries(obj).filter(([key]) => !keys.includes(key)));
+}
+
 async function seedCompaniesAndContacts(count = 40) {
   for (let i = 0; i < count; i++) {
     const companyData = buildCompany(i);
     // Re-running the seed refreshes the fields the seed owns, so additions
     // to seed data (phones, tech stacks, …) reach existing rows too.
-    const { id: _companyId, ...companyRefresh } = companyData;
+    const companyRefresh = omitKeys(companyData, ['id']);
     const company = await prisma.company.upsert({
       where: { domain: companyData.domain },
       update: companyRefresh,
@@ -220,7 +226,7 @@ async function seedCompaniesAndContacts(count = 40) {
     for (const contact of buildContacts(company, i)) {
       // Refresh everything except email/emailVerified — those are written by
       // the (billed) reveal flow and must survive a re-seed.
-      const { id: _contactId, email: _e, emailVerified: _v, ...contactRefresh } = contact;
+      const contactRefresh = omitKeys(contact, ['id', 'email', 'emailVerified']);
       await prisma.contact.upsert({
         where: { id: contact.id },
         update: contactRefresh,

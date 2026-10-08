@@ -252,7 +252,7 @@ describe('tickets', () => {
     const org = await registerOrg('Acme', 'owner@acme.test');
     const adminToken = await seedAdmin();
 
-    const first = await request(app)
+    await request(app)
       .post('/api/v1/tickets')
       .set('Authorization', `Bearer ${org.accessToken}`)
       .send({ type: 'SUPPORT', subject: 'Bug report', body: 'First ticket' });
