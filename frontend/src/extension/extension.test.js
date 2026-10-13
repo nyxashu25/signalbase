@@ -59,6 +59,14 @@ describe('extension manifest', () => {
     expect(manifest.permissions).toEqual(['storage', 'activeTab']);
     expect(manifest.host_permissions.some((h) => h.includes('<all_urls>') || h === '*://*/*')).toBe(false);
   });
+
+  it('keeps product names out of the store summary', () => {
+    // The Chrome Web Store shows the manifest description as the listing's
+    // summary, and rejected 0.6.0 for listing the sites it works on there
+    // (keyword spam, "Yellow Argon"). Name the sites in the listing's prose.
+    expect(manifest.description.length).toBeLessThanOrEqual(132);
+    expect(manifest.description).not.toMatch(/LinkedIn|Sales Navigator|Gmail|Google|HubSpot|Salesforce/);
+  });
 });
 
 describe('apps.js: addresses on the page', () => {

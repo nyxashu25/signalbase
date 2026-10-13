@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "DataPit — Contact Lookup",
-  "version": "0.6.0",
-  "description": "Find and reveal work emails on LinkedIn, Sales Navigator, company websites, Gmail, Google Calendar, HubSpot and Salesforce.",
+  "version": "0.6.1",
+  "description": "See who's in your DataPit database and reveal their work email as you prospect: on profiles, in your inbox, calendar and CRM.",
   "permissions": [
     "storage",
     "activeTab"

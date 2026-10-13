@@ -26,7 +26,7 @@ export const EXTENSION_STORE_URL =
 // Chrome Web Store serves. Bump the store version once Google approves an
 // upload — until then, pages note that the newest surfaces are download-only.
 export const EXTENSION_NAME = 'DataPit — Contact Lookup';
-export const EXTENSION_VERSION = '0.6.0';
+export const EXTENSION_VERSION = '0.6.1';
 export const EXTENSION_STORE_VERSION = '0.5.0';
 export const EXTENSION_SURFACES =
   'LinkedIn, Sales Navigator, company websites, Gmail, Google Calendar, HubSpot and Salesforce';
