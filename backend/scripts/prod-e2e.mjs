@@ -3,7 +3,7 @@
 //
 //   node scripts/prod-e2e.mjs
 //
-// Exercises the real API on 127.0.0.1:4000 (prod env, prod DB) using
+// Exercises the real API on 127.0.0.1:4100 (prod env, prod DB) using
 // disposable accounts/rows that are all deleted at the end:
 //   register -> verify -> login -> me -> search -> reveal (own seeded
 //   contact, so no shared data is mutated) -> lists + masking -> saved
@@ -16,7 +16,7 @@
 // that's expected (sandbox sender) and non-fatal by design.
 import { createHash } from 'node:crypto';
 
-const BASE = process.env.E2E_BASE_URL ?? 'http://127.0.0.1:4000/api/v1';
+const BASE = process.env.E2E_BASE_URL ?? 'http://127.0.0.1:4100/api/v1';
 const STAMP = Date.now();
 const OWNER_EMAIL = `e2e-owner-${STAMP}@dp-e2e.test`;
 const INVITEE_EMAIL = `e2e-invitee-${STAMP}@dp-e2e.test`;

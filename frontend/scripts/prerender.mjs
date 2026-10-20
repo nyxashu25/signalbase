@@ -13,7 +13,7 @@
 //   dist/llms.txt, dist/llms-full.txt   summaries for AI assistants (src/seo/llms.js)
 //
 // Email-format pages need the API: set PRERENDER_API_URL (the deploy uses
-// http://127.0.0.1:4000). Without it they're skipped.
+// http://127.0.0.1:4100). Without it they're skipped.
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';

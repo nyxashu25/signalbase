@@ -327,7 +327,7 @@ live in the page files (with sources) and `src/data/competitors.js`; re-check
 them at least quarterly.
 
 **Build on the server with `npm run build:prod`** (not `npm run build`): it
-sets `PRERENDER_API_URL=http://127.0.0.1:4000` so the prerender can fetch
+sets `PRERENDER_API_URL=http://127.0.0.1:4100` so the prerender can fetch
 `/api/v1/public/email-formats` and write a page per company with at least 5
 addresses. The API must be running during the build; without it the build
 still succeeds and just skips those pages.
