@@ -6,6 +6,31 @@ update this file when those change, not the other way around.
 
 ---
 
+## Production server
+
+Since 2026-10-20 DataPit runs on **`200.97.160.235`** (Ubuntu 26.04,
+`ssh root@200.97.160.235`), moved from `72.62.212.246`, which no longer has
+any DataPit code, data or config. The host also runs other apps (one on port
+4000, Postgres 18, a shared Valkey, MongoDB, a TURN server), so DataPit uses
+its own instance of each service and nothing in Docker:
+
+| Piece | Where |
+| --- | --- |
+| Code | `/var/www/datapit.io/app` (git checkout of `main`), secrets in `backend/.env` |
+| API / worker | pm2 `datapit-api` (**port 4100**) and `datapit-worker`, both `--import ./src/tracing.js` from `backend/` |
+| Postgres | the host's Postgres 18, database `datapit`, role `datapit` (password in `DATABASE_URL`) |
+| Redis | its own Valkey, `valkey-server@datapit` on `127.0.0.1:6380`, config `/etc/valkey/valkey-datapit.conf` (password, AOF, `noeviction`) |
+| Elasticsearch | 8.19 from Elastic's apt repo, `127.0.0.1:9200` only, 1 GB heap, security off |
+| nginx | `sites-available/datapit.io` (= `deploy/nginx/datapit.io.conf`) and `conf.d/datapit-upstream.conf` (= `deploy/nginx/datapit-upstream.conf`) |
+| TLS | certbot, nginx authenticator, `/etc/letsencrypt/live/datapit.io` |
+| Jobs | `datapit-backup`, `datapit-healthwatch`, `datapit-seo-report` timers (`deploy/systemd/`) |
+
+Deploy: `git pull`, `npm ci` (backend: `npx prisma migrate deploy`),
+`pm2 restart datapit-api datapit-worker`, then `npm run build:prod` in
+`frontend/` while the API is up.
+
+---
+
 ## Observability surfaces
 
 - **`GET /metrics`** — Prometheus text format (`backend/src/config/metrics.js`).
@@ -207,10 +232,9 @@ notification failures are non-fatal by design.
 Nightly at **03:17 UTC** (`datapit-backup.timer`, `Persistent=true`), kept
 **14 days** in `/var/backups/datapit/` (root-only):
 
-- `pg-<db>-<stamp>.dump` — `pg_dump -Fc` of the production database, taken
-  through `docker exec` (Postgres runs in the `…-postgres-1` container; the
-  host has no pg tools). Sanity-checked with `pg_restore -l` before the run
-  reports success.
+- `pg-<db>-<stamp>.dump` — `pg_dump -Fc` of the production database, run
+  with `DATABASE_URL` against the host's Postgres 18. Sanity-checked with
+  `pg_restore -l` before the run reports success.
 - `env-<stamp>.bak` — a copy of `backend/.env`. **Not optional**: it holds
   `SETTINGS_ENCRYPTION_KEY`, without which the encrypted Stripe credentials
   inside the dump can never be decrypted again.
@@ -225,13 +249,16 @@ systemctl list-timers | grep datapit
 **Restore** (to a scratch DB first — never straight over production):
 
 ```
-C=$(docker ps --format '{{.Names}}' | grep -m1 postgres)
-docker exec $C createdb -U titans7 restore_test
-docker exec -i $C pg_restore -U titans7 -d restore_test --no-owner < /var/backups/datapit/pg-….dump
-docker exec $C psql -U titans7 -d restore_test -c '\dt'   # eyeball, then point a scratch env at it
+sudo -u postgres createdb -O datapit restore_test
+sudo -u postgres pg_restore -d restore_test --no-owner --role=datapit /var/backups/datapit/pg-….dump
+sudo -u postgres psql -d restore_test -c '\dt'   # eyeball, then point a scratch env at it
 # to actually swap: stop pm2 apps, rename DBs (ALTER DATABASE … RENAME), start, reindex ES
-docker exec $C dropdb -U titans7 restore_test
+sudo -u postgres dropdb restore_test
 ```
+
+`/var/backups/datapit/old-server/` holds the last dump from the old server
+(2026-10-20, Postgres 16, database `titans7`), the same data the new server
+started from.
 
 After any restore: `npm run reindex` (ES) — Redis balances converge from the
 ledger via the reconciliation job, but a mass drift alert on the first cycle
@@ -252,9 +279,10 @@ hourly reminders while broken, one on recovery. State in
 `/var/lib/datapit/healthwatch.state`. Test the mail path:
 `datapit-healthwatch.sh --test`.
 
-**Prometheus** — the `prometheus` package scrapes the API's `/metrics` every
-15s (job `datapit-api`, see `deploy/prometheus-datapit.yml`), 30-day
-retention, UI bound to `127.0.0.1:9090` only:
+**Prometheus** — not installed on the current server (it ran on the old one,
+with nothing reading it). To bring it back: install the `prometheus` package,
+add the job in `deploy/prometheus-datapit.yml` (scrapes the API's `/metrics`
+every 15s), keep the UI bound to `127.0.0.1:9090`, and reach it with:
 
 ```
 ssh -L 9090:127.0.0.1:9090 root@datapit.io   →   http://localhost:9090
@@ -263,14 +291,13 @@ ssh -L 9090:127.0.0.1:9090 root@datapit.io   →   http://localhost:9090
 Start with `rate(http_requests_total[5m])`, `credit_reservations_pending`,
 `bullmq_queue_waiting_jobs`.
 
-**Redis durability** — the redis container now runs with `--appendonly yes`
-(AOF, everysec) on its persistent volume; before 2026-08-24 it was
-RDB-snapshot-only (up to ~1h of credit-balance drift on a hard crash). The
-compose file is `/var/www/datapit.io/docker-compose.yml` (it moved with the
-domain migration) and pins `name: titans7-signalbase` explicitly — never
-remove that line: the project name anchors the data volume names
-(`titans7-signalbase_postgres_data` etc.), and losing it would point a
-`docker compose up` at fresh, empty volumes.
+**Redis durability** — `valkey-server@datapit` runs with `appendonly yes`
+(AOF, everysec) plus RDB snapshots in `/var/lib/valkey/datapit`, so a hard
+crash loses at most about a second of credit-balance changes (and the
+reconciliation job repairs balances from the ledger anyway). Its
+`maxmemory 1gb` with `noeviction` is what BullMQ requires; never point
+DataPit at the host's shared Valkey on 6379. `docker-compose.yml` in the repo
+is for local development only.
 
 
 ## Search: prerendered pages, nginx, sitemap (`deploy/nginx/datapit.io.conf`)

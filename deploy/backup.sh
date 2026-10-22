@@ -56,8 +56,9 @@ fi
 cp "$ENV_FILE" "$BACKUP_DIR/env-$STAMP.bak"
 chmod 600 "$BACKUP_DIR/env-$STAMP.bak"
 
-# Rotate: keep KEEP_DAYS days of nightly dumps + env copies.
-find "$BACKUP_DIR" -name 'pg-*.dump' -mtime +"$KEEP_DAYS" -delete
-find "$BACKUP_DIR" -name 'env-*.bak' -mtime +"$KEEP_DAYS" -delete
+# Rotate: keep KEEP_DAYS days of nightly dumps + env copies (top level only;
+# subfolders such as old-server/ are kept).
+find "$BACKUP_DIR" -maxdepth 1 -name 'pg-*.dump' -mtime +"$KEEP_DAYS" -delete
+find "$BACKUP_DIR" -maxdepth 1 -name 'env-*.bak' -mtime +"$KEEP_DAYS" -delete
 
 echo "backup ok: $OUT ($(du -h "$OUT" | cut -f1), $TABLES table-data entries), env copied, retention ${KEEP_DAYS}d"
